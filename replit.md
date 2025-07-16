@@ -265,6 +265,11 @@ Preferred communication style: Simple, everyday language.
   - Buffer Time Preference (65%)
 - **USER EXPERIENCE**: Providers can now fine-tune how much each factor influences appointment duration predictions, with settings persisting between sessions
 - **PRODUCTION IMPACT**: Each provider can optimize their scheduling AI based on their practice patterns and patient population
+- **BUG FIX COMPLETED**: Fixed critical issue where AI prediction calculations were using hardcoded default weights instead of provider's saved preferences
+  - Updated predictAppointmentDuration to load and apply provider weights at calculation time
+  - Modified all AI factor calculations to respect provider weight settings (0-100% scale)
+  - Updated AIDurationDisplay tooltip to show provider's actual weight values instead of hardcoded 80%
+  - Provider weights now fetched when schedule appointment dialog opens and passed to display component
 
 ### Scheduling System Enhancements - Manual Override & Conflict Prevention COMPLETED (January 16, 2025)
 - **MANUAL DURATION OVERRIDE**: Duration field now always editable, allowing providers to override AI predictions when needed

@@ -20,6 +20,16 @@ interface AIDurationDisplayProps {
     avgArrivalDelta?: number;
     historicalAvg?: number;
   };
+  providerWeights?: {
+    historicalVisitWeight?: number;
+    medicalProblemsWeight?: number;
+    activeMedicationsWeight?: number;
+    patientAgeWeight?: number;
+    noShowRiskWeight?: number;
+    averageArrivalTimeWeight?: number;
+    providerEfficiencyWeight?: number;
+    timeOfDayWeight?: number;
+  };
 }
 
 export function AIDurationDisplay({
@@ -27,7 +37,8 @@ export function AIDurationDisplay({
   patientVisibleDuration,
   providerScheduledDuration,
   aiPredictedDuration,
-  complexityFactors
+  complexityFactors,
+  providerWeights
 }: AIDurationDisplayProps) {
   const durationDifference = aiPredictedDuration - baseDuration;
   const hasAdjustment = Math.abs(durationDifference) > 0;
@@ -75,7 +86,7 @@ export function AIDurationDisplay({
                   {/* Primary Factor */}
                   {complexityFactors?.historicalAvg && complexityFactors.historicalAvg > 0 && (
                     <div className="border-b pb-2">
-                      <p className="font-medium text-green-600">Primary Factor (80% weight when available)</p>
+                      <p className="font-medium text-green-600">Primary Factor ({providerWeights?.historicalVisitWeight || 80}% weight when available)</p>
                       <div className="text-sm mt-1">
                         <div className="flex justify-between">
                           <span>Historical visit average:</span>

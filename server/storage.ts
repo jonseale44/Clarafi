@@ -2111,6 +2111,10 @@ export class DatabaseStorage implements IStorage {
   }) {
     console.log('🤖 [AI SCHEDULING] Starting prediction for patient:', params.patientId);
     
+    // Get provider's custom AI weights
+    const providerWeights = await this.getProviderAiWeights(params.providerId, 2); // Using health system ID 2 for now
+    console.log('🤖 [AI SCHEDULING] Provider weights loaded:', providerWeights);
+    
     // Map frontend appointment types to standard durations
     const appointmentTypeMap: Record<string, string> = {
       'new-patient': 'new_patient',
@@ -2180,24 +2184,31 @@ export class DatabaseStorage implements IStorage {
         
       console.log('🤖 [AI SCHEDULING] Provider patterns:', providerPatterns);
       
-      // 4. Calculate complexity-based adjustments
-      // Each active problem adds 1-2 minutes
-      if (complexity.problemCount > 0) {
-        durationAdjustment += Math.min(complexity.problemCount * 1.5, 15); // Cap at 15 minutes
+      // 4. Calculate complexity-based adjustments using provider weights
+      // Each active problem adds time based on weight
+      if (complexity.problemCount > 0 && providerWeights.medicalProblemsWeight > 0) {
+        const problemFactor = providerWeights.medicalProblemsWeight / 100;
+        durationAdjustment += Math.min(complexity.problemCount * 1.5 * problemFactor, 15 * problemFactor);
       }
       
-      // Multiple medications add time for medication reconciliation
-      if (complexity.medicationCount > 5) {
-        durationAdjustment += 5;
-      } else if (complexity.medicationCount > 10) {
-        durationAdjustment += 10;
+      // Multiple medications add time based on weight
+      if (providerWeights.activeMedicationsWeight > 0) {
+        const medFactor = providerWeights.activeMedicationsWeight / 100;
+        if (complexity.medicationCount > 10) {
+          durationAdjustment += 10 * medFactor;
+        } else if (complexity.medicationCount > 5) {
+          durationAdjustment += 5 * medFactor;
+        }
       }
       
-      // Elderly patients (>65) typically need more time
-      if (complexity.age > 65) {
-        durationAdjustment += 5;
-      } else if (complexity.age > 80) {
-        durationAdjustment += 10;
+      // Age adjustments based on weight
+      if (providerWeights.patientAgeWeight > 0) {
+        const ageFactor = providerWeights.patientAgeWeight / 100;
+        if (complexity.age > 80) {
+          durationAdjustment += 10 * ageFactor;
+        } else if (complexity.age > 65) {
+          durationAdjustment += 5 * ageFactor;
+        }
       }
       
       // 5. Use historical patterns if available - THIS IS THE MOST IMPORTANT FACTOR
@@ -2224,42 +2235,47 @@ export class DatabaseStorage implements IStorage {
           baseDuration = typeSpecificDuration;
           console.log(`🤖 [AI SCHEDULING] Using type-specific historical duration: ${typeSpecificDuration} minutes for ${params.appointmentType}`);
         } else if (historicalAvg > 0) {
-          // We have general visit history - weight it HEAVILY (80/20 blend)
-          baseDuration = Math.round((historicalAvg * 0.8) + (baseDuration * 0.2));
-          console.log(`🤖 [AI SCHEDULING] Using historical average duration: ${historicalAvg} minutes (weighted 80%)`);
+          // We have general visit history - weight it based on provider preference
+          const historicalWeight = providerWeights.historicalVisitWeight / 100;
+          baseDuration = Math.round((historicalAvg * historicalWeight) + (baseDuration * (1 - historicalWeight)));
+          console.log(`🤖 [AI SCHEDULING] Using historical average duration: ${historicalAvg} minutes (weighted ${providerWeights.historicalVisitWeight}%)`);
         }
         
         // High no-show rate might mean scheduling shorter slots
         const noShowRate = parseFloat(patientPatterns.noShowRate || '0');
-        if (noShowRate > 0.3) { // >30% no-show rate
-          durationAdjustment -= 5;
+        if (noShowRate > 0.3 && providerWeights.noShowRiskWeight > 0) { // >30% no-show rate
+          const noShowFactor = providerWeights.noShowRiskWeight / 100;
+          durationAdjustment -= 5 * noShowFactor;
         }
         
         // Consistent late arrivals need buffer
         const avgArrivalDelta = parseFloat(patientPatterns.avgArrivalDelta || '0');
-        if (avgArrivalDelta > 10) { // Consistently >10 minutes late
-          durationAdjustment += 5;
+        if (avgArrivalDelta > 10 && providerWeights.averageArrivalTimeWeight > 0) { // Consistently >10 minutes late
+          const arrivalFactor = providerWeights.averageArrivalTimeWeight / 100;
+          durationAdjustment += 5 * arrivalFactor;
         }
       }
       
       // 6. Provider-specific adjustments
-      if (providerPatterns) {
+      if (providerPatterns && providerWeights.providerEfficiencyWeight > 0) {
         const providerAvg = parseFloat(providerPatterns.avgVisitDuration || '0');
         if (providerAvg > 0) {
+          const efficiencyFactor = providerWeights.providerEfficiencyWeight / 100;
           // Some providers run longer/shorter than average
           const providerFactor = providerAvg / baseDuration;
           if (providerFactor > 1.2) { // Provider runs 20% longer
-            durationAdjustment += 5;
+            durationAdjustment += 5 * efficiencyFactor;
           } else if (providerFactor < 0.8) { // Provider is efficient
-            durationAdjustment -= 5;
+            durationAdjustment -= 5 * efficiencyFactor;
           }
         }
       }
       
       // 7. Time of day adjustments (providers often run behind later in day)
       const appointmentHour = parseInt(params.appointmentTime.split(':')[0]);
-      if (appointmentHour >= 15) { // After 3 PM
-        durationAdjustment += 5;
+      if (appointmentHour >= 15 && providerWeights.timeOfDayWeight > 0) { // After 3 PM
+        const timeFactor = providerWeights.timeOfDayWeight / 100;
+        durationAdjustment += 5 * timeFactor;
       }
       
     } catch (error) {

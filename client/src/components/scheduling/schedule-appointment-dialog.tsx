@@ -72,6 +72,9 @@ export function ScheduleAppointmentDialog({
   const [fetchingPrediction, setFetchingPrediction] = useState(false);
   const [manualDurationOverride, setManualDurationOverride] = useState(false);
   
+  // Provider weights state  
+  const [providerWeights, setProviderWeights] = useState<any>(null);
+  
   // Conflict detection state
   const [conflicts, setConflicts] = useState<any[]>([]);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
@@ -104,6 +107,24 @@ export function ScheduleAppointmentDialog({
       }
     }
   }, [open, selectedDate, preselectedPatient]);
+
+  // Fetch provider weights when dialog opens
+  useEffect(() => {
+    if (open && currentUser?.id) {
+      const fetchWeights = async () => {
+        try {
+          const response = await fetch('/api/scheduling/provider-ai-weights');
+          if (response.ok) {
+            const weights = await response.json();
+            setProviderWeights(weights);
+          }
+        } catch (error) {
+          console.error('Error fetching provider weights:', error);
+        }
+      };
+      fetchWeights();
+    }
+  }, [open, currentUser?.id]);
 
   // Reset manual override when appointment type changes
   useEffect(() => {
@@ -515,6 +536,7 @@ export function ScheduleAppointmentDialog({
                 providerScheduledDuration={aiPrediction.providerScheduledDuration}
                 aiPredictedDuration={aiPrediction.aiPredictedDuration}
                 complexityFactors={aiPrediction.complexityFactors}
+                providerWeights={providerWeights}
               />
             </div>
           )}
