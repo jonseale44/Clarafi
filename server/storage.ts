@@ -126,6 +126,28 @@ export interface IStorage {
   deleteMedicalProblem(id: number): Promise<void>;
   getMedicalProblemVisitHistory(problemId: number): Promise<any[]>;
   
+  // Appointment and scheduling management
+  getAppointments(params: {
+    healthSystemId: number;
+    startDate: Date;
+    endDate: Date;
+    providerId?: number;
+    locationId?: number;
+    patientId?: number;
+  }): Promise<any[]>;
+  createAppointment(data: any): Promise<Appointment>;
+  updateAppointment(appointmentId: number, data: any, healthSystemId: number): Promise<Appointment | null>;
+  getAppointmentById(appointmentId: number, healthSystemId: number): Promise<any>;
+  deleteAppointment(appointmentId: number, healthSystemId: number): Promise<void>;
+  getProvidersByHealthSystem(healthSystemId: number, locationId?: number): Promise<any[]>;
+  getRealtimeScheduleStatus(providerId: number, date: Date): Promise<any>;
+  predictAppointmentDuration(params: any): Promise<any>;
+  getSchedulePreferences(providerId: number): Promise<any>;
+  updateSchedulePreferences(providerId: number, data: any): Promise<any>;
+  getAppointmentTypes(healthSystemId: number, locationId?: number): Promise<any[]>;
+  getSchedulingAiFactors(): Promise<any[]>;
+  updateAiFactorWeight(params: any): Promise<any>;
+  
   sessionStore: session.SessionStore;
 }
 
@@ -2162,6 +2184,42 @@ export class DatabaseStorage implements IStorage {
       .execute();
       
     return result[0];
+  }
+
+  // Get appointment by ID
+  async getAppointmentById(appointmentId: number, healthSystemId: number) {
+    const result = await db
+      .select({
+        id: appointments.id,
+        patientId: appointments.patientId,
+        providerId: appointments.providerId,
+        locationId: appointments.locationId,
+        appointmentDate: appointments.appointmentDate,
+        startTime: appointments.startTime,
+        endTime: appointments.endTime,
+        duration: appointments.duration,
+        appointmentType: appointments.appointmentType,
+        chiefComplaint: appointments.chiefComplaint,
+        visitReason: appointments.visitReason,
+        status: appointments.status,
+        confirmationStatus: appointments.confirmationStatus,
+        checkedInAt: appointments.checkedInAt,
+        checkedInBy: appointments.checkedInBy,
+        roomAssignment: appointments.roomAssignment,
+        urgencyLevel: appointments.urgencyLevel,
+        schedulingNotes: appointments.schedulingNotes,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+      })
+      .from(appointments)
+      .innerJoin(patients, eq(appointments.patientId, patients.id))
+      .where(and(
+        eq(appointments.id, appointmentId),
+        eq(patients.healthSystemId, healthSystemId)
+      ))
+      .execute();
+      
+    return result[0] || null;
   }
 
   // Delete appointment

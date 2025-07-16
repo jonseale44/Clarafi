@@ -202,6 +202,103 @@ router.delete('/api/scheduling/appointments/:id', tenantIsolation, async (req, r
   }
 });
 
+// Check in appointment and create encounter
+router.post('/api/scheduling/appointments/:id/check-in', tenantIsolation, async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const appointmentId = parseInt(req.params.id);
+    const { roomAssignment } = req.body;
+    
+    console.log('🚪 [APPOINTMENT CHECK-IN] Starting check-in process for appointment:', appointmentId);
+    
+    // Check permissions
+    const canCheckIn = ['admin', 'nurse', 'ma', 'front_desk'].includes(req.user!.role);
+    if (!canCheckIn) {
+      return res.status(403).json({ error: 'You do not have permission to check in appointments' });
+    }
+    
+    // Get appointment details
+    const appointment = await storage.getAppointmentById(appointmentId, req.userHealthSystemId!);
+    
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    
+    if (appointment.status === 'checked_in') {
+      return res.status(400).json({ error: 'Appointment already checked in' });
+    }
+    
+    if (appointment.status === 'cancelled' || appointment.status === 'no_show') {
+      return res.status(400).json({ error: `Cannot check in ${appointment.status} appointment` });
+    }
+    
+    console.log('🚪 [APPOINTMENT CHECK-IN] Found appointment:', {
+      id: appointment.id,
+      patientId: appointment.patientId,
+      providerId: appointment.providerId,
+      locationId: appointment.locationId,
+      chiefComplaint: appointment.chiefComplaint,
+      appointmentType: appointment.appointmentType
+    });
+    
+    // Begin transaction for atomic operation
+    const { db, appointments, encounters } = await import('../shared/schema.js');
+    const { eq } = await import('drizzle-orm');
+    
+    // Update appointment status to checked_in
+    const checkedInAt = new Date();
+    await db.update(appointments)
+      .set({
+        status: 'checked_in',
+        checkedInAt: checkedInAt,
+        checkedInBy: req.user!.id,
+        roomAssignment: roomAssignment || null
+      })
+      .where(eq(appointments.id, appointmentId));
+    
+    console.log('🚪 [APPOINTMENT CHECK-IN] Updated appointment status to checked_in');
+    
+    // Create encounter from appointment
+    const encounterData = {
+      patientId: appointment.patientId,
+      providerId: appointment.providerId,
+      locationId: appointment.locationId,
+      appointmentId: appointmentId,
+      visitType: appointment.appointmentType || 'office_visit',
+      chiefComplaint: appointment.chiefComplaint || appointment.visitReason || '',
+      encounterStatus: 'in_progress' as const,
+      checkedInAt: checkedInAt,
+      checkedInBy: req.user!.id,
+      startTime: checkedInAt,
+      createdBy: req.user!.id
+    };
+    
+    console.log('🚪 [APPOINTMENT CHECK-IN] Creating encounter with data:', encounterData);
+    
+    const [newEncounter] = await db.insert(encounters)
+      .values(encounterData)
+      .returning();
+    
+    console.log('🚪 [APPOINTMENT CHECK-IN] Successfully created encounter:', newEncounter.id);
+    
+    res.json({
+      success: true,
+      encounterId: newEncounter.id,
+      appointment: {
+        ...appointment,
+        status: 'checked_in',
+        checkedInAt: checkedInAt,
+        checkedInBy: req.user!.id,
+        roomAssignment: roomAssignment || null
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ [APPOINTMENT CHECK-IN] Error during check-in:', error);
+    res.status(500).json({ error: 'Failed to check in appointment' });
+  }
+});
+
 // Get schedule preferences
 router.get('/api/scheduling/preferences/:providerId', tenantIsolation, async (req, res) => {
   try {

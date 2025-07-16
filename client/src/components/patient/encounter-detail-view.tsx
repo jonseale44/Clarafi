@@ -3830,7 +3830,15 @@ Please provide medical suggestions based on this complete conversation context.`
               Encounter ID: {encounterId}
             </div>
           </div>
-          <div className="text-sm text-gray-500 mt-1">
+          {encounter?.chiefComplaint && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-start space-x-2">
+                <span className="text-sm font-semibold text-blue-700">Chief Complaint:</span>
+                <span className="text-sm text-blue-800">{encounter.chiefComplaint}</span>
+              </div>
+            </div>
+          )}
+          <div className="text-sm text-gray-500 mt-2">
             Clinical documentation and voice notes for this encounter.
           </div>
         </div>
