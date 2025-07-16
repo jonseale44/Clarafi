@@ -147,18 +147,81 @@ const CHIEF_COMPLAINTS_POOL = [
 ];
 
 export class TestPatientGenerator {
+  // Counter for sequential naming
+  private static nameCounter = 0;
+  private static initialized = false;
+  
+  // Initialize counter based on existing test patients
+  private async initializeCounter(healthSystemId: number): Promise<void> {
+    if (TestPatientGenerator.initialized) return;
+    
+    try {
+      // Get count of existing ZTEST patients
+      const existingPatients = await db
+        .select({ firstName: patients.firstName, lastName: patients.lastName })
+        .from(patients)
+        .where(eq(patients.healthSystemId, healthSystemId));
+      
+      // Count how many match our pattern
+      const ztestCount = existingPatients.filter(p => 
+        p.firstName.startsWith('ZTest') || p.firstName === 'ZT'
+      ).length;
+      
+      if (ztestCount > 0) {
+        TestPatientGenerator.nameCounter = ztestCount;
+      }
+      
+      TestPatientGenerator.initialized = true;
+    } catch (error) {
+      console.error("[TestPatientGenerator] Error initializing counter:", error);
+    }
+  }
   
   // Generate a unique test patient MRN
   private generateTestMRN(): string {
-    const timestamp = Date.now();
-    return `ZTEST${timestamp}`;
+    // Use shorter timestamp for MRN to ensure uniqueness
+    const shortTimestamp = Date.now().toString().slice(-8);
+    return `ZTEST${shortTimestamp}`;
   }
 
-  // Generate test patient name
+  // Generate test patient name with 12 character limit total
   private generateTestName(config: TestPatientConfig): { firstName: string; lastName: string } {
-    const timestamp = new Date().getTime();
-    const firstName = config.customFirstName || `Ztest${timestamp}`;
-    const lastName = config.customLastName || `Patient${timestamp}`;
+    TestPatientGenerator.nameCounter++;
+    const counter = TestPatientGenerator.nameCounter;
+    
+    // If custom names provided, use them but truncate if too long
+    if (config.customFirstName || config.customLastName) {
+      const firstName = (config.customFirstName || "ZTest").slice(0, 6);
+      const lastName = (config.customLastName || counter.toString()).slice(0, 6);
+      return { firstName, lastName };
+    }
+    
+    // Generate pattern-based names (total 12 chars max)
+    // Pattern options: ZTest1, ZTest2... ZTest99, then ZTestA, ZTestAA, etc.
+    let firstName: string;
+    let lastName: string;
+    
+    if (counter <= 99) {
+      // Numeric pattern: ZTest 1-99
+      firstName = "ZTest";
+      lastName = counter.toString();
+    } else if (counter <= 99 + 26) {
+      // Single letter pattern: ZTest A-Z
+      firstName = "ZTest";
+      lastName = String.fromCharCode(65 + (counter - 100)); // A-Z
+    } else if (counter <= 99 + 26 + 676) {
+      // Double letter pattern: ZTest AA-ZZ
+      const letterIndex = counter - 126;
+      const firstLetter = String.fromCharCode(65 + Math.floor(letterIndex / 26));
+      const secondLetter = String.fromCharCode(65 + (letterIndex % 26));
+      firstName = "ZTest";
+      lastName = firstLetter + secondLetter;
+    } else {
+      // For very high numbers, use ZT + 5 digit number
+      firstName = "ZT";
+      lastName = counter.toString().padStart(5, '0').slice(-5);
+    }
+    
     return { firstName, lastName };
   }
 
@@ -266,6 +329,9 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
     console.log("[TestPatientGenerator] Starting generation with config:", config);
     console.log("[TestPatientGenerator] Config providerId:", config.providerId, "type:", typeof config.providerId);
     
+    // Initialize counter if needed
+    await this.initializeCounter(config.healthSystemId);
+    
     // Generate basic patient data
     const { firstName, lastName } = this.generateTestName(config);
     const mrn = this.generateTestMRN();
@@ -280,7 +346,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
       dateOfBirth: dateOfBirth.toISOString().split('T')[0],
       gender: Math.random() > 0.5 ? "male" : "female",
       contactNumber: `555-${String(Math.floor(Math.random() * 900) + 100)}-${String(Math.floor(Math.random() * 9000) + 1000)}`,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@testpatient.com`,
+      email: `${firstName.toLowerCase()}${lastName.toLowerCase()}@test.local`,
       address: "123 Test Street, Test City, TX 75001",
       preferredLocationId: config.locationId,
       primaryProviderId: config.providerId,
