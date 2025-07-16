@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,10 +31,13 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  Target
+  Target,
+  ArrowLeft,
+  LogOut
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
+import { useLocation } from "wouter";
 
 interface Article {
   id: number;
@@ -69,9 +72,15 @@ interface GenerationSettings {
 
 export default function AdminBlogManagement() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [selectedTab, setSelectedTab] = useState("queue");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [generateFormData, setGenerateFormData] = useState({
+    category: "",
+    audience: "",
+    topic: ""
+  });
   const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
     articlesPerWeek: 3,
     autoGenerate: false,
@@ -85,12 +94,12 @@ export default function AdminBlogManagement() {
 
   // Fetch articles in review queue
   const { data: queueData, isLoading: queueLoading } = useQuery<{ articles: Article[] }>({
-    queryKey: ["/api/admin/blog/queue"],
+    queryKey: ["/api/admin/blog/articles?status=review"],
   });
 
   // Fetch published articles
   const { data: publishedData, isLoading: publishedLoading } = useQuery<{ articles: Article[] }>({
-    queryKey: ["/api/admin/blog/published"],
+    queryKey: ["/api/admin/blog/articles?status=published"],
   });
 
   // Fetch generation statistics
@@ -98,16 +107,30 @@ export default function AdminBlogManagement() {
     queryKey: ["/api/admin/blog/stats"],
   });
 
-  // Generate new article mutation
+  // Generate new article mutation (two-step process)
   const generateArticleMutation = useMutation({
-    mutationFn: async (params: { category: string; audience: string }) => {
-      const response = await fetch("/api/admin/blog/generate", {
+    mutationFn: async (params: { category: string; audience: string; topic?: string }) => {
+      // Step 1: Add to generation queue
+      const queueResponse = await apiRequest({
+        url: "/api/admin/blog/generation-queue",
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
+        body: {
+          category: params.category,
+          targetAudience: params.audience,
+          topic: params.topic || null,
+          keywords: [],
+          competitorMentions: []
+        }
       });
-      if (!response.ok) throw new Error("Failed to generate article");
-      return response.json();
+      
+      // Step 2: Trigger generation for the queue item
+      const generateResponse = await apiRequest({
+        url: `/api/admin/blog/generate/${queueResponse.queueItem.id}`,
+        method: "POST",
+        body: {}
+      });
+      
+      return generateResponse;
     },
     onSuccess: () => {
       toast({
@@ -115,7 +138,15 @@ export default function AdminBlogManagement() {
         description: "The AI is generating a new article. This may take a few minutes.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/queue"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles"] });
     },
+    onError: (error) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate article",
+        variant: "destructive"
+      });
+    }
   });
 
   // Approve article mutation
@@ -235,11 +266,42 @@ export default function AdminBlogManagement() {
     </Card>
   );
 
+  // Logout handler
+  const logoutMutation = useMutation({
+    mutationFn: async () => apiRequest({ url: "/api/logout", method: "POST" }),
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/auth");
+    }
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Blog Management</h1>
-        <p className="text-gray-600">Manage AI-generated articles and blog content</p>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Blog Management</h1>
+            <p className="text-gray-600">Manage AI-generated articles and blog content</p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => setLocation("/admin")}
+              variant="outline"
+              size="sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <Button 
+              onClick={() => logoutMutation.mutate()}
+              variant="outline"
+              size="sm"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
       </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
@@ -507,7 +569,10 @@ export default function AdminBlogManagement() {
                 <div className="space-y-4">
                   <div>
                     <Label>Category</Label>
-                    <Select>
+                    <Select
+                      value={generateFormData.category}
+                      onValueChange={(value) => setGenerateFormData({ ...generateFormData, category: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
@@ -524,7 +589,10 @@ export default function AdminBlogManagement() {
 
                   <div>
                     <Label>Target Audience</Label>
-                    <Select>
+                    <Select
+                      value={generateFormData.audience}
+                      onValueChange={(value) => setGenerateFormData({ ...generateFormData, audience: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select target audience" />
                       </SelectTrigger>
@@ -536,6 +604,15 @@ export default function AdminBlogManagement() {
                         <SelectItem value="nurse_practitioners">Nurse Practitioners</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div>
+                    <Label>Topic (Optional)</Label>
+                    <Input
+                      value={generateFormData.topic}
+                      onChange={(e) => setGenerateFormData({ ...generateFormData, topic: e.target.value })}
+                      placeholder="Specific topic to focus on..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -570,11 +647,22 @@ export default function AdminBlogManagement() {
 
                   <Button 
                     className="w-full" 
-                    onClick={() => generateArticleMutation.mutate({
-                      category: "clinical_efficiency",
-                      audience: "physicians"
-                    })}
-                    disabled={generateArticleMutation.isPending}
+                    onClick={() => {
+                      if (!generateFormData.category || !generateFormData.audience) {
+                        toast({
+                          title: "Missing Information",
+                          description: "Please select both a category and target audience",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      generateArticleMutation.mutate({
+                        category: generateFormData.category,
+                        audience: generateFormData.audience,
+                        topic: generateFormData.topic || undefined
+                      });
+                    }}
+                    disabled={generateArticleMutation.isPending || !generateFormData.category || !generateFormData.audience}
                   >
                     {generateArticleMutation.isPending ? (
                       <>

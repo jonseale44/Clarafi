@@ -159,6 +159,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Blog Generation Two-Step Process Fix & Navigation Enhancement COMPLETED (January 16, 2025)
+- **FIXED BLOG GENERATION**: Blog article generation was failing because frontend was calling wrong endpoint
+- **TWO-STEP PROCESS IMPLEMENTED**: 
+  - Step 1: Create queue item at `/api/admin/blog/generation-queue` 
+  - Step 2: Trigger generation at `/api/admin/blog/generate/:queueId`
+- **FORM STATE MANAGEMENT**: Added proper state management for category, audience, and topic selection
+- **VALIDATION ADDED**: Generate button now validates that both category and audience are selected
+- **NAVIGATION BUTTONS ADDED**: Added "Back to Dashboard" and "Logout" buttons to blog management page header
+- **QUERY KEY FIXES**: Updated query keys to match actual API endpoints:
+  - Review queue: `/api/admin/blog/articles?status=review`
+  - Published articles: `/api/admin/blog/articles?status=published`
+- **USER EXPERIENCE**: Form now properly captures selections and passes them to the generation API
+- **PRODUCTION READY**: Blog generation system now fully functional with proper error handling
+
 ### SEO Blog Management System Implementation COMPLETED (January 16, 2025)
 - **COMPREHENSIVE BLOG SYSTEM**: Implemented AI-powered blog article generation and management system for healthcare SEO
 - **ADMIN BLOG MANAGEMENT INTERFACE**: Created full-featured admin interface at `/admin/blog` with:
