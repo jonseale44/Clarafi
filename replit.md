@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### AI Scheduling Tooltip Decimal Point Fix & Proactive Conflict Detection COMPLETED (January 16, 2025)
+- **DECIMAL POINT ERROR FIXED**: Fixed no-show rate display in AI scheduling tooltip showing 2000% instead of 20% due to double percentage conversion
+- **PROACTIVE CONFLICT DETECTION**: Added real-time appointment conflict checking before submission (not just after save attempts)
+- **NEW ENDPOINT**: Created POST /api/scheduling/appointments/check-conflicts endpoint to detect double-booking scenarios
+- **CONFLICT WARNING UI**: Added visual alert in schedule appointment dialog showing conflicting appointments with patient names and times
+- **REAL-TIME CHECKING**: Conflict detection runs automatically when date/time/duration/provider changes with 500ms debounce
+- **USER GUIDANCE**: Clear messaging advises users to select different time slots when conflicts detected
+
 ### Appointment Completion Tracking with Recording Duration Integration COMPLETED (January 17, 2025)
 - **RECORDING DURATION TRACKING**: Enhanced realtime proxy WebSocket to capture and save voice recording duration as key metric for appointment duration AI predictions
 - **STORAGE IMPLEMENTATION**: Added saveRecordingMetadata method to storage layer that saves recording metadata to encounter's aiSuggestions JSONB field

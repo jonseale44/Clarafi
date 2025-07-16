@@ -45,8 +45,8 @@ export function AIDurationDisplay({
       if (complexityFactors.age && complexityFactors.age > 65) {
         reasons.push(`Patient age: ${complexityFactors.age} years`);
       }
-      if (complexityFactors.noShowRate && complexityFactors.noShowRate > 0.3) {
-        reasons.push(`High no-show rate: ${Math.round(complexityFactors.noShowRate * 100)}%`);
+      if (complexityFactors.noShowRate && complexityFactors.noShowRate > 30) {
+        reasons.push(`High no-show rate: ${Math.round(complexityFactors.noShowRate)}%`);
       }
       if (complexityFactors.avgArrivalDelta && complexityFactors.avgArrivalDelta > 10) {
         reasons.push(`Typically arrives ${Math.round(complexityFactors.avgArrivalDelta)} min late`);
@@ -114,8 +114,8 @@ export function AIDurationDisplay({
                       <p className="font-medium text-gray-700">Patient Behavior:</p>
                       <div className="ml-2 space-y-0.5">
                         <div className="flex justify-between">
-                          <span>• No-show rate ({((complexityFactors?.noShowRate || 0) * 100).toFixed(0)}%):</span>
-                          <span>{(complexityFactors?.noShowRate || 0) > 0.3 ? '-5' : '0'} min</span>
+                          <span>• No-show rate ({(complexityFactors?.noShowRate || 0).toFixed(0)}%):</span>
+                          <span>{(complexityFactors?.noShowRate || 0) > 30 ? '-5' : '0'} min</span>
                         </div>
                         <div className="flex justify-between">
                           <span>• Avg arrival ({(complexityFactors?.avgArrivalDelta || 0) > 0 ? '+' : ''}{complexityFactors?.avgArrivalDelta || 0} min):</span>

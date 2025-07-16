@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { format } from "date-fns";
-import { Check, ChevronsUpDown, Calendar, User, MapPin } from "lucide-react";
+import { Check, ChevronsUpDown, Calendar, User, MapPin, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { AIDurationDisplay } from "./ai-duration-display";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 
 interface Patient {
@@ -70,6 +71,10 @@ export function ScheduleAppointmentDialog({
   } | null>(null);
   const [fetchingPrediction, setFetchingPrediction] = useState(false);
   const [manualDurationOverride, setManualDurationOverride] = useState(false);
+  
+  // Conflict detection state
+  const [conflicts, setConflicts] = useState<any[]>([]);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
 
   // Set preselected patient if provided
   useEffect(() => {
@@ -150,6 +155,43 @@ export function ScheduleAppointmentDialog({
 
     fetchPrediction();
   }, [selectedPatient, providerId, currentUser?.id, appointmentType, date, time]);
+
+  // Check for conflicts when date/time/duration/provider changes
+  useEffect(() => {
+    if (!date || !time || !duration || !providerId && !currentUser?.id) {
+      setConflicts([]);
+      return;
+    }
+
+    const checkConflicts = async () => {
+      setCheckingConflicts(true);
+      try {
+        const effectiveProviderId = providerId || currentUser?.id;
+        const response = await fetch('/api/scheduling/appointments/check-conflicts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            providerId: effectiveProviderId,
+            appointmentDate: date,
+            appointmentTime: time,
+            duration: parseInt(duration),
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setConflicts(data.conflicts || []);
+        }
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+      } finally {
+        setCheckingConflicts(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(checkConflicts, 500);
+    return () => clearTimeout(debounceTimer);
+  }, [date, time, duration, providerId, currentUser?.id]);
 
 
   // Get user's locations
@@ -475,6 +517,24 @@ export function ScheduleAppointmentDialog({
                 complexityFactors={aiPrediction.complexityFactors}
               />
             </div>
+          )}
+
+          {/* Conflict Warning */}
+          {conflicts.length > 0 && (
+            <Alert className="mt-4 border-amber-200 bg-amber-50">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                <span className="font-medium">Scheduling Conflict Detected</span>
+                <div className="mt-2 space-y-1">
+                  {conflicts.map((conflict, index) => (
+                    <div key={conflict.id} className="text-sm">
+                      {conflict.startTime} - {conflict.endTime}: {conflict.patientName} ({conflict.appointmentType})
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-2 text-sm">Please select a different time slot to avoid double-booking.</p>
+              </AlertDescription>
+            </Alert>
           )}
 
           <div>

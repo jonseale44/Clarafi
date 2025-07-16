@@ -204,6 +204,42 @@ router.post('/api/scheduling/appointments/preview-duration', tenantIsolation, as
   }
 });
 
+// Check for conflicts without creating appointment
+router.post('/api/scheduling/appointments/check-conflicts', tenantIsolation, async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const storage = getStorage();
+    const { providerId, appointmentDate, appointmentTime, duration, excludeAppointmentId } = req.body;
+    
+    if (!providerId || !appointmentDate || !appointmentTime || !duration) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    const conflicts = await storage.checkAppointmentConflicts({
+      providerId,
+      appointmentDate,
+      startTime: appointmentTime,
+      duration: parseInt(duration),
+      excludeAppointmentId
+    });
+    
+    return res.json({ 
+      hasConflicts: conflicts.length > 0,
+      conflicts: conflicts.map(c => ({
+        id: c.id,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        patientName: c.patientName,
+        appointmentType: c.appointmentType,
+        status: c.status
+      }))
+    });
+  } catch (error) {
+    console.error('Error checking conflicts:', error);
+    res.status(500).json({ error: 'Failed to check conflicts' });
+  }
+});
+
 // Update appointment
 router.put('/api/scheduling/appointments/:id',  tenantIsolation, async (req, res) => {
   try {
