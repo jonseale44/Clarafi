@@ -5,6 +5,7 @@ import { SurgicalHistorySection } from "./surgical-history-section";
 import { AllergySection } from "./allergy-section";
 import { PatientAttachments } from "./patient-attachments";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
+import { AppointmentsSection } from "./appointments-section";
 import { EncountersTab } from "./encounters-tab";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
 import { VitalsTrendingGraph } from "@/components/vitals/vitals-trending-graph";
@@ -336,20 +337,7 @@ export function SharedChartSections({
         );
       
       case "appointments":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Appointments</h2>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center py-8 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p className="text-lg font-medium">Appointments management coming soon</p>
-                  <p className="text-sm">Schedule and manage patient appointments.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <AppointmentsSection patientId={patientId} />;
       
       default:
         return <div>Section not found</div>;

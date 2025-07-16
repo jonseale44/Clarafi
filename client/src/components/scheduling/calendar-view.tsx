@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScheduleAppointmentDialog } from "./schedule-appointment-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CalendarViewProps {
   providerId?: number;
@@ -40,6 +43,9 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
   const [showNewAppointmentDialog, setShowNewAppointmentDialog] = useState(false);
+  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<{ id: number; name: string } | null>(null);
+  const [patientSearchQuery, setPatientSearchQuery] = useState("");
   
   // Fetch appointments for the current week
   const startDate = startOfWeek(currentDate);
@@ -53,6 +59,27 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       locationId
     }],
     enabled: true
+  });
+
+  // Query for patient search - using search endpoint with proper query parameter
+  const { data: patients = [] } = useQuery<Array<{ 
+    id: number; 
+    firstName: string; 
+    lastName: string; 
+    mrn: string;
+    dateOfBirth: string;
+    address: string;
+    city: string;
+    state: string;
+    phone: string;
+  }>>({
+    queryKey: ['/api/patients/search', patientSearchQuery],
+    queryFn: async () => {
+      const response = await fetch(`/api/patients/search?q=${encodeURIComponent(patientSearchQuery)}`);
+      if (!response.ok) throw new Error('Failed to search patients');
+      return response.json();
+    },
+    enabled: patientSearchQuery.length > 0, // Start searching immediately
   });
   
   // Fetch real-time schedule status if viewing today
@@ -266,142 +293,13 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       </div>
 
       {/* New Appointment Dialog */}
-      <Dialog open={showNewAppointmentDialog} onOpenChange={setShowNewAppointmentDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Schedule New Appointment</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="patient">Patient</Label>
-                <Input 
-                  id="patient" 
-                  placeholder="Search for patient..." 
-                  className="mt-2"
-                />
-              </div>
-              <div>
-                <Label htmlFor="appointment-type">Appointment Type</Label>
-                <Select defaultValue="follow-up">
-                  <SelectTrigger id="appointment-type" className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new-patient">New Patient</SelectItem>
-                    <SelectItem value="follow-up">Follow Up</SelectItem>
-                    <SelectItem value="physical">Annual Physical</SelectItem>
-                    <SelectItem value="sick-visit">Sick Visit</SelectItem>
-                    <SelectItem value="procedure">Procedure</SelectItem>
-                    <SelectItem value="telehealth">Telehealth</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
-                  defaultValue={format(selectedDate, 'yyyy-MM-dd')}
-                  className="mt-2"
-                />
-              </div>
-              <div>
-                <Label htmlFor="time">Time</Label>
-                <Select defaultValue="09:00">
-                  <SelectTrigger id="time" className="mt-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="08:00">8:00 AM</SelectItem>
-                    <SelectItem value="08:30">8:30 AM</SelectItem>
-                    <SelectItem value="09:00">9:00 AM</SelectItem>
-                    <SelectItem value="09:30">9:30 AM</SelectItem>
-                    <SelectItem value="10:00">10:00 AM</SelectItem>
-                    <SelectItem value="10:30">10:30 AM</SelectItem>
-                    <SelectItem value="11:00">11:00 AM</SelectItem>
-                    <SelectItem value="11:30">11:30 AM</SelectItem>
-                    <SelectItem value="12:00">12:00 PM</SelectItem>
-                    <SelectItem value="12:30">12:30 PM</SelectItem>
-                    <SelectItem value="13:00">1:00 PM</SelectItem>
-                    <SelectItem value="13:30">1:30 PM</SelectItem>
-                    <SelectItem value="14:00">2:00 PM</SelectItem>
-                    <SelectItem value="14:30">2:30 PM</SelectItem>
-                    <SelectItem value="15:00">3:00 PM</SelectItem>
-                    <SelectItem value="15:30">3:30 PM</SelectItem>
-                    <SelectItem value="16:00">4:00 PM</SelectItem>
-                    <SelectItem value="16:30">4:30 PM</SelectItem>
-                    <SelectItem value="17:00">5:00 PM</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="duration">Duration</Label>
-              <Select defaultValue="20">
-                <SelectTrigger id="duration" className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 minutes</SelectItem>
-                  <SelectItem value="20">20 minutes</SelectItem>
-                  <SelectItem value="30">30 minutes</SelectItem>
-                  <SelectItem value="45">45 minutes</SelectItem>
-                  <SelectItem value="60">60 minutes</SelectItem>
-                  <SelectItem value="90">90 minutes</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-gray-500 mt-1">
-                ✨ AI will predict actual duration based on patient and visit type
-              </p>
-            </div>
-
-            <div>
-              <Label htmlFor="chief-complaint">Chief Complaint</Label>
-              <Textarea 
-                id="chief-complaint"
-                placeholder="Enter reason for visit..."
-                className="mt-2"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Additional Notes</Label>
-              <Textarea 
-                id="notes"
-                placeholder="Any special instructions or notes..."
-                className="mt-2"
-                rows={2}
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowNewAppointmentDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => {
-                  toast({
-                    title: "Appointment Scheduled",
-                    description: "The appointment has been successfully added to the calendar.",
-                  });
-                  setShowNewAppointmentDialog(false);
-                }}
-              >
-                Schedule Appointment
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ScheduleAppointmentDialog
+        open={showNewAppointmentDialog}
+        onOpenChange={setShowNewAppointmentDialog}
+        selectedDate={selectedDate}
+        providerId={providerId}
+        locationId={locationId}
+      />
     </div>
   );
 }
