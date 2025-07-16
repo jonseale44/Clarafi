@@ -35,6 +35,7 @@ interface TestPatientConfig {
   includeSurgicalHistory: boolean;
   noShowRate: number;
   avgArrivalDelta: number;
+  avgVisitDuration: number;
   customFirstName?: string;
   customLastName?: string;
 }
@@ -66,6 +67,7 @@ export default function SystemAdminTestPatients() {
     includeSurgicalHistory: true,
     noShowRate: 10,
     avgArrivalDelta: -5,
+    avgVisitDuration: 25,
     customFirstName: "",
     customLastName: "",
   });
@@ -452,6 +454,19 @@ export default function SystemAdminTestPatients() {
               {/* AI Scheduling Parameters */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">AI Scheduling Parameters</h3>
+                <div>
+                  <Label>Historical Visit Average: {config.avgVisitDuration} minutes</Label>
+                  <Slider
+                    value={[config.avgVisitDuration]}
+                    onValueChange={([value]) => setConfig(prev => ({ ...prev, avgVisitDuration: value }))}
+                    min={10}
+                    max={60}
+                    step={5}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Patient's average appointment duration across all visit types
+                  </p>
+                </div>
                 <div>
                   <Label>No-Show Rate: {config.noShowRate}%</Label>
                   <Slider

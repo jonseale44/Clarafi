@@ -867,10 +867,11 @@ Preferred communication style: Simple, everyday language.
 - **FRONTEND UI**: Created comprehensive system admin interface at /admin/test-patients with:
   - Health system, provider, and location selection dropdowns
   - Configurable patient complexity and data quantities (sliders for problems, medications, etc.)
-  - AI scheduling parameter configuration (no-show rate, average arrival time)
+  - AI scheduling parameter configuration (no-show rate, average arrival time, **historical visit average**)
   - Toggle switches for including various data types (vitals, labs, imaging, histories)
   - Test patient management table with deletion capability
 - **NAVIGATION HEADER ADDED**: Test patient generator page now includes navigation header with "Back to Admin Dashboard" and "Logout" buttons for better UX
+- **HISTORICAL VISIT AVERAGE CONTROL ADDED**: Fixed hardcoded 25.5 minute average and added manual control for historical visit duration (10-60 minutes) in test patient creation interface, allowing admins to create patients with varying appointment length patterns for comprehensive AI scheduling testing
 
 ### Clinic Data Consistency Clarification (January 16, 2025)
 - **CURRENT DATABASE STATE**: Only contains Waco-area health systems - no Ascension or other large systems imported

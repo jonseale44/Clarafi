@@ -563,7 +563,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
     // Create scheduling patterns
     await db.insert(patientSchedulingPatterns).values({
       patientId,
-      avgVisitDuration: "25.5",
+      avgVisitDuration: String(config.avgVisitDuration),
       noShowRate: String(config.noShowRate),
       avgArrivalDelta: String(config.avgArrivalDelta),
       arrivalConsistency: String(100 - config.noShowRate),
