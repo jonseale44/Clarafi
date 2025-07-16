@@ -160,8 +160,8 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Login Page Marketing Redesign - AI Ambient Scribe Focus COMPLETED (January 16, 2025)
-- **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Transform Your Practice Today" to emphasize positive transformation
-- **SUBTITLE UPDATE**: Now reads "The revolutionary AI ambient scribe + EMR that lets you focus on patients, not paperwork. Experience healthcare as it should be"
+- **HEADLINE CHANGE**: Changed from "The EMR That Actually Thinks" to "Built by Doctors, for Doctors" to emphasize physician-created origin and avoid patronizing tone
+- **SUBTITLE UPDATE**: Now reads "The AI ambient scribe + EMR designed to eliminate documentation burden completely. Let the EMR do the heavy lifting while you practice medicine"
 - **LIVE AI DURING ENCOUNTER BOX**: Emphasizes real-time AI capabilities during the visit:
   - AI suggestions as you talk
   - Real-time SOAP notes
@@ -182,14 +182,14 @@ Preferred communication style: Simple, everyday language.
   - No separate subscriptions
   - Solo practice: $149/month
   - Enterprise: $399/month
-- **KEY DIFFERENTIATORS**: "Others give you ambient AI. We give you a complete medical command center" with focus on:
-  - Live AI suggestions during encounter
-  - Entire chart auto-updates
-  - Instant labs, billing, everything
-- **REMOVED FALSE CLAIMS**: Deleted "Trusted by 500+ providers across 50+ specialties" as not yet accurate
-- **NEW TAGLINE**: "It's like comparing apples to gigantic caramel apples" to emphasize massive capability difference
+- **KEY DIFFERENTIATORS**: "Created by physicians who understand documentation burden" with focus on:
+  - AI thinks ahead while you talk
+  - Zero documentation time
+  - EMR does the heavy lifting
+- **DOCTOR-CREATED EMPHASIS**: Multiple mentions throughout that this was built by doctors who practice medicine daily
+- **NEW TAGLINE**: "Created by doctors who practice medicine every day. We built this because we needed it. Zero documentation time was the goal."
 - **OPTIMISTIC TONE**: Removed competitor names and attack messaging, focusing on positive benefits and transformation
-- **PRIMARY FOCUS**: Marketing emphasizes that Clarafi is vastly superior to basic AI scribes by providing real-time AI assistance during encounters, automatic chart updating, instant lab ordering, and complete EMR functionality - not just note-taking after the visit
+- **PRIMARY FOCUS**: Marketing emphasizes that Clarafi was built by doctors to solve their own documentation burden, offering real-time AI assistance during encounters, automatic chart updating, and complete EMR functionality - vastly superior to basic AI scribes that only provide notes after the visit
 
 ### Scheduling System Production Cleanup COMPLETED (January 16, 2025)
 - **PERMISSION FIXES**: Added 'provider' role to appointment creation, update, and deletion permissions - providers can now fully manage appointments

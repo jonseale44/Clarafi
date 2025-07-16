@@ -1134,10 +1134,10 @@ export default function AuthPage() {
       <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto">
         <div className="max-w-2xl text-center py-4">
           <h2 className="text-4xl font-bold mb-4">
-            Transform Your Practice Today
+            Built by Doctors, for Doctors
           </h2>
           <p className="text-xl mb-8 text-navy-blue-100">
-            The revolutionary AI ambient scribe + EMR that lets you focus on patients, not paperwork. Experience healthcare as it should be.
+            The AI ambient scribe + EMR designed to eliminate documentation burden completely. Let the EMR do the heavy lifting while you practice medicine.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-8">
@@ -1208,11 +1208,11 @@ export default function AuthPage() {
           
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
-            <p className="text-sm font-semibold text-gold">Others give you ambient AI. We give you a complete medical command center:</p>
+            <p className="text-sm font-semibold text-gold">Created by physicians who understand documentation burden:</p>
             <div className="flex flex-wrap justify-center gap-3 text-xs">
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Live AI suggestions during encounter</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Entire chart auto-updates</span>
-              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Instant labs, billing, everything</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ AI thinks ahead while you talk</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ Zero documentation time</span>
+              <span className="bg-white/20 px-3 py-1 rounded-full">✓ EMR does the heavy lifting</span>
             </div>
           </div>
           
@@ -1235,8 +1235,8 @@ export default function AuthPage() {
           </div>
           
           <div className="mt-6 text-xs text-navy-blue-200">
-            <p className="font-semibold">It's like comparing apples to gigantic caramel apples</p>
-            <p className="mt-1">Other AI scribes just give you notes. We transform your entire practice.</p>
+            <p className="font-semibold">Created by doctors who practice medicine every day</p>
+            <p className="mt-1">We built this because we needed it. Zero documentation time was the goal.</p>
             <p className="mt-1 text-gold">Complete medical command center from $149/month</p>
           </div>
         </div>
