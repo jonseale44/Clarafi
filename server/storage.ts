@@ -243,7 +243,7 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values([insertUser])
       .returning();
     return user;
   }
@@ -1475,21 +1475,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Note Templates Implementation
-  async getanys(userId: number): Promise<Selectany[]> {
+  async getUserNoteTemplates(userId: number): Promise<any[]> {
     return await db.select()
       .from(userNoteTemplates)
       .where(and(eq(userNoteTemplates.userId, userId), eq(userNoteTemplates.active, true)))
       .orderBy(userNoteTemplates.templateName);
   }
 
-  async getany(id: number): Promise<Selectany | undefined> {
+  async getUserNoteTemplate(id: number): Promise<any | undefined> {
     const [template] = await db.select()
       .from(userNoteTemplates)
       .where(eq(userNoteTemplates.id, id));
     return template || undefined;
   }
 
-  async getUserTemplatesByType(userId: number, noteType: string): Promise<Selectany[]> {
+  async getUserTemplatesByType(userId: number, noteType: string): Promise<any[]> {
     console.log(`🔍 [Storage] Getting user templates for userId: ${userId}, noteType: ${noteType}`);
     console.log(`🔍 [Storage] Query details:`, {
       table: 'user_note_templates',
@@ -1552,14 +1552,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createany(template: Insertany): Promise<Selectany> {
+  async createUserNoteTemplate(template: any): Promise<any> {
     const [created] = await db.insert(userNoteTemplates)
       .values(template)
       .returning();
     return created;
   }
 
-  async updateany(id: number, updates: Partial<Selectany>): Promise<Selectany> {
+  async updateUserNoteTemplate(id: number, updates: any): Promise<any> {
     const [updated] = await db.update(userNoteTemplates)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(userNoteTemplates.id, id))
@@ -1567,20 +1567,10 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteany(id: number): Promise<void> {
+  async deleteUserNoteTemplate(id: number): Promise<void> {
     await db.update(userNoteTemplates)
       .set({ active: false, updatedAt: new Date() })
       .where(eq(userNoteTemplates.id, id));
-  }
-
-  async getany(id: number): Promise<Selectany | null> {
-    const results = await db.select()
-      .from(userNoteTemplates)
-      .where(and(
-        eq(userNoteTemplates.id, id),
-        eq(userNoteTemplates.active, true)
-      ));
-    return results[0] || null;
   }
 
   async templateNameExists(userId: number, templateName: string): Promise<boolean> {
@@ -2862,29 +2852,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(healthSystems).orderBy(healthSystems.name);
   }
 
-  async getHealthSystem(id: number): Promise<any> {
-    const [healthSystem] = await db.select().from(healthSystems).where(eq(healthSystems.id, id));
-    return healthSystem;
-  }
 
-  async getProvidersByHealthSystem(healthSystemId: number): Promise<any[]> {
-    return await db
-      .select({
-        id: users.id,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        credentials: users.credentials,
-      })
-      .from(users)
-      .where(
-        and(
-          eq(users.healthSystemId, healthSystemId),
-          eq(users.role, 'provider')
-        )
-      )
-      .orderBy(users.lastName);
-  }
 
   async getLocationsByHealthSystem(healthSystemId: number): Promise<any[]> {
     return await db

@@ -2402,6 +2402,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   role: true,
+  healthSystemId: true,
   npi: true,
   credentials: true,
   specialties: true,
