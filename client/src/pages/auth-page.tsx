@@ -1358,6 +1358,8 @@ export default function AuthPage() {
             <div className="flex flex-wrap justify-center gap-4 text-xs text-navy-blue-200">
               <a href="#about" className="hover:text-white transition-colors">About Us</a>
               <span className="text-white/20">•</span>
+              <a href="/blog" className="hover:text-white transition-colors">Blog</a>
+              <span className="text-white/20">•</span>
               <a href="#pricing" className="hover:text-white transition-colors">Pricing Details</a>
               <span className="text-white/20">•</span>
               <a href="#faqs" className="hover:text-white transition-colors">FAQs</a>
