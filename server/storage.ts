@@ -2102,16 +2102,27 @@ export class DatabaseStorage implements IStorage {
   }) {
     console.log('🤖 [AI SCHEDULING] Starting prediction for patient:', params.patientId);
     
+    // Map frontend appointment types to standard durations
+    const appointmentTypeMap: Record<string, string> = {
+      'new-patient': 'new_patient',
+      'follow-up': 'follow_up',
+      'physical': 'annual_physical',
+      'sick-visit': 'acute_visit',
+      'procedure': 'procedure',
+      'telehealth': 'follow_up'
+    };
+    
     // Base durations
     const standardDurations: Record<string, number> = {
       'new_patient': 45,
       'follow_up': 20,
-      'annual_physical': 30,
+      'annual_physical': 45,  // Physicals should be longer
       'acute_visit': 15,
       'procedure': 60
     };
     
-    let baseDuration = standardDurations[params.appointmentType] || 20;
+    const mappedType = appointmentTypeMap[params.appointmentType] || params.appointmentType;
+    let baseDuration = standardDurations[mappedType] || 20;
     let durationAdjustment = 0;
     let complexity = { problemCount: 0, medicationCount: 0, age: 0, allergiesCount: 0 };
     let patientPatterns: any = null;
@@ -2180,13 +2191,33 @@ export class DatabaseStorage implements IStorage {
         durationAdjustment += 10;
       }
       
-      // 5. Use historical patterns if available
+      // 5. Use historical patterns if available - THIS IS THE MOST IMPORTANT FACTOR
       if (patientPatterns) {
         // Use patient's average visit duration if we have history
         const historicalAvg = parseFloat(patientPatterns.avgVisitDuration || '0');
-        if (historicalAvg > 0) {
-          // Blend historical average with calculated duration
-          baseDuration = Math.round((baseDuration + historicalAvg) / 2);
+        
+        // Check for appointment-type-specific history
+        let typeSpecificDuration = 0;
+        if (patientPatterns.avgDurationByType) {
+          try {
+            const durationByType = typeof patientPatterns.avgDurationByType === 'string' 
+              ? JSON.parse(patientPatterns.avgDurationByType) 
+              : patientPatterns.avgDurationByType;
+            typeSpecificDuration = durationByType[params.appointmentType] || 0;
+          } catch (e) {
+            console.log('🤖 [AI SCHEDULING] Could not parse appointment type history');
+          }
+        }
+        
+        // PRIORITIZE HISTORICAL DATA - it's the best predictor
+        if (typeSpecificDuration > 0) {
+          // We have specific history for this appointment type - use it as PRIMARY predictor
+          baseDuration = typeSpecificDuration;
+          console.log(`🤖 [AI SCHEDULING] Using type-specific historical duration: ${typeSpecificDuration} minutes for ${params.appointmentType}`);
+        } else if (historicalAvg > 0) {
+          // We have general visit history - weight it HEAVILY (80/20 blend)
+          baseDuration = Math.round((historicalAvg * 0.8) + (baseDuration * 0.2));
+          console.log(`🤖 [AI SCHEDULING] Using historical average duration: ${historicalAvg} minutes (weighted 80%)`);
         }
         
         // High no-show rate might mean scheduling shorter slots
