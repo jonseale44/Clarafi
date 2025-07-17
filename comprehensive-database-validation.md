@@ -48,5 +48,34 @@ This document contains the results of a comprehensive database schema validation
 3. **Monitoring**: Add automated monitoring for API endpoint failures to catch schema mismatches early
 4. **Documentation**: Keep this document updated with any future schema changes
 
+## Additional Issues Fixed (Part 2)
+
+### 4. Medical History Table Reference
+**Issue**: deletePatient method was trying to delete from non-existent `medical_history` table
+**Fix**: Changed reference to use existing `surgical_history` table
+
+### 5. User Note Preferences Missing Columns
+**Issue**: user_note_preferences table was missing many columns including:
+- default_soap_template (and other template columns)
+- global_ai_learning
+- ranking_weights
+- medical_problems_display_threshold
+- chart_panel_width
+- enable_dense_view
+
+**Fix**: Added all 15+ missing columns with appropriate defaults
+
+### 6. Locations Table Missing Services Column
+**Issue**: locations.services column was missing causing location API to fail
+**Fix**: Added services column as JSONB with empty array default
+
+### Final Status After All Fixes:
+- ✅ Medical problems now load properly (shows 0 for patient with no problems)
+- ✅ Attachments table accessible as patient_attachments
+- ✅ Encounters table has all required columns
+- ✅ User preferences API now works
+- ✅ Locations API now works
+- ✅ Patient deletion now works properly
+
 ## Next Steps
 Continue monitoring for any additional schema drift issues as users interact with different parts of the system.

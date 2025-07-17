@@ -572,8 +572,8 @@ export class DatabaseStorage implements IStorage {
       await db.delete(familyHistory).where(eq(familyHistory.patientId, id));
       console.log(`🗑️ [Storage] Deleted family history for patient ${id}`);
       
-      await db.delete(medicalHistory).where(eq(medicalHistory.patientId, id));
-      console.log(`🗑️ [Storage] Deleted medical history for patient ${id}`);
+      await db.delete(surgicalHistory).where(eq(surgicalHistory.patientId, id));
+      console.log(`🗑️ [Storage] Deleted surgical history for patient ${id}`);
       
       await db.delete(socialHistory).where(eq(socialHistory.patientId, id));
       console.log(`🗑️ [Storage] Deleted social history for patient ${id}`);
