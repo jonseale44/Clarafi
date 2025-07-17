@@ -127,7 +127,7 @@ export default function AdminBlogManagement() {
 
   // Generate new article mutation (two-step process)
   const generateArticleMutation = useMutation({
-    mutationFn: async (params: { category: string; audience: string; topic?: string }) => {
+    mutationFn: async (params: { category: string; audience: string; topic?: string; customPrompt?: string }) => {
       console.log('📝 [Blog Generation] Starting generation with params:', params);
       
       // Step 1: Add to generation queue
@@ -139,6 +139,7 @@ export default function AdminBlogManagement() {
           category: params.category,
           targetAudience: params.audience,
           topic: params.topic || null,
+          customPrompt: params.customPrompt || null,
           keywords: [],
           competitorMentions: []
         }
@@ -846,15 +847,13 @@ export default function AdminBlogManagement() {
                       }
                       
                       console.log('🚀 [Blog Generation] Submitting generation request...');
+                      console.log('📊 [Blog Generation] customPrompt value:', generateFormData.customPrompt);
+                      console.log('📊 [Blog Generation] category check:', generateFormData.category === "misc");
                       generateArticleMutation.mutate({
                         category: generateFormData.category,
                         audience: generateFormData.audience,
                         topic: generateFormData.topic || undefined,
-                        customPrompt: generateFormData.category === "misc" ? generateFormData.customPrompt : undefined,
-                        includeDiagrams: generateFormData.includeDiagrams,
-                        includeInfographics: generateFormData.includeInfographics,
-                        performCompetitorAnalysis: generateFormData.performCompetitorAnalysis,
-                        checkPlagiarism: generateFormData.checkPlagiarism
+                        customPrompt: generateFormData.category === "misc" ? generateFormData.customPrompt : undefined
                       });
                     }}
                     disabled={generateArticleMutation.isPending || !generateFormData.category || !generateFormData.audience}
