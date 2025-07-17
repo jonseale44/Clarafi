@@ -339,16 +339,16 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
     }
   };
 
-  // Fetch medications with enhanced data - with aggressive refetching for real-time updates
+  // Fetch medications with enhanced data - with reasonable refetching
   const { data: medicationData, isLoading, error } = useQuery({
     queryKey: ['enhanced-medications', patientId],
     queryFn: async () => {
       const response = await apiRequest('GET', `/api/patients/${patientId}/medications-enhanced`);
       return await response.json();
     },
-    refetchInterval: 2000, // Poll every 2 seconds for order changes
-    refetchIntervalInBackground: true,
-    staleTime: 0 // Always consider data stale for fresh updates
+    refetchInterval: 30000, // Poll every 30 seconds to reduce server load
+    refetchIntervalInBackground: false,
+    staleTime: 10000 // Consider data fresh for 10 seconds
   });
 
   // Create medication mutation (updated to use new chart medication endpoint)
