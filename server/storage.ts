@@ -3087,6 +3087,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteArticle(id: number): Promise<void> {
+    // First remove any references to this article from the generation queue
+    await db.update(articleGenerationQueue)
+      .set({ generatedArticleId: null })
+      .where(eq(articleGenerationQueue.generatedArticleId, id));
+    
+    // Now we can safely delete the article
     await db.delete(articles).where(eq(articles.id, id));
   }
 

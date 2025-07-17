@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { 
@@ -685,15 +686,44 @@ export default function AdminBlogManagement() {
                         </span>
                       </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full"
+                        className="flex-1"
                         onClick={() => window.open(`/blog/${article.slug}`, '_blank')}
                       >
                         View Article
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="flex items-center space-x-1"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Article</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{article.title}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteArticleMutation.mutate(article.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete Article
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </CardFooter>
                   </Card>
                 ))}

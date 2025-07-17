@@ -159,6 +159,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Blog Article Deletion Enhancement (January 17, 2025)
+- **Added Delete Functionality**: System administrators can now delete published articles from the admin blog management interface
+- **UI Enhancement**: Added delete button with confirmation dialog to each published article card
+- **Foreign Key Constraint Fix**: Updated the deleteArticle method in storage.ts to handle foreign key constraints with article_generation_queue table
+- **Database Integrity**: When deleting an article, the system now properly removes references from the generation queue before deletion
+
 ### Database Import Fix for Deployment COMPLETED (January 17, 2025)
 - **FIXED DEPLOYMENT BLOCKING ERROR**: Resolved critical import issue preventing successful deployment
 - **DB IMPORT CORRECTIONS**: Fixed all incorrect imports of 'db' from 'shared/schema.ts' to correct 'server/db.ts' location
