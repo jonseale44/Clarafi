@@ -1,5 +1,5 @@
 import { Express, Request, Response } from 'express';
-import { db } from './db';
+import { db } from './db.js';
 import { 
   users, 
   healthSystems, 

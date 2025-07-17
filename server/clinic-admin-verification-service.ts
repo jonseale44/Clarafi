@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { healthSystems, users, clinicAdminVerifications, organizationDocuments } from '../shared/schema';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';

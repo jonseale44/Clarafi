@@ -4,7 +4,7 @@
  * Supports LabCorp, Quest, and hospital lab workflows
  */
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { labOrders, labResults, patients, encounters } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { APIResponseHandler } from "./api-response-handler";

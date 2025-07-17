@@ -3,7 +3,7 @@
  * Handles automatic external lab transmission when orders are signed
  */
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { labOrders, labResults } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { labSimulator } from "./lab-simulator-service";

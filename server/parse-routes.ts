@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { PatientParserService } from "./patient-parser-service";
-import { db } from "./db";
+import { db } from "./db.js";
 import { patients, insertPatientSchema } from "../shared/schema";
 import { tenantIsolation } from "./tenant-isolation";
 import { storage } from "./storage";

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { MigrationService } from "./migration-service";
-import { db } from "./db";
+import { db } from "./db.js";
 import { users, healthSystems, migrationInvitations } from "@shared/schema";
 import { eq, and, or, gt } from "drizzle-orm";
 import crypto from "crypto";

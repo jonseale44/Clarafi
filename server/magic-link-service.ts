@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { users, magicLinks } from "@shared/schema";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import crypto from "crypto";

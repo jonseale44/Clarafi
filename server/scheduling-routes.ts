@@ -344,7 +344,8 @@ router.post('/api/scheduling/appointments/:id/check-in', tenantIsolation, async 
     });
     
     // Begin transaction for atomic operation
-    const { db, appointments, encounters } = await import('../shared/schema.js');
+    const { db } = await import('./db.js');
+    const { appointments, encounters } = await import('../shared/schema.js');
     const { eq } = await import('drizzle-orm');
     
     // Update appointment status to checked_in

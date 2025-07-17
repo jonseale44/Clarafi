@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { MagicLinkService } from "./magic-link-service";
 import { z } from "zod";
-import { db } from "./db";
+import { db } from "./db.js";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 

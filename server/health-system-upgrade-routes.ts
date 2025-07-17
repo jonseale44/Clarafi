@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from './db';
+import { db } from './db.js';
 import { healthSystems, users, subscriptionHistory } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 import { StripeService } from './stripe-service';

@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { webauthnCredentials, users } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { randomBytes } from 'crypto';

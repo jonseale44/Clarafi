@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from "express";
-import { db } from "./db";
+import { db } from "./db.js";
 import { labOrders, labResults, orders } from "@shared/schema";
 import { eq, and, desc, or, isNull } from "drizzle-orm";
 import { APIResponseHandler } from "./api-response-handler";

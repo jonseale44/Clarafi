@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import { ClinicAdminVerificationService, ClinicAdminVerificationRequest } from './clinic-admin-verification-service';
 import { z } from 'zod';
-import { db } from './db';
+import { db } from './db.js';
 import { eq } from 'drizzle-orm';
 import { clinicAdminVerifications, users, healthSystems } from '@shared/schema';
 

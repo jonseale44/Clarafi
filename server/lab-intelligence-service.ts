@@ -6,7 +6,7 @@
  */
 
 import OpenAI from 'openai';
-import { db } from './db';
+import { db } from './db.js';
 import { labResults, labOrders, patients, encounters, labReferenceRanges } from '@shared/schema';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 

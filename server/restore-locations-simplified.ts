@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { healthSystems, organizations, locations, userLocations } from "@shared/schema";
 
 async function restoreLocations() {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from './db';
+import { db } from './db.js';
 import { healthSystems, locations } from '@shared/schema';
 import { eq, like, or, and, sql } from 'drizzle-orm';
 import { ClinicDataImportService } from './clinic-data-import-service';

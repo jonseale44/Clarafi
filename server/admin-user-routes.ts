@@ -1,5 +1,5 @@
 import { Express } from "express";
-import { db } from "./db";
+import { db } from "./db.js";
 import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs } from "@shared/schema";
 import { eq, sql, and, isNull, desc } from "drizzle-orm";
 import { z } from "zod";

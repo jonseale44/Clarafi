@@ -5,7 +5,7 @@
  */
 
 import OpenAI from "openai";
-import { db } from "./db";
+import { db } from "./db.js";
 import { patients, medicalProblems, encounters, orders } from "@shared/schema";
 import { eq } from "drizzle-orm";
 

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { healthSystems, locations } from "@shared/schema";
 import { sql } from "drizzle-orm";
 

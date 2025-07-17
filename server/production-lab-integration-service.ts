@@ -4,7 +4,7 @@
  * Handles all production EMR requirements for lab ordering and results
  */
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { labOrders, labResults, externalLabs, orders } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { APIResponseHandler } from "./api-response-handler";
@@ -161,7 +161,7 @@ export class ProductionLabIntegrationService {
     try {
       const { encounters } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
-      const { db } = await import("./storage.js");
+      const { db } = await import("./db.js");
       
       const encounterResult = await db.select().from(encounters).where(eq(encounters.id, encounterId)).limit(1);
       
@@ -387,7 +387,7 @@ export class ProductionLabIntegrationService {
     try {
       const { labOrders } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
-      const { db } = await import("./storage.js");
+      const { db } = await import("./db.js");
       
       // Get lab order details for workflow customization
       const orderResult = await db.select().from(labOrders).where(eq(labOrders.id, labOrderId)).limit(1);

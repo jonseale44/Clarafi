@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { healthSystems, organizations, locations, InsertHealthSystem, InsertOrganization, InsertLocation } from '@shared/schema';
 import { eq, and, or, like } from 'drizzle-orm';
 import * as fs from 'fs';

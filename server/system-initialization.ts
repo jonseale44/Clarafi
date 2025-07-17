@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { locations } from '@shared/schema';
 import { count } from 'drizzle-orm';
 import { ClinicDataImportService } from './clinic-data-import-service';

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";

@@ -1,4 +1,4 @@
-import { db } from '../shared/schema.js';
+import { db } from './db.js';
 import { appointments, encounters, appointmentDurationHistory, patientSchedulingPatterns, providerSchedulingPatterns } from '../shared/schema.js';
 import { eq, and, isNotNull } from 'drizzle-orm';
 

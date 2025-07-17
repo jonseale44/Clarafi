@@ -1,7 +1,7 @@
 // Billing Calculation Service
 // Calculates per-user billing for Enterprise (Tier 2) health systems
 
-import { db } from './db';
+import { db } from './db.js';
 import { users, subscriptionKeys } from '@shared/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { PER_USER_PRICING } from '@shared/feature-gates';

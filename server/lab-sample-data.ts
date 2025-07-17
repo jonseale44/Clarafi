@@ -3,7 +3,7 @@
  * Creates realistic lab orders and results for demonstration
  */
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { labOrders, labResults, patients } from "@shared/schema";
 import { eq } from "drizzle-orm";
 

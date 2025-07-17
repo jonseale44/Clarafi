@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { subscriptionKeys, users, subscriptionHistory, emailNotifications, healthSystems } from '../shared/schema';
 import { eq, and, lt, gte, or } from 'drizzle-orm';
 import crypto from 'crypto';

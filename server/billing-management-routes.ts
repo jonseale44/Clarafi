@@ -3,7 +3,7 @@
 
 import { Request, Response, Router } from 'express';
 import { BillingCalculationService } from './billing-calculation-service';
-import { db } from './db';
+import { db } from './db.js';
 import { healthSystems } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 

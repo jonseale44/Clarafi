@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { db } from "./db";
+import { db } from "./db.js";
 import { encounters, labOrders, labResults, orders, patients, users } from "@shared/schema";
 import { eq, and, sql, desc, isNull, or, gte } from "drizzle-orm";
 import { startOfDay, endOfDay } from "date-fns";

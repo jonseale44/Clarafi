@@ -414,7 +414,7 @@ router.post("/api/places/create-health-system", async (req, res) => {
     console.log("🏥 [Google Places] Creating health system from place data:", placeData);
 
     // Check if this place already exists in our database
-    const { db } = await import("./db");
+    const { db } = await import("./db.js");
     const { healthSystems, locations } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
     

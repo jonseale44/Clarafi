@@ -3,7 +3,7 @@
  * Handles result-triggered encounters, automated follow-up ordering, and comprehensive reporting
  */
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { labResults, encounters, labOrders, patients, users } from "@shared/schema";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
 import { labIntelligenceService } from "./lab-intelligence-service";

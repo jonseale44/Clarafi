@@ -4459,7 +4459,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       console.log("📍 [Public Health Systems] Accessing public endpoint");
       const search = (req.query.search as string)?.toLowerCase() || "";
 
-      const { db } = await import("./db");
+      const { db } = await import("./db.js");
       const { healthSystems, locations } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
 

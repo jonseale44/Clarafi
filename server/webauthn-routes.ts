@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { WebAuthnService } from './webauthn-service';
-import { db } from './db';
+import { db } from './db.js';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 

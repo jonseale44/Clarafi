@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { db } from "./db";
+import { db } from "./db.js";
 import { users, healthSystems, locations, userLocations } from "@shared/schema";
 import { hashPassword } from "./auth";
 import { eq } from "drizzle-orm";

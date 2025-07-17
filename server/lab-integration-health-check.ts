@@ -3,7 +3,7 @@
  * Validates production readiness for external lab integration
  */
 
-import { db } from "./storage.js";
+import { db } from "./db.js";
 import { labOrders, labResults, orders } from "@shared/schema";
 import { eq, and, gte } from "drizzle-orm";
 

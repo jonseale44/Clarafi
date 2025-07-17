@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import { users } from "@shared/schema";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
