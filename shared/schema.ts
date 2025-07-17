@@ -2865,6 +2865,16 @@ export const documentProcessingQueue = pgTable("document_processing_queue", {
   status: text("status").default("queued"), // "queued", "processing", "completed", "failed"
   attempts: integer("attempts").default(0),
   lastAttempt: timestamp("last_attempt"),
+  
+  // Missing columns that exist in database
+  priority: integer("priority").default(100),
+  processorType: text("processor_type").notNull().default("document_analysis"), // Added NOT NULL with default
+  processingMetadata: jsonb("processing_metadata"),
+  errorMessage: text("error_message"), 
+  retryCount: integer("retry_count").default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -2903,6 +2913,13 @@ export const insertDocumentProcessingQueueSchema = createInsertSchema(documentPr
   status: true,
   attempts: true,
   lastAttempt: true,
+  priority: true,
+  processorType: true,
+  processingMetadata: true,
+  errorMessage: true,
+  retryCount: true,
+  startedAt: true,
+  completedAt: true,
 });
 
 export type PatientAttachment = typeof patientAttachments.$inferSelect;

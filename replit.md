@@ -228,6 +228,17 @@ Preferred communication style: Simple, everyday language.
 - **SUCCESSFUL BUILD VERIFICATION**: Application now builds successfully with no import errors
 - **DEPLOYMENT READY**: All import issues resolved, application ready for production deployment
 
+### Database Schema Drift Root Cause Analysis COMPLETED (January 17, 2025)
+- **ROOT CAUSE IDENTIFIED**: Massive schema drift between database and schema.ts - NOT a camelCase/snake_case mapping issue
+- **DRIZZLE ORM WORKING CORRECTLY**: Confirmed that Drizzle's camelCase-to-snake_case mapping is functioning as intended
+- **ACTUAL PROBLEM**: Database has evolved with columns that don't exist in schema.ts definitions
+- **EXAMPLE DISCOVERED**: document_processing_queue table has 11 columns in database but only 5 defined in schema.ts
+- **MISSING COLUMNS**: processor_type (NOT NULL), priority, processing_metadata, error_message, retry_count, started_at, completed_at
+- **FIX IMPLEMENTED**: Added all missing columns to documentProcessingQueue table definition in schema.ts
+- **INSERT SCHEMA UPDATED**: Updated insertDocumentProcessingQueueSchema to include all new fields
+- **PATTERN IDENTIFIED**: Multiple tables affected - allergies has 32 columns in DB vs 14 in schema, similar drift across system
+- **CORRECT SOLUTION**: Update schema.ts to match actual database structure rather than using raw SQL workarounds
+
 ### Conversational Article Revision System COMPLETED (January 17, 2025)
 - **AI-POWERED REVISION WORKFLOW**: Implemented robust revision system allowing iterative article improvement through natural language feedback
 - **REVISION DIALOG INTERFACE**: Created split-screen dialog showing current article content alongside revision feedback interface
