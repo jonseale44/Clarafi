@@ -962,7 +962,9 @@ Preferred communication style: Simple, everyday language.
 ### Database Query Fixes for Schema Mismatch Resolution COMPLETED (January 17, 2025)
 - **APPOINTMENTS CONFLICT CHECK FIX**: Removed `appointmentType` field from conflict check query and replaced with `appointmentTypeId` which exists in database
 - **SCHEDULING AI WEIGHTS FIX**: Simplified query to not join with scheduling_ai_factors table as database uses direct factor_name column instead of factor_id reference
-- **MEDICAL PROBLEMS QUERY FIX**: Updated getPatientMedicalProblems to only select columns that exist in database, excluding schema-defined fields `firstEncounterId` and `lastUpdatedEncounterId` that don't exist in production database
+- **MEDICAL PROBLEMS QUERY FIX**: Converted getPatientMedicalProblems to use raw SQL instead of Drizzle select to avoid field ordering issues
+- **MISSING COLUMNS HANDLED**: Medical problems query excludes non-existent columns (change_log, last_ranked_encounter_id, ranking_reason, ranking_factors) and adds default values for API compatibility
+- **DOCUMENT ANALYSIS QUEUE FIX**: Fixed document processing queue by using raw SQL to avoid selecting non-existent `last_attempt` column
 - **ROOT CAUSE**: Database and schema.ts have diverged significantly - database represents production state while schema.ts contains fields that were never migrated to production
 - **STRATEGY**: Fixed queries to work with actual database structure rather than modifying production database
 

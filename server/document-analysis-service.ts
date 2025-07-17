@@ -13,7 +13,7 @@ import {
   documentProcessingQueue,
   patientAttachments,
 } from "../shared/schema.js";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { attachmentChartProcessor } from "./attachment-chart-processor.js";
 
 export class DocumentAnalysisService {
@@ -37,10 +37,13 @@ export class DocumentAnalysisService {
     );
 
     // Check if already queued or processed (skip check for reprocessing)
-    const [existingQueue] = await db
-      .select()
-      .from(documentProcessingQueue)
-      .where(eq(documentProcessingQueue.attachmentId, attachmentId));
+    // Use raw SQL to avoid schema mismatch with last_attempt column
+    const existingQueueResult = await db.execute(sql`
+      SELECT id, attachment_id, status 
+      FROM document_processing_queue 
+      WHERE attachment_id = ${attachmentId}
+    `);
+    const existingQueue = existingQueueResult.rows[0];
 
     const [existingContent] = await db
       .select()
