@@ -443,10 +443,15 @@ router.put("/api/admin/blog/comments/:id", requireAuth, async (req: Request, res
 router.post("/api/admin/blog/generation-queue", requireAuth, async (req: Request, res: Response) => {
   try {
     console.log('📥 [Blog API] Received generation queue request:', req.body);
-    const { topic, category, targetAudience, keywords, competitorMentions } = req.body;
+    const { topic, category, targetAudience, keywords, competitorMentions, customPrompt } = req.body;
     
     if (!category || !targetAudience) {
       return res.status(400).json({ error: "Category and target audience are required" });
+    }
+    
+    // For misc category, custom prompt is required
+    if (category === "misc" && !customPrompt) {
+      return res.status(400).json({ error: "Custom prompt is required for miscellaneous category" });
     }
     
     console.log('💾 [Blog API] Creating queue item with data:', {
@@ -454,7 +459,8 @@ router.post("/api/admin/blog/generation-queue", requireAuth, async (req: Request
       category,
       targetAudience,
       keywords: keywords || [],
-      competitorMentions: competitorMentions || []
+      competitorMentions: competitorMentions || [],
+      customPrompt: category === "misc" ? customPrompt : undefined
     });
     
     const queueItem = await storage.createArticleGenerationQueueItem({
@@ -463,7 +469,8 @@ router.post("/api/admin/blog/generation-queue", requireAuth, async (req: Request
       targetAudience,
       keywords: keywords || [],
       competitorMentions: competitorMentions || [],
-      researchSources: null
+      researchSources: null,
+      customPrompt: category === "misc" ? customPrompt : undefined
     });
     
     console.log('✅ [Blog API] Queue item created successfully:', queueItem);
@@ -531,40 +538,72 @@ router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Reques
     }
     
     // Generate article using GPT-4
-    const systemPrompt = `You are an expert healthcare content writer creating articles for Clarafi's EMR blog. 
-    Clarafi is an AI-powered EMR built by doctors for doctors, featuring real-time AI ambient scribe capabilities.
+    let systemPrompt, userPrompt;
     
-    Target Audience: ${item.targetAudience}
-    Category: ${item.category}
-    
-    Guidelines:
-    1. Write in a professional, authoritative tone suitable for healthcare professionals
-    2. Focus on practical insights and real-world applications
-    3. Highlight pain points with traditional EMRs that Clarafi solves
-    4. Include specific examples and scenarios
-    5. Mention competitor limitations naturally if provided
-    6. Optimize for SEO with relevant keywords
-    7. No AI disclosure - articles are attributed to "Clarafi Team"
-    8. Include a compelling meta description (155 characters max)
-    9. Suggest 5-7 relevant keywords
-    10. Format with clear headings and subheadings using Markdown
-    
-    Please respond in JSON format with the following structure.`;
-    
-    const userPrompt = `Write a comprehensive article about: ${item.topic || `${item.category} for ${item.targetAudience}`}
-    
-    Research data: ${JSON.stringify(researchData).substring(0, 4000)}
-    Keywords to include: ${item.keywords?.join(', ') || 'EMR, healthcare technology, clinical efficiency'}
-    ${item.competitorMentions?.length ? `Competitors to mention: ${item.competitorMentions.join(', ')}` : ''}
-    
-    Return the response as a JSON object with the following format:
-    {
-      "title": "Compelling, SEO-friendly title",
-      "metaDescription": "155 characters max",
-      "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-      "content": "Full article with markdown formatting",
-      "excerpt": "2-3 sentence summary"
-    }`;
+    if (item.category === "misc" && item.customPrompt) {
+      // For misc category with custom prompt, use a simpler system prompt
+      systemPrompt = `You are an expert healthcare content writer creating articles for Clarafi's EMR blog. 
+      Clarafi is an AI-powered EMR built by doctors for doctors, featuring real-time AI ambient scribe capabilities.
+      
+      Guidelines:
+      1. No AI disclosure - articles are attributed to "Clarafi Team"
+      2. Include a compelling meta description (155 characters max)
+      3. Suggest 5-7 relevant keywords
+      4. Format with clear headings and subheadings using Markdown
+      
+      Please respond in JSON format with the following structure.`;
+      
+      // Use the custom prompt provided by the user
+      userPrompt = `${item.customPrompt}
+      
+      ${item.topic ? `Additional focus: ${item.topic}` : ''}
+      Research data: ${JSON.stringify(researchData).substring(0, 4000)}
+      
+      Return the response as a JSON object with the following format:
+      {
+        "title": "Compelling, SEO-friendly title",
+        "metaDescription": "155 characters max",
+        "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+        "content": "Full article with markdown formatting",
+        "excerpt": "2-3 sentence summary"
+      }`;
+    } else {
+      // Standard prompts for predefined categories
+      systemPrompt = `You are an expert healthcare content writer creating articles for Clarafi's EMR blog. 
+      Clarafi is an AI-powered EMR built by doctors for doctors, featuring real-time AI ambient scribe capabilities.
+      
+      Target Audience: ${item.targetAudience}
+      Category: ${item.category}
+      
+      Guidelines:
+      1. Write in a professional, authoritative tone suitable for healthcare professionals
+      2. Focus on practical insights and real-world applications
+      3. Highlight pain points with traditional EMRs that Clarafi solves
+      4. Include specific examples and scenarios
+      5. Mention competitor limitations naturally if provided
+      6. Optimize for SEO with relevant keywords
+      7. No AI disclosure - articles are attributed to "Clarafi Team"
+      8. Include a compelling meta description (155 characters max)
+      9. Suggest 5-7 relevant keywords
+      10. Format with clear headings and subheadings using Markdown
+      
+      Please respond in JSON format with the following structure.`;
+      
+      userPrompt = `Write a comprehensive article about: ${item.topic || `${item.category} for ${item.targetAudience}`}
+      
+      Research data: ${JSON.stringify(researchData).substring(0, 4000)}
+      Keywords to include: ${item.keywords?.join(', ') || 'EMR, healthcare technology, clinical efficiency'}
+      ${item.competitorMentions?.length ? `Competitors to mention: ${item.competitorMentions.join(', ')}` : ''}
+      
+      Return the response as a JSON object with the following format:
+      {
+        "title": "Compelling, SEO-friendly title",
+        "metaDescription": "155 characters max",
+        "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+        "content": "Full article with markdown formatting",
+        "excerpt": "2-3 sentence summary"
+      }`;
+    }
     
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",

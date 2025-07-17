@@ -93,6 +93,7 @@ export default function AdminBlogManagement() {
     category: "",
     audience: "",
     topic: "",
+    customPrompt: "",
     includeDiagrams: true,
     includeInfographics: true,
     performCompetitorAnalysis: true,
@@ -727,6 +728,7 @@ export default function AdminBlogManagement() {
                         <SelectItem value="regulatory_compliance">Regulatory Compliance</SelectItem>
                         <SelectItem value="patient_engagement">Patient Engagement</SelectItem>
                         <SelectItem value="healthcare_innovation">Healthcare Innovation</SelectItem>
+                        <SelectItem value="misc">Miscellaneous (Custom Prompt)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -758,6 +760,18 @@ export default function AdminBlogManagement() {
                       placeholder="Specific topic to focus on..."
                     />
                   </div>
+
+                  {generateFormData.category === "misc" && (
+                    <div>
+                      <Label>Custom Prompt</Label>
+                      <Textarea
+                        value={generateFormData.customPrompt}
+                        onChange={(e) => setGenerateFormData({ ...generateFormData, customPrompt: e.target.value })}
+                        placeholder="Write your custom prompt here. Be specific about the topic, style, target audience, and any key points to cover..."
+                        className="min-h-[150px]"
+                      />
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <Label>Article Options</Label>
@@ -820,11 +834,23 @@ export default function AdminBlogManagement() {
                         return;
                       }
                       
+                      // For misc category, custom prompt is required
+                      if (generateFormData.category === "misc" && !generateFormData.customPrompt?.trim()) {
+                        console.warn('⚠️ [Blog Generation] Missing custom prompt for misc category');
+                        toast({
+                          title: "Missing Custom Prompt",
+                          description: "Please provide a custom prompt for the miscellaneous category",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      
                       console.log('🚀 [Blog Generation] Submitting generation request...');
                       generateArticleMutation.mutate({
                         category: generateFormData.category,
                         audience: generateFormData.audience,
                         topic: generateFormData.topic || undefined,
+                        customPrompt: generateFormData.category === "misc" ? generateFormData.customPrompt : undefined,
                         includeDiagrams: generateFormData.includeDiagrams,
                         includeInfographics: generateFormData.includeInfographics,
                         performCompetitorAnalysis: generateFormData.performCompetitorAnalysis,

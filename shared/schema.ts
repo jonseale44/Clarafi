@@ -3823,6 +3823,7 @@ export const articleGenerationQueue = pgTable("article_generation_queue", {
   targetAudience: text("target_audience").notNull(),
   keywords: text("keywords").array(),
   competitorMentions: text("competitor_mentions").array(),
+  customPrompt: text("custom_prompt"), // For misc category custom prompts
   researchSources: jsonb("research_sources"), // URLs and snippets from web search
   status: text("status").notNull().default("pending"), // pending, generating, completed, failed
   generatedArticleId: integer("generated_article_id").references(() => articles.id),
