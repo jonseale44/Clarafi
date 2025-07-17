@@ -36,7 +36,7 @@ const loginSchema = z.object({
 const phoneRegex = /^\d{3}-?\d{3}-?\d{4}$/;
 const zipRegex = /^\d{5}(-\d{4})?$/;
 
-const registerSchema = insertUserSchema.extend({
+const registerSchema = insertUserSchema.omit({ healthSystemId: true }).extend({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
     .max(20, "Username must be less than 20 characters")
