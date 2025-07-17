@@ -377,7 +377,7 @@ export class StripeService {
         
         switch (params.tier) {
           case 1:
-            priceAmount = 99; // $99/month for Personal EMR
+            priceAmount = 149; // $149/month for Personal EMR
             productName = 'Clarafi Personal EMR';
             productDescription = 'Full documentation features for individual providers';
             break;

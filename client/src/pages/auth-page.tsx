@@ -1308,9 +1308,11 @@ export default function AuthPage() {
                     <h4 className="font-semibold text-navy-blue-900">Simple, Transparent Pricing</h4>
                     <p className="text-sm">No hidden fees, no separate subscriptions for AI and EMR:</p>
                     <ul className="text-sm space-y-1 ml-4">
-                      <li>• <strong>Providers ($399/mo):</strong> Full AI scribe + complete EMR access</li>
-                      <li>• <strong>Nurses/MAs ($99/mo):</strong> Clinical documentation and patient care tools</li>
-                      <li>• <strong>Front Staff ($49/mo):</strong> Scheduling, billing, and administrative features</li>
+                      <li>• <strong>Solo Provider ($149/mo):</strong> Individual practice with full EMR + AI scribe</li>
+                      <li>• <strong>Enterprise (per-user pricing):</strong></li>
+                      <li className="ml-4">- Providers ($399/mo): Full access</li>
+                      <li className="ml-4">- Nurses/MAs ($99/mo): Clinical tools</li>
+                      <li className="ml-4">- Front Staff ($49/mo): Admin features</li>
                     </ul>
                     <p className="text-sm mt-2">Compare to: AI scribes alone ($149-299) + EMR systems ($300-800) = Save 50-70% monthly while getting better integration.</p>
                   </div>

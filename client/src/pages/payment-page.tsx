@@ -141,7 +141,7 @@ export default function PaymentPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold">$99</span>
+                <span className="text-2xl font-bold">$149</span>
                 <Badge variant="secondary">per month</Badge>
               </div>
               

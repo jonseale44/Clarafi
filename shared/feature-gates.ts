@@ -14,8 +14,8 @@ export interface FeatureGate {
 // PRICING CONFIGURATION - Easy to modify
 export const TIER_PRICING = {
   tier1: {
-    monthly: 99,
-    annual: 990, // 2 months free
+    monthly: 149,
+    annual: 1490, // 2 months free
     name: 'Personal EMR',
     description: 'Full documentation features for individual providers',
     trialDays: 30,

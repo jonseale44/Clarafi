@@ -159,6 +159,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Pricing Update (January 17, 2025)
+- **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
+- **STRIPE INTEGRATION**: Modified Stripe checkout to charge correct $149 amount for Personal EMR tier
+- **UI CONSISTENCY**: Fixed all pricing displays to show consistent $149 pricing for solo practitioners
+- **CLARITY IMPROVEMENT**: Updated auth page tooltip to clearly distinguish between solo provider pricing ($149/month) and Enterprise per-user pricing model
+
 ### Blog Generation Model Upgrade (January 17, 2025)
 - **GPT Model Update**: Upgraded blog generation system from GPT-4o to GPT-4.1 for improved content quality
 - **Max Tokens Increase**: Increased max tokens from 4,000 to 10,000 to allow for more comprehensive articles
@@ -1616,7 +1622,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Stripe Payment Integration and Subscription Management (January 10, 2025)
 - **COMPLETE PAYMENT SYSTEM**: Successfully implemented production-ready Stripe payment integration with subscription management system
-- **BUSINESS MODEL IMPLEMENTATION**: Built bottom-up growth strategy where individual providers start at $99/month with 1-month free trial
+- **BUSINESS MODEL IMPLEMENTATION**: Built bottom-up growth strategy where individual providers start at $149/month with 1-month free trial
 - **STRIPE SERVICE ARCHITECTURE**: Created comprehensive StripeService with methods for customer creation, subscription management, webhook handling, and checkout sessions
 - **PAYMENT FLOW**: 
   - Individual providers registering new practices are redirected to Stripe checkout after account creation
