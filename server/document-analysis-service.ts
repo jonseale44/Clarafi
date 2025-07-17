@@ -51,14 +51,10 @@ export class DocumentAnalysisService {
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
     // Add to queue with only fields that exist in database
-    await db.insert(documentProcessingQueue).values({
-      attachmentId,
-      status: "queued",
-      attempts: 0,
-      priority: 0,
-      retryCount: 0,
-      createdAt: new Date()
-    } as any);
+    await db.execute(sql`
+      INSERT INTO document_processing_queue (attachment_id, status, attempts)
+      VALUES (${attachmentId}, 'queued', 0)
+    `);
 
     // Create processing record
     await db.insert(attachmentExtractedContent).values({
