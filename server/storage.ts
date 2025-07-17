@@ -1505,33 +1505,38 @@ export class DatabaseStorage implements IStorage {
 
   // Medical Problems management (Enhanced JSONB approach)
   async getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]> {
-    // Select only fields that exist in database - exclude firstEncounterId and lastUpdatedEncounterId
-    return await db.select({
-      id: medicalProblems.id,
-      patientId: medicalProblems.patientId,
-      problemTitle: medicalProblems.problemTitle,
-      currentIcd10Code: medicalProblems.currentIcd10Code,
-      problemStatus: medicalProblems.problemStatus,
-      visitHistory: medicalProblems.visitHistory,
-      changeLog: medicalProblems.changeLog,
-      lastRankedEncounterId: medicalProblems.lastRankedEncounterId,
-      rankingReason: medicalProblems.rankingReason,
-      rankingFactors: medicalProblems.rankingFactors,
-      encounterId: medicalProblems.encounterId,
-      icd10Code: medicalProblems.icd10Code,
-      snomedCode: medicalProblems.snomedCode,
-      onsetDate: medicalProblems.onsetDate,
-      resolutionDate: medicalProblems.resolutionDate,
-      notes: medicalProblems.notes,
-      severity: medicalProblems.severity,
-      sourceType: medicalProblems.sourceType,
-      sourceConfidence: medicalProblems.sourceConfidence,
-      extractedFromAttachmentId: medicalProblems.extractedFromAttachmentId,
-      createdAt: medicalProblems.createdAt,
-      updatedAt: medicalProblems.updatedAt,
-      providerId: medicalProblems.providerId,
-      firstDiagnosedDate: medicalProblems.firstDiagnosedDate
-    }).from(medicalProblems).where(eq(medicalProblems.patientId, patientId)) as any;
+    // Use raw SQL to avoid Drizzle field mapping issues with schema mismatch
+    const result = await db.execute(sql`
+      SELECT 
+        id,
+        patient_id as "patientId",
+        problem_title as "problemTitle",
+        current_icd10_code as "currentIcd10Code",
+        problem_status as "problemStatus",
+        visit_history as "visitHistory",
+        change_log as "changeLog",
+        last_ranked_encounter_id as "lastRankedEncounterId",
+        ranking_reason as "rankingReason",
+        ranking_factors as "rankingFactors",
+        encounter_id as "encounterId",
+        icd10_code as "icd10Code",
+        snomed_code as "snomedCode",
+        onset_date as "onsetDate",
+        resolution_date as "resolutionDate",
+        notes,
+        severity,
+        source_type as "sourceType",
+        source_confidence as "sourceConfidence",
+        extracted_from_attachment_id as "extractedFromAttachmentId",
+        created_at as "createdAt",
+        updated_at as "updatedAt",
+        provider_id as "providerId",
+        date_diagnosed as "firstDiagnosedDate"
+      FROM medical_problems
+      WHERE patient_id = ${patientId}
+    `);
+    
+    return result.rows as MedicalProblem[];
   }
 
   async getMedicalProblem(id: number): Promise<MedicalProblem | undefined> {
