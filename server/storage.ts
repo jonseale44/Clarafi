@@ -1505,7 +1505,7 @@ export class DatabaseStorage implements IStorage {
 
   // Medical Problems management (Enhanced JSONB approach)
   async getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]> {
-    // Use raw SQL to avoid Drizzle field mapping issues with schema mismatch
+    // Use raw SQL with only columns that exist in production database
     const result = await db.execute(sql`
       SELECT 
         id,
@@ -1514,10 +1514,6 @@ export class DatabaseStorage implements IStorage {
         current_icd10_code as "currentIcd10Code",
         problem_status as "problemStatus",
         visit_history as "visitHistory",
-        change_log as "changeLog",
-        last_ranked_encounter_id as "lastRankedEncounterId",
-        ranking_reason as "rankingReason",
-        ranking_factors as "rankingFactors",
         encounter_id as "encounterId",
         icd10_code as "icd10Code",
         snomed_code as "snomedCode",
@@ -1536,7 +1532,14 @@ export class DatabaseStorage implements IStorage {
       WHERE patient_id = ${patientId}
     `);
     
-    return result.rows as MedicalProblem[];
+    // Add default values for schema fields that don't exist in database
+    return result.rows.map((row: any) => ({
+      ...row,
+      changeLog: [],
+      lastRankedEncounterId: null,
+      rankingReason: null,
+      rankingFactors: null
+    })) as MedicalProblem[];
   }
 
   async getMedicalProblem(id: number): Promise<MedicalProblem | undefined> {

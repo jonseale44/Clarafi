@@ -47,11 +47,15 @@ export class DocumentAnalysisService {
       .from(attachmentExtractedContent)
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
-    // Add to queue
+    // Add to queue with only fields that exist in database
     await db.insert(documentProcessingQueue).values({
       attachmentId,
       status: "queued",
-    });
+      attempts: 0,
+      priority: 0,
+      retryCount: 0,
+      createdAt: new Date()
+    } as any);
 
     // Create processing record
     await db.insert(attachmentExtractedContent).values({
