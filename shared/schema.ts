@@ -575,7 +575,8 @@ export const schedulingAiFactors = pgTable("scheduling_ai_factors", {
 // AI Factor Weights - Per provider/location customization
 export const schedulingAiWeights = pgTable("scheduling_ai_weights", {
   id: serial("id").primaryKey(),
-  factorId: integer("factor_id").notNull().references(() => schedulingAiFactors.id),
+  factorId: integer("factor_id").references(() => schedulingAiFactors.id), // Made nullable since DB uses factor_name
+  factorName: text("factor_name"), // Database has this instead of factor_id
   
   // Scope (can be provider-specific, location-specific, or health system wide)
   providerId: integer("provider_id").references(() => users.id),
@@ -583,8 +584,9 @@ export const schedulingAiWeights = pgTable("scheduling_ai_weights", {
   healthSystemId: integer("health_system_id").references(() => healthSystems.id),
   
   // Customized settings
-  enabled: boolean("enabled").notNull(),
+  enabled: boolean("enabled"), // Made nullable to match database
   weight: decimal("weight", { precision: 5, scale: 2 }).notNull(), // 0-100
+  isActive: boolean("is_active").default(true), // Database has this column
   
   // Override calculation parameters
   customParameters: jsonb("custom_parameters").$type<{
@@ -596,6 +598,7 @@ export const schedulingAiWeights = pgTable("scheduling_ai_weights", {
   
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").notNull().references(() => users.id),
+  updatedAt: timestamp("updated_at").defaultNow(), // Database has this column
 });
 
 // Patient Scheduling Patterns - AI learning data per patient
@@ -968,6 +971,7 @@ export const appointments = pgTable("appointments", {
   
   // Appointment details
   appointmentType: text("appointment_type").notNull(), // 'new_patient', 'follow_up', 'annual_physical', 'urgent', 'telehealth'
+  appointmentTypeId: integer("appointment_type_id").references(() => appointmentTypes.id), // Database has this column
   chiefComplaint: text("chief_complaint"),
   visitReason: text("visit_reason"),
   
@@ -1023,45 +1027,54 @@ export const appointments = pgTable("appointments", {
   
   // Additional orphaned columns from database
   actualDuration: integer("actual_duration"),
-  useAiScheduling: boolean("use_ai_scheduling").default(true),
-  resourceRequirements: jsonb("resource_requirements").default([]),
-  tags: text("tags").array(),
-  insuranceVerificationNotes: text("insurance_verification_notes"),
-  copayCollected: boolean("copay_collected").default(false),
-  formsCompleted: boolean("forms_completed").default(false),
-  vitalSignsTaken: boolean("vital_signs_taken").default(false),
-  roomNumber: text("room_number"),
-  intakeCompletedAt: timestamp("intake_completed_at"),
-  providerReadyAt: timestamp("provider_ready_at"),
-  visitCompletedAt: timestamp("visit_completed_at"),
-  noShowReason: text("no_show_reason"),
-  lateCancellationReason: text("late_cancellation_reason"),
-  rescheduledFrom: integer("rescheduled_from"),
-  rescheduledReason: text("rescheduled_reason"),
-  parentAppointmentId: integer("parent_appointment_id"),
-  recurrenceRule: text("recurrence_rule"),
-  recurrenceExceptions: text("recurrence_exceptions").array(),
-  reminderSent: boolean("reminder_sent").default(false),
-  reminderSentAt: timestamp("reminder_sent_at"),
+  appointmentDate: date("appointment_date"), // Added missing appointment_date
+  aiPredictedDuration: integer("ai_predicted_duration"),
+  billingNotes: text("billing_notes"),
+  cancellationReason: text("cancellation_reason"),
+  cancelledAt: timestamp("cancelled_at"),
+  cancelledBy: integer("cancelled_by").references(() => users.id),
+  chartReviewed: boolean("chart_reviewed").default(false),
+  completedAt: timestamp("completed_at"),
+  completedBy: integer("completed_by").references(() => users.id),
   confirmationSent: boolean("confirmation_sent").default(false),
   confirmationSentAt: timestamp("confirmation_sent_at"),
+  copayCollected: boolean("copay_collected").default(false),
+  durationMinutes: integer("duration_minutes"),
+  formsCompleted: boolean("forms_completed").default(false),
+  imagesReviewed: boolean("images_reviewed").default(false),
+  insuranceVerificationNotes: text("insurance_verification_notes"),
+  intakeCompletedAt: timestamp("intake_completed_at"),
+  interpreterLanguage: text("interpreter_language"),
+  interpreterNeeded: boolean("interpreter_needed").default(false),
+  labsReviewed: boolean("labs_reviewed").default(false),
+  lateCancellationReason: text("late_cancellation_reason"),
+  medicationsReconciled: boolean("medications_reconciled").default(false),
+  noShowReason: text("no_show_reason"),
+  notes: text("notes"),
+  parentAppointmentId: integer("parent_appointment_id").references(() => appointments.id),
   patientConfirmed: boolean("patient_confirmed").default(false),
   patientConfirmedAt: timestamp("patient_confirmed_at"),
-  waitListPriority: integer("wait_list_priority"),
-  referringProvider: text("referring_provider"),
-  referralReason: text("referral_reason"),
-  interpreterNeeded: boolean("interpreter_needed").default(false),
-  interpreterLanguage: text("interpreter_language"),
-  wheelchairAccessible: boolean("wheelchair_accessible").default(false),
-  specialInstructions: text("special_instructions"),
-  preAppointmentNotes: text("pre_appointment_notes"),
   postAppointmentNotes: text("post_appointment_notes"),
-  billingNotes: text("billing_notes"),
-  chartReviewed: boolean("chart_reviewed").default(false),
-  labsReviewed: boolean("labs_reviewed").default(false),
-  imagesReviewed: boolean("images_reviewed").default(false),
-  medicationsReconciled: boolean("medications_reconciled").default(false),
+  preAppointmentNotes: text("pre_appointment_notes"),
   problemsReviewed: boolean("problems_reviewed").default(false),
+  providerReadyAt: timestamp("provider_ready_at"),
+  recurrenceExceptions: jsonb("recurrence_exceptions").default([]),
+  recurrenceRule: text("recurrence_rule"),
+  referralReason: text("referral_reason"),
+  referringProvider: text("referring_provider"),
+  reminderSent: boolean("reminder_sent").default(false),
+  reminderSentAt: timestamp("reminder_sent_at"),
+  rescheduledFrom: integer("rescheduled_from").references(() => appointments.id),
+  rescheduledReason: text("rescheduled_reason"),
+  resourceRequirements: jsonb("resource_requirements").default({}),
+  roomNumber: text("room_number"),
+  specialInstructions: text("special_instructions"),
+  tags: jsonb("tags").default([]),
+  useAiScheduling: boolean("use_ai_scheduling").default(true),
+  visitCompletedAt: timestamp("visit_completed_at"),
+  vitalSignsTaken: boolean("vital_signs_taken").default(false),
+  waitListPriority: integer("wait_list_priority"),
+  wheelchairAccessible: boolean("wheelchair_accessible").default(false),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1582,7 +1595,6 @@ export const medicalProblems = pgTable("medical_problems", {
   problemTitle: text("problem_title").notNull(),
   currentIcd10Code: text("current_icd10_code"),
   problemStatus: text("problem_status").default("active"), // 'active', 'resolved', 'chronic'
-  firstDiagnosedDate: date("first_diagnosed_date"),
   firstEncounterId: integer("first_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id, { onDelete: "set null" }),
   
@@ -1601,6 +1613,42 @@ export const medicalProblems = pgTable("medical_problems", {
     patient_frequency: number;      // Relative percentage (0-100%) within patient context
     clinical_relevance: number;     // Relative percentage (0-100%) within patient context
   }>(), // GPT-generated factor breakdown for user weight customization
+  
+  // Orphaned columns from database
+  encounterId: integer("encounter_id").references(() => encounters.id, { onDelete: "set null" }),
+  icd10Code: text("icd10_code"), // Legacy ICD-10 code field
+  snomedCode: text("snomed_code"), // SNOMED CT code
+  onsetDate: date("onset_date"), // Date problem started
+  resolutionDate: date("resolution_date"), // Date problem resolved
+  notes: text("notes"), // Clinical notes
+  severity: text("severity"), // mild, moderate, severe
+  
+  // Source tracking fields
+  sourceType: text("source_type"), // provider, patient_reported, system_extract
+  sourceConfidence: decimal("source_confidence", { precision: 5, scale: 2 }), // 0.00-1.00
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id),
+  extractionNotes: text("extraction_notes"),
+  providerId: integer("provider_id").references(() => users.id),
+  
+  // Legacy date field (duplicate of firstDiagnosedDate)
+  dateDiagnosed: date("date_diagnosed"),
+  lastUpdated: timestamp("last_updated"),
+  
+  // Verification and review fields
+  verificationStatus: text("verification_status"), // unverified, verified
+  verificationDate: timestamp("verification_date"),
+  verifiedBy: integer("verified_by").references(() => users.id),
+  
+  // Clinical classification
+  clinicalStatus: text("clinical_status"), // active, recurrence, relapse, inactive, remission, resolved
+  bodySite: text("body_site"), // Anatomical location
+  bodySiteLaterality: text("body_site_laterality"), // left, right, bilateral
+  category: text("category"), // problem, health_concern, diagnosis
+  
+  // Review tracking
+  lastReviewedDate: timestamp("last_reviewed_date"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  patientEducationProvided: boolean("patient_education_provided").default(false),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

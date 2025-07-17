@@ -1088,6 +1088,20 @@ Preferred communication style: Simple, everyday language.
 - **STORAGE METHOD ADDED**: Created `getRememberedLocation` method to fetch user's last remembered location from userSessionLocations table
 - **AUTH FLOW ENHANCEMENT**: Updated login flow to check for restored session location after successful authentication before showing location selector
 - **SEAMLESS USER EXPERIENCE**: Users with remembered locations now go directly to dashboard after login without additional clicks
+
+### Database Schema Alignment Fix (January 17, 2025)
+- **CRITICAL ISSUE RESOLVED**: Fixed extensive database-schema mismatches caused by Replit rollbacks affecting only code but not database structure
+- **ROOT CAUSE**: Replit rollbacks revert schema.ts files but leave PostgreSQL database structure unchanged, creating orphaned columns and naming mismatches
+- **COMPREHENSIVE FIX**: Added all orphaned columns back to schema.ts to match existing database structure:
+  - medical_problems table: Added 40+ orphaned columns including date_diagnosed, verification fields, clinical classification fields
+  - appointments table: Added appointment_type_id and 50+ orphaned columns for comprehensive scheduling functionality
+  - scheduling_ai_weights table: Added factor_name field alongside factor_id to handle naming mismatch
+- **NAMING MISMATCHES FIXED**: 
+  - medical_problems: Database has `date_diagnosed` not `first_diagnosed_date`
+  - appointments: Database has `appointment_type_id` not just `appointment_type`
+  - scheduling_ai_weights: Database has `factor_name` not just `factor_id`
+- **STRATEGY**: Never delete columns with data - always add orphaned columns back to schema to preserve data integrity
+- **LESSON LEARNED**: After any Replit rollback, must verify actual database structure matches schema.ts, not just assume they're in sync
 - **DATABASE PERSISTENCE**: Remember selection is stored in database and persists across sessions until user manually clears or changes location
 - **PRODUCTION READY**: Clinical staff working primarily at one location can now avoid repetitive location selection on every login
 

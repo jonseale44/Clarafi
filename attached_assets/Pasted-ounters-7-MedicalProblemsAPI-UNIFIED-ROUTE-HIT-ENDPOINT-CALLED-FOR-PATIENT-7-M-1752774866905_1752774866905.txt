@@ -1,0 +1,41 @@
+ounters/7
+🚀🚀🚀 [MedicalProblemsAPI] UNIFIED ROUTE HIT - ENDPOINT CALLED FOR PATIENT 7 🚀🚀🚀
+🔍 [MedicalProblemsAPI] Full request URL: /api/medical-problems/7
+🔍 [MedicalProblemsAPI] Request method: GET
+🔍 [MedicalProblemsAPI] GET request for patient 7
+✅ [MedicalProblemsAPI] User authenticated: User ID 5
+🔍 [MedicalProblemsAPI] Raw patientId param: "7"
+🔍 [MedicalProblemsAPI] Parsed patientId: 7
+🔍 [MedicalProblemsAPI] Fetching problems for patient ID: 7
+🔍 [MedicalProblemsAPI] About to call storage.getPatientMedicalProblems(7)
+❌ [MedicalProblemsAPI] Error fetching medical problems for patient 7: error: column "first_diagnosed_date" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getPatientMedicalProblems (/home/runner/workspace/server/storage.ts:1508:12)
+    at async <anonymous> (/home/runner/workspace/server/unified-medical-problems-api.ts:47:22) {
+  length: 120,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '85',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+🔒 [TenantIsolation] User 5 accessing data for health system 14
+5:54:16 PM [express] GET /api/patients/7/medical-problems 500 in 330ms :: {"error":"Failed to fetch …
+5:54:16 PM [express] GET /api/encounters/7 404 in 404ms :: {"message":"Encounter not found"}
+📍 [FIRST] GET /api/patients/7/medications-enhanced
+5:54:19 PM [express] GET /api/patients/7/medications-enhanced 200 in 304ms :: {"medications":[],"gro…
+📍 [FIRST] GET /api/patients/7/medications-enhanced
+5:54:22 PM [express] GET /api/patients/7/medications-enhanced 3
