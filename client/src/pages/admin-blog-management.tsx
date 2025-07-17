@@ -79,7 +79,11 @@ export default function AdminBlogManagement() {
   const [generateFormData, setGenerateFormData] = useState({
     category: "",
     audience: "",
-    topic: ""
+    topic: "",
+    includeDiagrams: true,
+    includeInfographics: true,
+    performCompetitorAnalysis: true,
+    checkPlagiarism: true
   });
   const [generationSettings, setGenerationSettings] = useState<GenerationSettings>({
     articlesPerWeek: 3,
@@ -162,20 +166,39 @@ export default function AdminBlogManagement() {
   // Approve article mutation
   const approveArticleMutation = useMutation({
     mutationFn: async (articleId: number) => {
+      console.log('🎯 [Frontend] Calling approve endpoint for article:', articleId);
       const response = await fetch(`/api/admin/blog/articles/${articleId}/approve`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      if (!response.ok) throw new Error("Failed to approve article");
-      return response.json();
+      console.log('📡 [Frontend] Approve response status:', response.status);
+      const data = await response.json();
+      console.log('📦 [Frontend] Approve response data:', data);
+      if (!response.ok) throw new Error(data.error || "Failed to approve article");
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ [Frontend] Approve success, invalidating queries');
       toast({
         title: "Article Approved",
         description: "The article has been published successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+      // Invalidate both review and published article queries
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=review"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=published"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/stats"] });
       setSelectedArticle(null);
     },
+    onError: (error) => {
+      console.error('❌ [Frontend] Approve error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve article",
+        variant: "destructive"
+      });
+    }
   });
 
   // Update article mutation
@@ -194,7 +217,8 @@ export default function AdminBlogManagement() {
         title: "Article Updated",
         description: "The article has been updated successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=review"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=published"] });
       setEditMode(false);
     },
   });
@@ -213,7 +237,8 @@ export default function AdminBlogManagement() {
         title: "Article Deleted",
         description: "The article has been deleted successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=review"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=published"] });
       setSelectedArticle(null);
     },
   });
@@ -282,6 +307,37 @@ export default function AdminBlogManagement() {
     onSuccess: () => {
       queryClient.clear();
       setLocation("/auth");
+    }
+  });
+
+  // Fetch generation settings
+  const { data: settingsData } = useQuery<GenerationSettings>({
+    queryKey: ["/api/admin/blog/generation-settings"],
+    onSuccess: (data) => {
+      if (data) {
+        setGenerationSettings(data);
+      }
+    }
+  });
+
+  // Save generation settings mutation
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (settings: GenerationSettings) => {
+      const response = await apiRequest("PUT", "/api/admin/blog/generation-settings", settings);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Saved",
+        description: "Blog generation settings have been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
     }
   });
 
@@ -630,19 +686,31 @@ export default function AdminBlogManagement() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Include diagrams</span>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={generateFormData.includeDiagrams}
+                          onCheckedChange={(checked) => setGenerateFormData({ ...generateFormData, includeDiagrams: checked })}
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Include infographics</span>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={generateFormData.includeInfographics}
+                          onCheckedChange={(checked) => setGenerateFormData({ ...generateFormData, includeInfographics: checked })}
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Perform competitor analysis</span>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={generateFormData.performCompetitorAnalysis}
+                          onCheckedChange={(checked) => setGenerateFormData({ ...generateFormData, performCompetitorAnalysis: checked })}
+                        />
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Check for plagiarism</span>
-                        <Switch defaultChecked />
+                        <Switch 
+                          checked={generateFormData.checkPlagiarism}
+                          onCheckedChange={(checked) => setGenerateFormData({ ...generateFormData, checkPlagiarism: checked })}
+                        />
                       </div>
                     </div>
                   </div>
@@ -678,7 +746,11 @@ export default function AdminBlogManagement() {
                       generateArticleMutation.mutate({
                         category: generateFormData.category,
                         audience: generateFormData.audience,
-                        topic: generateFormData.topic || undefined
+                        topic: generateFormData.topic || undefined,
+                        includeDiagrams: generateFormData.includeDiagrams,
+                        includeInfographics: generateFormData.includeInfographics,
+                        performCompetitorAnalysis: generateFormData.performCompetitorAnalysis,
+                        checkPlagiarism: generateFormData.checkPlagiarism
                       });
                     }}
                     disabled={generateArticleMutation.isPending || !generateFormData.category || !generateFormData.audience}
@@ -820,8 +892,12 @@ export default function AdminBlogManagement() {
                     </div>
                   </div>
 
-                  <Button className="w-full">
-                    Save Settings
+                  <Button 
+                    className="w-full"
+                    onClick={() => saveSettingsMutation.mutate(generationSettings)}
+                    disabled={saveSettingsMutation.isPending}
+                  >
+                    {saveSettingsMutation.isPending ? "Saving..." : "Save Settings"}
                   </Button>
                 </div>
               </CardContent>

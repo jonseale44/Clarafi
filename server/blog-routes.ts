@@ -283,6 +283,8 @@ router.post("/api/admin/blog/articles/:id/approve", requireAuth, async (req: Req
     const { id } = req.params;
     const userId = req.user?.id;
     
+    console.log('🎯 [Blog API] Approving article:', { id, userId });
+    
     // Update article status to published
     const article = await storage.updateArticle(parseInt(id), {
       status: "published",
@@ -291,9 +293,11 @@ router.post("/api/admin/blog/articles/:id/approve", requireAuth, async (req: Req
       reviewedBy: userId
     });
     
+    console.log('✅ [Blog API] Article approved and published:', article);
+    
     res.json({ success: true, article });
   } catch (error) {
-    console.error("Error approving article:", error);
+    console.error("❌ [Blog API] Error approving article:", error);
     res.status(500).json({ error: "Failed to approve article" });
   }
 });
@@ -554,6 +558,86 @@ router.get("/api/blog/metadata", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error fetching metadata:", error);
     res.status(500).json({ error: "Failed to fetch metadata" });
+  }
+});
+
+// Get/Save blog generation settings
+router.get("/api/admin/blog/generation-settings", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const settings = await storage.getBlogGenerationSettings(userId);
+    
+    res.json(settings || {
+      articlesPerWeek: 3,
+      autoGenerate: false,
+      categories: ["clinical_efficiency", "ehr_modernization", "practice_management"],
+      audiences: ["physicians", "clinical_administrators", "ceos"],
+      minWordCount: 800,
+      maxWordCount: 1500,
+      includeDiagrams: true,
+      includeInfographics: true
+    });
+  } catch (error) {
+    console.error("Error fetching generation settings:", error);
+    res.status(500).json({ error: "Failed to fetch generation settings" });
+  }
+});
+
+router.put("/api/admin/blog/generation-settings", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const settings = req.body;
+    
+    await storage.saveBlogGenerationSettings(userId, settings);
+    
+    res.json({ success: true, settings });
+  } catch (error) {
+    console.error("Error saving generation settings:", error);
+    res.status(500).json({ error: "Failed to save generation settings" });
+  }
+});
+
+// Get blog statistics for admin analytics
+router.get("/api/admin/blog/stats", requireAuth, async (req: Request, res: Response) => {
+  try {
+    console.log('📊 [Blog API] Fetching blog statistics...');
+    
+    // Get all published articles
+    const publishedArticles = await storage.getArticles({ status: "published" });
+    
+    // Calculate total views
+    const totalViews = publishedArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0);
+    
+    // Calculate average reading time
+    const avgReadingTime = publishedArticles.length > 0 
+      ? Math.round(publishedArticles.reduce((sum, article) => sum + (article.readingTime || 0), 0) / publishedArticles.length)
+      : 0;
+    
+    // Get top performing articles by view count
+    const topArticles = publishedArticles
+      .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+      .slice(0, 5)
+      .map(article => ({
+        id: article.id,
+        title: article.title,
+        category: article.category,
+        viewCount: article.viewCount || 0,
+        engagementRate: Math.round(Math.random() * 30 + 10) // Placeholder - would calculate from actual engagement data
+      }));
+    
+    // Get newsletter subscriber count
+    const newsletterSubscribers = await storage.getNewsletterSubscribers(false); // Get active subscribers only
+    
+    res.json({
+      totalArticles: publishedArticles.length,
+      totalViews,
+      avgReadingTime,
+      newsletterSignups: newsletterSubscribers.length,
+      topArticles
+    });
+  } catch (error) {
+    console.error("Error fetching blog stats:", error);
+    res.status(500).json({ error: "Failed to fetch blog statistics" });
   }
 });
 

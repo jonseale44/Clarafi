@@ -3232,6 +3232,17 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(newsletterSubscribers.email, email));
   }
+
+  // Blog Generation Settings
+  private blogGenerationSettings = new Map<number, any>();
+
+  async getBlogGenerationSettings(userId: number): Promise<any> {
+    return this.blogGenerationSettings.get(userId) || null;
+  }
+
+  async saveBlogGenerationSettings(userId: number, settings: any): Promise<void> {
+    this.blogGenerationSettings.set(userId, settings);
+  }
 }
 
 export const storage = new DatabaseStorage();
