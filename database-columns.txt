@@ -1,0 +1,1069 @@
+            table_name             |            column_name            |          data_type          | is_nullable 
+-----------------------------------+-----------------------------------+-----------------------------+-------------
+ admin_prompt_reviews              | id                                | integer                     | NO
+ admin_prompt_reviews              | prompt_id                         | text                        | NO
+ admin_prompt_reviews              | reviewer_id                       | integer                     | YES
+ admin_prompt_reviews              | review_status                     | text                        | YES
+ admin_prompt_reviews              | feedback                          | text                        | YES
+ admin_prompt_reviews              | created_at                        | timestamp without time zone | YES
+ admin_prompt_reviews              | updated_at                        | timestamp without time zone | YES
+ allergies                         | id                                | integer                     | NO
+ allergies                         | patient_id                        | integer                     | NO
+ allergies                         | encounter_id                      | integer                     | YES
+ allergies                         | allergen                          | text                        | NO
+ allergies                         | reaction                          | text                        | NO
+ allergies                         | severity                          | text                        | YES
+ allergies                         | onset_date                        | date                        | YES
+ allergies                         | notes                             | text                        | YES
+ allergies                         | status                            | text                        | YES
+ allergies                         | verified_by                       | integer                     | YES
+ allergies                         | verified_at                       | timestamp without time zone | YES
+ allergies                         | source_type                       | text                        | YES
+ allergies                         | source_confidence                 | numeric                     | YES
+ allergies                         | source_timestamp                  | timestamp without time zone | YES
+ allergies                         | extracted_from_attachment_id      | integer                     | YES
+ allergies                         | extraction_notes                  | text                        | YES
+ allergies                         | allergy_type                      | text                        | YES
+ allergies                         | reaction_type                     | text                        | YES
+ allergies                         | consolidation_reasoning           | text                        | YES
+ allergies                         | merged_ids                        | ARRAY                       | YES
+ allergies                         | visit_history                     | jsonb                       | YES
+ allergies                         | created_at                        | timestamp without time zone | YES
+ allergies                         | updated_at                        | timestamp without time zone | YES
+ allergies                         | last_reaction                     | date                        | YES
+ allergies                         | last_reaction_date                | date                        | YES
+ allergies                         | verification_status               | text                        | YES
+ allergies                         | drug_class                        | text                        | YES
+ allergies                         | cross_reactivity                  | ARRAY                       | YES
+ allergies                         | source_notes                      | text                        | YES
+ allergies                         | entered_by                        | integer                     | YES
+ allergies                         | temporal_conflict_resolution      | text                        | YES
+ allergies                         | last_updated_encounter            | integer                     | YES
+ appointment_duration_history      | id                                | integer                     | NO
+ appointment_duration_history      | appointment_id                    | integer                     | YES
+ appointment_duration_history      | predicted_duration                | integer                     | YES
+ appointment_duration_history      | actual_duration                   | integer                     | YES
+ appointment_duration_history      | created_at                        | timestamp without time zone | YES
+ appointment_resource_requirements | id                                | integer                     | NO
+ appointment_resource_requirements | appointment_type_id               | integer                     | YES
+ appointment_resource_requirements | resource_type                     | text                        | YES
+ appointment_resource_requirements | resource_id                       | integer                     | YES
+ appointment_resource_requirements | created_at                        | timestamp without time zone | YES
+ appointment_types                 | id                                | integer                     | NO
+ appointment_types                 | health_system_id                  | integer                     | YES
+ appointment_types                 | name                              | character varying           | NO
+ appointment_types                 | duration_minutes                  | integer                     | NO
+ appointment_types                 | color                             | character varying           | YES
+ appointment_types                 | description                       | text                        | YES
+ appointment_types                 | is_active                         | boolean                     | YES
+ appointment_types                 | created_at                        | timestamp with time zone    | YES
+ appointment_types                 | updated_at                        | timestamp with time zone    | YES
+ appointments                      | id                                | integer                     | NO
+ appointments                      | patient_id                        | integer                     | NO
+ appointments                      | provider_id                       | integer                     | NO
+ appointments                      | location_id                       | integer                     | NO
+ appointments                      | appointment_type_id               | integer                     | YES
+ appointments                      | start_time                        | timestamp with time zone    | NO
+ appointments                      | end_time                          | timestamp with time zone    | NO
+ appointments                      | duration_minutes                  | integer                     | NO
+ appointments                      | ai_predicted_duration             | integer                     | YES
+ appointments                      | status                            | character varying           | YES
+ appointments                      | chief_complaint                   | text                        | YES
+ appointments                      | notes                             | text                        | YES
+ appointments                      | checked_in_at                     | timestamp with time zone    | YES
+ appointments                      | checked_in_by                     | integer                     | YES
+ appointments                      | completed_at                      | timestamp with time zone    | YES
+ appointments                      | completed_by                      | integer                     | YES
+ appointments                      | cancelled_at                      | timestamp with time zone    | YES
+ appointments                      | cancelled_by                      | integer                     | YES
+ appointments                      | cancellation_reason               | text                        | YES
+ appointments                      | created_at                        | timestamp with time zone    | YES
+ appointments                      | updated_at                        | timestamp with time zone    | YES
+ article_comments                  | id                                | integer                     | NO
+ article_comments                  | article_id                        | integer                     | NO
+ article_comments                  | author_name                       | text                        | NO
+ article_comments                  | author_email                      | text                        | NO
+ article_comments                  | content                           | text                        | NO
+ article_comments                  | is_approved                       | boolean                     | YES
+ article_comments                  | parent_id                         | integer                     | YES
+ article_comments                  | created_at                        | timestamp without time zone | YES
+ article_generation_queue          | id                                | integer                     | NO
+ article_generation_queue          | topic                             | text                        | YES
+ article_generation_queue          | category                          | text                        | NO
+ article_generation_queue          | target_audience                   | text                        | NO
+ article_generation_queue          | keywords                          | ARRAY                       | YES
+ article_generation_queue          | competitor_mentions               | ARRAY                       | YES
+ article_generation_queue          | research_sources                  | jsonb                       | YES
+ article_generation_queue          | status                            | text                        | NO
+ article_generation_queue          | generated_article_id              | integer                     | YES
+ article_generation_queue          | error                             | text                        | YES
+ article_generation_queue          | created_at                        | timestamp without time zone | YES
+ article_generation_queue          | processed_at                      | timestamp without time zone | YES
+ article_generation_queue          | custom_prompt                     | text                        | YES
+ article_revisions                 | id                                | integer                     | NO
+ article_revisions                 | article_id                        | integer                     | NO
+ article_revisions                 | content                           | text                        | NO
+ article_revisions                 | revision_note                     | text                        | YES
+ article_revisions                 | revision_type                     | text                        | YES
+ article_revisions                 | created_by                        | integer                     | YES
+ article_revisions                 | created_at                        | timestamp without time zone | YES
+ articles                          | id                                | integer                     | NO
+ articles                          | title                             | text                        | NO
+ articles                          | slug                              | text                        | NO
+ articles                          | content                           | text                        | NO
+ articles                          | excerpt                           | text                        | YES
+ articles                          | category                          | text                        | NO
+ articles                          | status                            | text                        | NO
+ articles                          | author_name                       | text                        | YES
+ articles                          | featured_image                    | text                        | YES
+ articles                          | meta_title                        | text                        | YES
+ articles                          | meta_description                  | text                        | YES
+ articles                          | keywords                          | ARRAY                       | YES
+ articles                          | target_audience                   | text                        | YES
+ articles                          | reading_time                      | integer                     | YES
+ articles                          | view_count                        | integer                     | YES
+ articles                          | published_at                      | timestamp without time zone | YES
+ articles                          | scheduled_for                     | timestamp without time zone | YES
+ articles                          | generated_at                      | timestamp without time zone | YES
+ articles                          | reviewed_at                       | timestamp without time zone | YES
+ articles                          | reviewed_by                       | integer                     | YES
+ articles                          | created_at                        | timestamp without time zone | YES
+ articles                          | updated_at                        | timestamp without time zone | YES
+ attachments                       | id                                | integer                     | NO
+ attachments                       | patient_id                        | integer                     | NO
+ attachments                       | encounter_id                      | integer                     | YES
+ attachments                       | filename                          | text                        | NO
+ attachments                       | original_filename                 | text                        | YES
+ attachments                       | file_type                         | text                        | YES
+ attachments                       | file_size                         | integer                     | YES
+ attachments                       | mime_type                         | text                        | YES
+ attachments                       | upload_date                       | timestamp without time zone | YES
+ attachments                       | uploaded_by                       | integer                     | YES
+ attachments                       | document_type                     | text                        | YES
+ attachments                       | document_date                     | date                        | YES
+ attachments                       | description                       | text                        | YES
+ attachments                       | thumbnail_path                    | text                        | YES
+ attachments                       | ocr_text                          | text                        | YES
+ attachments                       | ocr_completed                     | boolean                     | YES
+ attachments                       | ocr_completed_at                  | timestamp without time zone | YES
+ attachments                       | processing_status                 | text                        | YES
+ attachments                       | processing_notes                  | text                        | YES
+ attachments                       | extracted_data                    | jsonb                       | YES
+ attachments                       | chart_sections_updated            | ARRAY                       | YES
+ attachments                       | confidence_scores                 | jsonb                       | YES
+ attachments                       | hash_value                        | text                        | YES
+ attachments                       | is_deleted                        | boolean                     | YES
+ attachments                       | deleted_at                        | timestamp without time zone | YES
+ attachments                       | deleted_by                        | integer                     | YES
+ attachments                       | retention_date                    | date                        | YES
+ attachments                       | access_count                      | integer                     | YES
+ attachments                       | last_accessed_at                  | timestamp without time zone | YES
+ attachments                       | tags                              | ARRAY                       | YES
+ attachments                       | source_system                     | text                        | YES
+ attachments                       | external_id                       | text                        | YES
+ attachments                       | created_at                        | timestamp without time zone | YES
+ attachments                       | updated_at                        | timestamp without time zone | YES
+ authentication_logs               | id                                | integer                     | NO
+ authentication_logs               | user_id                           | integer                     | YES
+ authentication_logs               | username                          | character varying           | YES
+ authentication_logs               | event_type                        | character varying           | NO
+ authentication_logs               | success                           | boolean                     | NO
+ authentication_logs               | ip_address                        | character varying           | YES
+ authentication_logs               | user_agent                        | text                        | YES
+ authentication_logs               | error_message                     | text                        | YES
+ authentication_logs               | created_at                        | timestamp with time zone    | YES
+ authentication_logs               | email                             | text                        | YES
+ authentication_logs               | health_system_id                  | integer                     | YES
+ authentication_logs               | failure_reason                    | text                        | YES
+ clinic_admin_verifications        | id                                | integer                     | NO
+ clinic_admin_verifications        | organization_name                 | text                        | NO
+ clinic_admin_verifications        | applicant_first_name              | text                        | NO
+ clinic_admin_verifications        | applicant_last_name               | text                        | NO
+ clinic_admin_verifications        | applicant_email                   | text                        | NO
+ clinic_admin_verifications        | applicant_phone                   | text                        | NO
+ clinic_admin_verifications        | address_street                    | text                        | NO
+ clinic_admin_verifications        | address_city                      | text                        | NO
+ clinic_admin_verifications        | address_state                     | text                        | NO
+ clinic_admin_verifications        | address_zip                       | text                        | NO
+ clinic_admin_verifications        | website                           | text                        | YES
+ clinic_admin_verifications        | preferred_ehr_tier                | integer                     | YES
+ clinic_admin_verifications        | verification_status               | text                        | YES
+ clinic_admin_verifications        | verification_score                | numeric                     | YES
+ clinic_admin_verifications        | verification_details              | jsonb                       | YES
+ clinic_admin_verifications        | risk_assessment                   | jsonb                       | YES
+ clinic_admin_verifications        | automated_decision                | text                        | YES
+ clinic_admin_verifications        | automated_recommendations         | ARRAY                       | YES
+ clinic_admin_verifications        | manual_review_notes               | text                        | YES
+ clinic_admin_verifications        | reviewer_id                       | integer                     | YES
+ clinic_admin_verifications        | reviewed_at                       | timestamp without time zone | YES
+ clinic_admin_verifications        | api_verification_results          | jsonb                       | YES
+ clinic_admin_verifications        | created_at                        | timestamp without time zone | YES
+ clinic_admin_verifications        | updated_at                        | timestamp without time zone | YES
+ dashboards                        | id                                | integer                     | NO
+ dashboards                        | name                              | text                        | NO
+ dashboards                        | config                            | jsonb                       | YES
+ dashboards                        | created_at                        | timestamp without time zone | YES
+ diagnoses                         | id                                | integer                     | NO
+ diagnoses                         | patient_id                        | integer                     | NO
+ diagnoses                         | encounter_id                      | integer                     | NO
+ diagnoses                         | diagnosis_code                    | text                        | YES
+ diagnoses                         | diagnosis_description             | text                        | YES
+ diagnoses                         | diagnosis_type                    | text                        | YES
+ diagnoses                         | status                            | text                        | NO
+ diagnoses                         | onset_date                        | date                        | YES
+ diagnoses                         | resolution_date                   | date                        | YES
+ diagnoses                         | notes                             | text                        | YES
+ diagnoses                         | severity                          | text                        | YES
+ diagnoses                         | clinician_id                      | integer                     | YES
+ diagnoses                         | created_at                        | timestamp without time zone | YES
+ diagnoses                         | updated_at                        | timestamp without time zone | YES
+ diagnoses                         | claim_submission_status           | text                        | YES
+ diagnoses                         | claim_id                          | text                        | YES
+ diagnoses                         | clearinghouse_id                  | text                        | YES
+ diagnoses                         | payer_id                          | text                        | YES
+ diagnoses                         | allowed_amount                    | numeric                     | YES
+ diagnoses                         | paid_amount                       | numeric                     | YES
+ diagnoses                         | patient_responsibility            | numeric                     | YES
+ diagnoses                         | adjustment_amount                 | numeric                     | YES
+ diagnoses                         | denial_reason                     | text                        | YES
+ diagnoses                         | denial_code                       | text                        | YES
+ diagnoses                         | appeal_status                     | text                        | YES
+ diagnoses                         | appeal_deadline                   | text                        | YES
+ diagnoses                         | billing_notes                     | text                        | YES
+ diagnoses                         | last_billing_action               | text                        | YES
+ diagnoses                         | assigned_biller                   | integer                     | YES
+ diagnoses                         | modifier_applied                  | text                        | YES
+ diagnoses                         | billing_action_date               | timestamp without time zone | YES
+ encounters                        | id                                | integer                     | NO
+ encounters                        | patient_id                        | integer                     | NO
+ encounters                        | provider_id                       | integer                     | NO
+ encounters                        | encounter_date                    | timestamp without time zone | YES
+ encounters                        | encounter_type                    | character varying           | YES
+ encounters                        | visit_reason                      | text                        | YES
+ encounters                        | status                            | character varying           | YES
+ encounters                        | location                          | character varying           | YES
+ encounters                        | insurance_verified                | boolean                     | YES
+ encounters                        | copay_collected                   | numeric                     | YES
+ encounters                        | notes                             | text                        | YES
+ encounters                        | created_at                        | timestamp without time zone | YES
+ encounters                        | updated_at                        | timestamp without time zone | YES
+ encounters                        | encounter_subtype                 | text                        | YES
+ encounters                        | encounter_status                  | text                        | YES
+ encounters                        | end_time                          | timestamp without time zone | YES
+ encounters                        | location_id                       | integer                     | YES
+ encounters                        | chief_complaint                   | text                        | YES
+ encounters                        | ai_scribe_mode                    | text                        | YES
+ encounters                        | ai_suggestions                    | jsonb                       | YES
+ encounters                        | signed_by                         | integer                     | YES
+ encounters                        | signed_at                         | timestamp without time zone | YES
+ encounters                        | is_signed                         | boolean                     | YES
+ encounters                        | appointment_id                    | integer                     | YES
+ encounters                        | start_time                        | timestamp without time zone | YES
+ encounters                        | note                              | text                        | YES
+ encounters                        | nurse_assessment                  | text                        | YES
+ encounters                        | nurse_interventions               | text                        | YES
+ encounters                        | nurse_notes                       | text                        | YES
+ encounters                        | transcription_id                  | text                        | YES
+ encounters                        | assistant_thread_id               | text                        | YES
+ encounters                        | voice_recording_url               | text                        | YES
+ family_history                    | id                                | integer                     | NO
+ family_history                    | patient_id                        | integer                     | NO
+ family_history                    | relationship                      | text                        | NO
+ family_history                    | condition                         | text                        | NO
+ family_history                    | age_at_onset                      | integer                     | YES
+ family_history                    | age_at_death                      | integer                     | YES
+ family_history                    | cause_of_death                    | text                        | YES
+ family_history                    | notes                             | text                        | YES
+ family_history                    | source_type                       | text                        | YES
+ family_history                    | source_confidence                 | numeric                     | YES
+ family_history                    | extracted_from_attachment_id      | integer                     | YES
+ family_history                    | extraction_notes                  | text                        | YES
+ family_history                    | maternal_side                     | boolean                     | YES
+ family_history                    | living_status                     | text                        | YES
+ family_history                    | genetic_marker                    | text                        | YES
+ family_history                    | consolidation_reasoning           | text                        | YES
+ family_history                    | merged_ids                        | ARRAY                       | YES
+ family_history                    | visit_history                     | jsonb                       | YES
+ family_history                    | created_at                        | timestamp without time zone | YES
+ family_history                    | updated_at                        | timestamp without time zone | YES
+ health_systems                    | id                                | integer                     | NO
+ health_systems                    | name                              | character varying           | NO
+ health_systems                    | type                              | character varying           | YES
+ health_systems                    | subscription_tier                 | integer                     | YES
+ health_systems                    | subscription_status               | character varying           | YES
+ health_systems                    | subscription_key                  | character varying           | YES
+ health_systems                    | is_migration                      | boolean                     | YES
+ health_systems                    | stripe_customer_id                | character varying           | YES
+ health_systems                    | metadata                          | jsonb                       | YES
+ health_systems                    | created_at                        | timestamp with time zone    | YES
+ health_systems                    | updated_at                        | timestamp with time zone    | YES
+ health_systems                    | short_name                        | text                        | YES
+ health_systems                    | system_type                       | text                        | YES
+ health_systems                    | subscription_start_date           | timestamp without time zone | YES
+ health_systems                    | subscription_end_date             | timestamp without time zone | YES
+ health_systems                    | merged_into_health_system_id      | integer                     | YES
+ health_systems                    | merged_date                       | timestamp without time zone | YES
+ health_systems                    | original_provider_id              | integer                     | YES
+ health_systems                    | primary_contact                   | text                        | YES
+ health_systems                    | phone                             | text                        | YES
+ health_systems                    | email                             | text                        | YES
+ health_systems                    | website                           | text                        | YES
+ health_systems                    | npi                               | text                        | YES
+ health_systems                    | tax_id                            | text                        | YES
+ health_systems                    | logo_url                          | text                        | YES
+ health_systems                    | brand_colors                      | jsonb                       | YES
+ health_systems                    | subscription_limits               | jsonb                       | YES
+ health_systems                    | active_user_count                 | jsonb                       | YES
+ health_systems                    | billing_details                   | jsonb                       | YES
+ health_systems                    | active                            | boolean                     | YES
+ health_systems                    | status                            | text                        | YES
+ imaging_results                   | id                                | integer                     | NO
+ imaging_results                   | patient_id                        | integer                     | NO
+ imaging_results                   | encounter_id                      | integer                     | YES
+ imaging_results                   | imaging_order_id                  | integer                     | YES
+ imaging_results                   | study_type                        | text                        | NO
+ imaging_results                   | body_part                         | text                        | NO
+ imaging_results                   | modality                          | text                        | YES
+ imaging_results                   | study_date                        | timestamp without time zone | YES
+ imaging_results                   | accession_number                  | text                        | YES
+ imaging_results                   | performing_facility               | text                        | YES
+ imaging_results                   | ordering_provider_id              | integer                     | YES
+ imaging_results                   | reading_radiologist               | text                        | YES
+ imaging_results                   | findings                          | text                        | YES
+ imaging_results                   | impression                        | text                        | YES
+ imaging_results                   | recommendations                   | text                        | YES
+ imaging_results                   | comparison_studies                | text                        | YES
+ imaging_results                   | technique                         | text                        | YES
+ imaging_results                   | contrast_used                     | boolean                     | YES
+ imaging_results                   | contrast_type                     | text                        | YES
+ imaging_results                   | radiation_dose                    | text                        | YES
+ imaging_results                   | number_of_images                  | integer                     | YES
+ imaging_results                   | critical_findings                 | boolean                     | YES
+ imaging_results                   | critical_findings_communicated_at | timestamp without time zone | YES
+ imaging_results                   | report_status                     | text                        | YES
+ imaging_results                   | report_finalized_at               | timestamp without time zone | YES
+ imaging_results                   | addendum                          | text                        | YES
+ imaging_results                   | addendum_date                     | timestamp without time zone | YES
+ imaging_results                   | procedure_code                    | text                        | YES
+ imaging_results                   | diagnostic_quality                | text                        | YES
+ imaging_results                   | limitations                       | text                        | YES
+ imaging_results                   | follow_up_needed                  | boolean                     | YES
+ imaging_results                   | follow_up_timeframe               | text                        | YES
+ imaging_results                   | bi_rads_score                     | text                        | YES
+ imaging_results                   | lung_rads_score                   | text                        | YES
+ imaging_results                   | ti_rads_score                     | text                        | YES
+ imaging_results                   | pi_rads_score                     | text                        | YES
+ imaging_results                   | liver_rads_score                  | text                        | YES
+ imaging_results                   | incidental_findings               | text                        | YES
+ imaging_results                   | relevant_history                  | text                        | YES
+ imaging_results                   | clinical_indication               | text                        | YES
+ imaging_results                   | protocol_name                     | text                        | YES
+ imaging_results                   | series_count                      | integer                     | YES
+ imaging_results                   | image_count                       | integer                     | YES
+ imaging_results                   | study_size_mb                     | numeric                     | YES
+ imaging_results                   | pacs_study_uid                    | text                        | YES
+ imaging_results                   | dicom_retrieval_url               | text                        | YES
+ imaging_results                   | external_system_id                | text                        | YES
+ imaging_results                   | source_type                       | text                        | YES
+ imaging_results                   | source_confidence                 | numeric                     | YES
+ imaging_results                   | extracted_from_attachment_id      | integer                     | YES
+ imaging_results                   | extraction_notes                  | text                        | YES
+ imaging_results                   | consolidation_reasoning           | text                        | YES
+ imaging_results                   | merged_ids                        | ARRAY                       | YES
+ imaging_results                   | visit_history                     | jsonb                       | YES
+ imaging_results                   | created_at                        | timestamp without time zone | YES
+ imaging_results                   | updated_at                        | timestamp without time zone | YES
+ lab_orders                        | id                                | integer                     | NO
+ lab_orders                        | order_id                          | integer                     | YES
+ lab_orders                        | external_order_id                 | text                        | YES
+ lab_orders                        | transmitted_at                    | timestamp without time zone | YES
+ lab_orders                        | acknowledged_at                   | timestamp without time zone | YES
+ lab_orders                        | result_received_at                | timestamp without time zone | YES
+ lab_orders                        | status                            | text                        | YES
+ lab_orders                        | transmission_response             | jsonb                       | YES
+ lab_orders                        | result_data                       | jsonb                       | YES
+ lab_orders                        | created_at                        | timestamp without time zone | YES
+ lab_orders                        | updated_at                        | timestamp without time zone | YES
+ lab_orders                        | patient_id                        | integer                     | YES
+ lab_orders                        | encounter_id                      | integer                     | YES
+ lab_orders                        | order_set_id                      | text                        | YES
+ lab_orders                        | loinc_code                        | text                        | YES
+ lab_orders                        | provider_id                       | integer                     | YES
+ lab_orders                        | test_name                         | text                        | YES
+ lab_orders                        | cpt_code                          | text                        | YES
+ lab_orders                        | test_code                         | text                        | YES
+ lab_orders                        | test_category                     | text                        | YES
+ lab_orders                        | priority                          | text                        | YES
+ lab_orders                        | clinical_indication               | text                        | YES
+ lab_orders                        | icd10_codes                       | ARRAY                       | YES
+ lab_orders                        | ordered_by                        | integer                     | YES
+ lab_orders                        | ordered_at                        | timestamp without time zone | YES
+ lab_orders                        | target_lab_id                     | text                        | YES
+ lab_orders                        | hl7_message_id                    | text                        | YES
+ lab_orders                        | requisition_number                | text                        | YES
+ lab_orders                        | order_status                      | text                        | YES
+ lab_orders                        | collected_at                      | timestamp without time zone | YES
+ lab_orders                        | specimen_type                     | text                        | YES
+ lab_orders                        | specimen_volume                   | text                        | YES
+ lab_orders                        | specimen_source                   | text                        | YES
+ lab_orders                        | fasting_required                  | boolean                     | YES
+ lab_orders                        | special_instructions              | text                        | YES
+ lab_orders                        | container_type                    | text                        | YES
+ lab_orders                        | collection_site                   | text                        | YES
+ lab_orders                        | collected_by                      | integer                     | YES
+ lab_orders                        | external_lab                      | text                        | YES
+ lab_orders                        | result_status                     | text                        | YES
+ lab_orders                        | collection_instructions           | text                        | YES
+ lab_orders                        | reference_range                   | text                        | YES
+ lab_orders                        | expected_turnaround               | text                        | YES
+ lab_orders                        | external_status                   | text                        | YES
+ lab_orders                        | results                           | jsonb                       | YES
+ lab_orders                        | abnormal_flags                    | ARRAY                       | YES
+ lab_orders                        | fasting_hours                     | integer                     | YES
+ lab_orders                        | discontinued_at                   | timestamp without time zone | YES
+ lab_orders                        | discontinued_by                   | integer                     | YES
+ lab_orders                        | discontinued_reason               | text                        | YES
+ lab_orders                        | critical_values                   | ARRAY                       | YES
+ lab_orders                        | stat_order                        | boolean                     | YES
+ lab_orders                        | timing_instructions               | text                        | YES
+ lab_orders                        | provider_notes                    | text                        | YES
+ lab_orders                        | patient_preparation               | text                        | YES
+ lab_orders                        | collection_priority               | text                        | YES
+ lab_orders                        | processing_notes                  | text                        | YES
+ lab_orders                        | billing_code                      | text                        | YES
+ lab_orders                        | insurance_preauth                 | text                        | YES
+ lab_orders                        | insurance_preauth_date            | timestamp without time zone | YES
+ lab_orders                        | estimated_cost                    | numeric                     | YES
+ lab_orders                        | actual_cost                       | numeric                     | YES
+ lab_orders                        | patient_consent                   | boolean                     | YES
+ lab_orders                        | consent_date                      | timestamp without time zone | YES
+ lab_orders                        | insurance_coverage                | text                        | YES
+ lab_orders                        | patient_copay                     | numeric                     | YES
+ lab_orders                        | billing_status                    | text                        | YES
+ lab_orders                        | billing_date                      | timestamp without time zone | YES
+ lab_orders                        | cancellation_reason               | text                        | YES
+ lab_orders                        | result_interpretation             | text                        | YES
+ lab_orders                        | ai_suggested_tests                | ARRAY                       | YES
+ lab_orders                        | ai_analysis                       | text                        | YES
+ lab_orders                        | result_notification_sent          | boolean                     | YES
+ lab_orders                        | result_notification_date          | timestamp without time zone | YES
+ lab_orders                        | performing_lab_id                 | integer                     | YES
+ lab_orders                        | lab_account_number                | text                        | YES
+ lab_orders                        | risk_flags                        | ARRAY                       | YES
+ lab_orders                        | quality_control_status            | text                        | YES
+ lab_orders                        | quality_control_notes             | text                        | YES
+ lab_orders                        | repeat_test_reason                | text                        | YES
+ lab_orders                        | original_order_id                 | integer                     | YES
+ lab_orders                        | test_methodology                  | text                        | YES
+ lab_orders                        | quality_measure                   | text                        | YES
+ lab_orders                        | processing_lab_name               | text                        | YES
+ lab_orders                        | processing_lab_director           | text                        | YES
+ lab_orders                        | test_validation_status            | text                        | YES
+ lab_orders                        | regulatory_compliance             | text                        | YES
+ lab_orders                        | sample_rejection_reason           | text                        | YES
+ lab_orders                        | preventive_care_flag              | boolean                     | YES
+ lab_orders                        | clinical_trial_id                 | text                        | YES
+ lab_orders                        | research_study_id                 | text                        | YES
+ lab_orders                        | patient_location                  | text                        | YES
+ lab_orders                        | ordering_facility_id              | integer                     | YES
+ lab_orders                        | test_performed_at                 | text                        | YES
+ lab_reference_ranges              | id                                | integer                     | NO
+ lab_reference_ranges              | test_code                         | text                        | NO
+ lab_reference_ranges              | test_name                         | text                        | NO
+ lab_reference_ranges              | age_min                           | integer                     | YES
+ lab_reference_ranges              | age_max                           | integer                     | YES
+ lab_reference_ranges              | gender                            | text                        | YES
+ lab_reference_ranges              | reference_low                     | numeric                     | YES
+ lab_reference_ranges              | reference_high                    | numeric                     | YES
+ lab_reference_ranges              | critical_low                      | numeric                     | YES
+ lab_reference_ranges              | critical_high                     | numeric                     | YES
+ lab_reference_ranges              | unit                              | text                        | YES
+ lab_reference_ranges              | notes                             | text                        | YES
+ lab_reference_ranges              | created_at                        | timestamp without time zone | YES
+ lab_reference_ranges              | updated_at                        | timestamp without time zone | YES
+ lab_results                       | id                                | integer                     | NO
+ lab_results                       | lab_order_id                      | integer                     | YES
+ lab_results                       | patient_id                        | integer                     | NO
+ lab_results                       | loinc_code                        | text                        | NO
+ lab_results                       | test_code                         | text                        | NO
+ lab_results                       | test_name                         | text                        | NO
+ lab_results                       | test_category                     | text                        | YES
+ lab_results                       | result_value                      | text                        | YES
+ lab_results                       | result_numeric                    | numeric                     | YES
+ lab_results                       | result_units                      | text                        | YES
+ lab_results                       | reference_range                   | text                        | YES
+ lab_results                       | age_gender_adjusted_range         | text                        | YES
+ lab_results                       | abnormal_flag                     | text                        | YES
+ lab_results                       | critical_flag                     | boolean                     | YES
+ lab_results                       | delta_flag                        | text                        | YES
+ lab_results                       | specimen_collected_at             | timestamp without time zone | YES
+ lab_results                       | specimen_received_at              | timestamp without time zone | YES
+ lab_results                       | result_available_at               | timestamp without time zone | YES
+ lab_results                       | result_finalized_at               | timestamp without time zone | YES
+ lab_results                       | received_at                       | timestamp without time zone | YES
+ lab_results                       | external_lab_id                   | integer                     | YES
+ lab_results                       | external_result_id                | text                        | YES
+ lab_results                       | hl7_message_id                    | text                        | YES
+ lab_results                       | instrument_id                     | text                        | YES
+ lab_results                       | result_status                     | text                        | YES
+ lab_results                       | verification_status               | text                        | YES
+ lab_results                       | result_comments                   | text                        | YES
+ lab_results                       | reviewed_by                       | integer                     | YES
+ lab_results                       | reviewed_at                       | timestamp without time zone | YES
+ lab_results                       | provider_notes                    | text                        | YES
+ lab_results                       | needs_review                      | boolean                     | YES
+ lab_results                       | review_status                     | text                        | YES
+ lab_results                       | review_note                       | text                        | YES
+ lab_results                       | review_template                   | text                        | YES
+ lab_results                       | review_history                    | jsonb                       | YES
+ lab_results                       | patient_communication_sent        | boolean                     | YES
+ lab_results                       | patient_communication_method      | text                        | YES
+ lab_results                       | patient_communication_sent_at     | timestamp without time zone | YES
+ lab_results                       | patient_notified_by               | integer                     | YES
+ lab_results                       | patient_message                   | text                        | YES
+ lab_results                       | patient_message_sent_at           | timestamp without time zone | YES
+ lab_results                       | source_type                       | text                        | YES
+ lab_results                       | source_confidence                 | text                        | YES
+ lab_results                       | extracted_from_attachment_id      | integer                     | YES
+ lab_results                       | extraction_notes                  | text                        | YES
+ lab_results                       | consolidation_reasoning           | text                        | YES
+ lab_results                       | merged_ids                        | ARRAY                       | YES
+ lab_results                       | visit_history                     | jsonb                       | YES
+ lab_results                       | created_at                        | timestamp without time zone | YES
+ lab_results                       | updated_at                        | timestamp without time zone | YES
+ locations                         | id                                | integer                     | NO
+ locations                         | name                              | character varying           | NO
+ locations                         | address                           | character varying           | YES
+ locations                         | city                              | character varying           | YES
+ locations                         | state                             | character varying           | YES
+ locations                         | zip                               | character varying           | YES
+ locations                         | phone                             | character varying           | YES
+ locations                         | health_system_id                  | integer                     | YES
+ locations                         | created_at                        | timestamp with time zone    | YES
+ locations                         | updated_at                        | timestamp with time zone    | YES
+ locations                         | zip_code                          | text                        | YES
+ locations                         | npi                               | text                        | YES
+ locations                         | location_type                     | text                        | YES
+ locations                         | organization_id                   | integer                     | YES
+ locations                         | short_name                        | text                        | YES
+ medical_problems                  | id                                | integer                     | NO
+ medical_problems                  | patient_id                        | integer                     | NO
+ medical_problems                  | encounter_id                      | integer                     | YES
+ medical_problems                  | problem_title                     | text                        | NO
+ medical_problems                  | icd10_code                        | text                        | YES
+ medical_problems                  | snomed_code                       | text                        | YES
+ medical_problems                  | problem_status                    | text                        | YES
+ medical_problems                  | onset_date                        | date                        | YES
+ medical_problems                  | resolution_date                   | date                        | YES
+ medical_problems                  | notes                             | text                        | YES
+ medical_problems                  | severity                          | text                        | YES
+ medical_problems                  | source_type                       | text                        | YES
+ medical_problems                  | source_confidence                 | numeric                     | YES
+ medical_problems                  | extracted_from_attachment_id      | integer                     | YES
+ medical_problems                  | extraction_notes                  | text                        | YES
+ medical_problems                  | provider_id                       | integer                     | YES
+ medical_problems                  | date_diagnosed                    | date                        | YES
+ medical_problems                  | last_updated                      | timestamp without time zone | YES
+ medical_problems                  | verification_status               | text                        | YES
+ medical_problems                  | verification_date                 | timestamp without time zone | YES
+ medical_problems                  | verified_by                       | integer                     | YES
+ medical_problems                  | clinical_status                   | text                        | YES
+ medical_problems                  | body_site                         | text                        | YES
+ medical_problems                  | body_site_laterality              | text                        | YES
+ medical_problems                  | category                          | text                        | YES
+ medical_problems                  | current_icd10_code                | text                        | YES
+ medical_problems                  | last_reviewed_date                | timestamp without time zone | YES
+ medical_problems                  | reviewed_by                       | integer                     | YES
+ medical_problems                  | patient_education_provided        | boolean                     | YES
+ medical_problems                  | care_plan_status                  | text                        | YES
+ medical_problems                  | functional_impact                 | text                        | YES
+ medical_problems                  | prognosis                         | text                        | YES
+ medical_problems                  | risk_factors                      | ARRAY                       | YES
+ medical_problems                  | associated_conditions             | ARRAY                       | YES
+ medical_problems                  | treatment_goals                   | text                        | YES
+ medical_problems                  | monitoring_parameters             | text                        | YES
+ medical_problems                  | follow_up_required                | boolean                     | YES
+ medical_problems                  | follow_up_date                    | date                        | YES
+ medical_problems                  | problem_ranking                   | integer                     | YES
+ medical_problems                  | display_in_summary                | boolean                     | YES
+ medical_problems                  | patient_aware                     | boolean                     | YES
+ medical_problems                  | caregiver_aware                   | boolean                     | YES
+ medical_problems                  | reportable_condition              | boolean                     | YES
+ medical_problems                  | reported_date                     | date                        | YES
+ medical_problems                  | clinical_priority                 | text                        | YES
+ medical_problems                  | social_determinants               | jsonb                       | YES
+ medical_problems                  | cultural_considerations           | text                        | YES
+ medical_problems                  | patient_goals                     | text                        | YES
+ medical_problems                  | barriers_to_care                  | text                        | YES
+ medical_problems                  | quality_measures                  | jsonb                       | YES
+ medical_problems                  | outcome_measures                  | jsonb                       | YES
+ medical_problems                  | care_team_members                 | jsonb                       | YES
+ medical_problems                  | care_coordination_notes           | text                        | YES
+ medical_problems                  | original_problem_text             | text                        | YES
+ medical_problems                  | mapped_by_ai                      | boolean                     | YES
+ medical_problems                  | ai_confidence_score               | numeric                     | YES
+ medical_problems                  | human_verified                    | boolean                     | YES
+ medical_problems                  | consolidation_reasoning           | text                        | YES
+ medical_problems                  | merged_ids                        | ARRAY                       | YES
+ medical_problems                  | visit_history                     | jsonb                       | YES
+ medical_problems                  | created_at                        | timestamp without time zone | YES
+ medical_problems                  | updated_at                        | timestamp without time zone | YES
+ medications                       | id                                | integer                     | NO
+ medications                       | patient_id                        | integer                     | NO
+ medications                       | encounter_id                      | integer                     | YES
+ medications                       | medication_name                   | text                        | NO
+ medications                       | generic_name                      | text                        | YES
+ medications                       | brand_name                        | text                        | YES
+ medications                       | dosage                            | text                        | YES
+ medications                       | strength                          | text                        | YES
+ medications                       | form                              | text                        | YES
+ medications                       | route                             | text                        | YES
+ medications                       | frequency                         | text                        | YES
+ medications                       | sig                               | text                        | YES
+ medications                       | start_date                        | date                        | YES
+ medications                       | end_date                          | date                        | YES
+ medications                       | discontinuation_date              | date                        | YES
+ medications                       | discontinuation_reason            | text                        | YES
+ medications                       | status                            | text                        | YES
+ medications                       | prescribed_by                     | integer                     | YES
+ medications                       | prescribed_date                   | timestamp without time zone | YES
+ medications                       | pharmacy                          | text                        | YES
+ medications                       | prescriber_notes                  | text                        | YES
+ medications                       | patient_instructions              | text                        | YES
+ medications                       | ndc_code                          | text                        | YES
+ medications                       | rxnorm_code                       | text                        | YES
+ medications                       | days_supply                       | integer                     | YES
+ medications                       | quantity                          | integer                     | YES
+ medications                       | quantity_unit                     | text                        | YES
+ medications                       | refills                           | integer                     | YES
+ medications                       | refills_remaining                 | integer                     | YES
+ medications                       | lot_number                        | text                        | YES
+ medications                       | expiration_date                   | date                        | YES
+ medications                       | manufacturer                      | text                        | YES
+ medications                       | dea_schedule                      | text                        | YES
+ medications                       | is_controlled                     | boolean                     | YES
+ medications                       | requires_prior_auth               | boolean                     | YES
+ medications                       | prior_auth_number                 | text                        | YES
+ medications                       | formulary_status                  | text                        | YES
+ medications                       | therapeutic_class                 | text                        | YES
+ medications                       | source_type                       | text                        | YES
+ medications                       | source_confidence                 | numeric                     | YES
+ medications                       | extracted_from_attachment_id      | integer                     | YES
+ medications                       | extraction_notes                  | text                        | YES
+ medications                       | grouping_strategy                 | text                        | YES
+ medications                       | discontinuation_source            | text                        | YES
+ medications                       | original_order_id                 | integer                     | YES
+ medications                       | consolidation_reasoning           | text                        | YES
+ medications                       | merged_ids                        | ARRAY                       | YES
+ medications                       | visit_history                     | jsonb                       | YES
+ medications                       | created_at                        | timestamp without time zone | YES
+ medications                       | updated_at                        | timestamp without time zone | YES
+ migration_invitations             | id                                | integer                     | NO
+ migration_invitations             | from_health_system_id             | integer                     | YES
+ migration_invitations             | to_health_system_id               | integer                     | YES
+ migration_invitations             | invitation_code                   | text                        | YES
+ migration_invitations             | status                            | text                        | YES
+ migration_invitations             | created_at                        | timestamp without time zone | YES
+ migration_invitations             | expires_at                        | timestamp without time zone | YES
+ newsletter_subscribers            | id                                | integer                     | NO
+ newsletter_subscribers            | email                             | text                        | NO
+ newsletter_subscribers            | name                              | text                        | YES
+ newsletter_subscribers            | subscribed_at                     | timestamp without time zone | YES
+ newsletter_subscribers            | unsubscribed_at                   | timestamp without time zone | YES
+ newsletter_subscribers            | preferences                       | jsonb                       | YES
+ newsletter_subscribers            | source                            | text                        | YES
+ orders                            | id                                | integer                     | NO
+ orders                            | patient_id                        | integer                     | NO
+ orders                            | encounter_id                      | integer                     | NO
+ orders                            | provider_id                       | integer                     | NO
+ orders                            | order_type                        | character varying           | NO
+ orders                            | order_date                        | timestamp without time zone | YES
+ orders                            | priority                          | character varying           | YES
+ orders                            | status                            | character varying           | YES
+ orders                            | medication_name                   | character varying           | YES
+ orders                            | medication_dosage                 | character varying           | YES
+ orders                            | medication_route                  | character varying           | YES
+ orders                            | medication_frequency              | character varying           | YES
+ orders                            | medication_duration               | character varying           | YES
+ orders                            | medication_quantity               | integer                     | YES
+ orders                            | medication_refills                | integer                     | YES
+ orders                            | lab_test_name                     | character varying           | YES
+ orders                            | lab_test_code                     | character varying           | YES
+ orders                            | imaging_study_type                | character varying           | YES
+ orders                            | imaging_body_part                 | character varying           | YES
+ orders                            | referral_specialty                | character varying           | YES
+ orders                            | referral_reason                   | text                        | YES
+ orders                            | instructions                      | text                        | YES
+ orders                            | clinical_indication               | text                        | YES
+ orders                            | diagnosis_codes                   | ARRAY                       | YES
+ orders                            | created_at                        | timestamp without time zone | YES
+ orders                            | updated_at                        | timestamp without time zone | YES
+ orders                            | order_status                      | character varying           | YES
+ orders                            | reference_id                      | text                        | YES
+ orders                            | provider_notes                    | text                        | YES
+ orders                            | dosage                            | text                        | YES
+ orders                            | quantity                          | integer                     | YES
+ orders                            | sig                               | text                        | YES
+ orders                            | refills                           | integer                     | YES
+ orders                            | prescriber                        | text                        | YES
+ orders                            | prescriber_id                     | integer                     | YES
+ orders                            | ordered_by                        | integer                     | YES
+ orders                            | test_name                         | text                        | YES
+ orders                            | test_code                         | text                        | YES
+ orders                            | study_type                        | text                        | YES
+ orders                            | body_part                         | text                        | YES
+ orders                            | lab_name                          | text                        | YES
+ orders                            | ndc_code                          | text                        | YES
+ orders                            | form                              | text                        | YES
+ orders                            | route                             | text                        | YES
+ orders                            | frequency                         | text                        | YES
+ orders                            | duration                          | text                        | YES
+ orders                            | start_date                        | timestamp without time zone | YES
+ orders                            | end_date                          | timestamp without time zone | YES
+ orders                            | route_of_administration           | text                        | YES
+ orders                            | indication                        | text                        | YES
+ orders                            | imaging_order_id                  | integer                     | YES
+ orders                            | external_order_id                 | text                        | YES
+ orders                            | days_supply                       | integer                     | YES
+ orders                            | diagnosis_code                    | text                        | YES
+ orders                            | requires_prior_auth               | boolean                     | YES
+ orders                            | prior_auth_number                 | text                        | YES
+ orders                            | specimen_type                     | text                        | YES
+ orders                            | fasting_required                  | boolean                     | YES
+ orders                            | region                            | text                        | YES
+ orders                            | laterality                        | text                        | YES
+ orders                            | contrast_needed                   | boolean                     | YES
+ orders                            | specialty_type                    | text                        | YES
+ orders                            | provider_name                     | text                        | YES
+ orders                            | urgency                           | text                        | YES
+ orders                            | ordered_at                        | timestamp without time zone | YES
+ orders                            | approved_by                       | integer                     | YES
+ orders                            | approved_at                       | timestamp without time zone | YES
+ orders                            | quantity_unit                     | text                        | YES
+ organizations                     | id                                | integer                     | NO
+ organizations                     | name                              | character varying           | NO
+ organizations                     | type                              | character varying           | YES
+ organizations                     | address                           | character varying           | YES
+ organizations                     | city                              | character varying           | YES
+ organizations                     | state                             | character varying           | YES
+ organizations                     | zip_code                          | character varying           | YES
+ organizations                     | phone                             | character varying           | YES
+ organizations                     | website                           | character varying           | YES
+ organizations                     | created_at                        | timestamp with time zone    | YES
+ organizations                     | updated_at                        | timestamp with time zone    | YES
+ organizations                     | health_system_id                  | integer                     | YES
+ organizations                     | short_name                        | text                        | YES
+ organizations                     | organization_type                 | text                        | NO
+ organizations                     | region                            | text                        | YES
+ organizations                     | tax_id                            | text                        | YES
+ organizations                     | npi                               | text                        | YES
+ organizations                     | email                             | text                        | YES
+ organizations                     | active                            | boolean                     | YES
+ patient_physical_findings         | id                                | integer                     | NO
+ patient_physical_findings         | patient_id                        | integer                     | NO
+ patient_physical_findings         | encounter_id                      | integer                     | YES
+ patient_physical_findings         | body_system                       | text                        | NO
+ patient_physical_findings         | finding                           | text                        | NO
+ patient_physical_findings         | severity                          | text                        | YES
+ patient_physical_findings         | laterality                        | text                        | YES
+ patient_physical_findings         | quality                           | text                        | YES
+ patient_physical_findings         | duration                          | text                        | YES
+ patient_physical_findings         | context                           | text                        | YES
+ patient_physical_findings         | associated_symptoms               | text                        | YES
+ patient_physical_findings         | provider_id                       | integer                     | YES
+ patient_physical_findings         | examined_at                       | timestamp without time zone | YES
+ patient_physical_findings         | is_normal                         | boolean                     | YES
+ patient_physical_findings         | requires_follow_up                | boolean                     | YES
+ patient_physical_findings         | follow_up_timeframe               | text                        | YES
+ patient_physical_findings         | created_at                        | timestamp without time zone | YES
+ patient_physical_findings         | updated_at                        | timestamp without time zone | YES
+ patients                          | id                                | integer                     | NO
+ patients                          | external_id                       | character varying           | YES
+ patients                          | first_name                        | character varying           | NO
+ patients                          | last_name                         | character varying           | NO
+ patients                          | middle_name                       | character varying           | YES
+ patients                          | date_of_birth                     | date                        | NO
+ patients                          | gender                            | character varying           | YES
+ patients                          | email                             | character varying           | YES
+ patients                          | phone                             | character varying           | YES
+ patients                          | phone_type                        | character varying           | YES
+ patients                          | address                           | character varying           | YES
+ patients                          | city                              | character varying           | YES
+ patients                          | state                             | character varying           | YES
+ patients                          | zip                               | character varying           | YES
+ patients                          | insurance_provider                | character varying           | YES
+ patients                          | insurance_policy_number           | character varying           | YES
+ patients                          | insurance_group_number            | character varying           | YES
+ patients                          | emergency_contact_name            | character varying           | YES
+ patients                          | emergency_contact_phone           | character varying           | YES
+ patients                          | emergency_contact_relationship    | character varying           | YES
+ patients                          | preferred_language                | character varying           | YES
+ patients                          | race                              | character varying           | YES
+ patients                          | ethnicity                         | character varying           | YES
+ patients                          | created_at                        | timestamp without time zone | YES
+ patients                          | updated_at                        | timestamp without time zone | YES
+ patients                          | health_system_id                  | integer                     | YES
+ patients                          | mrn                               | text                        | YES
+ patients                          | contact_number                    | text                        | YES
+ patients                          | emergency_contact                 | jsonb                       | YES
+ patients                          | preferred_location_id             | integer                     | YES
+ patients                          | primary_provider_id               | integer                     | YES
+ patients                          | insurance_primary                 | text                        | YES
+ patients                          | insurance_secondary               | text                        | YES
+ patients                          | policy_number                     | text                        | YES
+ patients                          | group_number                      | text                        | YES
+ patients                          | assistant_id                      | text                        | YES
+ patients                          | assistant_thread_id               | text                        | YES
+ patients                          | last_chart_summary                | text                        | YES
+ patients                          | chart_last_updated                | timestamp without time zone | YES
+ patients                          | active_problems                   | jsonb                       | YES
+ patients                          | critical_alerts                   | jsonb                       | YES
+ patients                          | data_origin_type                  | text                        | YES
+ patients                          | original_facility_id              | integer                     | YES
+ patients                          | created_by_provider_id            | integer                     | YES
+ patients                          | creation_context                  | text                        | YES
+ patients                          | derivative_work_note              | text                        | YES
+ patients                          | migration_consent                 | jsonb                       | YES
+ patients                          | profile_photo_filename            | text                        | YES
+ phi_access_logs                   | id                                | integer                     | NO
+ phi_access_logs                   | user_id                           | integer                     | YES
+ phi_access_logs                   | patient_id                        | integer                     | YES
+ phi_access_logs                   | action                            | text                        | YES
+ phi_access_logs                   | resource_type                     | text                        | YES
+ phi_access_logs                   | resource_id                       | integer                     | YES
+ phi_access_logs                   | ip_address                        | text                        | YES
+ phi_access_logs                   | user_agent                        | text                        | YES
+ phi_access_logs                   | created_at                        | timestamp without time zone | YES
+ phi_access_logs                   | user_name                         | text                        | YES
+ phi_access_logs                   | user_role                         | text                        | YES
+ phi_access_logs                   | health_system_id                  | integer                     | YES
+ phi_access_logs                   | location_id                       | integer                     | YES
+ phi_access_logs                   | patient_name                      | text                        | YES
+ phi_access_logs                   | access_method                     | text                        | YES
+ phi_access_logs                   | http_method                       | text                        | YES
+ phi_access_logs                   | api_endpoint                      | text                        | YES
+ phi_access_logs                   | session_id                        | text                        | YES
+ phi_access_logs                   | success                           | boolean                     | YES
+ phi_access_logs                   | error_message                     | text                        | YES
+ phi_access_logs                   | response_time                     | integer                     | YES
+ phi_access_logs                   | access_reason                     | text                        | YES
+ phi_access_logs                   | emergency_access                  | boolean                     | YES
+ phi_access_logs                   | break_glass_reason                | text                        | YES
+ phi_access_logs                   | accessed_at                       | timestamp without time zone | YES
+ problem_rank_overrides            | id                                | integer                     | NO
+ problem_rank_overrides            | user_id                           | integer                     | NO
+ problem_rank_overrides            | patient_id                        | integer                     | NO
+ problem_rank_overrides            | problem_id                        | integer                     | NO
+ problem_rank_overrides            | custom_rank                       | integer                     | NO
+ problem_rank_overrides            | reason                            | text                        | YES
+ problem_rank_overrides            | created_at                        | timestamp without time zone | YES
+ problem_rank_overrides            | updated_at                        | timestamp without time zone | YES
+ scheduling_ai_factors             | id                                | integer                     | NO
+ scheduling_ai_factors             | category                          | character varying           | NO
+ scheduling_ai_factors             | factor_name                       | character varying           | NO
+ scheduling_ai_factors             | description                       | text                        | YES
+ scheduling_ai_factors             | data_type                         | character varying           | NO
+ scheduling_ai_factors             | is_enabled                        | boolean                     | YES
+ scheduling_ai_factors             | default_weight                    | numeric                     | YES
+ scheduling_ai_factors             | created_at                        | timestamp with time zone    | YES
+ scheduling_ai_factors             | updated_at                        | timestamp with time zone    | YES
+ scheduling_ai_weights             | id                                | integer                     | NO
+ scheduling_ai_weights             | provider_id                       | integer                     | YES
+ scheduling_ai_weights             | location_id                       | integer                     | YES
+ scheduling_ai_weights             | health_system_id                  | integer                     | YES
+ scheduling_ai_weights             | created_by                        | integer                     | NO
+ scheduling_ai_weights             | factor_name                       | character varying           | NO
+ scheduling_ai_weights             | weight                            | numeric                     | NO
+ scheduling_ai_weights             | is_active                         | boolean                     | YES
+ scheduling_ai_weights             | custom_parameters                 | jsonb                       | YES
+ scheduling_ai_weights             | created_at                        | timestamp with time zone    | YES
+ scheduling_ai_weights             | updated_at                        | timestamp with time zone    | YES
+ session                           | sid                               | character varying           | NO
+ session                           | sess                              | json                        | NO
+ session                           | expire                            | timestamp without time zone | NO
+ social_history                    | id                                | integer                     | NO
+ social_history                    | patient_id                        | integer                     | NO
+ social_history                    | category                          | text                        | NO
+ social_history                    | details                           | text                        | NO
+ social_history                    | status                            | text                        | YES
+ social_history                    | start_date                        | date                        | YES
+ social_history                    | end_date                          | date                        | YES
+ social_history                    | quantity                          | text                        | YES
+ social_history                    | frequency                         | text                        | YES
+ social_history                    | notes                             | text                        | YES
+ social_history                    | source_type                       | text                        | YES
+ social_history                    | source_confidence                 | numeric                     | YES
+ social_history                    | extracted_from_attachment_id      | integer                     | YES
+ social_history                    | extraction_notes                  | text                        | YES
+ social_history                    | risk_level                        | text                        | YES
+ social_history                    | counseling_provided               | boolean                     | YES
+ social_history                    | consolidation_reasoning           | text                        | YES
+ social_history                    | merged_ids                        | ARRAY                       | YES
+ social_history                    | visit_history                     | jsonb                       | YES
+ social_history                    | created_at                        | timestamp without time zone | YES
+ social_history                    | updated_at                        | timestamp without time zone | YES
+ surgical_history                  | id                                | integer                     | NO
+ surgical_history                  | patient_id                        | integer                     | NO
+ surgical_history                  | procedure_name                    | text                        | NO
+ surgical_history                  | procedure_date                    | date                        | YES
+ surgical_history                  | surgeon                           | text                        | YES
+ surgical_history                  | facility                          | text                        | YES
+ surgical_history                  | indication                        | text                        | YES
+ surgical_history                  | findings                          | text                        | YES
+ surgical_history                  | complications                     | text                        | YES
+ surgical_history                  | anesthesia_type                   | text                        | YES
+ surgical_history                  | implants_used                     | text                        | YES
+ surgical_history                  | pathology_results                 | text                        | YES
+ surgical_history                  | recovery_notes                    | text                        | YES
+ surgical_history                  | source_type                       | text                        | YES
+ surgical_history                  | source_confidence                 | numeric                     | YES
+ surgical_history                  | extracted_from_attachment_id      | integer                     | YES
+ surgical_history                  | extraction_notes                  | text                        | YES
+ surgical_history                  | procedure_code                    | text                        | YES
+ surgical_history                  | laterality                        | text                        | YES
+ surgical_history                  | approach                          | text                        | YES
+ surgical_history                  | duration_minutes                  | integer                     | YES
+ surgical_history                  | estimated_blood_loss_ml           | integer                     | YES
+ surgical_history                  | specimens_removed                 | text                        | YES
+ surgical_history                  | drains_placed                     | text                        | YES
+ surgical_history                  | post_op_diagnosis                 | text                        | YES
+ surgical_history                  | discharge_instructions            | text                        | YES
+ surgical_history                  | follow_up_required                | boolean                     | YES
+ surgical_history                  | follow_up_date                    | date                        | YES
+ surgical_history                  | consolidation_reasoning           | text                        | YES
+ surgical_history                  | merged_ids                        | ARRAY                       | YES
+ surgical_history                  | visit_history                     | jsonb                       | YES
+ surgical_history                  | created_at                        | timestamp without time zone | YES
+ surgical_history                  | updated_at                        | timestamp without time zone | YES
+ user_locations                    | id                                | integer                     | NO
+ user_locations                    | user_id                           | integer                     | NO
+ user_locations                    | location_id                       | integer                     | NO
+ user_locations                    | is_primary                        | boolean                     | YES
+ user_locations                    | permissions                       | jsonb                       | YES
+ user_locations                    | created_at                        | timestamp with time zone    | YES
+ user_locations                    | updated_at                        | timestamp with time zone    | YES
+ user_locations                    | role_at_location                  | text                        | YES
+ user_note_preferences             | id                                | integer                     | NO
+ user_note_preferences             | user_id                           | integer                     | NO
+ user_note_preferences             | last_selected_note_type           | character varying           | YES
+ user_note_preferences             | default_chief_complaint           | text                        | YES
+ user_note_preferences             | default_physical_exam             | text                        | YES
+ user_note_preferences             | default_ros_negatives             | text                        | YES
+ user_note_preferences             | default_assessment_style          | character varying           | YES
+ user_note_preferences             | use_voice_commands                | boolean                     | YES
+ user_note_preferences             | auto_save_interval                | integer                     | YES
+ user_note_preferences             | show_template_suggestions         | boolean                     | YES
+ user_note_preferences             | include_time_stamps               | boolean                     | YES
+ user_note_preferences             | default_note_font_size            | integer                     | YES
+ user_note_preferences             | default_macro_set                 | character varying           | YES
+ user_note_preferences             | preferred_exam_order              | ARRAY                       | YES
+ user_note_preferences             | custom_normal_exams               | jsonb                       | YES
+ user_note_preferences             | abbreviation_expansions           | jsonb                       | YES
+ user_note_preferences             | quick_phrases                     | jsonb                       | YES
+ user_note_preferences             | billing_reminder_enabled          | boolean                     | YES
+ user_note_preferences             | sign_reminder_minutes             | integer                     | YES
+ user_note_preferences             | created_at                        | timestamp without time zone | YES
+ user_note_preferences             | updated_at                        | timestamp without time zone | YES
+ user_problem_list_preferences     | id                                | integer                     | NO
+ user_problem_list_preferences     | user_id                           | integer                     | NO
+ user_problem_list_preferences     | show_resolved_problems            | boolean                     | YES
+ user_problem_list_preferences     | show_inactive_problems            | boolean                     | YES
+ user_problem_list_preferences     | sort_by                           | text                        | YES
+ user_problem_list_preferences     | group_by_category                 | boolean                     | YES
+ user_problem_list_preferences     | highlight_recent_changes          | boolean                     | YES
+ user_problem_list_preferences     | recent_change_days                | integer                     | YES
+ user_problem_list_preferences     | max_problems_displayed            | integer                     | YES
+ user_problem_list_preferences     | created_at                        | timestamp without time zone | YES
+ user_problem_list_preferences     | updated_at                        | timestamp without time zone | YES
+ user_session_locations            | id                                | integer                     | NO
+ user_session_locations            | user_id                           | integer                     | NO
+ user_session_locations            | location_id                       | integer                     | NO
+ user_session_locations            | session_id                        | character varying           | YES
+ user_session_locations            | is_primary                        | boolean                     | YES
+ user_session_locations            | permissions                       | jsonb                       | YES
+ user_session_locations            | remembered                        | boolean                     | YES
+ user_session_locations            | created_at                        | timestamp with time zone    | YES
+ user_session_locations            | updated_at                        | timestamp with time zone    | YES
+ user_session_locations            | is_active                         | boolean                     | YES
+ user_session_locations            | remember_selection                | boolean                     | YES
+ user_session_locations            | selected_at                       | timestamp without time zone | YES
+ users                             | id                                | integer                     | NO
+ users                             | username                          | character varying           | NO
+ users                             | email                             | character varying           | YES
+ users                             | password                          | character varying           | NO
+ users                             | first_name                        | character varying           | YES
+ users                             | last_name                         | character varying           | YES
+ users                             | role                              | character varying           | YES
+ users                             | npi                               | character varying           | YES
+ users                             | credentials                       | character varying           | YES
+ users                             | specialties                       | ARRAY                       | YES
+ users                             | license_number                    | character varying           | YES
+ users                             | license_state                     | character varying           | YES
+ users                             | bio                               | text                        | YES
+ users                             | is_active                         | boolean                     | YES
+ users                             | last_login                        | timestamp without time zone | YES
+ users                             | profile_image_url                 | character varying           | YES
+ users                             | created_at                        | timestamp without time zone | YES
+ users                             | updated_at                        | timestamp without time zone | YES
+ users                             | health_system_id                  | integer                     | YES
+ users                             | email_verified                    | boolean                     | YES
+ users                             | email_verification_token          | text                        | YES
+ users                             | email_verification_expires        | timestamp without time zone | YES
+ users                             | mfa_enabled                       | boolean                     | YES
+ users                             | mfa_secret                        | text                        | YES
+ users                             | account_status                    | text                        | YES
+ users                             | failed_login_attempts             | integer                     | YES
+ users                             | account_locked_until              | timestamp without time zone | YES
+ users                             | require_password_change           | boolean                     | YES
+ users                             | verification_status               | text                        | YES
+ users                             | verified_with_key_id              | integer                     | YES
+ users                             | verified_at                       | timestamp without time zone | YES
+ users                             | active                            | boolean                     | YES
+ vitals                            | id                                | integer                     | NO
+ vitals                            | patient_id                        | integer                     | NO
+ vitals                            | encounter_id                      | integer                     | YES
+ vitals                            | blood_pressure_systolic           | integer                     | YES
+ vitals                            | blood_pressure_diastolic          | integer                     | YES
+ vitals                            | heart_rate                        | integer                     | YES
+ vitals                            | respiratory_rate                  | integer                     | YES
+ vitals                            | temperature                       | numeric                     | YES
+ vitals                            | oxygen_saturation                 | integer                     | YES
+ vitals                            | weight                            | numeric                     | YES
+ vitals                            | height                            | numeric                     | YES
+ vitals                            | bmi                               | numeric                     | YES
+ vitals                            | recorded_at                       | timestamp without time zone | YES
+ vitals                            | recorded_by                       | integer                     | YES
+ vitals                            | notes                             | text                        | YES
+ vitals                            | pain_scale                        | integer                     | YES
+ vitals                            | blood_glucose                     | integer                     | YES
+ vitals                            | source_type                       | text                        | YES
+ vitals                            | source_confidence                 | numeric                     | YES
+ vitals                            | extracted_from_attachment_id      | integer                     | YES
+ vitals                            | extraction_notes                  | text                        | YES
+ vitals                            | consolidation_reasoning           | text                        | YES
+ vitals                            | merged_ids                        | ARRAY                       | YES
+ vitals                            | visit_history                     | jsonb                       | YES
+ vitals                            | created_at                        | timestamp without time zone | YES
+ vitals                            | updated_at                        | timestamp without time zone | YES
+ vitals                            | entry_type                        | text                        | YES
+ vitals                            | systolic                          | integer                     | YES
+ vitals                            | diastolic                         | integer                     | YES
+ vitals                            | systolic_bp                       | integer                     | YES
+ vitals                            | diastolic_bp                      | integer                     | YES
+ vitals                            | alerts                            | jsonb                       | YES
+ vitals                            | parsed_from_text                  | text                        | YES
+ vitals                            | processing_notes                  | text                        | YES
+ vitals                            | original_text                     | text                        | YES
+ webauthn_credentials              | id                                | integer                     | NO
+ webauthn_credentials              | user_id                           | integer                     | YES
+ webauthn_credentials              | credential_id                     | text                        | NO
+ webauthn_credentials              | public_key                        | text                        | NO
+ webauthn_credentials              | counter                           | bigint                      | YES
+ webauthn_credentials              | device_type                       | text                        | YES
+ webauthn_credentials              | transports                        | ARRAY                       | YES
+ webauthn_credentials              | created_at                        | timestamp without time zone | YES
+ webauthn_credentials              | last_used_at                      | timestamp without time zone | YES
+ webauthn_credentials              | registered_device                 | text                        | YES
+ webauthn_credentials              | device_name                       | text                        | YES
+(1065 rows)
+

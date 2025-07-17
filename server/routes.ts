@@ -986,8 +986,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Convert empty strings to null for proper database handling
+      const cleanedBody = Object.fromEntries(
+        Object.entries(req.body).map(([key, value]) => [
+          key,
+          value === '' ? null : value
+        ])
+      );
+
       const patientDataWithHealthSystem = {
-        ...req.body,
+        ...cleanedBody,
         healthSystemId,
         createdByProviderId: userId,
         dataOriginType: "emr_direct",
