@@ -148,7 +148,7 @@ export default function PaymentPage() {
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5" />
-                  <span className="font-semibold">30-Day Free Trial</span>
+                  <span className="font-semibold">14-Day Free Trial</span>
                 </div>
                 <p className="text-sm mt-1">No charges today. Cancel anytime.</p>
               </div>

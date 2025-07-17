@@ -161,9 +161,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
-- **STRIPE INTEGRATION**: Modified Stripe checkout to charge correct $149 amount for Personal EMR tier
+- **TRIAL PERIOD CHANGE**: Updated free trial period from 30 days to 14 days for both tiers
+- **STRIPE INTEGRATION**: Modified Stripe checkout to charge correct $149 amount for Personal EMR tier and updated trial period
 - **UI CONSISTENCY**: Fixed all pricing displays to show consistent $149 pricing for solo practitioners
 - **CLARITY IMPROVEMENT**: Updated auth page tooltip to clearly distinguish between solo provider pricing ($149/month) and Enterprise per-user pricing model
+- **PRICING PAGE**: Created comprehensive pricing page with infographic showing AI Scribe vs Enterprise EMR features
 
 ### Blog Generation Model Upgrade (January 17, 2025)
 - **GPT Model Update**: Upgraded blog generation system from GPT-4o to GPT-4.1 for improved content quality

@@ -1288,20 +1288,22 @@ export default function AuthPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-help transition-all hover:bg-white/15">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                        <Building2 className="h-5 w-5 text-navy-blue-900" />
+                  <Link href="/pricing">
+                    <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-pointer transition-all hover:bg-white/15">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-navy-blue-900" />
+                        </div>
+                        <h3 className="font-semibold text-left">One Price, Everything</h3>
                       </div>
-                      <h3 className="font-semibold text-left">One Price, Everything</h3>
+                      <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                        <li>• AI scribe + EMR together</li>
+                        <li>• No separate subscriptions</li>
+                        <li>• Starting at $149/month</li>
+                        <li>• See pricing details →</li>
+                      </ul>
                     </div>
-                    <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                      <li>• AI scribe + EMR together</li>
-                      <li>• No separate subscriptions</li>
-                      <li>• Starting at $149/month</li>
-                      <li>• See pricing details →</li>
-                    </ul>
-                  </div>
+                  </Link>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
                   <div className="space-y-2">

@@ -40,6 +40,7 @@ import SystemAdminTestPatients from "@/pages/system-admin-test-patients";
 import BlogPage from "@/pages/blog";
 import BlogArticlePage from "@/pages/blog-article";
 import AdminBlogManagement from "@/pages/admin-blog-management";
+import Pricing from "@/pages/pricing";
 
 import NotFound from "@/pages/not-found";
 
@@ -87,6 +88,9 @@ function Router() {
       {/* Public Blog Routes */}
       <Route path="/blog" component={BlogPage} />
       <Route path="/blog/:slug" component={BlogArticlePage} />
+      
+      {/* Public Pricing Page */}
+      <Route path="/pricing" component={Pricing} />
       
       <Route component={NotFound} />
     </Switch>

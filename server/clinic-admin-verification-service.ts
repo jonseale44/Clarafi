@@ -679,9 +679,9 @@ Keep recommendations concise and specific.
       taxId: verificationData.taxId,
       npi: verificationData.npiNumber,
       subscriptionTier: 2, // Start as enterprise
-      subscriptionStatus: 'trial', // 30-day trial period
+      subscriptionStatus: 'trial', // 14-day trial period
       subscriptionStartDate: new Date(),
-      subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      subscriptionEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
       primaryContact: `${verificationData.firstName} ${verificationData.lastName}`,
       email: verificationData.email,
       phone: verificationData.phone
@@ -803,12 +803,12 @@ Keep recommendations concise and specific.
               <h4 style="color: #003366; margin-top: 0;">Trial Period Information:</h4>
               <p>Your Enterprise EMR trial includes:</p>
               <ul>
-                <li>30-day free trial period</li>
+                <li>14-day free trial period</li>
                 <li>Full access to all Enterprise features</li>
                 <li>Unlimited providers and patients</li>
                 <li>Email and phone support</li>
               </ul>
-              <p>Your trial expires on: <strong>${new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong></p>
+              <p>Your trial expires on: <strong>${new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong></p>
             </div>
             
             <p style="margin-top: 30px;">

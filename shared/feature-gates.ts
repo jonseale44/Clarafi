@@ -18,14 +18,14 @@ export const TIER_PRICING = {
     annual: 1490, // 2 months free
     name: 'Personal EMR',
     description: 'Full documentation features for individual providers',
-    trialDays: 30,
+    trialDays: 14,
   },
   tier2: {
     monthly: 'custom', // Contact sales
     annual: 'custom',
     name: 'Enterprise EMR',
     description: 'Complete EMR with all integrations',
-    trialDays: 30,
+    trialDays: 14,
   }
 } as const;
 
