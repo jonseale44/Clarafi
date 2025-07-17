@@ -8,63 +8,9 @@ import { initializeSystemData } from "./system-initialization";
 
 const app = express();
 
-// Add VERY FIRST middleware to catch ALL requests
+// Simple request logging middleware
 app.use((req, res, next) => {
   console.log(`📍 [FIRST] ${req.method} ${req.url}`);
-  if (req.url.includes('webauthn') || req.method === 'POST') {
-    console.log('🚨 [CRITICAL WebAuthn/POST Request]:', {
-      method: req.method,
-      url: req.url,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl,
-      path: req.path,
-      contentType: req.get('content-type'),
-      contentLength: req.get('content-length'),
-      headers: req.headers,
-      rawHeaders: req.rawHeaders
-    });
-    
-    // Log raw body for POST requests
-    if (req.method === 'POST') {
-      let rawBody = '';
-      req.on('data', chunk => {
-        rawBody += chunk.toString();
-        console.log('📦 [POST Body Chunk]:', chunk.toString().substring(0, 100));
-      });
-      req.on('end', () => {
-        console.log('📦 [POST Body Complete]:', rawBody.substring(0, 200));
-      });
-    }
-  }
-  
-  // Add response interceptor for WebAuthn routes
-  if (req.url.includes('webauthn')) {
-    const originalSend = res.send;
-    const originalJson = res.json;
-    
-    res.send = function(data: any) {
-      console.log('📤 [WebAuthn Response] send() called:', {
-        url: req.url,
-        statusCode: res.statusCode,
-        contentType: res.getHeader('content-type'),
-        dataType: typeof data,
-        dataLength: data?.length || JSON.stringify(data).length,
-        dataPreview: typeof data === 'string' ? data.substring(0, 200) : JSON.stringify(data).substring(0, 200)
-      });
-      return originalSend.call(this, data);
-    };
-    
-    res.json = function(data: any) {
-      console.log('📤 [WebAuthn Response] json() called:', {
-        url: req.url,
-        statusCode: res.statusCode,
-        dataKeys: data ? Object.keys(data) : null,
-        dataPreview: JSON.stringify(data).substring(0, 200)
-      });
-      return originalJson.call(this, data);
-    };
-  }
-  
   next();
 });
 

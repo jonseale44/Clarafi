@@ -276,7 +276,7 @@ export function ScheduleAppointmentDialog({
       
       // Get the current user's ID as provider - use either passed providerId or current user
       const effectiveProviderId = providerId || currentUser?.id;
-      const selectedLocationId = locationId || locations[0]?.id;
+      const selectedLocationId = locationId || locations[0]?.id || 1; // Default to 1 if no locations
       
       if (!effectiveProviderId) {
         toast({

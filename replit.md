@@ -195,6 +195,14 @@ Preferred communication style: Simple, everyday language.
 - **Keywords Section**: Updated badge styling with custom colors and improved spacing
 - **Inter Font Configuration**: Added Inter font to Tailwind config and imported via Google Fonts CDN
 
+### Critical Schema Drift Issue - Appointments Table FIXED (January 17, 2025)
+- **RECURRING PROBLEM**: Despite extensive database schema fixes, appointments table was still missing critical columns causing scheduling failures
+- **ROOT CAUSE**: Replit rollbacks only affect code/schema.ts but NOT database structure, causing persistent schema drift
+- **COLUMNS ADDED**: duration, patient_visible_duration, and 40+ other appointment-related columns
+- **LOCATION FIX**: Made locationId optional in scheduling form (defaults to 1) since many providers don't have locations configured
+- **USER FRUSTRATION**: After hours of database fixes, appointments table issues persisted - extremely frustrating recurring problem
+- **LESSON LEARNED**: Always verify actual database structure, not just schema.ts, after any rollback or major changes
+
 ### Database Import Fix for Deployment COMPLETED (January 17, 2025)
 - **FIXED DEPLOYMENT BLOCKING ERROR**: Resolved critical import issue preventing successful deployment
 - **DB IMPORT CORRECTIONS**: Fixed all incorrect imports of 'db' from 'shared/schema.ts' to correct 'server/db.ts' location
