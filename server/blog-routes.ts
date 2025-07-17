@@ -379,8 +379,9 @@ router.get("/api/admin/blog/generation-queue", requireAuth, async (req: Request,
 
 // Generate article using AI
 router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Request, res: Response) => {
+  const { queueId } = req.params; // Move queueId outside try block
+  
   try {
-    const { queueId } = req.params;
     console.log('🚀 [Blog API] Starting article generation for queue ID:', queueId);
     const queueItem = await storage.getArticleGenerationQueue();
     const item = queueItem.find(q => q.id === parseInt(queueId));
@@ -435,7 +436,9 @@ router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Reques
     7. No AI disclosure - articles are attributed to "Clarafi Team"
     8. Include a compelling meta description (155 characters max)
     9. Suggest 5-7 relevant keywords
-    10. Format with clear headings and subheadings using Markdown`;
+    10. Format with clear headings and subheadings using Markdown
+    
+    Please respond in JSON format with the following structure.`;
     
     const userPrompt = `Write a comprehensive article about: ${item.topic || `${item.category} for ${item.targetAudience}`}
     
@@ -443,12 +446,14 @@ router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Reques
     Keywords to include: ${item.keywords?.join(', ') || 'EMR, healthcare technology, clinical efficiency'}
     ${item.competitorMentions?.length ? `Competitors to mention: ${item.competitorMentions.join(', ')}` : ''}
     
-    Format:
-    - Title: Compelling, SEO-friendly title
-    - Meta Description: 155 characters max
-    - Keywords: Array of 5-7 relevant keywords
-    - Content: Full article with markdown formatting
-    - Excerpt: 2-3 sentence summary`;
+    Return the response as a JSON object with the following format:
+    {
+      "title": "Compelling, SEO-friendly title",
+      "metaDescription": "155 characters max",
+      "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
+      "content": "Full article with markdown formatting",
+      "excerpt": "2-3 sentence summary"
+    }`;
     
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -492,7 +497,7 @@ router.post("/api/admin/blog/generate/:queueId", requireAuth, async (req: Reques
   } catch (error) {
     console.error("Error generating article:", error);
     
-    // Mark as failed
+    // Mark as failed - now queueId is accessible
     await storage.updateArticleGenerationQueueItem(parseInt(queueId), {
       status: "failed",
       error: error.message
