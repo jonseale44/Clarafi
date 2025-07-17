@@ -159,6 +159,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Blog Generation Model Upgrade (January 17, 2025)
+- **GPT Model Update**: Upgraded blog generation system from GPT-4o to GPT-4.1 for improved content quality
+- **Max Tokens Increase**: Increased max tokens from 4,000 to 10,000 to allow for more comprehensive articles
+- **Applied To**: Both article generation and article revision endpoints now use GPT-4.1 with 10,000 max tokens
+
 ### Blog Article Management System Enhancements (January 17, 2025)
 - **Delete Functionality Enhanced**: System administrators can now delete both published and review articles from the admin blog management interface
 - **Delete Button UI**: Added loading states with spinning RefreshCw icon while deletion is in progress
