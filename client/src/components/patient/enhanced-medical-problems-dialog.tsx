@@ -264,7 +264,7 @@ export function EnhancedMedicalProblemsDialog({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem saved successfully" });
       onClose();
     },

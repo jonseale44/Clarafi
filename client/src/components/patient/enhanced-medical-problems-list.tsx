@@ -147,7 +147,7 @@ export function EnhancedMedicalProblemsList({
 
   // Load medical problems data using unified API
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
-    queryKey: ['/api/medical-problems', patientId],
+    queryKey: [`/api/patients/${patientId}/medical-problems`],
     enabled: !!patientId,
   });
 
@@ -474,7 +474,7 @@ export function EnhancedMedicalProblemsList({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem deleted successfully" });
     },
     onError: (error: Error) => {
@@ -505,7 +505,7 @@ export function EnhancedMedicalProblemsList({
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/medical-problems', patientId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem marked as resolved" });
     },
     onError: (error: Error) => {
