@@ -1,0 +1,51 @@
+t-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9) {
+  length: 108,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '128',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+🔄 [UnifiedSurgicalHistory] Found 0 existing surgical procedures for patient 11
+[Chart Service] Fetching chart data for patient 11
+👨‍👩‍👧‍👦 [UnifiedFamilyHistory] Error in processUnified: error: column "family_member" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedFamilyHistoryParser.getExistingFamilyHistory (/home/runner/workspace/server/unified-family-history-parser.ts:213:12)
+    at async UnifiedFamilyHistoryParser.processUnified (/home/runner/workspace/server/unified-family-history-parser.ts:116:9)
+    at async AttachmentChartProcessor.processDocumentForFamilyHistory (/home/runner/workspace/server/attachment-chart-processor.ts:701:22)
+    at async Promise.allSettled (index 3)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9) {
+  length: 113,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '28',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}

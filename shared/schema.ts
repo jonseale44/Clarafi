@@ -1027,7 +1027,6 @@ export const appointments = pgTable("appointments", {
   
   // Additional orphaned columns from database
   actualDuration: integer("actual_duration"),
-  appointmentDate: date("appointment_date"), // Added missing appointment_date
   aiPredictedDuration: integer("ai_predicted_duration"),
   billingNotes: text("billing_notes"),
   cancellationReason: text("cancellation_reason"),
@@ -1338,6 +1337,7 @@ export const surgicalHistory = pgTable("surgical_history", {
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'operative_report', 'discharge_summary', 'imported_records'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
+  confidence: decimal("confidence", { precision: 3, scale: 2 }), // Overall confidence score for the surgical history entry
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
@@ -1462,7 +1462,6 @@ export const vitals = pgTable("vitals", {
   
   // Additional data
   notes: text("notes"),
-  alerts: text("alerts").array(),
   parsedFromText: boolean("parsed_from_text").default(false),
   originalText: text("original_text"),
   processingNotes: text("processing_notes"),
