@@ -132,6 +132,7 @@ export const locations = pgTable("locations", {
   city: text("city").notNull(),
   state: text("state").notNull(),
   zipCode: text("zip_code").notNull(),
+  zip: text("zip"), // Legacy duplicate of zip_code
   
   // Contact
   phone: text("phone"),
@@ -161,6 +162,7 @@ export const locations = pgTable("locations", {
   
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // User-Location Associations - Which providers work at which locations
@@ -232,6 +234,12 @@ export const users = pgTable("users", {
   credentials: text("credentials"),
   specialties: text("specialties").array(),
   licenseNumber: text("license_number"),
+  licenseState: text("license_state"), // State where license is valid
+  
+  // Additional orphaned columns from database
+  bio: text("bio"), // Professional biography
+  profileImageUrl: text("profile_image_url"), // User profile picture URL
+  isActive: boolean("is_active").default(true), // Legacy duplicate of active field
   
   // Email verification
   emailVerified: boolean("email_verified").default(false),
@@ -254,6 +262,7 @@ export const users = pgTable("users", {
   
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // User Interface Preferences
@@ -456,12 +465,32 @@ export const patients = pgTable("patients", {
   
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
+  middleName: text("middle_name"), // Middle name or initial
   dateOfBirth: date("date_of_birth").notNull(),
   gender: text("gender").notNull(),
   contactNumber: text("contact_number"),
   email: text("email"),
   address: text("address"),
+  
+  // Additional orphaned address fields
+  city: text("city"),
+  state: text("state"),
+  zip: text("zip"), // Legacy zip code field
+  
+  // Contact details
+  phone: text("phone"), // Legacy duplicate of contactNumber
+  phoneType: text("phone_type"), // mobile, home, work
+  
+  // Emergency contact - expanded fields
   emergencyContact: text("emergency_contact"),
+  emergencyContactName: text("emergency_contact_name"),
+  emergencyContactPhone: text("emergency_contact_phone"),
+  emergencyContactRelationship: text("emergency_contact_relationship"),
+  
+  // Demographics and preferences
+  preferredLanguage: text("preferred_language").default("English"),
+  race: text("race"),
+  ethnicity: text("ethnicity"),
   
   // Location Associations
   preferredLocationId: integer("preferred_location_id").references(() => locations.id), // Patient's home/primary location
@@ -474,6 +503,14 @@ export const patients = pgTable("patients", {
   // Insurance Fields
   policyNumber: text("policy_number"),
   groupNumber: text("group_number"),
+  insuranceProvider: text("insurance_provider"), // Legacy insurance provider name
+  insuranceVerified: boolean("insurance_verified").default(false), // Insurance verification status
+  
+  // External system reference
+  externalId: text("external_id"), // External system patient ID
+  
+  // Consent tracking  
+  consentGiven: boolean("consent_given").default(false), // General consent flag
   
   // Voice workflow optimization
   assistantId: text("assistant_id"), // Patient-specific OpenAI assistant ID
@@ -984,6 +1021,48 @@ export const appointments = pgTable("appointments", {
   verifiedBy: integer("verified_by").references(() => users.id),
   copayAmount: decimal("copay_amount", { precision: 10, scale: 2 }),
   
+  // Additional orphaned columns from database
+  actualDuration: integer("actual_duration"),
+  useAiScheduling: boolean("use_ai_scheduling").default(true),
+  resourceRequirements: jsonb("resource_requirements").default([]),
+  tags: text("tags").array(),
+  insuranceVerificationNotes: text("insurance_verification_notes"),
+  copayCollected: boolean("copay_collected").default(false),
+  formsCompleted: boolean("forms_completed").default(false),
+  vitalSignsTaken: boolean("vital_signs_taken").default(false),
+  roomNumber: text("room_number"),
+  intakeCompletedAt: timestamp("intake_completed_at"),
+  providerReadyAt: timestamp("provider_ready_at"),
+  visitCompletedAt: timestamp("visit_completed_at"),
+  noShowReason: text("no_show_reason"),
+  lateCancellationReason: text("late_cancellation_reason"),
+  rescheduledFrom: integer("rescheduled_from"),
+  rescheduledReason: text("rescheduled_reason"),
+  parentAppointmentId: integer("parent_appointment_id"),
+  recurrenceRule: text("recurrence_rule"),
+  recurrenceExceptions: text("recurrence_exceptions").array(),
+  reminderSent: boolean("reminder_sent").default(false),
+  reminderSentAt: timestamp("reminder_sent_at"),
+  confirmationSent: boolean("confirmation_sent").default(false),
+  confirmationSentAt: timestamp("confirmation_sent_at"),
+  patientConfirmed: boolean("patient_confirmed").default(false),
+  patientConfirmedAt: timestamp("patient_confirmed_at"),
+  waitListPriority: integer("wait_list_priority"),
+  referringProvider: text("referring_provider"),
+  referralReason: text("referral_reason"),
+  interpreterNeeded: boolean("interpreter_needed").default(false),
+  interpreterLanguage: text("interpreter_language"),
+  wheelchairAccessible: boolean("wheelchair_accessible").default(false),
+  specialInstructions: text("special_instructions"),
+  preAppointmentNotes: text("pre_appointment_notes"),
+  postAppointmentNotes: text("post_appointment_notes"),
+  billingNotes: text("billing_notes"),
+  chartReviewed: boolean("chart_reviewed").default(false),
+  labsReviewed: boolean("labs_reviewed").default(false),
+  imagesReviewed: boolean("images_reviewed").default(false),
+  medicationsReconciled: boolean("medications_reconciled").default(false),
+  problemsReviewed: boolean("problems_reviewed").default(false),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: integer("created_by").notNull().references(() => users.id),
@@ -1292,6 +1371,16 @@ export const allergies = pgTable("allergies", {
   drugClass: text("drug_class"), // For drug allergies (e.g., 'penicillins', 'sulfonamides')
   crossReactivity: text("cross_reactivity").array(), // Related allergens to avoid
   
+  // Additional orphaned columns from database
+  encounterId: integer("encounter_id").references(() => encounters.id), // Specific encounter where allergy was documented
+  notes: text("notes"), // Additional clinical notes
+  reactionType: text("reaction_type"), // Classification of reaction type
+  verifiedBy: integer("verified_by").references(() => users.id), // Who verified this allergy
+  verifiedAt: timestamp("verified_at"), // When was it verified
+  sourceTimestamp: timestamp("source_timestamp"), // When was the source data created
+  lastReaction: date("last_reaction"), // Legacy duplicate of lastReactionDate
+  mergedIds: integer("merged_ids").array(), // IDs of allergies that were merged into this one
+  
   // Source tracking for multi-source allergy data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'family_reported', 'imported_records', 'nkda_documented'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
@@ -1350,21 +1439,35 @@ export const vitals = pgTable("vitals", {
   respiratoryRate: integer("respiratory_rate"),
   painScale: integer("pain_scale"),
   
+  // Additional vital fields from database
+  bloodPressure: text("blood_pressure"), // Legacy text format
+  bloodGlucose: integer("blood_glucose"),
+  systolic: integer("systolic"), // Legacy duplicate fields
+  diastolic: integer("diastolic"),
+  bloodPressureSystolic: integer("blood_pressure_systolic"), // Legacy duplicates
+  bloodPressureDiastolic: integer("blood_pressure_diastolic"),
+  
   // Additional data
   notes: text("notes"),
   alerts: text("alerts").array(),
   parsedFromText: boolean("parsed_from_text").default(false),
   originalText: text("original_text"),
+  processingNotes: text("processing_notes"),
   
   // Source tracking for multi-source vital data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'device_imported', 'patient_reported', 'imported_records'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
-  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
-  enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id),
+  extractionNotes: text("extraction_notes"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: integer("merged_ids").array(),
+  visitHistory: jsonb("visit_history").default([]),
+  enteredBy: integer("entered_by").references(() => users.id),
   
+  // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Enhanced Medications with EMR-standard fields
