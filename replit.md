@@ -203,6 +203,18 @@ Preferred communication style: Simple, everyday language.
 - **USER FRUSTRATION**: After hours of database fixes, appointments table issues persisted - extremely frustrating recurring problem
 - **LESSON LEARNED**: Always verify actual database structure, not just schema.ts, after any rollback or major changes
 
+### Patient Attachments Column Naming Issue FIXED (January 17, 2025)
+- **UPLOAD FAILURE**: File uploads failing with "null value in column \"filename\" violates not-null constraint"
+- **ROOT CAUSE**: Database had duplicate columns with different naming conventions:
+  - `filename` (NOT NULL constraint) vs `file_name` (nullable)
+  - `original_filename` vs `original_file_name`
+- **SCHEMA MISMATCH**: Schema.ts uses camelCase (fileName) which maps to snake_case (file_name), but NOT NULL constraint was on wrong column
+- **FIX APPLIED**: 
+  - Removed NOT NULL constraint from duplicate `filename` column
+  - Applied NOT NULL constraint to correct `file_name` column
+  - Same fix for `original_file_name` column
+- **PRODUCTION IMPACT**: File uploads now work correctly without null constraint violations
+
 ### Database Import Fix for Deployment COMPLETED (January 17, 2025)
 - **FIXED DEPLOYMENT BLOCKING ERROR**: Resolved critical import issue preventing successful deployment
 - **DB IMPORT CORRECTIONS**: Fixed all incorrect imports of 'db' from 'shared/schema.ts' to correct 'server/db.ts' location
