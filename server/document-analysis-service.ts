@@ -56,12 +56,11 @@ export class DocumentAnalysisService {
       VALUES (${attachmentId}, 'queued', 0, 'document_analysis')
     `);
 
-    // Create processing record
-    await db.insert(attachmentExtractedContent).values({
-      attachmentId,
-      processingStatus: "pending",
-      contentType: "document", // Add required content_type
-    });
+    // Create processing record using raw SQL to handle snake_case columns
+    await db.execute(sql`
+      INSERT INTO attachment_extracted_content (attachment_id, processing_status, content_type)
+      VALUES (${attachmentId}, 'pending', 'document')
+    `);
 
     console.log(
       `📄 [DocumentAnalysis] Attachment ${attachmentId} queued for processing`,

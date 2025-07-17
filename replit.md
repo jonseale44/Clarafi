@@ -968,6 +968,13 @@ Preferred communication style: Simple, everyday language.
 - **ROOT CAUSE**: Database and schema.ts have diverged significantly - database represents production state while schema.ts contains fields that were never migrated to production
 - **STRATEGY**: Fixed queries to work with actual database structure rather than modifying production database
 
+### Critical Database Constraint Fixes COMPLETED (January 17, 2025)
+- **ALLERGIES TABLE FIX**: Made 'reaction' column nullable to allow NKDA (No Known Drug Allergies) documentation - fixed "null value in column 'reaction' violates not-null constraint" error
+- **DOCUMENT PROCESSING FIX**: Fixed attachment_extracted_content insert by using raw SQL with snake_case column names - fixed "null value in column 'content_type' violates not-null constraint" error
+- **SYSTEMATIC APPROACH**: Converted problematic Drizzle ORM queries to raw SQL throughout the codebase to handle snake_case vs camelCase column naming mismatches
+- **AFFECTED MODULES**: Fixed database queries in family history parser, orders table, provider scheduling patterns, and document analysis service
+- **PRODUCTION IMPACT**: Document uploads, AI scheduling, allergy documentation, and all patient chart sections now working without database errors
+
 ### Additional Database Column Fixes for Patient Scheduling COMPLETED (January 17, 2025)
 - **PATIENT SCHEDULING PATTERNS FIX**: Converted query to use raw SQL with snake_case columns (`avg_visit_duration`, `avg_duration_by_type`, `no_show_rate`, `avg_arrival_delta`) instead of camelCase from Drizzle ORM
 - **APPOINTMENT CONFLICT FIX**: Updated conflict check to use SQL expression for `appointment_date` column instead of `appointmentDate` which doesn't exist
