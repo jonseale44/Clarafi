@@ -135,7 +135,7 @@ export default function BlogArticlePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 font-inter">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
@@ -150,77 +150,100 @@ export default function BlogArticlePage() {
 
       {/* Article Content */}
       <article className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {article.featuredImage && (
-            <div className="h-96 rounded-t-lg overflow-hidden">
+            <div className="h-[28rem] overflow-hidden relative">
               <img 
                 src={article.featuredImage} 
                 alt={article.title}
                 className="w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
             </div>
           )}
           
-          <div className="p-8">
+          <div className="px-8 py-10 lg:px-12">
             {/* Article Header */}
-            <header className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Badge>{article.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</Badge>
-                <span className="text-sm text-gray-500">•</span>
-                <span className="text-sm text-gray-500">{article.targetAudience.replace(/_/g, ' ')}</span>
+            <header className="mb-10">
+              <div className="flex items-center gap-2 mb-6">
+                <Badge className="bg-[#003366]/10 text-[#003366] border-0 px-3 py-1 text-xs font-medium">
+                  {article.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </Badge>
+                <span className="text-sm text-gray-400">•</span>
+                <span className="text-sm text-gray-600 font-medium">{article.targetAudience.replace(/_/g, ' ')}</span>
               </div>
               
-              <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight tracking-tight text-gray-900">{article.title}</h1>
               
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center text-sm text-gray-600 space-x-4">
+              <div className="flex items-center justify-between flex-wrap gap-6">
+                <div className="flex items-center text-sm text-gray-500 space-x-6">
                   <div className="flex items-center">
-                    <User className="h-4 w-4 mr-1" />
-                    {article.authorName}
+                    <User className="h-4 w-4 mr-2 text-gray-400" />
+                    <span className="font-medium text-gray-700">{article.authorName}</span>
                   </div>
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {formatDate(article.publishedAt)}
+                    <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{formatDate(article.publishedAt)}</span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
-                    {article.readingTime} min read
+                    <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{article.readingTime} min read</span>
                   </div>
                   <div className="flex items-center">
-                    <Eye className="h-4 w-4 mr-1" />
-                    {article.viewCount} views
+                    <Eye className="h-4 w-4 mr-2 text-gray-400" />
+                    <span>{article.viewCount} views</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => shareArticle('twitter')}>
-                    <Twitter className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="hover:bg-gray-100" onClick={() => shareArticle('twitter')}>
+                    <Twitter className="h-4 w-4 text-gray-600" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => shareArticle('linkedin')}>
-                    <Linkedin className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="hover:bg-gray-100" onClick={() => shareArticle('linkedin')}>
+                    <Linkedin className="h-4 w-4 text-gray-600" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => shareArticle('facebook')}>
-                    <Facebook className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="hover:bg-gray-100" onClick={() => shareArticle('facebook')}>
+                    <Facebook className="h-4 w-4 text-gray-600" />
                   </Button>
                 </div>
               </div>
             </header>
 
-            <Separator className="my-8" />
+            <div className="my-10 border-t border-gray-200" />
 
             {/* Article Content */}
-            <div className="prose prose-lg max-w-none">
+            <div className="prose prose-lg max-w-none font-inter
+                        prose-headings:font-bold 
+                        prose-headings:tracking-tight
+                        prose-headings:text-gray-900
+                        prose-h1:text-2xl prose-h1:mb-6 prose-h1:mt-10 prose-h1:font-bold
+                        prose-h2:text-xl prose-h2:mb-4 prose-h2:mt-8 prose-h2:font-semibold
+                        prose-h3:text-lg prose-h3:mb-3 prose-h3:mt-6 prose-h3:font-medium
+                        prose-p:text-gray-600 prose-p:leading-7 prose-p:mb-5 prose-p:text-base
+                        prose-a:text-[#003366] prose-a:font-medium prose-a:no-underline hover:prose-a:underline
+                        prose-strong:text-gray-800 prose-strong:font-semibold
+                        prose-ul:my-5 prose-ul:space-y-2 prose-li:text-gray-600 prose-li:leading-7
+                        prose-ol:my-5 prose-ol:space-y-2
+                        prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
+                        prose-blockquote:border-l-4 prose-blockquote:border-[#003366]/30
+                        prose-blockquote:pl-6 prose-blockquote:py-4 prose-blockquote:my-6
+                        prose-blockquote:bg-gray-50 prose-blockquote:rounded-r-lg
+                        prose-blockquote:italic prose-blockquote:text-gray-700
+                        prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded-md
+                        prose-code:text-sm prose-code:font-mono
+                        prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-pre:p-5
+                        prose-hr:my-8 prose-hr:border-gray-200">
               <ReactMarkdown>{article.content}</ReactMarkdown>
             </div>
 
             {/* Keywords */}
             {article.keywords && article.keywords.length > 0 && (
               <>
-                <Separator className="my-8" />
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold">Keywords:</span>
+                <div className="my-10 border-t border-gray-200" />
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-sm font-semibold text-gray-700">Keywords:</span>
                   {article.keywords.map((keyword, index) => (
-                    <Badge key={index} variant="secondary">
+                    <Badge key={index} className="bg-gray-100 text-gray-700 border-0 px-3 py-1">
                       {keyword}
                     </Badge>
                   ))}
@@ -229,7 +252,7 @@ export default function BlogArticlePage() {
             )}
 
             {/* Comments Section */}
-            <Separator className="my-8" />
+            <div className="my-12 border-t border-gray-200" />
             
             <div className="mt-8">
               <h2 className="text-2xl font-bold mb-6">Comments ({comments.length})</h2>

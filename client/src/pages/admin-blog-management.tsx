@@ -245,8 +245,11 @@ export default function AdminBlogManagement() {
       const response = await fetch(`/api/admin/blog/articles/${articleId}`, {
         method: "DELETE",
       });
-      if (!response.ok) throw new Error("Failed to delete article");
-      return response.json();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete article");
+      }
+      return data;
     },
     onSuccess: () => {
       toast({
@@ -257,6 +260,13 @@ export default function AdminBlogManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=published"] });
       setSelectedArticle(null);
     },
+    onError: (error) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete article",
+        variant: "destructive"
+      });
+    }
   });
 
   const formatDate = (dateString: string) => {
@@ -499,8 +509,13 @@ export default function AdminBlogManagement() {
                           size="sm"
                           variant="destructive"
                           onClick={() => deleteArticleMutation.mutate(selectedArticle.id)}
+                          disabled={deleteArticleMutation.isPending}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {deleteArticleMutation.isPending ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
