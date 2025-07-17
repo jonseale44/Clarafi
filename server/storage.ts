@@ -662,8 +662,20 @@ export class DatabaseStorage implements IStorage {
 
   // Encounter management
   async getEncounter(id: number): Promise<Encounter | undefined> {
-    const [encounter] = await db.select().from(encounters).where(eq(encounters.id, id));
-    return encounter || undefined;
+    const result = await db.execute(sql`
+      SELECT * FROM encounters WHERE id = ${id}
+    `);
+    const encounter = result.rows[0];
+    // Map snake_case to camelCase for compatibility
+    if (encounter) {
+      return {
+        ...encounter,
+        providerId: encounter.provider_id,
+        patientId: encounter.patient_id,
+        // Keep other fields as-is since they might already be correct
+      } as Encounter;
+    }
+    return undefined;
   }
 
   async getPatientEncounters(patientId: number): Promise<Encounter[]> {
@@ -2306,11 +2318,11 @@ export class DatabaseStorage implements IStorage {
       console.log('🤖 [AI SCHEDULING] Patient patterns:', patientPatterns);
       
       // 3. Get provider patterns
-      const [providerPatterns] = await db
-        .select()
-        .from(providerSchedulingPatterns)
-        .where(eq(providerSchedulingPatterns.providerId, params.providerId))
-        .execute();
+      const providerPatternsResult = await db.execute(sql`
+        SELECT * FROM provider_scheduling_patterns 
+        WHERE provider_id = ${params.providerId}
+      `);
+      const providerPatterns = providerPatternsResult.rows[0] || null;
         
       console.log('🤖 [AI SCHEDULING] Provider patterns:', providerPatterns);
       
