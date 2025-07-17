@@ -91,8 +91,12 @@ export class PatientChartService {
       const chartData = {
         activeProblems: activeProblems,
         medicalHistory: medicalHistoryRecords.map(h => ({
-          conditionCategory: h.conditionCategory,
-          historyText: h.historyText,
+          condition: h.condition || '',
+          onsetDate: h.onsetDate,
+          resolutionDate: h.resolutionDate,
+          status: h.status,
+          severity: h.severity,
+          notes: h.notes,
           lastUpdated: h.updatedAt
         })),
         currentMedications: currentMedications.map(m => ({
