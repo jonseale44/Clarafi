@@ -175,6 +175,7 @@ Return a JSON object with this structure:
           const newOrder: InsertOrder = {
             patientId: existingOrders[0]?.patientId || newSoapOrders[0]?.patientId || 0,
             encounterId: existingOrders[0]?.encounterId || newSoapOrders[0]?.encounterId || 0,
+            providerId: existingOrders[0]?.providerId || newSoapOrders[0]?.providerId || 0,
             orderType: orderDetails.type as any,
             orderStatus: 'draft' as any,
             medicationName: orderDetails.medication_name,

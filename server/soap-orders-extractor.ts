@@ -71,6 +71,14 @@ export class SOAPOrdersExtractor {
         `[SOAPExtractor] SOAP Note preview: ${soapNote.substring(0, 200)}...`,
       );
 
+      // Get encounter to fetch provider ID
+      const encounter = await storage.getEncounter(encounterId);
+      if (!encounter) {
+        throw new Error(`Encounter ${encounterId} not found`);
+      }
+      const providerId = encounter.providerId;
+      console.log(`[SOAPExtractor] Provider ID from encounter: ${providerId}`);
+
       // Get existing draft orders for this encounter to enable deduplication
       console.log(`[SOAPExtractor] Fetching existing draft orders for deduplication...`);
       const existingOrders = await storage.getDraftOrdersByEncounter(encounterId);
@@ -118,6 +126,7 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
+            providerId,
             orderType: "medication",
             orderStatus: "draft",
             medicationName: standardized.medicationName || med.medication_name,
@@ -170,6 +179,7 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
+            providerId,
             orderType: "lab",
             orderStatus: "draft",
             labName: standardizedLab.labName,
@@ -198,6 +208,7 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
+            providerId,
             orderType: "imaging",
             orderStatus: "draft",
             studyType: img.study_type,
@@ -221,6 +232,7 @@ export class SOAPOrdersExtractor {
           const rawOrder = {
             patientId,
             encounterId,
+            providerId,
             orderType: "referral",
             orderStatus: "draft",
             specialtyType: ref.specialty_type,
