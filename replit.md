@@ -959,6 +959,13 @@ Preferred communication style: Simple, everyday language.
 - **STRIPE LOADING ISSUE FIX**: Fixed critical issue where Stripe checkout pages were stuck loading by simplifying session creation with minimal configuration, fixed pricing ($299/month), and direct API calls instead of complex service layers
 - **PRODUCTION READY**: Complete simplified tier system ready for deployment with proper Stripe integration
 
+### Database Query Fixes for Schema Mismatch Resolution COMPLETED (January 17, 2025)
+- **APPOINTMENTS CONFLICT CHECK FIX**: Removed `appointmentType` field from conflict check query and replaced with `appointmentTypeId` which exists in database
+- **SCHEDULING AI WEIGHTS FIX**: Simplified query to not join with scheduling_ai_factors table as database uses direct factor_name column instead of factor_id reference
+- **MEDICAL PROBLEMS QUERY FIX**: Updated getPatientMedicalProblems to only select columns that exist in database, excluding schema-defined fields `firstEncounterId` and `lastUpdatedEncounterId` that don't exist in production database
+- **ROOT CAUSE**: Database and schema.ts have diverged significantly - database represents production state while schema.ts contains fields that were never migrated to production
+- **STRATEGY**: Fixed queries to work with actual database structure rather than modifying production database
+
 ### Tier 1 Individual Practice Registration Enhancement COMPLETED (January 11, 2025)
 - **PRACTICE INFORMATION NOW OPTIONAL**: Successfully made all practice information fields (name, address, city, state, zip, phone) optional for tier 1 individual practice registration
 - **UNIQUE PRACTICE NAME GENERATION**: When practice name not provided, system generates unique name using format: "FirstName LastName, MD - Private Practice (timestamp)"

@@ -1505,7 +1505,33 @@ export class DatabaseStorage implements IStorage {
 
   // Medical Problems management (Enhanced JSONB approach)
   async getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]> {
-    return await db.select().from(medicalProblems).where(eq(medicalProblems.patientId, patientId));
+    // Select only fields that exist in database - exclude firstEncounterId and lastUpdatedEncounterId
+    return await db.select({
+      id: medicalProblems.id,
+      patientId: medicalProblems.patientId,
+      problemTitle: medicalProblems.problemTitle,
+      currentIcd10Code: medicalProblems.currentIcd10Code,
+      problemStatus: medicalProblems.problemStatus,
+      visitHistory: medicalProblems.visitHistory,
+      changeLog: medicalProblems.changeLog,
+      lastRankedEncounterId: medicalProblems.lastRankedEncounterId,
+      rankingReason: medicalProblems.rankingReason,
+      rankingFactors: medicalProblems.rankingFactors,
+      encounterId: medicalProblems.encounterId,
+      icd10Code: medicalProblems.icd10Code,
+      snomedCode: medicalProblems.snomedCode,
+      onsetDate: medicalProblems.onsetDate,
+      resolutionDate: medicalProblems.resolutionDate,
+      notes: medicalProblems.notes,
+      severity: medicalProblems.severity,
+      sourceType: medicalProblems.sourceType,
+      sourceConfidence: medicalProblems.sourceConfidence,
+      extractedFromAttachmentId: medicalProblems.extractedFromAttachmentId,
+      createdAt: medicalProblems.createdAt,
+      updatedAt: medicalProblems.updatedAt,
+      providerId: medicalProblems.providerId,
+      firstDiagnosedDate: medicalProblems.firstDiagnosedDate
+    }).from(medicalProblems).where(eq(medicalProblems.patientId, patientId)) as any;
   }
 
   async getMedicalProblem(id: number): Promise<MedicalProblem | undefined> {
@@ -2445,7 +2471,8 @@ export class DatabaseStorage implements IStorage {
         startTime: appointments.startTime,
         endTime: appointments.endTime,
         duration: appointments.duration,
-        appointmentType: appointments.appointmentType,
+        // Remove appointmentType as it doesn't exist in DB - use appointmentTypeId instead
+        appointmentTypeId: appointments.appointmentTypeId,
         status: appointments.status,
         patientName: sql<string>`${patients.firstName} || ' ' || ${patients.lastName}`
       })
@@ -2842,13 +2869,13 @@ export class DatabaseStorage implements IStorage {
     };
 
     // Fetch all provider-specific weights
+    // Note: Database has factor_name column instead of factor_id reference
     const weights = await db
       .select({
-        factorName: schedulingAiFactors.factorName,
+        factorName: schedulingAiWeights.factorName,
         weight: schedulingAiWeights.weight
       })
       .from(schedulingAiWeights)
-      .innerJoin(schedulingAiFactors, eq(schedulingAiWeights.factorId, schedulingAiFactors.id))
       .where(
         and(
           eq(schedulingAiWeights.providerId, providerId),
