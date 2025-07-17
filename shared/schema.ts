@@ -2433,6 +2433,8 @@ export const insertPatientSchema = createInsertSchema(patients).pick({
   creationContext: true,
   derivativeWorkNote: true,
   migrationConsent: true,
+}).extend({
+  mrn: z.string().optional(), // Make MRN optional since we auto-generate it
 });
 
 export const insertEncounterSchema = createInsertSchema(encounters).pick({

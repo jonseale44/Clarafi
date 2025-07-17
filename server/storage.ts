@@ -506,9 +506,19 @@ export class DatabaseStorage implements IStorage {
     if (!insertPatient.healthSystemId) {
       throw new Error("healthSystemId is required for patient creation");
     }
+    
+    // Generate MRN if not provided
+    let mrn = insertPatient.mrn;
+    if (!mrn) {
+      // Generate unique MRN based on health system ID and timestamp
+      const timestamp = Date.now();
+      const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      mrn = `MRN-${insertPatient.healthSystemId}-${timestamp}-${randomSuffix}`;
+    }
+    
     const [patient] = await db
       .insert(patients)
-      .values(insertPatient)
+      .values({ ...insertPatient, mrn })
       .returning();
     return patient;
   }

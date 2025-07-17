@@ -294,6 +294,17 @@ BEGIN
     END IF;
 END $$;
 
+-- 3c. Add columns discovered from latest errors
+DO $$ 
+BEGIN
+    -- Add selected_at to user_session_locations table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='user_session_locations' 
+                   AND column_name='selected_at') THEN
+        ALTER TABLE user_session_locations ADD COLUMN selected_at TIMESTAMP DEFAULT NOW();
+    END IF;
+END $$;
+
 -- 4. Create lab_results table if it doesn't exist
 CREATE TABLE IF NOT EXISTS lab_results (
     id SERIAL PRIMARY KEY,
