@@ -666,7 +666,6 @@ Return a JSON object with this exact structure:
             modality: change.modality!,
             bodyPart: change.body_part!,
             laterality: change.laterality || null,
-            clinicalSummary: change.clinical_summary!,
             findings: change.findings || null,
             impression: change.impression || null,
             radiologistName: change.radiologist_name || null,
@@ -762,9 +761,9 @@ Return a JSON object with this exact structure:
               updatedAt: new Date(),
             };
             
-            // If this is a consolidation with enhanced data, update the summary
-            if (change.action === "CONSOLIDATE_WITH_ENHANCED_INTERPRETATION" && change.clinical_summary) {
-              updateData.clinicalSummary = change.clinical_summary;
+            // If this is a consolidation with enhanced data, update fields (except clinical_summary which doesn't exist)
+            if (change.action === "CONSOLIDATE_WITH_ENHANCED_INTERPRETATION") {
+              // clinical_summary column doesn't exist in database, skip it
               if (change.findings) updateData.findings = change.findings;
               if (change.impression) updateData.impression = change.impression;
               if (change.result_status) updateData.resultStatus = change.result_status;
@@ -813,7 +812,6 @@ Return a JSON object with this exact structure:
               modality: change.modality!,
               bodyPart: change.body_part!,
               laterality: change.laterality || null,
-              clinicalSummary: change.clinical_summary!,
               findings: change.findings || null,
               impression: change.impression || null,
               radiologistName: change.radiologist_name || null,

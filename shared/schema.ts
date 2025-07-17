@@ -1270,7 +1270,6 @@ export const socialHistory = pgTable("social_history", {
   // Source tracking for multi-source social history data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'provider_observed', 'imported_records'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
-  sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
   
@@ -1313,7 +1312,6 @@ export const surgicalHistory = pgTable("surgical_history", {
   
   // Clinical details
   complications: text("complications"),
-  outcome: text("outcome").default("successful"), // 'successful', 'complicated', 'cancelled', 'ongoing'
   anesthesiaType: text("anesthesia_type"), // 'general', 'local', 'regional', 'MAC', 'spinal'
   
   // Medical coding integration (Production EMR standard)
@@ -2027,9 +2025,6 @@ export const imagingResults = pgTable("imaging_results", {
   modality: text("modality").notNull(), // 'XR', 'CT', 'MR', 'US', 'Echo', 'PET'
   bodyPart: text("body_part"),
   laterality: text("laterality"), // 'left', 'right', 'bilateral'
-  
-  // GPT-generated clinical summary for chart display
-  clinicalSummary: text("clinical_summary").notNull(), // "Normal heart and lungs", "Small RUL nodule, stable"
   
   // Results
   findings: text("findings"), // Full radiologist findings
@@ -3001,7 +2996,6 @@ export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick(
   lastUpdatedEncounter: true,
   sourceType: true,
   sourceConfidence: true,
-  sourceNotes: true,
   extractedFromAttachmentId: true,
   enteredBy: true,
   consolidationReasoning: true,
@@ -3779,7 +3773,6 @@ export const authenticationLogs = pgTable("authentication_logs", {
   // Security info
   ipAddress: text("ip_address").notNull(),
   userAgent: text("user_agent"),
-  deviceFingerprint: text("device_fingerprint"),
   geolocation: jsonb("geolocation").$type<{
     country?: string;
     region?: string;

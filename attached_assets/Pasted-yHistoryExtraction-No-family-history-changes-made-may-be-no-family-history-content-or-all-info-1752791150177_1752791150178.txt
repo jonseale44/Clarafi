@@ -1,0 +1,46 @@
+yHistoryExtraction] ℹ️ No family history changes made - may be no family history content or all information already documented
+🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION COMPLETE =============
+🚬 [UnifiedSocialHistory] Error fetching existing social history: error: column "source_notes" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedSocialHistoryParser.getExistingSocialHistory (/home/runner/workspace/server/unified-social-history-parser.ts:184:24)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:118:9)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:970:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9) {
+  length: 113,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '137',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+🚬 [UnifiedSocialHistory] Found 0 existing social history entries for patient 11
+[Chart Service] Fetching chart data for patient 11
+📄 [UnifiedImagingParser] Patient ID: 11
+[Chart Service] Fetching chart data for patient 11
+💊 [AttachmentMedications] Found 9 existing medications for consolidation
+🩺 [VitalsExtraction] 🔍 Calling parseVitalsText with: {
+  textLength: 534,
+  textPreview: 'Laboratory & Imaging Results (Initial Workup Pending Further Testing)\n' +
+    'Labwork 6/12/10\n' +
+    '  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)\n' +
+    '  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight w',
+  patientContext: { age: 69, gender: 'male' },
+  patientId: 11
+}
+🔥 [VITALS PARSING] ============= STARTING GPT-4.1-NANO

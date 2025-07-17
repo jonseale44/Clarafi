@@ -11,7 +11,7 @@ import {
   socialHistory,
   imagingResults,
 } from "../shared/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 /**
  * Patient Chart Service

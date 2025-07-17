@@ -1,0 +1,294 @@
+yHistoryExtraction] ℹ️ No family history changes made - may be no family history content or all information already documented
+🔥 [FAMILY HISTORY WORKFLOW] ============= FAMILY HISTORY EXTRACTION COMPLETE =============
+🚬 [UnifiedSocialHistory] Error fetching existing social history: error: column "source_notes" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedSocialHistoryParser.getExistingSocialHistory (/home/runner/workspace/server/unified-social-history-parser.ts:184:24)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:118:9)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:970:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9) {
+  length: 113,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '137',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+🚬 [UnifiedSocialHistory] Found 0 existing social history entries for patient 11
+[Chart Service] Fetching chart data for patient 11
+📄 [UnifiedImagingParser] Patient ID: 11
+[Chart Service] Fetching chart data for patient 11
+💊 [AttachmentMedications] Found 9 existing medications for consolidation
+🩺 [VitalsExtraction] 🔍 Calling parseVitalsText with: {
+  textLength: 534,
+  textPreview: 'Laboratory & Imaging Results (Initial Workup Pending Further Testing)\n' +
+    'Labwork 6/12/10\n' +
+    '  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)\n' +
+    '  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight w',
+  patientContext: { age: 69, gender: 'male' },
+  patientId: 11
+}
+🔥 [VITALS PARSING] ============= STARTING GPT-4.1-NANO VITALS PARSING =============
+🩺 [VitalsParser] Input text length: 534 characters
+🩺 [VitalsParser] Patient context: { age: 69, gender: 'male' }
+🩺 [VitalsParser] Parsing vitals text preview: Laboratory & Imaging Results (Initial Workup Pending Further Testing)
+Labwork 6/12/10
+  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)
+  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight w...
+🩺 [VitalsParser] Starting AI parsing process...
+🚨 [UnifiedAllergy] Found 2 existing allergy entries for patient 11
+[Chart Service] Fetching chart data for patient 11
+⚗️ [LabParser] Found 0 existing lab results for consolidation analysis
+⚗️ [LabParser] 🤖 Calling OpenAI GPT-4.1...
+⚗️ [LabParser] 🤖 Model: gpt-4.1, Temperature: 0.1, Max tokens: 30000
+🩺 [VitalsParser] Found existing vitals: 1
+🩺 [VitalsParser] 🤖 Calling OpenAI GPT-4.1-nano...
+🩺 [VitalsParser] 🤖 Model: gpt-4.1-nano, Temperature: 0.1, Max tokens: 1500
+💊 [GPT] Calling GPT for medication extraction (attachment 19)
+💊 [GPT] ===== MEDICATION PROCESSING DEBUG INFO =====
+💊 [GPT] Extracted text length: 534 characters
+💊 [GPT] Existing medications count: 9
+💊 [GPT] Patient context: Age 69, Gender male
+💊 [GPT] Text preview (first 500 chars): Laboratory & Imaging Results (Initial Workup Pending Further Testing)
+Labwork 6/12/10
+  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)
+  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight worsening)
+  • BUN: 38 mg/dL
+  • K+: 4.8 mmol/L
+  • Na+: 135 mmol/L
+  • Glucose: 210 mg/dL
+  • Hgb A1c: 9.2% (poor diabetes control)
+  • INR: 2.1 (therapeutic)
+Chest X-ray 6/12/10
+  • Findings: Cardiomegaly, bilateral pulmonary congestion, mild pleural effusions
+ECG 6/12/10
+  • Findings: Atrial fibri...
+💊 [GPT] Text ending (last 500 chars): ...ial Workup Pending Further Testing)
+Labwork 6/12/10
+  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)
+  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight worsening)
+  • BUN: 38 mg/dL
+  • K+: 4.8 mmol/L
+  • Na+: 135 mmol/L
+  • Glucose: 210 mg/dL
+  • Hgb A1c: 9.2% (poor diabetes control)
+  • INR: 2.1 (therapeutic)
+Chest X-ray 6/12/10
+  • Findings: Cardiomegaly, bilateral pulmonary congestion, mild pleural effusions
+ECG 6/12/10
+  • Findings: Atrial fibrillation, no acute ischemic changes
+[Chart Service] Error fetching patient chart data: ReferenceError: sql is not defined
+    at Function.getPatientChartData (/home/runner/workspace/server/patient-chart-service.ts:91:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedSurgicalHistoryParser.processUnified (/home/runner/workspace/server/unified-surgical-history-parser.ts:121:9)
+    at async AttachmentChartProcessor.processDocumentForSurgicalHistory (/home/runner/workspace/server/attachment-chart-processor.ts:629:22)
+    at async Promise.allSettled (index 2)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9)
+🔄 [UnifiedSurgicalHistory] Patient chart context: 0 medical problems, 0 medications
+🔄 [UnifiedSurgicalHistory] 🤖 Sending request to gpt-4.1-mini
+🔄 [UnifiedSurgicalHistory] 🤖 Content length: 568 characters
+🔄 [UnifiedSurgicalHistory] 🤖 Existing surgeries: 0
+[Chart Service] Error fetching patient chart data: ReferenceError: sql is not defined
+    at Function.getPatientChartData (/home/runner/workspace/server/patient-chart-service.ts:91:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Promise.all (index 3)
+    at async UnifiedMedicalProblemsParser.processUnified (/home/runner/workspace/server/unified-medical-problems-parser.ts:111:9)
+    at async AttachmentChartProcessor.processDocumentForMedicalProblems (/home/runner/workspace/server/attachment-chart-processor.ts:556:22)
+    at async Promise.allSettled (index 1)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9)
+🔄 [UnifiedMedicalProblems] Found 5 existing problems
+🔄 [UnifiedMedicalProblems] Patient chart data: 0 problems, 0 medications, 0 vitals
+🤖 [UnifiedGPT] Sending unified prompt to GPT-4.1
+🤖 [UnifiedGPT] Prompt length: 26891 characters
+[Chart Service] Error fetching patient chart data: ReferenceError: sql is not defined
+    at Function.getPatientChartData (/home/runner/workspace/server/patient-chart-service.ts:91:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedSocialHistoryParser.processUnified (/home/runner/workspace/server/unified-social-history-parser.ts:125:9)
+    at async AttachmentChartProcessor.processDocumentForSocialHistory (/home/runner/workspace/server/attachment-chart-processor.ts:970:22)
+    at async Promise.allSettled (index 4)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9)
+🚬 [UnifiedSocialHistory] Patient chart context: 0 medical problems, 0 medications
+🚬 [UnifiedSocialHistory] 🤖 Starting GPT-4.1 social history extraction
+🚬 [UnifiedSocialHistory] Content length: 554 characters
+🚬 [UnifiedSocialHistory] Existing entries: 0
+🚬 [UnifiedSocialHistory] ============= GPT PROMPT DEBUG =============
+🚬 [UnifiedSocialHistory] SYSTEM PROMPT (first 500 chars):
+You are an expert clinical social worker and EMR data analyst with 15+ years of experience extracting and consolidating social history from medical documents.
+
+SIMPLIFIED 7-CATEGORY SOCIAL HISTORY SYSTEM:
+You MUST use EXACTLY these 7 categories (in this order):
+1. "tobacco" - Any smoking, chewing, vaping, cigarettes, cigars, nicotine
+2. "alcohol" - Any alcohol consumption, drinking, ETOH, beer, wine, liquor  
+3. "drugs" - Recreational drugs, illicit substances, marijuana, cocaine, opioids, subst...
+🚬 [UnifiedSocialHistory] USER CONTENT (first 1000 chars):
+ATTACHMENT CONTENT:
+Laboratory & Imaging Results (Initial Workup Pending Further Testing)
+Labwork 6/12/10
+  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)
+  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight worsening)
+  • BUN: 38 mg/dL
+  • K+: 4.8 mmol/L
+  • Na+: 135 mmol/L
+  • Glucose: 210 mg/dL
+  • Hgb A1c: 9.2% (poor diabetes control)
+  • INR: 2.1 (therapeutic)
+Chest X-ray 6/12/10
+  • Findings: Cardiomegaly, bilateral pulmonary congestion, mild pleural effusions
+ECG 6/12/10
+  • Findings: Atrial fibrillation, no acute ischemic changes...
+🚬 [UnifiedSocialHistory] EXISTING SOCIAL HISTORY ENTRIES:
+🚬 [UnifiedSocialHistory] ============= END PROMPT DEBUG =============
+[Chart Service] Error fetching patient chart data: ReferenceError: sql is not defined
+    at Function.getPatientChartData (/home/runner/workspace/server/patient-chart-service.ts:91:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedImagingParser.processAttachmentImagingData (/home/runner/workspace/server/unified-imaging-parser.ts:171:9)
+    at async AttachmentChartProcessor.processDocumentForImaging (/home/runner/workspace/server/attachment-chart-processor.ts:1165:22)
+    at async Promise.allSettled (index 7)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9)
+📄 [UnifiedImagingParser] Patient context loaded - Imaging count: 0
+❌ [UnifiedImagingParser] Attachment processing failed: error: column "clinical_summary" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async UnifiedImagingParser.getExistingImaging (/home/runner/workspace/server/unified-imaging-parser.ts:230:12)
+    at async UnifiedImagingParser.processAttachmentImagingData (/home/runner/workspace/server/unified-imaging-parser.ts:177:31)
+    at async AttachmentChartProcessor.processDocumentForImaging (/home/runner/workspace/server/attachment-chart-processor.ts:1165:22)
+    at async Promise.allSettled (index 7)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9) {
+  length: 117,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '101',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+📸 [ImagingExtraction] ✅ Successfully processed imaging in 889ms
+📸 [ImagingExtraction] ✅ Total imaging results affected: 0
+📸 [ImagingExtraction] ✅ Extraction confidence: 0
+📸 [ImagingExtraction] ✅ Processing notes: Processing failed: column "clinical_summary" does not exist
+📸 [ImagingExtraction] ℹ️ No imaging changes made - may be no imaging content or all information already documented
+🔥 [IMAGING WORKFLOW] ============= IMAGING EXTRACTION COMPLETE =============
+[Chart Service] Error fetching patient chart data: ReferenceError: sql is not defined
+    at Function.getPatientChartData (/home/runner/workspace/server/patient-chart-service.ts:91:44)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async UnifiedAllergyParser.processUnifiedAllergies (/home/runner/workspace/server/unified-allergy-parser.ts:125:9)
+    at async AttachmentChartProcessor.processDocumentForAllergies (/home/runner/workspace/server/attachment-chart-processor.ts:1038:22)
+    at async Promise.allSettled (index 5)
+    at async AttachmentChartProcessor.processCompletedAttachment (/home/runner/workspace/server/attachment-chart-processor.ts:100:183)
+    at async DocumentAnalysisService.triggerChartProcessing (/home/runner/workspace/server/document-analysis-service.ts:643:7)
+    at async DocumentAnalysisService.processDocument (/home/runner/workspace/server/document-analysis-service.ts:185:9)
+🚨 [UnifiedAllergy] Patient chart context: 0 medical problems, 0 medications
+🔍 [UnifiedAllergy] ===== SENDING PROMPT TO GPT =====
+🔍 [UnifiedAllergy] Existing allergies in prompt: [
+  'ID:8 Penicillin (resolved)',
+  'ID:10 No Known Drug Allergies (resolved)'
+]
+🔍 [UnifiedAllergy] Combined content preview: ATTACHMENT CONTENT:
+Laboratory & Imaging Results (Initial Workup Pending Further Testing)
+Labwork 6/12/10
+  • BNP: 980 pg/mL (elevated, consistent with CHF exacerbation)
+  • Creatinine: 2.1 mg/dL (baseline ~1.8, slight worsening)
+  • BUN: 38 mg/dL
+  • K+: 4.8 mmol/L
+  • Na+: 135 mmol/L
+  • Glucose: 
+🔍 [UnifiedAllergy] ===== END PROMPT CONTEXT =====
+🔄 [UnifiedSurgicalHistory] 🤖 GPT Response: []...
+🔄 [UnifiedSurgicalHistory] ✅ Successfully parsed 0 surgical changes from GPT
+🔄 [UnifiedSurgicalHistory] GPT processing complete, 0 surgical changes identified
+🔄 [UnifiedSurgicalHistory] === PROCESSING COMPLETE ===
+🔄 [UnifiedSurgicalHistory] Surgeries affected: 0
+🏥 [SurgicalHistoryExtraction] ✅ Successfully processed surgical history in 1247ms
+🏥 [SurgicalHistoryExtraction] ✅ Surgeries affected: 0
+🏥 [SurgicalHistoryExtraction] ✅ Processing time: 1246ms
+🏥 [SurgicalHistoryExtraction] ✅ Source summary: {
+  encounter_surgeries: 0,
+  attachment_surgeries: 0,
+  conflicts_resolved: 0
+}
+🏥 [SurgicalHistoryExtraction] ℹ️ No surgical history changes made - may be no surgical content or all procedures already documented
+🔥 [SURGICAL HISTORY WORKFLOW] ============= SURGICAL HISTORY EXTRACTION COMPLETE =============
+🚬 [UnifiedSocialHistory] ============= GPT RESPONSE DEBUG =============
+🚬 [UnifiedSocialHistory] GPT response length: 19 characters
+🚬 [UnifiedSocialHistory] FULL GPT RESPONSE:
+{
+  "changes": []
+}
+🚬 [UnifiedSocialHistory] ============= END RESPONSE DEBUG =============
+🚬 [UnifiedSocialHistory] Successfully parsed 0 social history changes
+🚬 [UnifiedSocialHistory] PARSED CHANGES:
+🚬 [UnifiedSocialHistory] GPT processing complete. Changes: 0
+🚬 [UnifiedSocialHistory] 💾 Applying 0 changes to database
+🚬 [UnifiedSocialHistory] 🔧 Database operation parameters:
+🚬 [UnifiedSocialHistory] 🔧   - patientId: 11
+🚬 [UnifiedSocialHistory] 🔧   - encounterId: null
+🚬 [UnifiedSocialHistory] 🔧   - attachmentId: 19
+🚬 [UnifiedSocialHistory] 🔧   - providerId: 1 (THIS SHOULD BE 1, NOT 2)
+🚬 [UnifiedSocialHistory] 🔧   - triggerType: attachment_processing
+🚬 [UnifiedSocialHistory] 💾 Database operations complete. 0 entries affected
+🚬 [UnifiedSocialHistory] ============= UNIFIED SOCIAL HISTORY PROCESSING COMPLETE =============
+🚬 [UnifiedSocialHistory] Total changes applied: 0
+🚬 [UnifiedSocialHistory] Social history entries affected: 0
+🚭 [SocialHistoryExtraction] ✅ Successfully processed social history in 1276ms
+🚭 [SocialHistoryExtraction] ✅ Social history entries affected: 0
+🚭 [SocialHistoryExtraction] ✅ Encounter social history: 0
+🚭 [SocialHistoryExtraction] ✅ Attachment social history: 0
+🚭 [SocialHistoryExtraction] ℹ️ No social history changes made - may be no social history content or all information already documented
+🔥 [SOCIAL HISTORY WORKFLOW] ============= SOCIAL HISTORY EXTRACTION COMPLETE =============
+💊 [GPT] Response received in 1121ms
+💊 [GPT] Response text length: 405 characters
+💊 [GPT] Raw response preview: {
+  "extracted_date": "2010-06-12",
+  "date_extraction_source": "header",
+  "medications": [
+    // No medications are explicitly mentioned, prescribed, discontinued, or changed in this document.
+    // Only laboratory and imaging results are provided.
+    // No new medications, dose changes, or discontinuations are referenced.
+    // No allergies, intolerances, or adherence notes are documented.
+  ]
+}...
+💊 [GPT] Response ending: ...{
+  "extracted_date": "2010-06-12",
+  "date_extraction_source": "header",
+  "medications": [
+    // No medications are explicitly mentioned, prescribed, discontinued, or changed in this document.
+    // Only laboratory and imaging results are provided.
+    // No new medications, dose changes, or discontinuations are referenced.
+    // No allergies, intolerances, or adherence notes are documented.
+  ]
