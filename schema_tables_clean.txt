@@ -18,7 +18,6 @@ document_processing_queue
 email_notifications
 emergency_access_logs
 encounters
-export const migrationInvitations = pgTable('migration_invitations', {
 external_labs
 family_history
 gpt_lab_review_notes
@@ -41,8 +40,8 @@ organizations
 patient_attachments
 patient_order_preferences
 patient_physical_findings
-patients
 patient_scheduling_patterns
+patients
 phi_access_logs
 problem_rank_overrides
 provider_schedules
@@ -70,7 +69,7 @@ user_locations
 user_note_preferences
 user_note_templates
 user_problem_list_preferences
-users
 user_session_locations
+users
 vitals
 webauthn_credentials
