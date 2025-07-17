@@ -585,8 +585,9 @@ export class DatabaseStorage implements IStorage {
       console.log(`🗑️ [Storage] Deleted lab results for patient ${id}`);
       
       // Delete GPT lab review notes before lab orders
-      await db.delete(gptLabReviewNotes).where(eq(gptLabReviewNotes.patientId, id));
-      console.log(`🗑️ [Storage] Deleted GPT lab review notes for patient ${id}`);
+      // NOTE: Table doesn't exist yet - commented out until database sync
+      // await db.delete(gptLabReviewNotes).where(eq(gptLabReviewNotes.patientId, id));
+      // console.log(`🗑️ [Storage] Deleted GPT lab review notes for patient ${id}`);
       
       await db.delete(labOrders).where(eq(labOrders.patientId, id));
       console.log(`🗑️ [Storage] Deleted lab orders for patient ${id}`);
