@@ -1285,42 +1285,22 @@ export default function AuthPage() {
             </TooltipProvider>
             
             {/* One Price, Everything */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link href="/pricing">
-                    <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-pointer transition-all hover:bg-white/15">
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
-                          <Building2 className="h-5 w-5 text-navy-blue-900" />
-                        </div>
-                        <h3 className="font-semibold text-left">One Price, Everything</h3>
-                      </div>
-                      <ul className="text-sm text-navy-blue-100 text-left space-y-1">
-                        <li>• AI scribe + EMR together</li>
-                        <li>• No separate subscriptions</li>
-                        <li>• Starting at $149/month</li>
-                        <li>• See pricing details →</li>
-                      </ul>
-                    </div>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-sm p-4 bg-white/95 backdrop-blur text-navy-blue-900">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-navy-blue-900">Simple, Transparent Pricing</h4>
-                    <p className="text-sm">No hidden fees, no separate subscriptions for AI and EMR:</p>
-                    <ul className="text-sm space-y-1 ml-4">
-                      <li>• <strong>Solo Provider ($149/mo):</strong> Individual practice with full EMR + AI scribe</li>
-                      <li>• <strong>Enterprise (per-user pricing):</strong></li>
-                      <li className="ml-4">- Providers ($399/mo): Full access</li>
-                      <li className="ml-4">- Nurses/MAs ($99/mo): Clinical tools</li>
-                      <li className="ml-4">- Front Staff ($49/mo): Admin features</li>
-                    </ul>
-                    <p className="text-sm mt-2">Compare to: AI scribes alone ($149-299) + EMR systems ($300-800) = Save 50-70% monthly while getting better integration.</p>
+            <Link href="/pricing" className="block">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-pointer transition-all hover:bg-white/15">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-gold to-yellow-400 rounded-lg flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-navy-blue-900" />
                   </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  <h3 className="font-semibold text-left">One Price, Everything</h3>
+                </div>
+                <ul className="text-sm text-navy-blue-100 text-left space-y-1">
+                  <li>• AI scribe + EMR together</li>
+                  <li>• No separate subscriptions</li>
+                  <li>• Starting at $149/month</li>
+                  <li>• See pricing details →</li>
+                </ul>
+              </div>
+            </Link>
           </div>
           
           {/* Key differentiators */}
