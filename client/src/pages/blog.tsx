@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, Eye, ChevronRight, Search } from "lucide-react";
+import { Calendar, Clock, Eye, ChevronRight, Search, Home, ArrowLeft, ArrowUp } from "lucide-react";
 
 interface Article {
   id: number;
@@ -90,6 +90,32 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navigation Bar */}
+      <nav className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Home</span>
+                </Button>
+              </Link>
+              <div className="h-6 w-px bg-gray-300" />
+              <span className="text-sm font-medium text-gray-900">Blog</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Home className="h-4 w-4" />
+                  <span className="hidden sm:inline">Home</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#003366] to-[#004080] text-white py-16">
         <div className="container mx-auto px-4">
@@ -100,9 +126,32 @@ export default function BlogPage() {
         </div>
       </div>
 
+      {/* Breadcrumb Navigation */}
+      <div className="container mx-auto px-4 pt-4">
+        <nav className="flex items-center space-x-2 text-sm text-gray-600">
+          <Link href="/">
+            <span className="hover:text-[#003366] cursor-pointer">Home</span>
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-gray-900 font-medium">Blog</span>
+        </nav>
+      </div>
+
       {/* Search and Filters */}
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Browse Articles</h2>
+            <div className="flex items-center space-x-2 text-sm">
+              <span className="text-gray-600">Quick links:</span>
+              <Link href="#newsletter">
+                <Button variant="link" size="sm" className="text-[#003366]">Newsletter</Button>
+              </Link>
+              <Link href="/">
+                <Button variant="link" size="sm" className="text-[#003366]">Dashboard</Button>
+              </Link>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <div className="relative">
@@ -231,7 +280,7 @@ export default function BlogPage() {
         )}
 
         {/* Newsletter Signup */}
-        <div className="mt-16 bg-gradient-to-r from-[#003366] to-[#004080] text-white rounded-lg p-8">
+        <div id="newsletter" className="mt-16 bg-gradient-to-r from-[#003366] to-[#004080] text-white rounded-lg p-8">
           <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-2xl font-bold mb-4">Stay Updated</h2>
             <p className="mb-6">
@@ -246,6 +295,32 @@ export default function BlogPage() {
               <Button className="bg-[#FFD700] text-[#003366] hover:bg-[#FFC700]">
                 Subscribe
               </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Navigation */}
+        <div className="mt-16 border-t pt-8 pb-4">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="flex items-center space-x-4">
+              <Link href="/">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <Home className="h-4 w-4" />
+                  <span>Back to Dashboard</span>
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="flex items-center space-x-2"
+              >
+                <ArrowUp className="h-4 w-4" />
+                <span>Back to Top</span>
+              </Button>
+            </div>
+            <div className="text-sm text-gray-600">
+              © 2025 Clarafi. All rights reserved.
             </div>
           </div>
         </div>
