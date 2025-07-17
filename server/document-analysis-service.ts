@@ -93,7 +93,6 @@ export class DocumentAnalysisService {
         .update(documentProcessingQueue)
         .set({
           status: "processing",
-          lastAttempt: new Date(),
         })
         .where(eq(documentProcessingQueue.attachmentId, attachmentId));
 
@@ -229,7 +228,6 @@ export class DocumentAnalysisService {
         .set({
           status: "failed",
           attempts: (currentQueue?.attempts || 0) + 1,
-          lastAttempt: new Date(),
         })
         .where(eq(documentProcessingQueue.attachmentId, attachmentId));
     }
