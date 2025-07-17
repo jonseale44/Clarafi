@@ -1207,7 +1207,7 @@ export const encounters = pgTable("encounters", {
 export const familyHistory = pgTable("family_history", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
-  familyMember: text("family_member").notNull(), // 'father', 'mother', 'brother', 'sister', 'son', 'daughter', 'grandmother', 'grandfather'
+  relationship: text("relationship").notNull(), // 'father', 'mother', 'brother', 'sister', 'son', 'daughter', 'grandmother', 'grandfather'
   medicalHistory: text("medical_history"), // "DM2, h/o CAD, died of MI at age 70"
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
   
@@ -1263,6 +1263,7 @@ export const socialHistory = pgTable("social_history", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   category: text("category").notNull(), // 'smoking', 'alcohol', 'occupation', 'exercise', 'diet', 'sexual_history', 'living_situation', 'recreational_drugs'
+  details: text("details").notNull(), // Required by database
   currentStatus: text("current_status").notNull(),
   historyNotes: text("history_notes"),
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
@@ -1334,8 +1335,6 @@ export const surgicalHistory = pgTable("surgical_history", {
   // Source tracking (same pattern as medical problems/medical history)
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'operative_report', 'discharge_summary', 'imported_records'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
-  sourceNotes: text("source_notes"), // Additional context about data source
-  confidence: decimal("confidence", { precision: 3, scale: 2 }), // Overall confidence score for the surgical history entry
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
@@ -1835,7 +1834,6 @@ export const labResults = pgTable("lab_results", {
   }>>(),
   
   // Communication and routing
-  assignedTo: integer("assigned_to").references(() => users.id), // Assigned to staff member for follow-up
   communicationStatus: text("communication_status").default("none"), // 'none', 'pending', 'completed'
   communicationPlan: jsonb("communication_plan").$type<{
     patientNotification?: boolean;
@@ -2033,7 +2031,7 @@ export const imagingResults = pgTable("imaging_results", {
   performingFacility: text("performing_facility"), // Database column is "performing_facility"
   
   // PDF attachment integration
-  attachmentId: integer("attachment_id").references(() => patientAttachments.id), // Link to PDF report
+  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Link to PDF report
   
   // DICOM details
   dicomStudyId: text("dicom_study_id"),
@@ -2050,7 +2048,6 @@ export const imagingResults = pgTable("imaging_results", {
   // Source tracking for multi-source data integration
   sourceType: text("source_type").default("pdf_extract"), // 'pdf_extract', 'hl7_message', 'manual_entry', 'encounter_note'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("0.95"), // GPT extraction confidence
-  extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id),
   enteredBy: integer("entered_by").references(() => users.id),
   
   // Visit history tracking (like medical problems)

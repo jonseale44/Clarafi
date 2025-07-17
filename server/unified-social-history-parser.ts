@@ -600,6 +600,7 @@ IMPORTANT: Only return entries for categories that have actual information. Do N
             .values({
               patientId,
               category: change.category,
+              details: change.currentStatus, // Use currentStatus as details since it's required
               currentStatus: change.currentStatus,
               lastUpdatedEncounter: encounterId,
               sourceType: attachmentId ? "attachment" : "encounter",

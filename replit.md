@@ -986,6 +986,13 @@ Preferred communication style: Simple, everyday language.
 - **AFFECTED MODULES**: Fixed database queries in family history parser, orders table, provider scheduling patterns, and document analysis service
 - **PRODUCTION IMPACT**: Document uploads, AI scheduling, allergy documentation, and all patient chart sections now working without database errors
 
+### Additional Schema Drift Fixes COMPLETED (January 17, 2025)
+- **LAB RESULTS TABLE FIX**: Removed non-existent `assignedTo` column from schema.ts that was causing "column 'assigned_to' does not exist" errors
+- **SOCIAL HISTORY TABLE FIX**: Added missing `details` column to schema.ts that database requires as NOT NULL - fixed "null value in column 'details' violates not-null constraint" error
+- **ROOT CAUSE**: Database evolved independently from schema.ts, leading to mismatches where schema had phantom columns or was missing required fields
+- **SYSTEMATIC FIX**: Verified actual database structure using \d+ commands and updated schema.ts to match production database
+- **PRODUCTION IMPACT**: Lab results extraction and social history parsing from attachments now working correctly
+
 ### Additional Database Column Fixes for Patient Scheduling COMPLETED (January 17, 2025)
 - **PATIENT SCHEDULING PATTERNS FIX**: Converted query to use raw SQL with snake_case columns (`avg_visit_duration`, `avg_duration_by_type`, `no_show_rate`, `avg_arrival_delta`) instead of camelCase from Drizzle ORM
 - **APPOINTMENT CONFLICT FIX**: Updated conflict check to use SQL expression for `appointment_date` column instead of `appointmentDate` which doesn't exist
