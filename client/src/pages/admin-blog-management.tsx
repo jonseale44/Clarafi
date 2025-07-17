@@ -33,7 +33,11 @@ import {
   Users,
   Target,
   ArrowLeft,
-  LogOut
+  LogOut,
+  MessageSquare,
+  Send,
+  History,
+  Mail
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
@@ -76,6 +80,15 @@ export default function AdminBlogManagement() {
   const [selectedTab, setSelectedTab] = useState("queue");
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [revisionDialogOpen, setRevisionDialogOpen] = useState(false);
+  const [revisionFeedback, setRevisionFeedback] = useState("");
+  const [revisionHistory, setRevisionHistory] = useState<Array<{
+    id: number;
+    revisionNote: string;
+    createdAt: string;
+    content?: string;
+    revisionType?: string;
+  }>>([]);
   const [generateFormData, setGenerateFormData] = useState({
     category: "",
     audience: "",
@@ -341,6 +354,56 @@ export default function AdminBlogManagement() {
     }
   });
 
+  // Request revision mutation
+  const requestRevisionMutation = useMutation({
+    mutationFn: async ({ articleId, feedback }: { articleId: number; feedback: string }) => {
+      const response = await apiRequest("POST", `/api/admin/blog/articles/${articleId}/revise`, {
+        feedback
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Revision Requested",
+        description: "GPT is working on your revision. This may take a moment...",
+      });
+      // Update the selected article with the revised content
+      if (selectedArticle && data.revisedArticle) {
+        setSelectedArticle(data.revisedArticle);
+        // Add to revision history
+        setRevisionHistory(prev => [...prev, {
+          id: Date.now(),
+          revisionNote: revisionFeedback,
+          createdAt: new Date().toISOString(),
+          content: data.revisedArticle.content,
+          revisionType: 'ai_feedback'
+        }]);
+        setRevisionFeedback("");
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog/articles?status=review"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to request revision",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Load revision history
+  const loadRevisionHistory = async (articleId: number) => {
+    try {
+      const response = await fetch(`/api/admin/blog/articles/${articleId}/revisions`);
+      if (response.ok) {
+        const data = await response.json();
+        setRevisionHistory(data.revisions || []);
+      }
+    } catch (error) {
+      console.error("Failed to load revision history:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -557,13 +620,28 @@ export default function AdminBlogManagement() {
                       >
                         Cancel
                       </Button>
-                      <Button
-                        onClick={() => approveArticleMutation.mutate(selectedArticle.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve & Publish
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setRevisionDialogOpen(true);
+                            // Load revision history when dialog opens
+                            if (selectedArticle) {
+                              loadRevisionHistory(selectedArticle.id);
+                            }
+                          }}
+                        >
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Request Revision
+                        </Button>
+                        <Button
+                          onClick={() => approveArticleMutation.mutate(selectedArticle.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Approve & Publish
+                        </Button>
+                      </div>
                     </CardFooter>
                   )}
                 </Card>
@@ -974,6 +1052,115 @@ export default function AdminBlogManagement() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Revision Dialog */}
+      <Dialog open={revisionDialogOpen} onOpenChange={setRevisionDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Request Article Revision</DialogTitle>
+            <DialogDescription>
+              Provide feedback to GPT to iteratively improve this article. Be specific about what you'd like changed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-4 h-[500px]">
+            {/* Current Article Preview */}
+            <div className="border rounded-lg p-4">
+              <h3 className="font-semibold mb-2 flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Current Article
+              </h3>
+              <ScrollArea className="h-[400px]">
+                <div className="prose prose-sm max-w-none pr-4">
+                  <h4 className="text-lg font-semibold">{selectedArticle?.title}</h4>
+                  <ReactMarkdown>{selectedArticle?.content || ''}</ReactMarkdown>
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Revision Interface */}
+            <div className="border rounded-lg p-4 flex flex-col">
+              <h3 className="font-semibold mb-2 flex items-center">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Revision Feedback
+              </h3>
+
+              {/* Revision History */}
+              {revisionHistory.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2 flex items-center">
+                    <History className="h-3 w-3 mr-1" />
+                    Previous Revisions
+                  </h4>
+                  <ScrollArea className="h-[150px] border rounded p-2">
+                    <div className="space-y-2">
+                      {revisionHistory.map((revision) => (
+                        <div key={revision.id} className="text-sm">
+                          <div className="font-medium text-gray-600">
+                            {new Date(revision.createdAt).toLocaleString()}
+                          </div>
+                          <div className="italic">"{revision.revisionNote}"</div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* Feedback Input */}
+              <div className="flex-1 flex flex-col">
+                <Textarea
+                  placeholder="Example: 'Make the introduction more engaging' or 'Add more specific examples of clinical efficiency improvements' or 'Be more aggressive about the benefits of AI'"
+                  value={revisionFeedback}
+                  onChange={(e) => setRevisionFeedback(e.target.value)}
+                  className="flex-1 resize-none"
+                  rows={6}
+                />
+
+                <div className="mt-4 flex justify-between items-center">
+                  <p className="text-sm text-gray-500">
+                    Be specific about what you want changed or improved
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setRevisionDialogOpen(false);
+                        setRevisionFeedback("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        if (selectedArticle && revisionFeedback.trim()) {
+                          requestRevisionMutation.mutate({
+                            articleId: selectedArticle.id,
+                            feedback: revisionFeedback
+                          });
+                        }
+                      }}
+                      disabled={!revisionFeedback.trim() || requestRevisionMutation.isPending}
+                    >
+                      {requestRevisionMutation.isPending ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Request Revision
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -316,6 +316,92 @@ router.get("/api/admin/blog/articles/:id/revisions", requireAuth, async (req: Re
   }
 });
 
+// Request article revision
+router.post("/api/admin/blog/articles/:id/revise", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { feedback } = req.body;
+    
+    if (!feedback || !feedback.trim()) {
+      return res.status(400).json({ error: "Feedback is required" });
+    }
+    
+    console.log('🔄 [Blog API] Requesting revision for article:', { id, feedback });
+    
+    // Get the current article
+    const articles = await storage.getArticles({ ids: [parseInt(id)] });
+    const article = articles[0];
+    
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    
+    // Use OpenAI to revise the article based on feedback
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const systemPrompt = `You are an expert healthcare content writer and editor. You will be given an article and feedback on how to improve it. Your task is to revise the article based on the feedback while maintaining:
+    - Professional medical terminology
+    - SEO optimization
+    - Engaging content for the target audience
+    - Factual accuracy
+    - The same overall structure and key points
+    
+    Make the requested changes while preserving the article's core message and value proposition.`;
+    
+    const userPrompt = `Here is the current article:
+    
+Title: ${article.title}
+Target Audience: ${article.targetAudience}
+Category: ${article.category}
+
+Content:
+${article.content}
+
+Revision Feedback:
+${feedback}
+
+Please revise the article based on the feedback provided. Return the revised content in markdown format.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 4000
+    });
+    
+    const revisedContent = response.choices[0].message.content;
+    
+    // Update the article with revised content
+    const updatedArticle = await storage.updateArticle(parseInt(id), {
+      content: revisedContent,
+      updatedAt: new Date()
+    });
+    
+    // Store revision history
+    await storage.createArticleRevision({
+      articleId: parseInt(id),
+      content: revisedContent,
+      revisionNote: feedback,
+      revisionType: 'ai_feedback',
+      createdBy: req.user?.id,
+      createdAt: new Date()
+    });
+    
+    console.log('✅ [Blog API] Article revised successfully');
+    
+    res.json({ 
+      success: true, 
+      revisedArticle: updatedArticle 
+    });
+  } catch (error) {
+    console.error("❌ [Blog API] Error revising article:", error);
+    res.status(500).json({ error: "Failed to revise article" });
+  }
+});
+
 // Moderate comments
 router.get("/api/admin/blog/comments", requireAuth, async (req: Request, res: Response) => {
   try {

@@ -159,6 +159,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Conversational Article Revision System COMPLETED (January 17, 2025)
+- **AI-POWERED REVISION WORKFLOW**: Implemented robust revision system allowing iterative article improvement through natural language feedback
+- **REVISION DIALOG INTERFACE**: Created split-screen dialog showing current article content alongside revision feedback interface
+- **REVISION HISTORY TRACKING**: All revision requests stored in database with timestamps, feedback, and resulting content changes
+- **GPT-4 INTEGRATION**: Backend endpoint processes revision feedback using GPT-4 to intelligently rewrite articles while maintaining:
+  - Professional medical terminology
+  - SEO optimization
+  - Target audience engagement
+  - Factual accuracy
+  - Core message preservation
+- **NATURAL LANGUAGE FEEDBACK**: Administrators can provide feedback like:
+  - "Make the introduction more engaging"
+  - "Add more specific examples of clinical efficiency improvements"
+  - "Be more aggressive about the benefits of AI"
+  - "Explain this concept in more detail"
+- **DATABASE SCHEMA**: Utilizes articleRevisions table with revisionNote, revisionType, and content tracking
+- **REAL-TIME UPDATES**: Article content updates immediately after revision processing
+- **PRODUCTION READY**: Complete revision workflow integrated into blog management system
+
 ### Blog Generation Two-Step Process Fix & Navigation Enhancement COMPLETED (January 16, 2025)
 - **FIXED BLOG GENERATION**: Blog article generation was failing because frontend was calling wrong endpoint
 - **TWO-STEP PROCESS IMPLEMENTED**: 
