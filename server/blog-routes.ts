@@ -277,6 +277,27 @@ router.delete("/api/admin/blog/articles/:id", requireAuth, async (req: Request, 
   }
 });
 
+// Approve and publish article
+router.post("/api/admin/blog/articles/:id/approve", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+    
+    // Update article status to published
+    const article = await storage.updateArticle(parseInt(id), {
+      status: "published",
+      publishedAt: new Date(),
+      reviewedAt: new Date(),
+      reviewedBy: userId
+    });
+    
+    res.json({ success: true, article });
+  } catch (error) {
+    console.error("Error approving article:", error);
+    res.status(500).json({ error: "Failed to approve article" });
+  }
+});
+
 // Get article revisions
 router.get("/api/admin/blog/articles/:id/revisions", requireAuth, async (req: Request, res: Response) => {
   try {
