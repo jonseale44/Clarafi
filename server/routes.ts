@@ -3624,6 +3624,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             dosageForm: order.form || "",
             sig: order.sig || "",
             quantity: order.quantity || 0,
+            quantityUnit: order.quantityUnit, // Pass existing unit to GPT
             refills: order.refills || 0,
             daysSupply: order.daysSupply || 0,
             route: order.routeOfAdministration || "",

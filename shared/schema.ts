@@ -1385,6 +1385,7 @@ export const medications = pgTable("medications", {
   // Prescription details
   frequency: text("frequency").notNull(),
   quantity: integer("quantity"), // Number of units
+  quantityUnit: text("quantity_unit"), // GPT-determined unit (tablets, mL, units, pens, vials, etc.)
   daysSupply: integer("days_supply"), // Duration of prescription
   refillsRemaining: integer("refills_remaining"),
   totalRefills: integer("total_refills"),
@@ -1983,6 +1984,7 @@ export const orders = pgTable("orders", {
   medicationName: text("medication_name"),
   dosage: text("dosage"),
   quantity: integer("quantity"),
+  quantityUnit: text("quantity_unit"), // GPT-determined unit (tablets, mL, units, pens, vials, etc.)
   sig: text("sig"), // Prescription instructions
   refills: integer("refills"),
   form: text("form"), // 'tablet', 'capsule', 'liquid', etc.

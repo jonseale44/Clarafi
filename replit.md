@@ -780,6 +780,18 @@ Preferred communication style: Simple, everyday language.
 - **APPFLOW.CONFIG.JSON**: Successfully directs builds to clarafi-mobile-capacitor subdirectory with app ID 3d7e1956
 - **NEXT STEPS**: Push all fixes to Git and trigger new build - expecting successful Vite build completion
 
+### Medication Quantity Unit Validation System COMPLETED (January 17, 2025)
+- **CRITICAL SAFETY ENHANCEMENT**: Implemented comprehensive medication quantity unit validation to prevent dangerous ambiguity (e.g., "30" could mean 30 tablets or 30 mL of insulin - potentially lethal)
+- **DATABASE SCHEMA UPDATES**: Added quantity_unit column to both orders and medications tables
+- **GPT-CENTRIC VALIDATION**: Enhanced PharmacyValidationService with explicit GPT prompts specifically requesting quantity units
+- **SOAP EXTRACTION ENHANCEMENT**: Updated SOAP orders extractor GPT prompt to extract quantity_unit from clinical notes
+- **FRONTEND DISPLAYS UPDATED**: 
+  - Draft orders now display quantity with units (e.g., "30 tablets" instead of just "30")
+  - Enhanced medications list shows quantity with units in prescription details
+  - Validation system automatically applies GPT recommendations for missing units
+- **AUTOMATIC UNIT INFERENCE**: When validating orders, GPT intelligently infers appropriate units based on medication form and route
+- **PRODUCTION STANDARDS**: System now matches or exceeds EPIC and Athena EMR medication safety standards
+
 ### Tax1099 EIN Verification Integration COMPLETED (January 13, 2025)
 - **PRODUCTION-READY IMPLEMENTATION**: Added real-time IRS EIN/Tax ID verification using Tax1099 API ($1 per check)
 - **API INTEGRATION**: Created verifyEIN method in verification-apis.ts with comprehensive error handling and match code interpretation

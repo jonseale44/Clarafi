@@ -76,6 +76,7 @@ interface Medication {
   route?: string;
   frequency: string;
   quantity?: number;
+  quantityUnit?: string;
   daysSupply?: number;
   refillsRemaining?: number;
   sig?: string;
@@ -1199,7 +1200,7 @@ function MedicationCard({ medication, isExpanded, onToggleExpanded, onDiscontinu
                     <div><span className="font-medium">Route:</span> {medication.route}</div>
                   )}
                   {medication.quantity && (
-                    <div><span className="font-medium">Quantity:</span> {medication.quantity}</div>
+                    <div><span className="font-medium">Quantity:</span> {medication.quantity}{medication.quantityUnit ? ` ${medication.quantityUnit}` : ''}</div>
                   )}
                   {medication.daysSupply && (
                     <div><span className="font-medium">Days Supply:</span> {medication.daysSupply}</div>

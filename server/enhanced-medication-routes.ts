@@ -533,7 +533,8 @@ router.post("/medications/validate-order", async (req: Request, res: Response) =
 
     const validationResult = await pharmacyValidation.validateMedicationOrder({
       ...req.body,
-      ...patientContext
+      ...patientContext,
+      quantityUnit: req.body.quantityUnit // Ensure quantity_unit is passed
     });
 
     console.log(`✅ [ValidateOrder] Validation complete: ${validationResult.isValid ? 'PASSED' : 'FAILED'}`);

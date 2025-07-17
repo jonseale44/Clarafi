@@ -733,7 +733,7 @@ function OrderContent({ order }: { order: Order }) {
           </div>
           <div className="text-sm text-gray-600 mb-2 italic">{order.sig}</div>
           <div className="text-xs text-gray-500 grid grid-cols-3 gap-2">
-            <span><strong>Qty:</strong> {order.quantity}</span>
+            <span><strong>Qty:</strong> {order.quantity}{order.quantityUnit ? ` ${order.quantityUnit}` : ''}</span>
             <span><strong>Refills:</strong> {order.refills}</span>
             {order.daysSupply && <span><strong>Days:</strong> {order.daysSupply}</span>}
           </div>
@@ -881,6 +881,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
     missingFieldRecommendations?: {
       sig?: string;
       quantity?: number;
+      quantity_unit?: string;
       refills?: number;
       daysSupply?: number;
       route?: string;
@@ -907,6 +908,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           dosageForm: order.form || "tablet",
           sig: order.sig,
           quantity: order.quantity || 30,
+          quantityUnit: order.quantityUnit,
           refills: order.refills || 0,
           daysSupply: order.daysSupply,
           route: order.routeOfAdministration || "oral",
@@ -972,6 +974,10 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
       if (recommendations.daysSupply && (!order.daysSupply || order.daysSupply === 0)) {
         console.log("📋 [MedicationEditFields] Applying daysSupply recommendation:", recommendations.daysSupply);
         onChange("daysSupply", recommendations.daysSupply);
+      }
+      if (recommendations.quantity_unit && !order.quantityUnit) {
+        console.log("📋 [MedicationEditFields] Applying quantity_unit recommendation:", recommendations.quantity_unit);
+        onChange("quantityUnit", recommendations.quantity_unit);
       }
       if (recommendations.route && !order.routeOfAdministration) {
         console.log("📋 [MedicationEditFields] Applying route recommendation:", recommendations.route);

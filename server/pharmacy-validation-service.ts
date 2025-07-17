@@ -39,6 +39,7 @@ export interface MedicationOrderForValidation {
   dosageForm: string;
   sig: string;
   quantity: number;
+  quantityUnit?: string;
   refills: number;
   daysSupply?: number;
   route: string;
@@ -114,7 +115,7 @@ MEDICATION ORDER:
 - Medication: ${order.medicationName} ${order.strength}
 - Form: ${order.dosageForm}
 - Sig: ${order.sig || "MISSING"}
-- Quantity: ${order.quantity || "MISSING"}
+- Quantity: ${order.quantity || "MISSING"} ${order.quantityUnit || "(UNITS NOT SPECIFIED)"}
 - Refills: ${order.refills !== undefined ? order.refills : "MISSING"}
 - Days Supply: ${order.daysSupply || "MISSING"}
 - Route: ${order.route || "MISSING"}
@@ -131,6 +132,14 @@ PATIENT CONTEXT:
 IMPORTANT: 
 1. For any field marked as 'MISSING', provide a recommended value in the missing_field_recommendations section based on the medication, indication, and patient context.
 2. CRITICAL: If quantity is provided but doesn't match the days supply and sig (e.g., quantity 30 with sig "once daily" for 90 days supply), you MUST recommend the correct quantity in missing_field_recommendations. Calculate: (doses per day from sig) × (days supply) = correct quantity.
+3. CRITICAL SAFETY: If quantity units are not specified, you MUST determine the appropriate unit based on the medication form. NEVER allow ambiguous quantities for injections, insulin, or liquid medications. For example:
+   - Tablets/Capsules: "tablets" or "capsules"
+   - Insulin: "mL" or "units" or "pens" or "vials"
+   - Other injections: "mL" or "vials"
+   - Liquids: "mL"
+   - Creams/Ointments: "grams" or "tubes"
+   - Inhalers: "inhalers"
+   - Patches: "patches"
 
 Provide a comprehensive pharmacy validation analysis in JSON format:
 
@@ -163,6 +172,7 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
   "missing_field_recommendations": {
     "sig": "Recommended sig if missing (e.g., 'Take 1 tablet by mouth once daily')",
     "quantity": recommended quantity number if missing OR if current quantity doesn't match the days supply and sig - calculate the correct quantity based on sig and days supply (e.g., if sig is once daily and days supply is 90, quantity should be 90),
+    "quantity_unit": "ALWAYS provide the appropriate unit for the quantity based on the medication form (e.g., 'tablets', 'mL', 'units', 'pens', 'vials', 'grams', 'inhalers')",
     "refills": recommended refills number if missing (e.g., 5),
     "daysSupply": recommended days supply if missing (e.g., 30),
     "route": "Recommended route if missing (e.g., 'oral')",

@@ -14,6 +14,7 @@ interface ExtractedMedication {
   medication_name: string;
   dosage: string;
   quantity: number;
+  quantity_unit?: string;
   sig: string;
   refills: number;
   form?: string;
@@ -122,6 +123,7 @@ export class SOAPOrdersExtractor {
             medicationName: standardized.medicationName || med.medication_name,
             dosage: standardized.strength || med.dosage,
             quantity: med.quantity,
+            quantityUnit: med.quantity_unit,
             sig: standardizedSig,
             refills: med.refills,
             form: standardized.dosageForm || med.form,
@@ -365,6 +367,7 @@ Extract all medical orders and provide complete standardized parameters required
       "medication_name": "PROPER CASE medication name (e.g., Lisinopril, Hydrochlorothiazide, Montelukast)",
       "dosage": "strength only (e.g., 10 mg, 25 mg, 250 mg)",
       "quantity": number_of_units,
+      "quantity_unit": "CRITICAL: unit of measurement for quantity (tablets, capsules, mL, units, pens, vials, grams, tubes, inhalers, patches) - NEVER leave blank for injectables/insulin",
       "sig": "standardized patient instructions using tablet/capsule count, NOT strength",
       "refills": number_of_refills,
       "form": "tablet/capsule/liquid/injection/cream/ointment/patch/inhaler/drops",
