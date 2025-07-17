@@ -2296,13 +2296,12 @@ export class DatabaseStorage implements IStorage {
       console.log('🤖 [AI SCHEDULING] Patient complexity:', complexity);
       
       // 2. Get patient scheduling patterns
-      const patterns = await db
-        .select()
-        .from(patientSchedulingPatterns)
-        .where(eq(patientSchedulingPatterns.patientId, params.patientId))
-        .execute();
+      const patterns = await db.execute(sql`
+        SELECT * FROM patient_scheduling_patterns 
+        WHERE patient_id = ${params.patientId}
+      `);
       
-      patientPatterns = patterns[0] || null;
+      patientPatterns = patterns.rows[0] || null;
         
       console.log('🤖 [AI SCHEDULING] Patient patterns:', patientPatterns);
       
@@ -2345,15 +2344,15 @@ export class DatabaseStorage implements IStorage {
       // 5. Use historical patterns if available - THIS IS THE MOST IMPORTANT FACTOR
       if (patientPatterns) {
         // Use patient's average visit duration if we have history
-        const historicalAvg = parseFloat(patientPatterns.avgVisitDuration || '0');
+        const historicalAvg = parseFloat(patientPatterns.avg_visit_duration || '0');
         
         // Check for appointment-type-specific history
         let typeSpecificDuration = 0;
-        if (patientPatterns.avgDurationByType) {
+        if (patientPatterns.avg_duration_by_type) {
           try {
-            const durationByType = typeof patientPatterns.avgDurationByType === 'string' 
-              ? JSON.parse(patientPatterns.avgDurationByType) 
-              : patientPatterns.avgDurationByType;
+            const durationByType = typeof patientPatterns.avg_duration_by_type === 'string' 
+              ? JSON.parse(patientPatterns.avg_duration_by_type) 
+              : patientPatterns.avg_duration_by_type;
             typeSpecificDuration = durationByType[params.appointmentType] || 0;
           } catch (e) {
             console.log('🤖 [AI SCHEDULING] Could not parse appointment type history');
@@ -2373,14 +2372,14 @@ export class DatabaseStorage implements IStorage {
         }
         
         // High no-show rate might mean scheduling shorter slots
-        const noShowRate = parseFloat(patientPatterns.noShowRate || '0');
+        const noShowRate = parseFloat(patientPatterns.no_show_rate || '0');
         if (noShowRate > 0.3 && providerWeights.noShowRiskWeight > 0) { // >30% no-show rate
           const noShowFactor = providerWeights.noShowRiskWeight / 100;
           durationAdjustment -= 5 * noShowFactor;
         }
         
         // Consistent late arrivals need buffer
-        const avgArrivalDelta = parseFloat(patientPatterns.avgArrivalDelta || '0');
+        const avgArrivalDelta = parseFloat(patientPatterns.avg_arrival_delta || '0');
         if (avgArrivalDelta > 10 && providerWeights.averageArrivalTimeWeight > 0) { // Consistently >10 minutes late
           const arrivalFactor = providerWeights.averageArrivalTimeWeight / 100;
           durationAdjustment += 5 * arrivalFactor;
@@ -2488,7 +2487,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(patients, eq(appointments.patientId, patients.id))
       .where(and(
         eq(appointments.providerId, providerId),
-        eq(appointments.appointmentDate, appointmentDate),
+        sql`${appointments}.appointment_date::date = ${appointmentDate}::date`,
         // Only check active appointments (not cancelled or no-show)
         notInArray(appointments.status, ['cancelled', 'no_show']),
         // Exclude the appointment being updated if provided

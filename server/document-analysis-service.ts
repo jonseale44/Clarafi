@@ -52,14 +52,15 @@ export class DocumentAnalysisService {
 
     // Add to queue with only fields that exist in database
     await db.execute(sql`
-      INSERT INTO document_processing_queue (attachment_id, status, attempts)
-      VALUES (${attachmentId}, 'queued', 0)
+      INSERT INTO document_processing_queue (attachment_id, status, attempts, processor_type)
+      VALUES (${attachmentId}, 'queued', 0, 'document_analysis')
     `);
 
     // Create processing record
     await db.insert(attachmentExtractedContent).values({
       attachmentId,
       processingStatus: "pending",
+      contentType: "document", // Add required content_type
     });
 
     console.log(

@@ -968,6 +968,14 @@ Preferred communication style: Simple, everyday language.
 - **ROOT CAUSE**: Database and schema.ts have diverged significantly - database represents production state while schema.ts contains fields that were never migrated to production
 - **STRATEGY**: Fixed queries to work with actual database structure rather than modifying production database
 
+### Additional Database Column Fixes for Patient Scheduling COMPLETED (January 17, 2025)
+- **PATIENT SCHEDULING PATTERNS FIX**: Converted query to use raw SQL with snake_case columns (`avg_visit_duration`, `avg_duration_by_type`, `no_show_rate`, `avg_arrival_delta`) instead of camelCase from Drizzle ORM
+- **APPOINTMENT CONFLICT FIX**: Updated conflict check to use SQL expression for `appointment_date` column instead of `appointmentDate` which doesn't exist
+- **DOCUMENT PROCESSOR TYPE FIX**: Added required `processor_type` column with value 'document_analysis' to document processing queue insert
+- **SYSTEMATIC ISSUE**: Identified recurring pattern where Drizzle ORM expects camelCase but database has snake_case columns
+- **SOLUTION APPROACH**: Used raw SQL queries for problematic tables to ensure exact column name matching
+- **IMPACT**: Fixed document upload functionality and AI-powered appointment scheduling features
+
 ### Tier 1 Individual Practice Registration Enhancement COMPLETED (January 11, 2025)
 - **PRACTICE INFORMATION NOW OPTIONAL**: Successfully made all practice information fields (name, address, city, state, zip, phone) optional for tier 1 individual practice registration
 - **UNIQUE PRACTICE NAME GENERATION**: When practice name not provided, system generates unique name using format: "FirstName LastName, MD - Private Practice (timestamp)"
