@@ -124,13 +124,173 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Add missing columns to patients table
+-- 3. Add ALL missing columns to patients table
 DO $$ 
 BEGIN
+    -- Location and provider
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name='patients' 
                    AND column_name='preferred_location_id') THEN
         ALTER TABLE patients ADD COLUMN preferred_location_id INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='primary_provider_id') THEN
+        ALTER TABLE patients ADD COLUMN primary_provider_id INTEGER;
+    END IF;
+    
+    -- Insurance fields
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='insurance_primary') THEN
+        ALTER TABLE patients ADD COLUMN insurance_primary TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='insurance_secondary') THEN
+        ALTER TABLE patients ADD COLUMN insurance_secondary TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='policy_number') THEN
+        ALTER TABLE patients ADD COLUMN policy_number TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='group_number') THEN
+        ALTER TABLE patients ADD COLUMN group_number TEXT;
+    END IF;
+    
+    -- Voice workflow optimization
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='assistant_id') THEN
+        ALTER TABLE patients ADD COLUMN assistant_id TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='assistant_thread_id') THEN
+        ALTER TABLE patients ADD COLUMN assistant_thread_id TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='last_chart_summary') THEN
+        ALTER TABLE patients ADD COLUMN last_chart_summary TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='chart_last_updated') THEN
+        ALTER TABLE patients ADD COLUMN chart_last_updated TIMESTAMP;
+    END IF;
+    
+    -- Clinical flags
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='active_problems') THEN
+        ALTER TABLE patients ADD COLUMN active_problems JSONB DEFAULT '[]'::jsonb;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='critical_alerts') THEN
+        ALTER TABLE patients ADD COLUMN critical_alerts JSONB DEFAULT '[]'::jsonb;
+    END IF;
+    
+    -- Data Origin Tracking
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='data_origin_type') THEN
+        ALTER TABLE patients ADD COLUMN data_origin_type TEXT DEFAULT 'emr_direct';
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='original_facility_id') THEN
+        ALTER TABLE patients ADD COLUMN original_facility_id INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='created_by_provider_id') THEN
+        ALTER TABLE patients ADD COLUMN created_by_provider_id INTEGER;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='creation_context') THEN
+        ALTER TABLE patients ADD COLUMN creation_context TEXT;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='derivative_work_note') THEN
+        ALTER TABLE patients ADD COLUMN derivative_work_note TEXT;
+    END IF;
+    
+    -- Migration and Consent Tracking
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='migration_consent') THEN
+        ALTER TABLE patients ADD COLUMN migration_consent JSONB DEFAULT '{"consentGiven": false}'::jsonb;
+    END IF;
+    
+    -- Profile photo
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='profile_photo_filename') THEN
+        ALTER TABLE patients ADD COLUMN profile_photo_filename TEXT;
+    END IF;
+    
+    -- Timestamps
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='created_at') THEN
+        ALTER TABLE patients ADD COLUMN created_at TIMESTAMP DEFAULT NOW();
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='patients' 
+                   AND column_name='updated_at') THEN
+        ALTER TABLE patients ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+    END IF;
+END $$;
+
+-- 3b. Add missing columns from recent errors
+DO $$ 
+BEGIN
+    -- Add accessed_at to phi_access_logs (it's using created_at but code expects accessed_at)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='phi_access_logs' 
+                   AND column_name='accessed_at') THEN
+        ALTER TABLE phi_access_logs ADD COLUMN accessed_at TIMESTAMP DEFAULT NOW();
+    END IF;
+    
+    -- Add start_time to encounters table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='encounters' 
+                   AND column_name='start_time') THEN
+        ALTER TABLE encounters ADD COLUMN start_time TIMESTAMP;
+    END IF;
+    
+    -- Add short_name to locations table
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='locations' 
+                   AND column_name='short_name') THEN
+        ALTER TABLE locations ADD COLUMN short_name TEXT;
+    END IF;
+    
+    -- Add status to health_systems table (for admin stats route)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='health_systems' 
+                   AND column_name='status') THEN
+        ALTER TABLE health_systems ADD COLUMN status TEXT DEFAULT 'active';
     END IF;
 END $$;
 
