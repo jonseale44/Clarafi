@@ -1004,6 +1004,7 @@ Preferred communication style: Simple, everyday language.
 - **RESOLUTION STRATEGY**: Database structure is source of truth - updated schema.ts to match reality rather than adding columns to database
 - **PRODUCTION IMPACT**: Document upload and processing working correctly, authentication errors resolved, server stable
 - **IMAGING PARSER FIX**: Removed all references to non-existent clinical_summary column from unified-imaging-parser.ts database inserts
+- **IMAGING COLUMN NAME FIX**: Fixed column name mismatches - schema.ts now uses readingRadiologist/performingFacility to match database columns reading_radiologist/performing_facility instead of radiologistName/facilityName
 
 ### Tier 1 Individual Practice Registration Enhancement COMPLETED (January 11, 2025)
 - **PRACTICE INFORMATION NOW OPTIONAL**: Successfully made all practice information fields (name, address, city, state, zip, phone) optional for tier 1 individual practice registration

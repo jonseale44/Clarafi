@@ -2029,8 +2029,8 @@ export const imagingResults = pgTable("imaging_results", {
   // Results
   findings: text("findings"), // Full radiologist findings
   impression: text("impression"), // Radiologist impression
-  radiologistName: text("radiologist_name"),
-  facilityName: text("facility_name"), // Where study was performed
+  readingRadiologist: text("reading_radiologist"), // Database column is "reading_radiologist"
+  performingFacility: text("performing_facility"), // Database column is "performing_facility"
   
   // PDF attachment integration
   attachmentId: integer("attachment_id").references(() => patientAttachments.id), // Link to PDF report
