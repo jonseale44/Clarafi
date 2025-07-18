@@ -1193,6 +1193,14 @@ export const encounters = pgTable("encounters", {
   appointmentId: integer("appointment_id").references(() => appointments.id),
   signatureId: varchar("signature_id").references(() => signatures.id),
   
+  // Critical missing columns from database (actively used)
+  encounterDate: timestamp("encounter_date"), // Encounter date (58 references)
+  templateId: integer("template_id"), // Note templates (56 references)
+  signedBy: integer("signed_by").references(() => users.id), // Provider signature (16 references)
+  visitReason: text("visit_reason"), // Chief complaint alias (26 references)
+  notes: text("notes"), // Clinical notes (444 references - CRITICAL!)
+  locationId: integer("location_id").references(() => locations.id), // Clinic location (113 references)
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   
@@ -1768,6 +1776,14 @@ export const labOrders = pgTable("lab_orders", {
   qualityMeasure: text("quality_measure"), // Links to quality reporting (HEDIS, CMS)
   preventiveCareFlag: boolean("preventive_care_flag").default(false),
   
+  // Critical missing columns from database (actively used)
+  orderId: text("order_id"), // External order ID (231 references in codebase)
+  results: jsonb("results"), // Lab results data (776 references - CRITICAL!)
+  externalLab: text("external_lab"), // External lab name (35 references)
+  providerNotes: text("provider_notes"), // Provider notes (139 references)
+  resultStatus: text("result_status"), // Result status (17 references)
+  specialInstructions: text("special_instructions"), // Special instructions (29 references)
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2055,6 +2071,12 @@ export const imagingResults = pgTable("imaging_results", {
     changesFrom?: string;
   }>>(),
   
+  // Critical missing column from database (971 references!)
+  encounterId: integer("encounter_id").references(() => encounters.id), // Links to encounters
+  recommendations: text("recommendations"), // Clinical recommendations (134 references)
+  technique: text("technique"), // Imaging technique details (31 references)
+  procedureCode: text("procedure_code"), // Billing codes (70 references)
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2153,6 +2175,16 @@ export const orders = pgTable("orders", {
   orderedAt: timestamp("ordered_at").defaultNow(),
   approvedBy: integer("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
+  
+  // Critical missing columns from database (actively used)
+  prescriber: text("prescriber"), // Prescribing provider name (147 references)
+  orderDate: timestamp("order_date"), // Order date (24 references)
+  startDate: timestamp("start_date"), // Start date (31 references)
+  endDate: timestamp("end_date"), // End date (11 references)
+  frequency: text("frequency"), // Dosing frequency (87 references)
+  imagingStudyType: text("imaging_study_type"), // Imaging type (12 references)
+  labTestName: text("lab_test_name"), // Lab test name (16 references)
+  referralReason: text("referral_reason"), // Referral reason (7 references)
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

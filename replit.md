@@ -159,6 +159,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Schema Cleanup - Critical Columns Added (January 18, 2025)
+- **SCHEMA CLEANUP PHASE 1 COMPLETED**: Added 22 critical columns to schema.ts that were causing application errors
+- **LAB_ORDERS TABLE**: Added orderId (231 refs), results (776 refs!), externalLab, providerNotes, resultStatus, specialInstructions
+- **IMAGING_RESULTS TABLE**: Added encounterId (971 refs!), recommendations, technique, procedureCode - fixing major functionality gaps
+- **ENCOUNTERS TABLE**: Added notes (444 refs!), encounterDate, templateId, signedBy, visitReason, locationId
+- **ORDERS TABLE**: Added prescriber (147 refs), orderDate, startDate, endDate, frequency columns for complete order tracking
+- **FIXED LAB PARSER**: Added source_system and interface_version columns to lab_results table
+- **FIXED IMAGING UI CRASH**: Added null safety check for status.toLowerCase() preventing UI crashes
+- **IMPACT**: Resolved critical functionality issues where code was referencing columns that existed in DB but not in schema.ts
+- **REMAINING WORK**: 520 extra columns still need evaluation (most have 0 references and can likely be removed from DB)
+
 ### Database Schema Alignment Fixes (January 18, 2025)
 - **FAMILY HISTORY API FIXED**: Fixed two critical schema mismatches in family_history table:
   - Changed `sourceNotes: text("source_notes")` to `sourceNotes: text("notes")` to match actual database column
