@@ -1245,7 +1245,7 @@ export const medicalHistory = pgTable("medical_history", {
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   conditionCategory: text("condition_category").notNull(), // 'cardiac', 'endocrine', 'surgical'
   historyText: text("history_text").notNull(),
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
   
   // Source tracking for multi-source medical history data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'provider_verified', 'imported_records'
@@ -2947,7 +2947,7 @@ export const insertAllergySchema = createInsertSchema(allergies).pick({
   allergen: true,
   reaction: true,
   severity: true,
-  lastUpdatedEncounter: true,
+  lastUpdatedEncounterId: true,
   sourceType: true,
   sourceConfidence: true,
   sourceNotes: true,
@@ -2957,9 +2957,9 @@ export const insertAllergySchema = createInsertSchema(allergies).pick({
 
 export const insertFamilyHistorySchema = createInsertSchema(familyHistory).pick({
   patientId: true,
-  familyMember: true,
-  medicalHistory: true,
-  lastUpdatedEncounter: true,
+  relationship: true,
+  condition: true,
+  lastUpdatedEncounterId: true,
   sourceType: true,
   sourceConfidence: true,
   sourceNotes: true,
@@ -2971,7 +2971,7 @@ export const insertMedicalHistorySchema = createInsertSchema(medicalHistory).pic
   patientId: true,
   conditionCategory: true,
   historyText: true,
-  lastUpdatedEncounter: true,
+  lastUpdatedEncounterId: true,
   sourceType: true,
   sourceConfidence: true,
   sourceNotes: true,

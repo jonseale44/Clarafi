@@ -169,6 +169,13 @@ Preferred communication style: Simple, everyday language.
   - Fixed foreign key names: "family_history_last_updated_encounter_" → "family_history_last_updated_encounter_id_"
 - **METHODOLOGY FOLLOWED**: Using proper Drizzle approach - updating schema.ts first then running db:push rather than manual SQL
 - **API FUNCTIONALITY RESTORED**: Family history API now returns data successfully without column errors
+- **LAB RESULTS COLUMNS ADDED**: Added missing portal release columns to lab_results table:
+  - portal_release_status, portal_release_by, portal_release_at, block_portal_release
+  - ai_interpretation TEXT column for GPT-enhanced lab interpretations
+- **MEDICAL HISTORY COLUMN FIX**: Fixed medical_history table schema mismatch:
+  - Changed `lastUpdatedEncounter` to `lastUpdatedEncounterId` in schema.ts to match database column name
+  - Updated insertMedicalHistorySchema to use correct field name
+  - Also fixed insertAllergySchema and insertFamilyHistorySchema column references
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
