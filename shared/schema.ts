@@ -2020,6 +2020,7 @@ export const imagingResults = pgTable("imaging_results", {
   
   // Study details
   studyDate: timestamp("study_date").notNull(),
+  studyType: text("study_type").notNull(), // Type of study (e.g., 'XR chest', 'CT abdomen')
   modality: text("modality").notNull(), // 'XR', 'CT', 'MR', 'US', 'Echo', 'PET'
   bodyPart: text("body_part"),
   laterality: text("laterality"), // 'left', 'right', 'bilateral'

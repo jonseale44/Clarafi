@@ -176,6 +176,10 @@ Preferred communication style: Simple, everyday language.
   - Changed `lastUpdatedEncounter` to `lastUpdatedEncounterId` in schema.ts to match database column name
   - Updated insertMedicalHistorySchema to use correct field name
   - Also fixed insertAllergySchema and insertFamilyHistorySchema column references
+- **IMAGING RESULTS SCHEMA FIX**: Fixed null constraint violation for study_type column:
+  - Added missing `studyType` field to imagingResults table schema in schema.ts
+  - Updated unified-imaging-parser.ts to ensure study_type is never null by combining modality and body_part
+  - Added fallback logic: uses "modality body_part" format, or just modality, or "Imaging Study" as last resort
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
