@@ -2152,9 +2152,13 @@ export class DatabaseStorage implements IStorage {
     locationId?: number;
     patientId?: number;
   }) {
+    // Convert dates to YYYY-MM-DD format for comparison with appointment_date column
+    const startDateStr = params.startDate.toISOString().split('T')[0];
+    const endDateStr = params.endDate.toISOString().split('T')[0];
+    
     let conditions = [
-      gte(appointments.startTime, params.startDate.toISOString()),
-      lte(appointments.startTime, params.endDate.toISOString())
+      gte(appointments.appointmentDate, startDateStr),
+      lte(appointments.appointmentDate, endDateStr)
     ];
     
     if (params.providerId) {
@@ -2177,7 +2181,7 @@ export class DatabaseStorage implements IStorage {
         providerId: appointments.providerId,
         providerName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         locationId: appointments.locationId,
-        appointmentDate: sql<string>`DATE(${appointments.startTime})`,
+        appointmentDate: appointments.appointmentDate,
         appointmentTime: appointments.startTime,
         startTime: appointments.startTime,
         endTime: appointments.endTime,
@@ -2187,8 +2191,8 @@ export class DatabaseStorage implements IStorage {
         appointmentType: appointments.appointmentType,
         status: appointments.status,
         chiefComplaint: appointments.chiefComplaint,
-        notes: appointments.notes,
-        aiPredictedDuration: sql<number>`NULL` // TODO: Get from prediction history
+        notes: appointments.schedulingNotes, // Use schedulingNotes column, not notes
+        aiPredictedDuration: appointments.aiPredictedDuration // Use actual column instead of NULL
       })
       .from(appointments)
       .innerJoin(patients, and(
@@ -2197,7 +2201,7 @@ export class DatabaseStorage implements IStorage {
       ))
       .innerJoin(users, eq(appointments.providerId, users.id))
       .where(and(...conditions))
-      .orderBy(appointments.startTime)
+      .orderBy(appointments.appointmentDate, appointments.startTime)
       .execute();
       
     return results;
@@ -2686,14 +2690,23 @@ export class DatabaseStorage implements IStorage {
 
   // Get appointment types
   async getAppointmentTypes(healthSystemId: number, locationId?: number) {
-    // Note: appointmentTypes table doesn't have locationId column
-    // Only filter by healthSystemId for now
-    return await db
-      .select()
-      .from(appointmentTypes)
-      .where(eq(appointmentTypes.healthSystemId, healthSystemId))
-      .orderBy(appointmentTypes.name)
-      .execute();
+    // Use raw SQL to handle column name mismatches between schema and database
+    const query = `
+      SELECT 
+        id,
+        health_system_id,
+        name,
+        duration_minutes,
+        color,
+        description,
+        is_active
+      FROM appointment_types
+      WHERE health_system_id = $1
+      ORDER BY name
+    `;
+    
+    const result = await db.execute(sql.raw(query, [healthSystemId]));
+    return result.rows;
   }
 
   // Get scheduling AI factors
