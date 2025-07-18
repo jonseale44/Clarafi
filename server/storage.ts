@@ -2488,23 +2488,23 @@ export class DatabaseStorage implements IStorage {
         or(
           // New appointment starts during existing appointment
           and(
-            sql`${appointments.startTime} <= ${startTime}`,
-            sql`${appointments.endTime} > ${startTime}`
+            sql`${appointments.startTime}::text <= ${startTime}::text`,
+            sql`${appointments.endTime}::text > ${startTime}::text`
           ),
           // New appointment ends during existing appointment
           and(
-            sql`${appointments.startTime} < ${endTime}`,
-            sql`${appointments.endTime} >= ${endTime}`
+            sql`${appointments.startTime}::text < ${endTime}::text`,
+            sql`${appointments.endTime}::text >= ${endTime}::text`
           ),
           // New appointment completely encompasses existing appointment
           and(
-            sql`${appointments.startTime} >= ${startTime}`,
-            sql`${appointments.endTime} <= ${endTime}`
+            sql`${appointments.startTime}::text >= ${startTime}::text`,
+            sql`${appointments.endTime}::text <= ${endTime}::text`
           ),
           // Existing appointment completely encompasses new appointment
           and(
-            sql`${appointments.startTime} <= ${startTime}`,
-            sql`${appointments.endTime} >= ${endTime}`
+            sql`${appointments.startTime}::text <= ${startTime}::text`,
+            sql`${appointments.endTime}::text >= ${endTime}::text`
           )
         )
       ))

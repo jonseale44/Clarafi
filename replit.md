@@ -207,15 +207,22 @@ Preferred communication style: Simple, everyday language.
 - **APPOINTMENTS TABLE FIX**: Added missing columns causing scheduling failures:
   - `provider_scheduled_duration` INTEGER - Duration provider has blocked for appointment
   - `appointment_date` DATE - Date of the appointment (separate from time)
+  - `appointment_type` TEXT - Type of appointment (follow-up, new_patient, etc.)
+  - `visit_reason` TEXT - Reason for visit (similar to chief complaint)
+  - Multiple communication and reminder tracking columns (reminders_sent, last_reminder_sent, etc.)
+  - All additional columns from schema.ts (confirmation_status, scheduling fields, insurance fields, etc.)
 - **PATIENT SCHEDULING PATTERNS FIX**: Added missing columns for AI predictions:
   - `avg_visit_duration` DECIMAL(5,2) - Average visit duration for patient
   - `no_show_rate` DECIMAL(5,2) - Patient's no-show percentage 
   - `avg_arrival_delta` DECIMAL(5,2) - Average minutes early/late
   - `avg_duration_by_type` JSONB - Appointment type to duration mapping
+  - `visit_duration_std_dev` DECIMAL(5,2) - Standard deviation of visit durations
 - **TIMESTAMP COMPARISON FIX**: Fixed appointment conflict checking:
   - Changed from invalid timestamp comparisons to proper date field comparisons
-  - Used SQL string comparisons for time fields stored as TEXT
-- **RESULT**: Scheduling system now functional with systematic column fixes applied
+  - Fixed SQL query using explicit ::text casting for time field comparisons
+  - Resolved "invalid input syntax for type timestamp with time zone" errors
+- **TOTAL COLUMNS ADDED**: 9 critical scheduling columns plus ~50 additional appointment-related columns
+- **RESULT**: Scheduling system now fully functional with all schema columns properly aligned
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
