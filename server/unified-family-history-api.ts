@@ -104,7 +104,7 @@ router.post("/family-history/:patientId", APIResponseHandler.asyncHandler(async 
       familyMember: familyMember.toLowerCase().trim(),
       medicalHistory: medicalHistory.trim(),
       sourceType,
-      sourceNotes,
+      notes: sourceNotes, // Map sourceNotes from API to notes in database
       sourceConfidence: "1.00",
       enteredBy: req.user?.id,
       visitHistory: [{
@@ -162,7 +162,7 @@ router.put("/family-history/:id", APIResponseHandler.asyncHandler(async (req, re
     }
     
     if (sourceNotes) {
-      updateData.sourceNotes = sourceNotes;
+      updateData.notes = sourceNotes; // Map sourceNotes to notes column
     }
 
     // Add visit history entry for the update

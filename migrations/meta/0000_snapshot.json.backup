@@ -217,8 +217,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_updated_encounter_id": {
-          "name": "last_updated_encounter_id",
+        "last_updated_encounter": {
+          "name": "last_updated_encounter",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -297,12 +297,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "allergies_last_updated_encounter_id_encounters_id_fk": {
-          "name": "allergies_last_updated_encounter_id_encounters_id_fk",
+        "allergies_last_updated_encounter_encounters_id_fk": {
+          "name": "allergies_last_updated_encounter_encounters_id_fk",
           "tableFrom": "allergies",
           "tableTo": "encounters",
           "columnsFrom": [
-            "last_updated_encounter_id"
+            "last_updated_encounter"
           ],
           "columnsTo": [
             "id"
@@ -1388,8 +1388,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_updated_encounter_id": {
-          "name": "last_updated_encounter_id",
+        "last_updated_encounter": {
+          "name": "last_updated_encounter",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1462,12 +1462,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "family_history_last_updated_encounter_id_encounters_id_fk": {
-          "name": "family_history_last_updated_encounter_id_encounters_id_fk",
+        "family_history_last_updated_encounter_encounters_id_fk": {
+          "name": "family_history_last_updated_encounter_encounters_id_fk",
           "tableFrom": "family_history",
           "tableTo": "encounters",
           "columnsFrom": [
-            "last_updated_encounter_id"
+            "last_updated_encounter"
           ],
           "columnsTo": [
             "id"
@@ -3421,8 +3421,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "last_updated_encounter_id": {
-          "name": "last_updated_encounter_id",
+        "last_updated_encounter": {
+          "name": "last_updated_encounter",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -3494,7 +3494,7 @@
           "tableFrom": "medical_history",
           "tableTo": "encounters",
           "columnsFrom": [
-            "last_updated_encounter_id"
+            "last_updated_encounter"
           ],
           "columnsTo": [
             "id"
@@ -6053,8 +6053,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_updated_encounter_id": {
-          "name": "last_updated_encounter_id",
+        "last_updated_encounter": {
+          "name": "last_updated_encounter",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -6145,7 +6145,7 @@
           "tableFrom": "social_history",
           "tableTo": "encounters",
           "columnsFrom": [
-            "last_updated_encounter_id"
+            "last_updated_encounter"
           ],
           "columnsTo": [
             "id"
@@ -6344,8 +6344,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "last_updated_encounter_id": {
-          "name": "last_updated_encounter_id",
+        "last_updated_encounter": {
+          "name": "last_updated_encounter",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -6423,7 +6423,7 @@
           "tableFrom": "surgical_history",
           "tableTo": "encounters",
           "columnsFrom": [
-            "last_updated_encounter_id"
+            "last_updated_encounter"
           ],
           "columnsTo": [
             "id"

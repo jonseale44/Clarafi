@@ -159,6 +159,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Database Schema Alignment Fixes (January 18, 2025)
+- **FAMILY HISTORY API FIXED**: Fixed two critical schema mismatches in family_history table:
+  - Changed `sourceNotes: text("source_notes")` to `sourceNotes: text("notes")` to match actual database column
+  - Commented out `enteredBy` column which doesn't exist in database
+- **MIGRATION SNAPSHOT CORRECTED**: Fixed migration/meta/0000_snapshot.json which had outdated column names:
+  - Changed all "last_updated_encounter" references to "last_updated_encounter_id" 
+  - Fixed foreign key names: "allergies_last_updated_encounter_" → "allergies_last_updated_encounter_id_"
+  - Fixed foreign key names: "family_history_last_updated_encounter_" → "family_history_last_updated_encounter_id_"
+- **METHODOLOGY FOLLOWED**: Using proper Drizzle approach - updating schema.ts first then running db:push rather than manual SQL
+- **API FUNCTIONALITY RESTORED**: Family history API now returns data successfully without column errors
+
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
 - **TRIAL PERIOD CHANGE**: Updated free trial period from 30 days to 14 days for both tiers

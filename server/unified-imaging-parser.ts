@@ -663,6 +663,7 @@ Return a JSON object with this exact structure:
             patientId,
             imagingOrderId: null, // Historical findings may not have orders
             studyDate: new Date(change.study_date!),
+            studyType: `${change.modality} ${change.body_part}`, // Combine modality and body part for study type
             modality: change.modality!,
             bodyPart: change.body_part!,
             laterality: change.laterality || null,
