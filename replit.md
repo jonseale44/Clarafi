@@ -217,12 +217,13 @@ Preferred communication style: Simple, everyday language.
   - `avg_arrival_delta` DECIMAL(5,2) - Average minutes early/late
   - `avg_duration_by_type` JSONB - Appointment type to duration mapping
   - `visit_duration_std_dev` DECIMAL(5,2) - Standard deviation of visit durations
-- **TIMESTAMP COMPARISON FIX**: Fixed appointment conflict checking:
-  - Changed from invalid timestamp comparisons to proper date field comparisons
-  - Fixed SQL query using explicit ::text casting for time field comparisons
-  - Resolved "invalid input syntax for type timestamp with time zone" errors
-- **TOTAL COLUMNS ADDED**: 9 critical scheduling columns plus ~50 additional appointment-related columns
-- **RESULT**: Scheduling system now fully functional with all schema columns properly aligned
+  - `arrival_consistency` DECIMAL(5,2) - Patient's arrival time consistency
+- **CRITICAL TIMESTAMP FIX**: Fixed schema mismatch where database had timestamp columns but schema.ts defined them as text:
+  - Changed start_time column from TIMESTAMP to TEXT to match schema.ts definition
+  - Changed end_time column from TIMESTAMP to TEXT to match schema.ts definition
+  - This fixed "invalid input syntax for type timestamp with time zone: '09:00'" errors
+- **TOTAL COLUMNS ADDED**: 10 critical scheduling columns plus ~50 additional appointment-related columns
+- **RESULT**: Scheduling system now fully functional - appointments can be created through the UI
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
