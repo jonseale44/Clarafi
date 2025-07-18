@@ -914,6 +914,21 @@ Preferred communication style: Simple, everyday language.
 - **AUTOMATIC UNIT INFERENCE**: When validating orders, GPT intelligently infers appropriate units based on medication form and route
 - **PRODUCTION STANDARDS**: System now matches or exceeds EPIC and Athena EMR medication safety standards
 
+### Medication Management System Enhanced with GPT Authority (January 18, 2025)
+- **BUSINESS LOGIC CLARIFIED**: Default prescriptions are 30 days with 2 refills (90 days total) unless specified otherwise
+- **GPT AS VALIDATION AUTHORITY**: System trusts GPT-4.1 to intelligently handle medication prescriptions without micromanagement
+- **SHORT-TERM PRESCRIPTION HANDLING**: Natural language parser includes explicit examples for short-term medications:
+  - "prednisone 50mg daily for 5 days" → 5 tablets, 0 refills
+  - Antibiotic courses → appropriate quantity, 0 refills
+  - Z-packs, steroid tapers → exact counts with no refills
+- **QUANTITY_UNIT ENFORCEMENT**: Made quantity_unit field required in ExtractedMedication interface (not optional)
+- **SOAP EXTRACTOR UPDATES**: Ensured quantity_unit field is preserved when converting existing orders for deduplication
+- **PHARMACY VALIDATION SERVICE**: Added suggestDaysSupply() method with intelligent duration detection:
+  - Parses "for X days" from sig instructions
+  - Special handling for Z-packs (5 days), methylprednisolone tapers (6 days)
+  - Defaults: antibiotics (10 days), steroid bursts (5 days), chronic meds (30 days)
+- **PRODUCTION PHILOSOPHY**: Let GPT handle the complexity of real-world prescribing patterns without rigid frontend validation
+
 ### Comprehensive Database Schema Alignment Fix COMPLETED (January 17, 2025)
 - **CRITICAL ISSUE RESOLVED**: Fixed massive database schema misalignment that was preventing patient creation and core EMR functionality
 - **COMPREHENSIVE SCHEMA ANALYSIS**: Created automated tools to compare database structure with schema.ts, identifying 49 missing tables and 566 extra columns

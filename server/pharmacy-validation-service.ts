@@ -219,15 +219,20 @@ Provide a comprehensive pharmacy validation analysis in JSON format:
         );
         
         // Add critical safety error
-        gptValidation.compliance.errors.unshift(
+        if (!gptValidation.critical_errors) {
+          gptValidation.critical_errors = [];
+        }
+        gptValidation.critical_errors.unshift(
           `CRITICAL SAFETY: ${order.medicationName} cannot be ${order.dosageForm}. Should be ${defaultForm}.`
         );
         
         // Add to warnings if not already present
-        if (!gptValidation.safety_assessment.specific_concerns.includes('dangerous form')) {
-          gptValidation.safety_assessment.specific_concerns += 
-            ` DANGEROUS FORM: ${order.medicationName} ${order.dosageForm} is medically impossible and dangerous.`;
+        if (!gptValidation.warnings) {
+          gptValidation.warnings = [];
         }
+        gptValidation.warnings.push(
+          `DANGEROUS FORM: ${order.medicationName} ${order.dosageForm} is medically impossible and dangerous.`
+        );
       }
 
       // Calculate days supply if not provided
@@ -370,6 +375,47 @@ Return ONLY a number representing the days supply.`;
 
     // Default
     return 2; // 3 months total
+  }
+
+  /**
+   * Suggest appropriate days supply based on medication type and sig
+   */
+  suggestDaysSupply(
+    medicationName: string,
+    sig: string,
+    clinicalIndication?: string,
+  ): number {
+    // Short-term medications (explicitly specified duration)
+    const durationMatch = sig.match(/for (\d+) days?/i);
+    if (durationMatch) {
+      return parseInt(durationMatch[1]);
+    }
+
+    // Z-pack (azithromycin) special case
+    if (medicationName.toLowerCase().includes('azithromycin') && 
+        (sig.toLowerCase().includes('day 1') || sig.toLowerCase().includes('pack'))) {
+      return 5;
+    }
+
+    // Methylprednisolone dose pack
+    if (medicationName.toLowerCase().includes('methylprednisolone') && 
+        sig.toLowerCase().includes('taper')) {
+      return 6;
+    }
+
+    // Antibiotics (typically 7-14 days)
+    if (medicationName.match(/cillin|cycline|mycin|floxacin|azole|cef/i)) {
+      return 10; // Default antibiotic course
+    }
+
+    // Steroids (typically short courses)
+    if (medicationName.match(/prednisone|prednisolone|dexamethasone/i) &&
+        !clinicalIndication?.match(/chronic|long.?term/i)) {
+      return 5; // Default steroid burst
+    }
+
+    // Default to 30 days for chronic medications
+    return 30;
   }
 }
 

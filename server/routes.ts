@@ -3346,6 +3346,7 @@ Return a JSON object with arrays for each order type found:
       "dosage": "strength only (e.g., 10 mg, 25 mg, 81 mg)", 
       "sig": "standardized patient instructions using tablet/capsule count, NOT strength amount",
       "quantity": number,
+      "quantity_unit": "ALWAYS provide the appropriate unit (e.g., tablets, capsules, mL, units, pens, vials, grams, patches, inhalers)",
       "refills": number,
       "form": "string",
       "route_of_administration": "string",
@@ -3422,11 +3423,13 @@ Complex Regimens:
   * Empagliflozin 10 mg once daily
 - "anticoagulate a.fib, DOAC starter" → Apixaban 5 mg, Take 1 tablet by mouth twice daily, 60 qty, 2 refills
 
-Short-term Medications:
+Short-term Medications (ALWAYS override 30-day default when duration is specified):
 - "zpak for sinusitis" → Azithromycin 250 mg, Day 1: Take 2 tablets, Days 2-5: Take 1 tablet daily, 6 tablets total, 0 refills
 - "pred burst for asthma flare" → Prednisone 40 mg, Take 1 tablet by mouth once daily for 5 days, 5 tablets, 0 refills
+- "prednisone 50mg daily for 5 days" → Prednisone 50 mg, Take 1 tablet by mouth once daily for 5 days, 5 tablets, 0 refills
 - "augmentin 875 for dog bite" → Amoxicillin-Clavulanate 875-125 mg, Take 1 tablet by mouth twice daily for 7 days, 14 tablets, 0 refills
 - "TMP-SMX UTI tx" → Trimethoprim-Sulfamethoxazole DS, Take 1 tablet by mouth twice daily for 3 days, 6 tablets, 0 refills
+- "methylprednisolone pack" → Methylprednisolone 4 mg, Take as directed by taper schedule, 21 tablets, 0 refills
 
 2. LAB TEST QUERIES:
 Quick Lab Panels:

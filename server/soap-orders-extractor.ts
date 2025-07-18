@@ -14,7 +14,7 @@ interface ExtractedMedication {
   medication_name: string;
   dosage: string;
   quantity: number;
-  quantity_unit?: string;
+  quantity_unit: string; // CRITICAL: Always required for medication safety
   sig: string;
   refills: number;
   form?: string;
@@ -269,6 +269,7 @@ export class SOAPOrdersExtractor {
             medicationName: order.medicationName,
             dosage: order.dosage,
             quantity: order.quantity,
+            quantityUnit: order.quantityUnit,
             sig: order.sig,
             refills: order.refills,
             form: order.form,

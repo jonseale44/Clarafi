@@ -145,7 +145,7 @@ const IntelligentAddMedicationForm: React.FC<IntelligentAddMedicationFormProps> 
     form: '',
     routeOfAdministration: '',
     sig: '',
-    quantity: 30,
+    quantity: 30, // Default 30-day supply (with 2 refills = 90 days total)
     refills: 2,
     daysSupply: 90,
   });
@@ -644,7 +644,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                             form: medication.dosageForm || '',
                             routeOfAdministration: medication.route || '',
                             sig: medication.sig || '',
-                            quantity: medication.quantity || 30,
+                            quantity: medication.quantity || 30, // Default 30-day supply (with 2 refills = 90 days total)
                             refills: medication.refillsRemaining || 2,
                             daysSupply: medication.daysSupply || 90
                           });
@@ -676,7 +676,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                       initialForm={editFormData?.form || medication.dosageForm || ''}
                       initialRoute={editFormData?.routeOfAdministration || medication.route || ''}
                       initialSig={editFormData?.sig || medication.sig || ''}
-                      initialQuantity={editFormData?.quantity || medication.quantity || 30}
+                      initialQuantity={editFormData?.quantity || medication.quantity || 30} // Default 30-day supply (with 2 refills = 90 days total)
                       initialRefills={(() => {
                         const refillsValue = editFormData?.refills || medication.refillsRemaining || 2;
                         console.log('🔍 [Enhanced Medications] Computing initialRefills:', {
