@@ -2303,7 +2303,10 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         const savedOrders = [];
         for (const orderData of deduplicatedOrders) {
           try {
-            const savedOrder = await storage.createOrder(orderData);
+            const savedOrder = await storage.createOrder({
+              ...orderData,
+              providerId: orderData.providerId || (req.user as any).id,
+            });
             savedOrders.push(savedOrder);
           } catch (error: any) {
             console.error("❌ [ExtractOrders] Failed to save order:", error);
@@ -2946,7 +2949,10 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         // Log warnings but continue - some fields may be populated later
       }
 
-      const order = await storage.createOrder(standardizedOrder);
+      const order = await storage.createOrder({
+        ...standardizedOrder,
+        providerId: (req.user as any).id,
+      });
       console.log("[Orders API] Created enhanced order:", order);
 
       // Trigger medication processing for medication orders
@@ -2992,7 +2998,11 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
       }
 
       const createdOrders = await Promise.all(
-        orders.map((orderData) => storage.createOrder(orderData)),
+        orders.map((orderData) => storage.createOrder({
+          ...orderData,
+          orderedBy: (req.user as any).id,
+          providerId: (req.user as any).id,
+        })),
       );
 
       // Process medication orders if any were created
@@ -3145,6 +3155,7 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
       const orderWithUser = {
         ...orderData,
         orderedBy: (req.user as any).id,
+        providerId: (req.user as any).id,
       };
 
       console.log(

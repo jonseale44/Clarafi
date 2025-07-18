@@ -2511,6 +2511,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Database Constraint Violation Fix COMPLETED (July 18, 2025)
+- **CRITICAL FIX**: Resolved database constraint violations for orders.provider_id NOT NULL requirement
+- **ROOT CAUSE**: Multiple order creation endpoints were missing the required `providerId` field
+- **COMPREHENSIVE FIX**: Updated ALL 4 order creation endpoints in routes.ts:
+  - Line 2306: Extract-orders endpoint - Added `providerId: orderData.providerId || (req.user as any).id`
+  - Line 2952: Draft order creation - Added `providerId: (req.user as any).id`
+  - Line 3001: Batch order creation - Added `providerId: (req.user as any).id`
+  - Line 3166: Standard order creation - Already had `providerId` in orderWithUser object
+- **IMPACT**: Prevents PostgreSQL error 23502 (null value in column "provider_id" violates not-null constraint)
+- **VALIDATION**: All order creation flows now properly associate orders with the creating provider
+
 ### Subscription Key Verification System Implementation COMPLETED (January 15, 2025)
 - **SUBSCRIPTION KEY ARCHITECTURE**: Implemented complete subscription key system for tier 3 health system access control
 - **DATABASE SCHEMA UPDATES**: Added subscription_keys table with cryptographic key generation, health system association, and usage tracking

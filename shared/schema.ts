@@ -2125,6 +2125,7 @@ export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id),
+  providerId: integer("provider_id").references(() => users.id).notNull(), // Required by database
   
   // Order classification
   orderType: text("order_type").notNull(), // 'medication', 'lab', 'imaging', 'referral'
@@ -2620,6 +2621,7 @@ export const insertEncounterSchema = createInsertSchema(encounters).pick({
 export const insertOrderSchema = createInsertSchema(orders).pick({
   patientId: true,
   encounterId: true,
+  providerId: true,
   orderType: true,
   orderStatus: true,
   referenceId: true,
