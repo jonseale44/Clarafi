@@ -56,7 +56,7 @@ router.get("/:patientId/order-preferences", async (req, res) => {
 
   } catch (error) {
     console.error("Error fetching patient order preferences:", error);
-    return APIResponseHandler.error(res, "FETCH_PREFERENCES_ERROR", "Failed to fetch patient order preferences");
+    return APIResponseHandler.error(res, "Failed to fetch patient order preferences", 500, "FETCH_PREFERENCES_ERROR");
   }
 });
 
@@ -138,7 +138,7 @@ router.put("/:patientId/order-preferences", async (req, res) => {
 
   } catch (error) {
     console.error("Error updating patient order preferences:", error);
-    return APIResponseHandler.error(res, "UPDATE_PREFERENCES_ERROR", "Failed to update patient order preferences");
+    return APIResponseHandler.error(res, "Failed to update patient order preferences", 500, "UPDATE_PREFERENCES_ERROR");
   }
 });
 
