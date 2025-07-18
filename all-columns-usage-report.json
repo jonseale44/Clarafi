@@ -1,0 +1,2127 @@
+{
+  "timestamp": "2025-07-18T16:33:10.488Z",
+  "summary": {
+    "totalChecked": 542,
+    "totalUsed": 366,
+    "totalUnused": 176
+  },
+  "byTable": {
+    "lab_orders": {
+      "used": {
+        "order_id": [
+          "server/comprehensive-database-alignment.ts:275",
+          "server/comprehensive-database-alignment.ts:371",
+          "server/encounter-signature-validation.ts:309"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ],
+        "special_instructions": [
+          "server/external-lab-mock-service.ts:23",
+          "shared/schema (copy).ts:1070",
+          "shared/schema.ts:1070"
+        ],
+        "external_lab": [
+          "server/comprehensive-database-alignment.ts:253",
+          "server/comprehensive-database-alignment.ts:254",
+          "server/external-lab-mock-service.ts:229"
+        ],
+        "result_status": [
+          "server/dashboard-routes.ts:44",
+          "server/dashboard-routes.ts:161",
+          "server/dashboard-routes.ts:172"
+        ],
+        "reference_range": [
+          "server/comprehensive-database-alignment.ts:262",
+          "server/gpt-lab-review-service.ts:257",
+          "server/lab-communication-service.ts:71"
+        ],
+        "results": [
+          "server/admin-clinic-import-routes.ts:54",
+          "server/admin-clinic-import-routes.ts:65",
+          "server/attachment-chart-processor.ts:112"
+        ],
+        "discontinued_at": [
+          "server/enhanced-medication-routes.ts:376"
+        ],
+        "provider_notes": [
+          "server/dashboard-routes.ts:204",
+          "server/imaging-order-processor.ts:80",
+          "server/lab-order-processor-fixed.ts:66"
+        ],
+        "processing_notes": [
+          "server/attachment-chart-processor.ts:1176",
+          "server/attachment-chart-processor.ts:1199",
+          "server/attachment-chart-processor.ts:1212"
+        ],
+        "billing_code": [
+          "server/production-lab-integration-service.ts:31",
+          "server/production-lab-integration-service.ts:287"
+        ],
+        "consent_date": [
+          "server/migration-service.ts:136",
+          "server/migration-service.ts:185",
+          "shared/schema (copy).ts:535"
+        ],
+        "cancellation_reason": [
+          "server/create-remaining-tables.ts:155",
+          "shared/schema (copy).ts:1032",
+          "shared/schema (copy).ts:1049"
+        ],
+        "regulatory_compliance": [
+          "server/blog-routes.ts:25",
+          "client/src/pages/admin-blog-management.tsx:287",
+          "client/src/pages/admin-blog-management.tsx:774"
+        ]
+      },
+      "unused": [
+        "result_received_at",
+        "transmission_response",
+        "result_data",
+        "specimen_source",
+        "collection_site",
+        "collected_by",
+        "expected_turnaround",
+        "external_status",
+        "abnormal_flags",
+        "discontinued_by",
+        "discontinued_reason",
+        "critical_values",
+        "stat_order",
+        "patient_preparation",
+        "collection_priority",
+        "insurance_preauth_date",
+        "actual_cost",
+        "patient_consent",
+        "patient_copay",
+        "billing_status",
+        "billing_date",
+        "result_interpretation",
+        "ai_analysis",
+        "result_notification_sent",
+        "result_notification_date",
+        "performing_lab_id",
+        "lab_account_number",
+        "quality_control_status",
+        "quality_control_notes",
+        "repeat_test_reason",
+        "original_order_id",
+        "test_methodology",
+        "processing_lab_name",
+        "processing_lab_director",
+        "test_validation_status",
+        "sample_rejection_reason",
+        "clinical_trial_id",
+        "research_study_id",
+        "patient_location",
+        "ordering_facility_id",
+        "test_performed_at"
+      ]
+    },
+    "imaging_results": {
+      "used": {
+        "encounter_id": [
+          "server/attachment-chart-processor.ts:321",
+          "server/attachment-chart-processor.ts:323",
+          "server/attachment-chart-processor.ts:324"
+        ],
+        "accession_number": [
+          "server/external-lab-mock-service.ts:97",
+          "shared/schema (copy).ts:2000",
+          "shared/schema.ts:2000"
+        ],
+        "recommendations": [
+          "server/clinic-admin-verification-service.ts:61",
+          "server/clinic-admin-verification-service.ts:190",
+          "server/clinic-admin-verification-service.ts:191"
+        ],
+        "technique": [
+          "server/enhanced-note-generation-service.ts:531",
+          "server/enhanced-note-generation-service.ts:583",
+          "server/template-prompt-generator.ts:185"
+        ],
+        "addendum": [
+          "server/imaging-api.ts:164",
+          "server/unified-imaging-parser.ts:9",
+          "server/unified-imaging-parser.ts:29"
+        ],
+        "procedure_code": [
+          "server/comprehensive-database-alignment.ts:616",
+          "server/fix-final-tables.ts:23",
+          "shared/schema (copy).ts:1320"
+        ],
+        "limitations": [
+          "server/blog-routes.ts:530",
+          "server/blog-routes.ts:583",
+          "server/physical-exam-learning-service.ts:181"
+        ],
+        "relevant_history": [
+          "server/medical-chart-index-service.ts:55",
+          "server/medical-chart-index-service.ts:252",
+          "server/medical-chart-index-service.ts:265"
+        ],
+        "clinical_indication": [
+          "server/create-essential-tables.ts:141",
+          "server/encounter-signature-validation.ts:329",
+          "server/encounter-validation-routes.ts:234"
+        ],
+        "extraction_notes": [
+          "server/fix-schema-drift.ts:30",
+          "server/fix-schema-drift.ts:31",
+          "server/fix-schema-drift.ts:42"
+        ],
+        "consolidation_reasoning": [
+          "server/fix-schema-drift.ts:25",
+          "server/fix-schema-drift.ts:26",
+          "server/fix-schema-drift.ts:37"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "ordering_provider_id",
+        "comparison_studies",
+        "contrast_used",
+        "contrast_type",
+        "radiation_dose",
+        "number_of_images",
+        "critical_findings",
+        "critical_findings_communicated_at",
+        "report_finalized_at",
+        "addendum_date",
+        "diagnostic_quality",
+        "follow_up_needed",
+        "follow_up_timeframe",
+        "bi_rads_score",
+        "lung_rads_score",
+        "ti_rads_score",
+        "pi_rads_score",
+        "liver_rads_score",
+        "incidental_findings",
+        "protocol_name",
+        "series_count",
+        "image_count",
+        "study_size_mb",
+        "dicom_retrieval_url",
+        "external_system_id"
+      ]
+    },
+    "medical_problems": {
+      "used": {
+        "risk_factors": [
+          "server/audit-logging.ts:201",
+          "server/clinic-admin-verification-service.ts:259",
+          "server/clinic-admin-verification-service.ts:347"
+        ],
+        "follow_up_required": [
+          "server/fix-final-tables.ts:31",
+          "server/lab-communication-service.ts:21",
+          "server/lab-communication-service.ts:38"
+        ],
+        "reported_date": [
+          "server/lab-entry-routes.ts:31",
+          "server/lab-entry-routes.ts:51"
+        ],
+        "consolidation_reasoning": [
+          "server/fix-schema-drift.ts:25",
+          "server/fix-schema-drift.ts:26",
+          "server/fix-schema-drift.ts:37"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "care_plan_status",
+        "functional_impact",
+        "prognosis",
+        "associated_conditions",
+        "treatment_goals",
+        "monitoring_parameters",
+        "follow_up_date",
+        "problem_ranking",
+        "display_in_summary",
+        "patient_aware",
+        "caregiver_aware",
+        "reportable_condition",
+        "clinical_priority",
+        "social_determinants",
+        "cultural_considerations",
+        "patient_goals",
+        "barriers_to_care",
+        "quality_measures",
+        "outcome_measures",
+        "care_team_members",
+        "care_coordination_notes",
+        "original_problem_text",
+        "mapped_by_ai",
+        "ai_confidence_score",
+        "human_verified"
+      ]
+    },
+    "orders": {
+      "used": {
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ],
+        "order_date": [
+          "server/create-essential-tables.ts:124",
+          "server/routes.ts:1357",
+          "server/test-patient-generator.ts:524"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "medication_dosage": [
+          "server/create-essential-tables.ts:128"
+        ],
+        "medication_route": [
+          "server/create-essential-tables.ts:129"
+        ],
+        "medication_frequency": [
+          "server/create-essential-tables.ts:130"
+        ],
+        "medication_duration": [
+          "server/create-essential-tables.ts:131"
+        ],
+        "medication_quantity": [
+          "server/create-essential-tables.ts:132"
+        ],
+        "medication_refills": [
+          "server/create-essential-tables.ts:133",
+          "client/src/components/patient/enhanced-medications-list.tsx:684"
+        ],
+        "lab_test_name": [
+          "server/create-essential-tables.ts:134"
+        ],
+        "lab_test_code": [
+          "server/create-essential-tables.ts:135"
+        ],
+        "imaging_study_type": [
+          "server/create-essential-tables.ts:136"
+        ],
+        "imaging_body_part": [
+          "server/create-essential-tables.ts:137"
+        ],
+        "referral_specialty": [
+          "server/create-essential-tables.ts:138"
+        ],
+        "referral_reason": [
+          "server/create-essential-tables.ts:139",
+          "shared/schema (copy).ts:1062",
+          "shared/schema.ts:1062"
+        ],
+        "instructions": [
+          "server/create-essential-tables.ts:140",
+          "server/encounter-validation-routes.ts:227",
+          "server/enhanced-medication-routes.ts:219"
+        ],
+        "diagnosis_codes": [
+          "server/create-essential-tables.ts:142",
+          "server/fix-database-schema.ts:108",
+          "server/fix-database-schema.ts:112"
+        ],
+        "prescriber": [
+          "server/enhanced-medication-routes.ts:63",
+          "server/enhanced-medication-routes.ts:227",
+          "server/enhanced-medication-routes.ts:228"
+        ],
+        "prescriber_id": [
+          "server/enhanced-medication-routes.ts:228",
+          "server/enhanced-medication-routes.ts:399",
+          "server/medication-delta-service.ts:2238"
+        ],
+        "body_part": [
+          "server/attachment-chart-processor.ts:1182",
+          "server/comprehensive-database-alignment.ts:295",
+          "server/create-essential-tables.ts:137"
+        ],
+        "ndc_code": [
+          "server/enhanced-medication-routes.ts:65",
+          "server/enhanced-medication-routes.ts:221",
+          "server/medication-delta-service.ts:790"
+        ],
+        "route": [
+          "server/admin-clinic-import-routes.ts:10",
+          "server/admin-clinic-import-routes.ts:13",
+          "server/admin-clinic-import-routes.ts:14"
+        ],
+        "frequency": [
+          "server/comprehensive-database-alignment.ts:55",
+          "server/comprehensive-database-alignment.ts:452",
+          "server/create-essential-tables.ts:130"
+        ],
+        "duration": [
+          "server/appointment-completion-service.ts:7",
+          "server/appointment-completion-service.ts:8",
+          "server/appointment-completion-service.ts:37"
+        ],
+        "start_date": [
+          "server/admin-user-routes.ts:278",
+          "server/admin-user-routes.ts:391",
+          "server/enhanced-medication-routes.ts:59"
+        ],
+        "end_date": [
+          "server/admin-user-routes.ts:279",
+          "server/enhanced-medication-routes.ts:60",
+          "server/enhanced-medication-routes.ts:225"
+        ],
+        "indication": [
+          "server/comprehensive-database-alignment.ts:297",
+          "server/create-essential-tables.ts:141",
+          "server/encounter-validation-routes.ts:234"
+        ],
+        "imaging_order_id": [
+          "server/fix-database-schema.ts:85",
+          "server/imaging-api.ts:65",
+          "server/imaging-api.ts:83"
+        ],
+        "external_order_id": [
+          "server/imaging-api.ts:46",
+          "server/imaging-order-processor.ts:77",
+          "server/lab-integration-health-check.ts:77"
+        ]
+      },
+      "unused": []
+    },
+    "encounters": {
+      "used": {
+        "encounter_date": [
+          "server/create-essential-tables.ts:102",
+          "server/gpt-lab-review-service.ts:220",
+          "server/gpt-lab-review-service.ts:224"
+        ],
+        "visit_reason": [
+          "server/create-essential-tables.ts:104",
+          "server/scheduling-routes.ts:371",
+          "server/storage.ts:2603"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "insurance_verified": [
+          "server/create-essential-tables.ts:107",
+          "shared/schema (copy).ts:507",
+          "shared/schema (copy).ts:1024"
+        ],
+        "copay_collected": [
+          "server/create-essential-tables.ts:108",
+          "shared/schema (copy).ts:1040",
+          "shared/schema.ts:1040"
+        ],
+        "notes": [
+          "server/admin-verification-routes.ts:491",
+          "server/admin-verification-routes.ts:502",
+          "server/attachment-chart-processor.ts:466"
+        ],
+        "location_id": [
+          "server/admin-user-routes.ts:115",
+          "server/admin-user-routes.ts:134",
+          "server/admin-user-routes.ts:136"
+        ],
+        "signed_by": [
+          "server/comprehensive-database-alignment.ts:359",
+          "server/comprehensive-database-alignment.ts:372",
+          "server/dashboard-routes.ts:253"
+        ],
+        "signed_at": [
+          "server/comprehensive-database-alignment.ts:361",
+          "server/comprehensive-database-alignment.ts:566",
+          "server/dashboard-routes.ts:254"
+        ],
+        "is_signed": [
+          "server/encounter-signature-validation.ts:407",
+          "server/medication-delta-service.ts:41",
+          "server/medication-delta-service.ts:682"
+        ],
+        "assistant_thread_id": [
+          "server/routes.ts:1893",
+          "server/routes.ts:1928",
+          "server/routes.ts:1939"
+        ],
+        "alerts": [
+          "server/attachment-chart-processor.ts:497",
+          "server/attachment-chart-processor.ts:814",
+          "server/lab-workflow-routes.ts:156"
+        ],
+        "discharge_summary": [
+          "server/attachment-chart-processor.ts:224",
+          "server/document-analysis-service.ts:499",
+          "client/src/components/patient/patient-attachments.tsx:708"
+        ],
+        "template_id": [
+          "server/comprehensive-database-alignment.ts:482",
+          "server/comprehensive-database-alignment.ts:492",
+          "server/comprehensive-database-alignment.ts:507"
+        ]
+      },
+      "unused": [
+        "ai_scribe_mode",
+        "transcription_id",
+        "voice_recording_url",
+        "referral_source",
+        "estimated_copay",
+        "billing_status",
+        "claim_number",
+        "primary_diagnosis_code",
+        "reimbursement_amount"
+      ]
+    },
+    "medications": {
+      "used": {
+        "form": [
+          "server/admin-verification-routes.ts:38",
+          "server/analyze-real-mismatches.ts:35",
+          "server/analyze-real-mismatches.ts:63"
+        ],
+        "prescribed_date": [
+          "client/src/pages/test-migration.tsx:107"
+        ],
+        "pharmacy": [
+          "server/clinic-data-import-service.ts:343",
+          "server/comprehensive-database-alignment.ts:630",
+          "server/enhanced-medication-routes.ts:502"
+        ],
+        "refills": [
+          "server/create-essential-tables.ts:133",
+          "server/enhanced-medication-routes.ts:55",
+          "server/enhanced-medication-routes.ts:217"
+        ],
+        "dea_schedule": [
+          "server/pharmacy-validation-service.ts:153",
+          "server/pharmacy-validation-service.ts:257",
+          "server/pharmacy-validation-service.ts:258"
+        ],
+        "is_controlled": [
+          "server/medication-intelligence-service.ts:33",
+          "server/medication-intelligence-service.ts:71",
+          "server/medication-intelligence-service.ts:95"
+        ],
+        "requires_prior_auth": [
+          "server/gpt-clinical-enhancer.ts:38",
+          "server/gpt-clinical-enhancer.ts:71",
+          "server/gpt-clinical-enhancer.ts:101"
+        ],
+        "prior_auth_number": [
+          "client/src/components/patient/draft-orders.tsx:41",
+          "client/src/components/patient/draft-orders.tsx:1117",
+          "client/src/components/patient/draft-orders.tsx:1119"
+        ],
+        "therapeutic_class": [
+          "server/medication-formulary-routes.ts:112",
+          "server/medication-formulary-routes.ts:139",
+          "server/medication-formulary-routes.ts:144"
+        ],
+        "extraction_notes": [
+          "server/fix-schema-drift.ts:30",
+          "server/fix-schema-drift.ts:31",
+          "server/fix-schema-drift.ts:42"
+        ],
+        "consolidation_reasoning": [
+          "server/fix-schema-drift.ts:25",
+          "server/fix-schema-drift.ts:26",
+          "server/fix-schema-drift.ts:37"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "discontinuation_date",
+        "discontinuation_reason",
+        "prescribed_by",
+        "prescriber_notes",
+        "patient_instructions",
+        "lot_number",
+        "expiration_date",
+        "manufacturer",
+        "formulary_status",
+        "discontinuation_source",
+        "original_order_id"
+      ]
+    },
+    "clinic_admin_verifications": {
+      "used": {
+        "website": [
+          "server/clinic-admin-verification-service.ts:32",
+          "server/clinic-admin-verification-service.ts:214",
+          "server/clinic-admin-verification-service.ts:240"
+        ],
+        "verification_status": [
+          "server/clinic-admin-verification-service.ts:721",
+          "server/lab-integration-health-check.ts:147",
+          "server/lab-order-processor.ts:150"
+        ],
+        "verification_score": [
+          "client/src/pages/admin-verification-review.tsx:50",
+          "client/src/pages/admin-verification-review.tsx:225",
+          "client/src/pages/admin-verification-review.tsx:313"
+        ],
+        "verification_details": [
+          "server/clinic-admin-verification-service.ts:51",
+          "server/clinic-admin-verification-service.ts:233",
+          "server/clinic-admin-verification-service.ts:256"
+        ],
+        "risk_assessment": [
+          "server/comprehensive-database-alignment.ts:280",
+          "server/lab-intelligence-service.ts:37",
+          "server/lab-intelligence-service.ts:409"
+        ],
+        "automated_decision": [
+          "server/clinic-admin-verification-service.ts:63",
+          "server/clinic-admin-verification-service.ts:260",
+          "server/clinic-admin-verification-service.ts:428"
+        ],
+        "reviewer_id": [
+          "server/clinic-admin-verification-service.ts:901",
+          "server/clinic-admin-verification-service.ts:920",
+          "server/clinic-admin-verification-service.ts:945"
+        ],
+        "reviewed_at": [
+          "server/audit-logging.ts:263",
+          "server/blog-routes.ts:235",
+          "server/blog-routes.ts:292"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": [
+        "applicant_first_name",
+        "applicant_last_name",
+        "applicant_email",
+        "applicant_phone",
+        "address_street",
+        "address_city",
+        "address_state",
+        "address_zip",
+        "preferred_ehr_tier",
+        "automated_recommendations",
+        "manual_review_notes",
+        "api_verification_results"
+      ]
+    },
+    "patient_attachments": {
+      "used": {
+        "filename": [
+          "server/admin-clinic-import-routes.ts:126",
+          "server/attachment-chart-processor.ts:531",
+          "server/attachment-chart-processor.ts:604"
+        ],
+        "document_type": [
+          "server/attachment-chart-processor.ts:80",
+          "server/attachment-chart-processor.ts:89",
+          "server/attachment-chart-processor.ts:92"
+        ],
+        "processing_notes": [
+          "server/attachment-chart-processor.ts:1176",
+          "server/attachment-chart-processor.ts:1199",
+          "server/attachment-chart-processor.ts:1212"
+        ],
+        "extracted_data": [
+          "server/cpt-extractor.ts:137",
+          "server/cpt-extractor.ts:142",
+          "server/cpt-extractor.ts:146"
+        ],
+        "source_system": [
+          "server/lab-order-processor.ts:163",
+          "server/remove-extra-columns.ts:101",
+          "shared/schema (copy).ts:1882"
+        ],
+        "external_id": [
+          "server/create-essential-tables.ts:68",
+          "shared/schema (copy).ts:510",
+          "shared/schema.ts:510"
+        ]
+      },
+      "unused": [
+        "original_filename",
+        "file_type",
+        "upload_date",
+        "document_date",
+        "ocr_text",
+        "ocr_completed",
+        "ocr_completed_at",
+        "chart_sections_updated",
+        "confidence_scores",
+        "hash_value",
+        "is_deleted",
+        "deleted_at",
+        "deleted_by",
+        "retention_date",
+        "access_count",
+        "last_accessed_at"
+      ]
+    },
+    "diagnoses": {
+      "used": {
+        "claim_submission_status": [
+          "server/routes.ts:2680",
+          "server/storage.ts:931",
+          "server/storage.ts:979"
+        ],
+        "claim_id": [
+          "server/storage.ts:932"
+        ],
+        "clearinghouse_id": [
+          "server/storage.ts:933"
+        ],
+        "payer_id": [
+          "server/routes.ts:2769",
+          "server/routes.ts:2773",
+          "server/routes.ts:2774"
+        ],
+        "allowed_amount": [
+          "server/storage.ts:935"
+        ],
+        "paid_amount": [
+          "server/storage.ts:936"
+        ],
+        "patient_responsibility": [
+          "server/storage.ts:937"
+        ],
+        "adjustment_amount": [
+          "server/storage.ts:938"
+        ],
+        "denial_reason": [
+          "server/storage.ts:939"
+        ],
+        "denial_code": [
+          "server/storage.ts:940"
+        ],
+        "appeal_status": [
+          "server/storage.ts:941"
+        ],
+        "appeal_deadline": [
+          "server/storage.ts:942"
+        ],
+        "billing_notes": [
+          "server/storage.ts:943",
+          "shared/schema (copy).ts:1031",
+          "shared/schema.ts:1031"
+        ],
+        "last_billing_action": [
+          "server/storage.ts:944"
+        ],
+        "assigned_biller": [
+          "server/storage.ts:945"
+        ],
+        "modifier_applied": [
+          "server/routes.ts:2685",
+          "server/storage.ts:946"
+        ],
+        "billing_action_date": [
+          "server/storage.ts:927"
+        ]
+      },
+      "unused": []
+    },
+    "surgical_history": {
+      "used": {
+        "surgeon": [
+          "server/comprehensive-database-alignment.ts:613",
+          "server/fix-final-tables.ts:18",
+          "server/test-patient-generator.ts:617"
+        ],
+        "facility": [
+          "server/admin-clinic-import-routes.ts:281",
+          "server/admin-clinic-import-routes.ts:372",
+          "server/admin-verification-routes.ts:222"
+        ],
+        "findings": [
+          "server/enhanced-note-generation-service.ts:52",
+          "server/enhanced-note-generation-service.ts:54",
+          "server/enhanced-note-generation-service.ts:181"
+        ],
+        "procedure_code": [
+          "server/comprehensive-database-alignment.ts:616",
+          "server/fix-final-tables.ts:23",
+          "shared/schema (copy).ts:1320"
+        ],
+        "approach": [
+          "server/document-analysis-service.ts:5",
+          "server/enhanced-medication-routes.ts:143",
+          "server/gpt-lab-review-service.ts:442"
+        ],
+        "duration_minutes": [
+          "server/comprehensive-database-alignment.ts:147",
+          "server/create-remaining-tables.ts:124",
+          "server/create-remaining-tables.ts:144"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "implants_used",
+        "pathology_results",
+        "recovery_notes",
+        "estimated_blood_loss_ml",
+        "specimens_removed",
+        "drains_placed",
+        "post_op_diagnosis",
+        "discharge_instructions",
+        "follow_up_date"
+      ]
+    },
+    "user_note_preferences": {
+      "used": {
+        "default_chief_complaint": [
+          "server/create-essential-tables.ts:42"
+        ],
+        "default_physical_exam": [
+          "server/create-essential-tables.ts:43"
+        ],
+        "default_ros_negatives": [
+          "server/create-essential-tables.ts:44"
+        ],
+        "default_assessment_style": [
+          "server/create-essential-tables.ts:45"
+        ],
+        "use_voice_commands": [
+          "server/create-essential-tables.ts:46"
+        ],
+        "auto_save_interval": [
+          "server/create-essential-tables.ts:47"
+        ],
+        "show_template_suggestions": [
+          "server/create-essential-tables.ts:48"
+        ],
+        "include_time_stamps": [
+          "server/create-essential-tables.ts:49"
+        ],
+        "default_note_font_size": [
+          "server/create-essential-tables.ts:50"
+        ],
+        "default_macro_set": [
+          "server/create-essential-tables.ts:51"
+        ],
+        "preferred_exam_order": [
+          "server/create-essential-tables.ts:52"
+        ],
+        "custom_normal_exams": [
+          "server/create-essential-tables.ts:53"
+        ],
+        "abbreviation_expansions": [
+          "server/create-essential-tables.ts:54"
+        ],
+        "quick_phrases": [
+          "server/create-essential-tables.ts:55"
+        ],
+        "billing_reminder_enabled": [
+          "server/create-essential-tables.ts:56"
+        ],
+        "sign_reminder_minutes": [
+          "server/create-essential-tables.ts:57"
+        ]
+      },
+      "unused": []
+    },
+    "patient_physical_findings": {
+      "used": {
+        "encounter_id": [
+          "server/attachment-chart-processor.ts:321",
+          "server/attachment-chart-processor.ts:323",
+          "server/attachment-chart-processor.ts:324"
+        ],
+        "finding": [
+          "server/enhanced-note-generation-service.ts:52",
+          "server/enhanced-note-generation-service.ts:54",
+          "server/enhanced-note-generation-service.ts:181"
+        ],
+        "severity": [
+          "server/attachment-chart-processor.ts:1059",
+          "server/comprehensive-database-alignment.ts:316",
+          "server/enhanced-note-generation-service.ts:527"
+        ],
+        "laterality": [
+          "server/comprehensive-database-alignment.ts:296",
+          "server/fix-final-tables.ts:25",
+          "server/imaging-api.ts:33"
+        ],
+        "quality": [
+          "server/document-analysis-service.ts:251",
+          "server/document-analysis-service.ts:356",
+          "server/encounter-signature-validation.ts:28"
+        ],
+        "duration": [
+          "server/appointment-completion-service.ts:7",
+          "server/appointment-completion-service.ts:8",
+          "server/appointment-completion-service.ts:37"
+        ],
+        "context": [
+          "server/attachment-chart-processor.ts:274",
+          "server/attachment-chart-processor.ts:275",
+          "server/attachment-chart-processor.ts:466"
+        ],
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ]
+      },
+      "unused": [
+        "body_system",
+        "associated_symptoms",
+        "examined_at",
+        "is_normal",
+        "requires_follow_up",
+        "follow_up_timeframe"
+      ]
+    },
+    "email_notifications": {
+      "used": {
+        "recipient_email": [
+          "server/comprehensive-database-alignment.ts:523"
+        ],
+        "body_html": [
+          "server/comprehensive-database-alignment.ts:525"
+        ],
+        "body_text": [
+          "server/comprehensive-database-alignment.ts:526"
+        ],
+        "related_user_id": [
+          "server/comprehensive-database-alignment.ts:528"
+        ],
+        "related_entity_type": [
+          "server/comprehensive-database-alignment.ts:529"
+        ],
+        "related_entity_id": [
+          "server/comprehensive-database-alignment.ts:530"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "error_message": [
+          "server/api-response-handler.ts:45",
+          "server/api-response-handler.ts:50",
+          "server/api-response-handler.ts:57"
+        ],
+        "retry_count": [
+          "server/comprehensive-database-alignment.ts:227",
+          "server/comprehensive-database-alignment.ts:534",
+          "shared/schema (copy).ts:2859"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "external_labs": {
+      "used": {
+        "patient_id": [
+          "server/admin-stats-routes.ts:99",
+          "server/appointment-completion-service.ts:58",
+          "server/appointment-completion-service.ts:233"
+        ],
+        "test_name": [
+          "server/comprehensive-database-alignment.ts:258",
+          "server/create-essential-tables.ts:134",
+          "server/dashboard-routes.ts:159"
+        ],
+        "test_date": [
+          "server/comprehensive-database-alignment.ts:259"
+        ],
+        "result_value": [
+          "server/comprehensive-database-alignment.ts:260",
+          "server/dashboard-routes.ts:164",
+          "server/gpt-lab-review-service.ts:187"
+        ],
+        "unit": [
+          "server/add-test-health-systems-sql.ts:11",
+          "server/add-test-health-systems-sql.ts:64",
+          "server/add-test-health-systems.ts:11"
+        ],
+        "reference_range": [
+          "server/comprehensive-database-alignment.ts:262",
+          "server/gpt-lab-review-service.ts:257",
+          "server/lab-communication-service.ts:71"
+        ],
+        "abnormal_flag": [
+          "server/comprehensive-database-alignment.ts:263",
+          "server/dashboard-routes.ts:163",
+          "server/dashboard-routes.ts:177"
+        ],
+        "ordering_provider": [
+          "server/comprehensive-database-alignment.ts:264"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "attachment_id": [
+          "server/attachment-chart-processor.ts:46",
+          "server/attachment-chart-processor.ts:48",
+          "server/attachment-chart-processor.ts:56"
+        ]
+      },
+      "unused": []
+    },
+    "lab_results": {
+      "used": {
+        "patient_message": [
+          "server/gpt-lab-review-routes.ts:26",
+          "server/gpt-lab-review-routes.ts:68",
+          "server/gpt-lab-review-routes.ts:167"
+        ],
+        "patient_message_sent_at": [
+          "shared/schema (copy).ts:1957",
+          "shared/schema.ts:1957"
+        ],
+        "extraction_notes": [
+          "server/fix-schema-drift.ts:30",
+          "server/fix-schema-drift.ts:31",
+          "server/fix-schema-drift.ts:42"
+        ],
+        "consolidation_reasoning": [
+          "server/fix-schema-drift.ts:25",
+          "server/fix-schema-drift.ts:26",
+          "server/fix-schema-drift.ts:37"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ],
+        "visit_history": [
+          "server/encounter-signature-validation.ts:403",
+          "server/encounter-signature-validation.ts:404",
+          "server/encounter-signature-validation.ts:406"
+        ]
+      },
+      "unused": [
+        "patient_communication_sent",
+        "patient_communication_method",
+        "patient_communication_sent_at",
+        "patient_notified_by"
+      ]
+    },
+    "medication_formulary": {
+      "used": {
+        "medication_name": [
+          "server/attachment-chart-processor.ts:1115",
+          "server/comprehensive-database-alignment.ts:326",
+          "server/create-essential-tables.ts:127"
+        ],
+        "drug_class": [
+          "server/comprehensive-database-alignment.ts:328",
+          "server/unified-allergy-api.ts:57",
+          "server/unified-allergy-api.ts:82"
+        ],
+        "dosage_forms": [
+          "server/comprehensive-database-alignment.ts:329",
+          "server/rxnorm-service.ts:24",
+          "server/rxnorm-service.ts:89"
+        ],
+        "strengths": [
+          "server/comprehensive-database-alignment.ts:330",
+          "server/medication-formulary-routes.ts:197",
+          "server/medication-intelligence-service.ts:13"
+        ],
+        "route": [
+          "server/admin-clinic-import-routes.ts:10",
+          "server/admin-clinic-import-routes.ts:13",
+          "server/admin-clinic-import-routes.ts:14"
+        ],
+        "tier": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "prior_auth_required": [
+          "server/comprehensive-database-alignment.ts:333",
+          "server/enhanced-medication-routes.ts:71",
+          "server/enhanced-medication-routes.ts:247"
+        ],
+        "quantity_limits": [
+          "server/comprehensive-database-alignment.ts:334"
+        ],
+        "step_therapy": [
+          "server/comprehensive-database-alignment.ts:335"
+        ],
+        "alternatives": [
+          "server/comprehensive-database-alignment.ts:336",
+          "server/routes.ts:1562",
+          "server/rxnorm-service.ts:199"
+        ]
+      },
+      "unused": []
+    },
+    "schedule_preferences": {
+      "used": {
+        "preferred_appointment_duration": [
+          "server/comprehensive-database-alignment.ts:140"
+        ],
+        "buffer_time_minutes": [
+          "server/comprehensive-database-alignment.ts:141"
+        ],
+        "lunch_start": [
+          "server/comprehensive-database-alignment.ts:142",
+          "shared/schema (copy).ts:724",
+          "shared/schema.ts:724"
+        ],
+        "lunch_duration": [
+          "server/comprehensive-database-alignment.ts:143",
+          "shared/schema (copy).ts:725",
+          "shared/schema (copy).ts:838"
+        ],
+        "max_daily_appointments": [
+          "server/comprehensive-database-alignment.ts:144"
+        ],
+        "max_consecutive_appointments": [
+          "server/comprehensive-database-alignment.ts:145"
+        ],
+        "preferred_break_after_n_appointments": [
+          "server/comprehensive-database-alignment.ts:146"
+        ],
+        "break_duration_minutes": [
+          "server/comprehensive-database-alignment.ts:147"
+        ],
+        "allow_overtime": [
+          "server/comprehensive-database-alignment.ts:149"
+        ],
+        "overtime_limit_minutes": [
+          "server/comprehensive-database-alignment.ts:150"
+        ]
+      },
+      "unused": []
+    },
+    "family_history": {
+      "used": {
+        "extraction_notes": [
+          "server/fix-schema-drift.ts:30",
+          "server/fix-schema-drift.ts:31",
+          "server/fix-schema-drift.ts:42"
+        ],
+        "consolidation_reasoning": [
+          "server/fix-schema-drift.ts:25",
+          "server/fix-schema-drift.ts:26",
+          "server/fix-schema-drift.ts:37"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "age_at_onset",
+        "age_at_death",
+        "cause_of_death",
+        "maternal_side",
+        "living_status",
+        "genetic_marker"
+      ]
+    },
+    "imaging_orders": {
+      "used": {
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ],
+        "imaging_type": [
+          "server/comprehensive-database-alignment.ts:294"
+        ],
+        "indication": [
+          "server/comprehensive-database-alignment.ts:297",
+          "server/create-essential-tables.ts:141",
+          "server/encounter-validation-routes.ts:234"
+        ],
+        "priority": [
+          "server/chart-section-orchestrator.ts:29",
+          "server/chart-section-orchestrator.ts:50",
+          "server/chart-section-orchestrator.ts:57"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "facility_id": [
+          "server/comprehensive-database-alignment.ts:301",
+          "shared/schema (copy).ts:527",
+          "shared/schema (copy).ts:1998"
+        ],
+        "scheduled_date": [
+          "server/appointment-completion-service.ts:241",
+          "server/comprehensive-database-alignment.ts:302"
+        ],
+        "completed_date": [
+          "server/comprehensive-database-alignment.ts:303"
+        ]
+      },
+      "unused": []
+    },
+    "data_modification_logs": {
+      "used": {
+        "action": [
+          "server/attachment-chart-processor.ts:21",
+          "server/attachment-chart-processor.ts:44",
+          "server/attachment-chart-processor.ts:91"
+        ],
+        "old_values": [
+          "server/comprehensive-database-alignment.ts:390"
+        ],
+        "new_values": [
+          "server/comprehensive-database-alignment.ts:391"
+        ],
+        "reason": [
+          "server/attachment-chart-processor.ts:114",
+          "server/attachment-chart-processor.ts:115",
+          "server/attachment-chart-processor.ts:117"
+        ],
+        "ip_address": [
+          "server/audit-logging.ts:117",
+          "server/audit-logging.ts:151",
+          "server/audit-logging.ts:194"
+        ],
+        "user_agent": [
+          "server/audit-logging.ts:118",
+          "server/audit-logging.ts:152",
+          "server/audit-logging.ts:195"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "gpt_lab_review_notes": {
+      "used": {
+        "lab_order_id": [
+          "server/comprehensive-database-alignment.ts:275",
+          "server/dashboard-routes.ts:40",
+          "server/dashboard-routes.ts:156"
+        ],
+        "review_type": [
+          "server/comprehensive-database-alignment.ts:276",
+          "server/lab-review-routes.ts:20",
+          "server/lab-review-routes.ts:27"
+        ],
+        "ai_interpretation": [
+          "server/comprehensive-database-alignment.ts:277",
+          "server/lab-intelligence-service.ts:88",
+          "server/lab-order-processor.ts:167"
+        ],
+        "clinical_significance": [
+          "server/comprehensive-database-alignment.ts:278",
+          "server/lab-intelligence-service.ts:23",
+          "server/lab-intelligence-service.ts:36"
+        ],
+        "follow_up_recommendations": [
+          "server/comprehensive-database-alignment.ts:279",
+          "server/lab-intelligence-service.ts:40",
+          "server/lab-intelligence-service.ts:409"
+        ],
+        "risk_assessment": [
+          "server/comprehensive-database-alignment.ts:280",
+          "server/lab-intelligence-service.ts:37",
+          "server/lab-intelligence-service.ts:409"
+        ],
+        "review_status": [
+          "server/comprehensive-database-alignment.ts:282",
+          "server/lab-order-processor.ts:166",
+          "server/lab-review-service.ts:239"
+        ]
+      },
+      "unused": []
+    },
+    "health_systems": {
+      "used": {
+        "type": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "subscription_key": [
+          "server/billing-calculation-service.ts:5",
+          "server/billing-calculation-service.ts:142",
+          "server/billing-calculation-service.ts:145"
+        ],
+        "is_migration": [
+          "server/comprehensive-database-alignment.ts:674",
+          "server/create-remaining-tables.ts:18"
+        ],
+        "stripe_customer_id": [
+          "server/comprehensive-database-alignment.ts:675",
+          "server/create-remaining-tables.ts:19",
+          "server/health-system-upgrade-routes.ts:29"
+        ],
+        "metadata": [
+          "server/appointment-completion-service.ts:124",
+          "server/attachment-chart-processor.ts:811",
+          "server/auth.ts:363"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ]
+      },
+      "unused": []
+    },
+    "patient_scheduling_patterns": {
+      "used": {
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ],
+        "pattern_type": [
+          "server/comprehensive-database-alignment.ts:54",
+          "server/comprehensive-database-alignment.ts:86",
+          "shared/schema (copy).ts:419"
+        ],
+        "frequency": [
+          "server/comprehensive-database-alignment.ts:55",
+          "server/comprehensive-database-alignment.ts:452",
+          "server/create-essential-tables.ts:130"
+        ],
+        "time_preferences": [
+          "server/comprehensive-database-alignment.ts:56"
+        ],
+        "seasonal_variations": [
+          "server/comprehensive-database-alignment.ts:57"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "realtime_schedule_status": {
+      "used": {
+        "date": [
+          "server/admin-routes.ts:46",
+          "server/admin-routes.ts:50",
+          "server/admin-routes.ts:52"
+        ],
+        "time_slot": [
+          "server/comprehensive-database-alignment.ts:100",
+          "server/comprehensive-database-alignment.ts:106"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "appointment_id": [
+          "server/appointment-completion-service.ts:10",
+          "server/appointment-completion-service.ts:11",
+          "server/appointment-completion-service.ts:18"
+        ],
+        "buffer_status": [
+          "server/comprehensive-database-alignment.ts:103"
+        ],
+        "efficiency_score": [
+          "server/comprehensive-database-alignment.ts:104"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "social_history": {
+      "used": {
+        "start_date": [
+          "server/admin-user-routes.ts:278",
+          "server/admin-user-routes.ts:391",
+          "server/enhanced-medication-routes.ts:59"
+        ],
+        "end_date": [
+          "server/admin-user-routes.ts:279",
+          "server/enhanced-medication-routes.ts:60",
+          "server/enhanced-medication-routes.ts:225"
+        ],
+        "quantity": [
+          "server/comprehensive-database-alignment.ts:334",
+          "server/create-essential-tables.ts:132",
+          "server/encounter-signature-validation.ts:317"
+        ],
+        "frequency": [
+          "server/comprehensive-database-alignment.ts:55",
+          "server/comprehensive-database-alignment.ts:452",
+          "server/create-essential-tables.ts:130"
+        ],
+        "risk_level": [
+          "server/medical-coding-guidelines.ts:9",
+          "server/medical-coding-guidelines.ts:258",
+          "server/medical-coding-guidelines.ts:317"
+        ],
+        "merged_ids": [
+          "shared/schema (copy).ts:1392",
+          "shared/schema (copy).ts:1473",
+          "shared/schema.ts:1392"
+        ]
+      },
+      "unused": [
+        "counseling_provided"
+      ]
+    },
+    "subscription_history": {
+      "used": {
+        "previous_status": [
+          "server/comprehensive-database-alignment.ts:548"
+        ],
+        "new_status": [
+          "server/comprehensive-database-alignment.ts:549",
+          "server/lab-simulator-service.ts:249",
+          "server/lab-simulator-service.ts:252"
+        ],
+        "changed_by": [
+          "server/comprehensive-database-alignment.ts:510",
+          "server/comprehensive-database-alignment.ts:550",
+          "server/signed-orders-routes.ts:85"
+        ],
+        "reason": [
+          "server/attachment-chart-processor.ts:114",
+          "server/attachment-chart-processor.ts:115",
+          "server/attachment-chart-processor.ts:117"
+        ],
+        "billing_impact": [
+          "server/comprehensive-database-alignment.ts:552"
+        ],
+        "effective_date": [
+          "server/comprehensive-database-alignment.ts:44",
+          "server/comprehensive-database-alignment.ts:553"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "appointment_types": {
+      "used": {
+        "name": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:12",
+          "server/add-test-health-systems-sql.ts:14"
+        ],
+        "duration_minutes": [
+          "server/comprehensive-database-alignment.ts:147",
+          "server/create-remaining-tables.ts:124",
+          "server/create-remaining-tables.ts:144"
+        ],
+        "color": [
+          "server/clinic-admin-verification-service.ts:504",
+          "server/clinic-admin-verification-service.ts:509",
+          "server/clinic-admin-verification-service.ts:510"
+        ],
+        "description": [
+          "server/admin-stats-routes.ts:134",
+          "server/admin-stats-routes.ts:146",
+          "server/admin-verification-routes.ts:189"
+        ],
+        "is_active": [
+          "server/admin-user-routes.ts:519",
+          "server/billing-calculation-service.ts:147",
+          "server/clinic-admin-verification-service.ts:1160"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "medical_history": {
+      "used": {
+        "condition": [
+          "server/comprehensive-database-alignment.ts:179",
+          "server/comprehensive-database-alignment.ts:312",
+          "server/cpt-extractor.ts:256"
+        ],
+        "onset_date": [
+          "server/comprehensive-database-alignment.ts:313",
+          "server/storage.ts:1521",
+          "server/test-patient-generator.ts:421"
+        ],
+        "resolution_date": [
+          "server/comprehensive-database-alignment.ts:314",
+          "shared/schema (copy).ts:1618",
+          "shared/schema (copy).ts:1677"
+        ],
+        "status": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "severity": [
+          "server/attachment-chart-processor.ts:1059",
+          "server/comprehensive-database-alignment.ts:316",
+          "server/enhanced-note-generation-service.ts:527"
+        ],
+        "notes": [
+          "server/admin-verification-routes.ts:491",
+          "server/admin-verification-routes.ts:502",
+          "server/attachment-chart-processor.ts:466"
+        ]
+      },
+      "unused": []
+    },
+    "organization_documents": {
+      "used": {
+        "organization_id": [
+          "server/admin-clinic-import-routes.ts:270",
+          "server/admin-clinic-import-routes.ts:378",
+          "server/admin-user-routes.ts:250"
+        ],
+        "file_path": [
+          "server/clinic-data-import-service.ts:50",
+          "server/clinic-data-import-service.ts:66",
+          "server/comprehensive-database-alignment.ts:241"
+        ],
+        "file_size": [
+          "server/admin-clinic-import-routes.ts:105",
+          "server/comprehensive-database-alignment.ts:242",
+          "server/patient-attachments-routes.ts:40"
+        ],
+        "mime_type": [
+          "server/comprehensive-database-alignment.ts:243",
+          "server/document-analysis-service.ts:119",
+          "server/document-analysis-service.ts:130"
+        ],
+        "active": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:11",
+          "server/add-test-health-systems-sql.ts:14"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "provider_scheduling_patterns": {
+      "used": {
+        "pattern_type": [
+          "server/comprehensive-database-alignment.ts:54",
+          "server/comprehensive-database-alignment.ts:86",
+          "shared/schema (copy).ts:419"
+        ],
+        "preferences": [
+          "server/auth.ts:667",
+          "server/auth.ts:668",
+          "server/auth.ts:673"
+        ],
+        "constraints": [
+          "server/comprehensive-database-alignment.ts:88",
+          "server/patient-attachments-routes.ts:644",
+          "server/routes.ts:4869"
+        ],
+        "historical_data": [
+          "server/comprehensive-database-alignment.ts:89",
+          "server/lab-intelligence-service.ts:60",
+          "server/lab-intelligence-service.ts:65"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "subscription_keys": {
+      "used": {
+        "key_value": [
+          "server/comprehensive-database-alignment.ts:562"
+        ],
+        "created_by": [
+          "server/blog-routes.ts:255",
+          "server/blog-routes.ts:389",
+          "server/comprehensive-database-alignment.ts:468"
+        ],
+        "assigned_to": [
+          "server/comprehensive-database-alignment.ts:565",
+          "server/lab-review-service.ts:56",
+          "server/lab-review-service.ts:291"
+        ],
+        "assigned_at": [
+          "server/comprehensive-database-alignment.ts:566"
+        ],
+        "usage_count": [
+          "server/comprehensive-database-alignment.ts:479",
+          "server/comprehensive-database-alignment.ts:569",
+          "server/storage.ts:1719"
+        ],
+        "last_used_at": [
+          "server/comprehensive-database-alignment.ts:570",
+          "server/webauthn-service.ts:289",
+          "server/webauthn-service.ts:319"
+        ]
+      },
+      "unused": []
+    },
+    "user_problem_list_preferences": {
+      "used": {
+        "id": [
+          "server/add-test-health-systems-sql.ts:63",
+          "server/add-test-health-systems-sql.ts:77",
+          "server/add-test-health-systems-sql.ts:78"
+        ]
+      },
+      "unused": [
+        "show_inactive_problems",
+        "sort_by",
+        "group_by_category",
+        "highlight_recent_changes",
+        "recent_change_days"
+      ]
+    },
+    "emergency_access_logs": {
+      "used": {
+        "access_reason": [
+          "server/audit-logging.ts:123",
+          "server/audit-logging.ts:157",
+          "server/comprehensive-database-alignment.ts:404"
+        ],
+        "override_restrictions": [
+          "server/comprehensive-database-alignment.ts:406"
+        ],
+        "supervisor_approval": [
+          "server/comprehensive-database-alignment.ts:407"
+        ],
+        "access_duration": [
+          "server/comprehensive-database-alignment.ts:408"
+        ],
+        "ip_address": [
+          "server/audit-logging.ts:117",
+          "server/audit-logging.ts:151",
+          "server/audit-logging.ts:194"
+        ]
+      },
+      "unused": []
+    },
+    "lab_reference_ranges": {
+      "used": {
+        "test_code": [
+          "server/create-essential-tables.ts:135",
+          "server/external-lab-mock-service.ts:22",
+          "server/external-lab-mock-service.ts:23"
+        ],
+        "unit": [
+          "server/add-test-health-systems-sql.ts:11",
+          "server/add-test-health-systems-sql.ts:64",
+          "server/add-test-health-systems.ts:11"
+        ],
+        "notes": [
+          "server/admin-verification-routes.ts:491",
+          "server/admin-verification-routes.ts:502",
+          "server/attachment-chart-processor.ts:466"
+        ]
+      },
+      "unused": [
+        "reference_low",
+        "reference_high"
+      ]
+    },
+    "scheduling_templates": {
+      "used": {
+        "template_type": [
+          "server/comprehensive-database-alignment.ts:192"
+        ],
+        "day_configuration": [
+          "server/comprehensive-database-alignment.ts:193"
+        ],
+        "appointment_types": [
+          "server/comprehensive-database-alignment.ts:194",
+          "server/create-remaining-tables.ts:120",
+          "server/create-remaining-tables.ts:210"
+        ],
+        "buffer_rules": [
+          "server/comprehensive-database-alignment.ts:195"
+        ],
+        "break_configuration": [
+          "server/comprehensive-database-alignment.ts:196"
+        ]
+      },
+      "unused": []
+    },
+    "signatures": {
+      "used": {
+        "encounter_id": [
+          "server/attachment-chart-processor.ts:321",
+          "server/attachment-chart-processor.ts:323",
+          "server/attachment-chart-processor.ts:324"
+        ],
+        "signed_by": [
+          "server/comprehensive-database-alignment.ts:359",
+          "server/comprehensive-database-alignment.ts:372",
+          "server/dashboard-routes.ts:253"
+        ],
+        "signature_type": [
+          "server/comprehensive-database-alignment.ts:360"
+        ],
+        "ip_address": [
+          "server/audit-logging.ts:117",
+          "server/audit-logging.ts:151",
+          "server/audit-logging.ts:194"
+        ],
+        "attestation_text": [
+          "server/comprehensive-database-alignment.ts:364"
+        ]
+      },
+      "unused": []
+    },
+    "user_assistant_threads": {
+      "used": {
+        "assistant_type": [
+          "server/comprehensive-database-alignment.ts:432"
+        ],
+        "assistant_id": [
+          "server/comprehensive-database-alignment.ts:434",
+          "server/routes.ts:1870",
+          "server/routes.ts:1881"
+        ],
+        "context": [
+          "server/attachment-chart-processor.ts:274",
+          "server/attachment-chart-processor.ts:275",
+          "server/attachment-chart-processor.ts:466"
+        ],
+        "last_message_at": [
+          "server/comprehensive-database-alignment.ts:436"
+        ],
+        "active": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:11",
+          "server/add-test-health-systems-sql.ts:14"
+        ]
+      },
+      "unused": []
+    },
+    "user_edit_patterns": {
+      "used": {
+        "note_type": [
+          "server/comprehensive-database-alignment.ts:447",
+          "server/comprehensive-database-alignment.ts:464",
+          "server/create-essential-tables.ts:41"
+        ],
+        "section_name": [
+          "server/chart-section-orchestrator.ts:262",
+          "server/chart-section-orchestrator.ts:263",
+          "server/chart-section-orchestrator.ts:266"
+        ],
+        "edit_type": [
+          "server/comprehensive-database-alignment.ts:449"
+        ],
+        "edit_frequency": [
+          "server/comprehensive-database-alignment.ts:452"
+        ],
+        "last_occurrence": [
+          "server/comprehensive-database-alignment.ts:454"
+        ]
+      },
+      "unused": []
+    },
+    "admin_prompt_reviews": {
+      "used": {
+        "reviewer_id": [
+          "server/clinic-admin-verification-service.ts:901",
+          "server/clinic-admin-verification-service.ts:920",
+          "server/clinic-admin-verification-service.ts:945"
+        ],
+        "feedback": [
+          "server/auth.ts:205",
+          "server/blog-routes.ts:323",
+          "server/blog-routes.ts:325"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": [
+        "prompt_id"
+      ]
+    },
+    "patient_order_preferences": {
+      "used": {
+        "provider_id": [
+          "server/admin-user-routes.ts:678",
+          "server/admin-user-routes.ts:679",
+          "server/appointment-completion-service.ts:61"
+        ],
+        "order_type": [
+          "server/comprehensive-database-alignment.ts:347",
+          "server/create-essential-tables.ts:123",
+          "server/encounter-signature-validation.ts:316"
+        ],
+        "preferences": [
+          "server/auth.ts:667",
+          "server/auth.ts:668",
+          "server/auth.ts:673"
+        ],
+        "standing_orders": [
+          "server/comprehensive-database-alignment.ts:349"
+        ]
+      },
+      "unused": []
+    },
+    "provider_schedules": {
+      "used": {
+        "break_start": [
+          "server/comprehensive-database-alignment.ts:71"
+        ],
+        "break_end": [
+          "server/comprehensive-database-alignment.ts:72"
+        ],
+        "effective_to": [
+          "server/comprehensive-database-alignment.ts:74"
+        ],
+        "max_appointments": [
+          "server/comprehensive-database-alignment.ts:76"
+        ]
+      },
+      "unused": []
+    },
+    "scheduling_ai_factors": {
+      "used": {
+        "category": [
+          "server/attachment-chart-processor.ts:991",
+          "server/blog-routes.ts:44",
+          "server/blog-routes.ts:52"
+        ],
+        "description": [
+          "server/admin-stats-routes.ts:134",
+          "server/admin-stats-routes.ts:146",
+          "server/admin-verification-routes.ts:189"
+        ],
+        "is_enabled": [
+          "server/create-remaining-tables.ts:93"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "scheduling_resources": {
+      "used": {
+        "name": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:12",
+          "server/add-test-health-systems-sql.ts:14"
+        ],
+        "available_hours": [
+          "server/comprehensive-database-alignment.ts:163"
+        ],
+        "requires_cleaning": [
+          "server/comprehensive-database-alignment.ts:164",
+          "shared/schema (copy).ts:926",
+          "shared/schema.ts:926"
+        ],
+        "cleaning_duration": [
+          "server/comprehensive-database-alignment.ts:165"
+        ]
+      },
+      "unused": []
+    },
+    "scheduling_rules": {
+      "used": {
+        "name": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:12",
+          "server/add-test-health-systems-sql.ts:14"
+        ],
+        "applies_to": [
+          "server/comprehensive-database-alignment.ts:176"
+        ],
+        "conditions": [
+          "server/comprehensive-database-alignment.ts:179",
+          "server/cpt-extractor.ts:256",
+          "server/cpt-extractor.ts:267"
+        ],
+        "actions": [
+          "server/attachment-chart-processor.ts:21",
+          "server/comprehensive-database-alignment.ts:180",
+          "server/enhanced-medication-routes.ts:70"
+        ]
+      },
+      "unused": []
+    },
+    "user_session_locations": {
+      "used": {
+        "is_primary": [
+          "server/admin-user-routes.ts:273",
+          "server/admin-user-routes.ts:299",
+          "server/admin-user-routes.ts:317"
+        ],
+        "permissions": [
+          "server/admin-user-routes.ts:318",
+          "server/admin-user-routes.ts:387",
+          "server/admin-user-routes.ts:388"
+        ],
+        "remembered": [
+          "server/auth.ts:534",
+          "server/auth.ts:536",
+          "server/auth.ts:537"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "asymmetric_scheduling_config": {
+      "used": {
+        "weekday_schedule": [
+          "server/comprehensive-database-alignment.ts:42"
+        ],
+        "custom_rules": [
+          "server/comprehensive-database-alignment.ts:43"
+        ],
+        "effective_date": [
+          "server/comprehensive-database-alignment.ts:44",
+          "server/comprehensive-database-alignment.ts:553"
+        ]
+      },
+      "unused": []
+    },
+    "organizations": {
+      "used": {
+        "type": [
+          "server/add-test-health-systems-sql.ts:10",
+          "server/add-test-health-systems-sql.ts:14",
+          "server/add-test-health-systems-sql.ts:18"
+        ],
+        "website": [
+          "server/clinic-admin-verification-service.ts:32",
+          "server/clinic-admin-verification-service.ts:214",
+          "server/clinic-admin-verification-service.ts:240"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "problem_rank_overrides": {
+      "used": {
+        "patient_id": [
+          "server/admin-stats-routes.ts:99",
+          "server/appointment-completion-service.ts:58",
+          "server/appointment-completion-service.ts:233"
+        ],
+        "reason": [
+          "server/attachment-chart-processor.ts:114",
+          "server/attachment-chart-processor.ts:115",
+          "server/attachment-chart-processor.ts:117"
+        ]
+      },
+      "unused": [
+        "custom_rank"
+      ]
+    },
+    "appointment_resource_requirements": {
+      "used": {
+        "resource_type": [
+          "server/audit-logging.ts:111",
+          "server/audit-logging.ts:145",
+          "server/comprehensive-database-alignment.ts:160"
+        ],
+        "resource_id": [
+          "server/audit-logging.ts:112",
+          "server/audit-logging.ts:146",
+          "server/comprehensive-database-alignment.ts:113"
+        ]
+      },
+      "unused": []
+    },
+    "authentication_logs": {
+      "used": {
+        "error_message": [
+          "server/api-response-handler.ts:45",
+          "server/api-response-handler.ts:50",
+          "server/api-response-handler.ts:57"
+        ],
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "migration_invitations": {
+      "used": {
+        "to_health_system_id": [
+          "server/admin-stats-routes.ts:41",
+          "server/registration-service.ts:391",
+          "shared/schema (copy).ts:25"
+        ]
+      },
+      "unused": [
+        "from_health_system_id"
+      ]
+    },
+    "patients": {
+      "used": {
+        "insurance_policy_number": [
+          "server/comprehensive-database-alignment.ts:662",
+          "server/create-essential-tables.ts:82"
+        ],
+        "insurance_group_number": [
+          "server/comprehensive-database-alignment.ts:663",
+          "server/create-essential-tables.ts:83"
+        ]
+      },
+      "unused": []
+    },
+    "user_locations": {
+      "used": {
+        "permissions": [
+          "server/admin-user-routes.ts:318",
+          "server/admin-user-routes.ts:387",
+          "server/admin-user-routes.ts:388"
+        ],
+        "updated_at": [
+          "server/appointment-completion-service.ts:147",
+          "server/appointment-completion-service.ts:149",
+          "server/blog-routes.ts:380"
+        ]
+      },
+      "unused": []
+    },
+    "webauthn_credentials": {
+      "used": {
+        "public_key": [
+          "server/webauthn-service.ts:68",
+          "server/webauthn-service.ts:165",
+          "server/webauthn-service.ts:267"
+        ],
+        "device_name": [
+          "server/webauthn-service.ts:68",
+          "server/webauthn-service.ts:167",
+          "server/webauthn-service.ts:320"
+        ]
+      },
+      "unused": []
+    },
+    "appointment_duration_history": {
+      "used": {
+        "predicted_duration": [
+          "server/appointment-completion-service.ts:238",
+          "server/create-remaining-tables.ts:145",
+          "client/src/components/patient/appointments-section.tsx:31"
+        ]
+      },
+      "unused": []
+    },
+    "magic_links": {
+      "used": {
+        "used": [
+          "server/admin-user-routes.ts:17",
+          "server/appointment-completion-service.ts:122",
+          "server/appointment-completion-service.ts:214"
+        ]
+      },
+      "unused": []
+    },
+    "phi_access_logs": {
+      "used": {
+        "created_at": [
+          "server/admin-stats-routes.ts:101",
+          "server/admin-user-routes.ts:216",
+          "server/appointment-completion-service.ts:147"
+        ]
+      },
+      "unused": []
+    },
+    "schedule_exceptions": {
+      "used": {
+        "affects_scheduling": [
+          "server/comprehensive-database-alignment.ts:131"
+        ]
+      },
+      "unused": []
+    },
+    "users": {
+      "used": {},
+      "unused": [
+        "is_verified"
+      ]
+    },
+    "vitals": {
+      "used": {
+        "alerts": [
+          "server/attachment-chart-processor.ts:497",
+          "server/attachment-chart-processor.ts:814",
+          "server/lab-workflow-routes.ts:156"
+        ]
+      },
+      "unused": []
+    }
+  }
+}

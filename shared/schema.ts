@@ -160,6 +160,15 @@ export const locations = pgTable("locations", {
   hasImaging: boolean("has_imaging").default(false),
   hasPharmacy: boolean("has_pharmacy").default(false),
   
+  // Additional actively used columns from database
+  timeZone: text("time_zone").default("America/Chicago"), // Location timezone
+  googlePlaceId: text("google_place_id"), // Google Places API reference
+  coordinatesLat: decimal("coordinates_lat", { precision: 10, scale: 7 }), // Latitude
+  coordinatesLng: decimal("coordinates_lng", { precision: 10, scale: 7 }), // Longitude
+  maxDailyCapacity: integer("max_daily_capacity"), // Maximum patients per day
+  emergencyContact: text("emergency_contact"), // Emergency contact name
+  emergencyPhone: text("emergency_phone"), // Emergency contact phone
+  
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -399,6 +408,24 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   // Dense view toggle for all chart sections
   enableDenseView: boolean("enable_dense_view").default(false),
   
+  // Additional actively used columns from database
+  templateSharingEnabled: boolean("template_sharing_enabled").default(false),
+  showDiagnosisWarnings: boolean("show_diagnosis_warnings").default(true),
+  autoExpandSections: boolean("auto_expand_sections").default(false),
+  defaultFontSize: integer("default_font_size").default(14),
+  highlightCriticalValues: boolean("highlight_critical_values").default(true),
+  showConfidenceScores: boolean("show_confidence_scores").default(true),
+  abbreviationExpansion: boolean("abbreviation_expansion").default(true),
+  smartPhraseEnabled: boolean("smart_phrase_enabled").default(true),
+  voiceCommandsEnabled: boolean("voice_commands_enabled").default(false),
+  quickActionsPosition: text("quick_actions_position").default("right"),
+  sidebarPosition: text("sidebar_position").default("left"),
+  compactViewEnabled: boolean("compact_view_enabled").default(false),
+  darkModeEnabled: boolean("dark_mode_enabled").default(false),
+  keyboardShortcutsEnabled: boolean("keyboard_shortcuts_enabled").default(true),
+  recentTemplatesCount: integer("recent_templates_count").default(5),
+  favoriteTemplates: jsonb("favorite_templates").default([]),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -539,6 +566,22 @@ export const patients = pgTable("patients", {
   }>().default({ consentGiven: false }),
   
   profilePhotoFilename: text("profile_photo_filename"),
+  
+  // Additional actively used columns from database
+  nickname: text("nickname"), // Preferred name
+  socialSecurityNumber: text("social_security_number"), // Encrypted SSN
+  driversLicenseNumber: text("drivers_license_number"), // Driver's license
+  passportNumber: text("passport_number"), // Passport number
+  militaryId: text("military_id"), // Military ID
+  religion: text("religion"), // Religious preference
+  sexualOrientation: text("sexual_orientation"), // Sexual orientation
+  genderIdentity: text("gender_identity"), // Gender identity
+  housingStatus: text("housing_status"), // Housing situation
+  employmentStatus: text("employment_status"), // Employment status
+  educationLevel: text("education_level"), // Education level
+  veteranStatus: boolean("veteran_status").default(false), // Veteran status
+  disabilityStatus: text("disability_status"), // Disability information
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -854,6 +897,18 @@ export const schedulePreferences = pgTable("schedule_preferences", {
     requiresApproval?: boolean;
   }>(),
   
+  // Additional actively used columns from database
+  preferredAppointmentDuration: integer("preferred_appointment_duration"), // Default appointment duration
+  bufferTimeMinutes: integer("buffer_time_minutes"), // Buffer between appointments
+  lunchStart: text("lunch_start"), // Lunch start time
+  lunchDuration: integer("lunch_duration"), // Lunch duration in minutes
+  maxDailyAppointments: integer("max_daily_appointments"), // Max appointments per day
+  maxConsecutiveAppointments: integer("max_consecutive_appointments"), // Max back-to-back appointments
+  preferredBreakAfterNAppointments: integer("preferred_break_after_n_appointments"), // Break after N appointments
+  breakDurationMinutes: integer("break_duration_minutes"), // Break duration
+  allowOvertime: boolean("allow_overtime").default(false), // Allow overtime scheduling
+  overtimeLimitMinutes: integer("overtime_limit_minutes"), // Max overtime minutes
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1075,6 +1130,13 @@ export const appointments = pgTable("appointments", {
   waitListPriority: integer("wait_list_priority"),
   wheelchairAccessible: boolean("wheelchair_accessible").default(false),
   
+  // Additional actively used columns from database (noShowReason already exists above)
+  lateArrival: boolean("late_arrival").default(false), // Patient arrived late
+  arrivalTime: timestamp("arrival_time"), // Actual arrival time
+  waitTime: integer("wait_time"), // Minutes waited
+  preparationCompleted: boolean("preparation_completed").default(false), // Pre-visit prep done
+  followUpScheduled: boolean("follow_up_scheduled").default(false), // Follow-up scheduled
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
   createdBy: integer("created_by").notNull().references(() => users.id),
@@ -1199,6 +1261,22 @@ export const encounters = pgTable("encounters", {
   // Audit trail
   lastChartUpdate: timestamp("last_chart_update"),
   chartUpdateDuration: integer("chart_update_duration"),
+  
+  // Additional actively used columns from database
+  encounterDate: timestamp("encounter_date"), // Date of encounter
+  visitReason: text("visit_reason"), // Reason for visit
+  status: text("status"), // Encounter status tracking
+  insuranceVerified: boolean("insurance_verified"), // Insurance verification status
+  copayCollected: boolean("copay_collected"), // Copay collection status
+  notes: text("notes"), // Additional encounter notes
+  locationId: integer("location_id").references(() => locations.id), // Location reference
+  signedBy: integer("signed_by").references(() => users.id), // Provider who signed
+  signedAt: timestamp("signed_at"), // When encounter was signed
+  isSigned: boolean("is_signed").default(false), // Signature status
+  assistantThreadId: text("assistant_thread_id"), // AI assistant thread ID
+  alerts: jsonb("alerts"), // Clinical alerts/warnings
+  dischargeSummary: text("discharge_summary"), // Discharge summary text
+  templateId: integer("template_id"), // Template reference
 });
 
 // Historical Data Tables (UPDATE-able by GPT)
@@ -1356,6 +1434,23 @@ export const surgicalHistory = pgTable("surgical_history", {
     sourceNotes?: string; // Additional context from extraction source
   }>>().default([]),
   
+  // Additional actively used columns from database
+  inpatientOutpatient: text("inpatient_outpatient"), // 'inpatient', 'outpatient', 'same-day'
+  preOpDiagnosis: text("pre_op_diagnosis"), // Pre-operative diagnosis
+  postOpDiagnosis: text("post_op_diagnosis"), // Post-operative diagnosis
+  pathologyReport: text("pathology_report"), // Pathology findings
+  operativeFindings: text("operative_findings"), // Findings during surgery
+  dispositionFromOr: text("disposition_from_or"), // Where patient went after surgery
+  
+  // Additional legacy columns actively used
+  surgeon: text("surgeon"), // Legacy surgeon field (duplicate of surgeon_name)
+  facility: text("facility"), // Legacy facility field (duplicate of facility_name)
+  findings: text("findings"), // Surgical findings
+  procedureCode: text("procedure_code"), // Legacy procedure code field
+  approach: text("approach"), // Surgical approach
+  durationMinutes: integer("duration_minutes"), // Surgery duration in minutes
+  mergedIds: integer("merged_ids").array(), // IDs of surgeries merged into this one
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1474,6 +1569,17 @@ export const vitals = pgTable("vitals", {
   visitHistory: jsonb("visit_history").default([]),
   enteredBy: integer("entered_by").references(() => users.id),
   
+  // Additional actively used columns from database
+  measurementLocation: text("measurement_location"), // where vitals were taken
+  measurementMethod: text("measurement_method"), // how vitals were measured
+  clinicalContext: text("clinical_context"), // clinical situation during measurement
+  verifiedBy: integer("verified_by").references(() => users.id), // who verified the vitals
+  verifiedAt: timestamp("verified_at"), // when vitals were verified
+  abnormalFlags: jsonb("abnormal_flags"), // flags for abnormal values
+  criticalValue: boolean("critical_value").default(false), // if any vital is critical
+  nurseNotes: text("nurse_notes"), // nursing notes about vitals
+  providerComments: text("provider_comments"), // provider comments on vitals
+  
   // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
@@ -1569,6 +1675,22 @@ export const medications = pgTable("medications", {
   insuranceAuthStatus: text("insurance_auth_status"), // 'approved', 'pending', 'denied'
   priorAuthRequired: boolean("prior_auth_required").default(false),
   
+  // Additional actively used columns from database
+  formularyStatus: text("formulary_status"), // 'preferred', 'non-preferred', 'not-covered'
+  genericSubstitutionAllowed: boolean("generic_substitution_allowed").default(true),
+  patientInstructions: text("patient_instructions"), // Additional patient instructions
+  discontinuationReason: text("discontinuation_reason"), // Why medication was stopped
+  originalPrescriber: text("original_prescriber"), // Original prescribing provider
+  originalPrescriptionDate: date("original_prescription_date"), // When first prescribed
+  lastDispensedDate: date("last_dispensed_date"), // Last pharmacy fill date
+  adherenceNotes: text("adherence_notes"), // Patient adherence observations
+  costCopay: decimal("cost_copay", { precision: 10, scale: 2 }), // Patient copay amount
+  pharmacyNotes: text("pharmacy_notes"), // Notes from pharmacy
+  renewalRequestDate: date("renewal_request_date"), // When renewal requested
+  renewalRequestStatus: text("renewal_request_status"), // Status of renewal request
+  medicationEducationProvided: boolean("medication_education_provided").default(false),
+  patientCounseling: text("patient_counseling"), // Counseling notes
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1646,6 +1768,16 @@ export const medicalProblems = pgTable("medical_problems", {
   reviewedBy: integer("reviewed_by").references(() => users.id),
   patientEducationProvided: boolean("patient_education_provided").default(false),
   
+  // Additional actively used columns from database
+  chronicCondition: boolean("chronic_condition").default(false), // if condition is chronic
+  followUpRequired: boolean("follow_up_required").default(false), // needs follow-up
+  followUpDate: date("follow_up_date"), // scheduled follow-up date
+  relatedProblems: jsonb("related_problems"), // related medical problems
+  riskFactors: jsonb("risk_factors"), // associated risk factors
+  prognosisNotes: text("prognosis_notes"), // prognosis information
+  treatmentPlan: text("treatment_plan"), // current treatment plan
+  complicationRisk: text("complication_risk"), // risk of complications
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1678,6 +1810,25 @@ export const diagnoses = pgTable("diagnoses", {
   notes: text("notes"),
   severity: text("severity"),
   clinician_id: integer("clinician_id").references(() => users.id),
+  
+  // Additional actively used columns for billing/RCM
+  claimSubmissionStatus: text("claim_submission_status"), // Status of insurance claim
+  claimId: integer("claim_id"), // Insurance claim ID
+  clearinghouseId: integer("clearinghouse_id"), // Clearinghouse reference
+  payerId: integer("payer_id"), // Insurance payer ID
+  allowedAmount: decimal("allowed_amount", { precision: 10, scale: 2 }), // Insurance allowed amount
+  paidAmount: decimal("paid_amount", { precision: 10, scale: 2 }), // Amount paid by insurance
+  patientResponsibility: decimal("patient_responsibility", { precision: 10, scale: 2 }), // Patient owes
+  adjustmentAmount: decimal("adjustment_amount", { precision: 10, scale: 2 }), // Write-offs/adjustments
+  denialReason: text("denial_reason"), // Insurance denial reason
+  denialCode: text("denial_code"), // Standardized denial code
+  appealStatus: text("appeal_status"), // Appeal tracking
+  appealDeadline: date("appeal_deadline"), // Appeal deadline date
+  billingNotes: text("billing_notes"), // Billing team notes
+  lastBillingAction: text("last_billing_action"), // Last action taken
+  assignedBiller: text("assigned_biller"), // Assigned billing specialist
+  modifierApplied: text("modifier_applied"), // CPT modifiers
+  billingActionDate: timestamp("billing_action_date"), // Last billing action date
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1767,6 +1918,21 @@ export const labOrders = pgTable("lab_orders", {
   // Quality measures
   qualityMeasure: text("quality_measure"), // Links to quality reporting (HEDIS, CMS)
   preventiveCareFlag: boolean("preventive_care_flag").default(false),
+  
+  // Additional actively used columns from database
+  orderId: integer("order_id"), // General order reference
+  status: text("status"), // Order status tracking
+  specialInstructions: text("special_instructions"), // Provider special instructions
+  externalLab: text("external_lab"), // External lab name/identifier
+  resultStatus: text("result_status"), // Result status tracking
+  referenceRange: text("reference_range"), // Normal reference ranges
+  results: jsonb("results"), // Lab results data
+  discontinuedAt: timestamp("discontinued_at"), // When order was discontinued
+  providerNotes: text("provider_notes"), // Provider-specific notes
+  processingNotes: text("processing_notes"), // Lab processing notes
+  consentDate: timestamp("consent_date"), // Patient consent timestamp
+  cancellationReason: text("cancellation_reason"), // Why order was cancelled
+  regulatoryCompliance: jsonb("regulatory_compliance"), // Compliance tracking
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1889,6 +2055,14 @@ export const labResults = pgTable("lab_results", {
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id, { onDelete: "set null" }), // Source attachment for extracted labs
   enteredBy: integer("entered_by").references(() => users.id), // Who entered non-standard results
   
+  // Additional actively used columns from database
+  patientMessage: text("patient_message"), // Message sent to patient about results
+  patientMessageSentAt: timestamp("patient_message_sent_at"), // When patient was notified
+  extractionNotes: text("extraction_notes"), // GPT extraction notes
+  consolidationReasoning: text("consolidation_reasoning"), // Why results were consolidated
+  mergedIds: jsonb("merged_ids"), // Array of merged result IDs
+  visitHistory: jsonb("visit_history"), // Visit history tracking
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2008,6 +2182,16 @@ export const imagingOrders = pgTable("imaging_orders", {
   prepInstructions: text("prep_instructions"),
   schedulingNotes: text("scheduling_notes"),
   
+  // Additional actively used columns from database
+  providerId: integer("provider_id").references(() => users.id), // Provider reference
+  imagingType: text("imaging_type"), // Imaging type classification
+  indication: text("indication"), // Clinical indication
+  priority: text("priority"), // Order priority
+  status: text("status"), // Order status
+  facilityId: integer("facility_id"), // Facility ID reference
+  scheduledDate: timestamp("scheduled_date"), // Scheduled date
+  completedDate: timestamp("completed_date"), // Completion date
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2055,6 +2239,20 @@ export const imagingResults = pgTable("imaging_results", {
     changesFrom?: string;
   }>>(),
   
+  // Additional actively used columns from database
+  encounterId: integer("encounter_id").references(() => encounters.id), // Encounter reference
+  accessionNumber: text("accession_number"), // Study accession number
+  recommendations: text("recommendations"), // Radiologist recommendations
+  technique: text("technique"), // Imaging technique details
+  addendum: text("addendum"), // Report addendums
+  procedureCode: text("procedure_code"), // CPT/procedure code
+  limitations: text("limitations"), // Study limitations
+  relevantHistory: text("relevant_history"), // Patient history relevant to study
+  clinicalIndication: text("clinical_indication"), // Why study was ordered
+  extractionNotes: text("extraction_notes"), // GPT extraction notes
+  consolidationReasoning: text("consolidation_reasoning"), // Why consolidated
+  mergedIds: jsonb("merged_ids"), // Array of merged result IDs
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -2093,6 +2291,16 @@ export const patientPhysicalFindings = pgTable("patient_physical_findings", {
     monitoringRequired?: boolean;
     significanceLevel?: 'low' | 'moderate' | 'high';
   }>(),
+  
+  // Additional actively used columns from database
+  encounterId: integer("encounter_id").references(() => encounters.id), // Encounter reference
+  finding: text("finding"), // Physical finding description
+  severity: text("severity"), // Severity classification
+  laterality: text("laterality"), // Body side (left/right/bilateral)
+  quality: text("quality"), // Quality descriptor
+  duration: text("duration"), // Duration of finding
+  context: text("context"), // Clinical context
+  providerId: integer("provider_id").references(() => users.id), // Examining provider
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -2153,6 +2361,37 @@ export const orders = pgTable("orders", {
   orderedAt: timestamp("ordered_at").defaultNow(),
   approvedBy: integer("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
+  
+  // Additional actively used columns from database
+  providerId: integer("provider_id").references(() => users.id), // Provider reference
+  orderDate: timestamp("order_date"), // Order date tracking
+  status: text("status"), // Order status
+  medicationDosage: text("medication_dosage"), // Dosage details
+  medicationRoute: text("medication_route"), // Route of administration
+  medicationFrequency: text("medication_frequency"), // Frequency details
+  medicationDuration: text("medication_duration"), // Duration of treatment
+  medicationQuantity: text("medication_quantity"), // Quantity prescribed
+  medicationRefills: text("medication_refills"), // Number of refills
+  labTestName: text("lab_test_name"), // Lab test name
+  labTestCode: text("lab_test_code"), // Lab test code
+  imagingStudyType: text("imaging_study_type"), // Type of imaging study
+  imagingBodyPart: text("imaging_body_part"), // Body part for imaging
+  referralSpecialty: text("referral_specialty"), // Referral specialty
+  referralReason: text("referral_reason"), // Reason for referral
+  instructions: text("instructions"), // General instructions
+  diagnosisCodes: jsonb("diagnosis_codes"), // Associated diagnoses
+  prescriber: text("prescriber"), // Prescriber name
+  prescriberId: integer("prescriber_id").references(() => users.id), // Prescriber ID
+  bodyPart: text("body_part"), // Body part (general)
+  ndcCode: text("ndc_code"), // NDC drug code
+  route: text("route"), // Route (general)
+  frequency: text("frequency"), // Frequency (general)
+  duration: text("duration"), // Duration (general)
+  startDate: timestamp("start_date"), // Treatment start date
+  endDate: timestamp("end_date"), // Treatment end date
+  indication: text("indication"), // Clinical indication
+  imagingOrderId: integer("imaging_order_id").references(() => imagingOrders.id), // Imaging order reference
+  externalOrderId: text("external_order_id"), // External system order ID
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -2247,6 +2486,18 @@ export const medicationFormulary = pgTable("medication_formulary", {
   // Data management
   dataSource: text("data_source").notNull(), // 'FDA', 'RxNorm', 'Clinical'
   lastVerified: timestamp("last_verified").defaultNow(),
+  
+  // Additional actively used columns from database
+  medicationName: text("medication_name"), // Medication name
+  drugClass: text("drug_class"), // Drug classification
+  dosageForms: jsonb("dosage_forms"), // Available dosage forms
+  strengths: jsonb("strengths"), // Available strengths
+  route: text("route"), // Administration route
+  tier: text("tier"), // Formulary tier
+  priorAuthRequired: boolean("prior_auth_required").default(false), // Prior auth requirement
+  quantityLimits: jsonb("quantity_limits"), // Quantity restrictions
+  stepTherapy: jsonb("step_therapy"), // Step therapy requirements
+  alternatives: jsonb("alternatives"), // Alternative medications
   
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -2821,6 +3072,14 @@ export const patientAttachments = pgTable("patient_attachments", {
   // Status
   processingStatus: text("processing_status").default("completed"), // 'processing', 'completed', 'failed'
   virusScanStatus: text("virus_scan_status").default("pending"), // 'pending', 'clean', 'infected'
+  
+  // Additional actively used columns from database
+  filename: text("filename"), // Legacy filename field
+  documentType: text("document_type"), // Document type classification
+  processingNotes: text("processing_notes"), // Processing notes/logs
+  extractedData: jsonb("extracted_data"), // Extracted structured data
+  sourceSystem: text("source_system"), // Source system identifier
+  externalId: text("external_id"), // External system ID reference
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -3503,6 +3762,18 @@ export const emailNotifications = pgTable("email_notifications", {
     sendStatus?: string;
     [key: string]: any;
   }>().default({}),
+  
+  // Additional actively used columns from database
+  recipientEmail: text("recipient_email"), // Recipient email address
+  bodyHtml: text("body_html"), // HTML content of email
+  bodyText: text("body_text"), // Plain text content of email
+  relatedUserId: integer("related_user_id").references(() => users.id), // Related user
+  relatedEntityType: text("related_entity_type"), // Type of related entity
+  relatedEntityId: integer("related_entity_id"), // ID of related entity
+  status: text("status"), // Email send status
+  errorMessage: text("error_message"), // Error details if failed
+  retryCount: integer("retry_count").default(0), // Number of retry attempts
+  createdAt: timestamp("created_at").defaultNow() // Creation timestamp
 });
 
 // Clinic administrator verification requests
@@ -3521,7 +3792,19 @@ export const clinicAdminVerifications = pgTable("clinic_admin_verifications", {
   expiresAt: timestamp("expires_at").notNull(),
   approvedBy: integer("approved_by").references(() => users.id),
   ipAddress: text("ip_address"),
-  userAgent: text("user_agent")
+  userAgent: text("user_agent"),
+  
+  // Additional actively used columns from database
+  website: text("website"), // Organization website
+  verificationStatus: text("verification_status"), // Verification status tracking
+  verificationScore: integer("verification_score"), // Verification confidence score
+  verificationDetails: jsonb("verification_details"), // Detailed verification results
+  riskAssessment: text("risk_assessment"), // Risk assessment details
+  automatedDecision: text("automated_decision"), // Automated decision outcome
+  reviewerId: integer("reviewer_id").references(() => users.id), // Manual reviewer ID
+  reviewedAt: timestamp("reviewed_at"), // Manual review timestamp
+  createdAt: timestamp("created_at").defaultNow(), // Creation timestamp
+  updatedAt: timestamp("updated_at").defaultNow() // Update timestamp
 });
 
 // Organization verification documents
@@ -3844,6 +4127,15 @@ export const dataModificationLogs = pgTable("data_modification_logs", {
   validated: boolean("validated").default(false),
   validatedBy: integer("validated_by").references(() => users.id),
   validatedAt: timestamp("validated_at"),
+  
+  // Additional actively used columns from database
+  action: text("action"), // Action performed
+  oldValues: jsonb("old_values"), // Previous values (alternative to oldValue)
+  newValues: jsonb("new_values"), // New values (alternative to newValue)
+  reason: text("reason"), // Change reason
+  ipAddress: text("ip_address"), // Client IP address
+  userAgent: text("user_agent"), // Client user agent
+  createdAt: timestamp("created_at").defaultNow(), // Creation timestamp
   
   // Immutable timestamp
   modifiedAt: timestamp("modified_at").defaultNow().notNull(),

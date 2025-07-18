@@ -1,0 +1,509 @@
+
+// lab_orders - Additional columns found in active use
+  orderId: integer("order_id"),
+  status: text("status"),
+  providerId: integer("provider_id"),
+  specialInstructions: text("special_instructions"),
+  externalLab: text("external_lab"),
+  resultStatus: text("result_status"),
+  referenceRange: text("reference_range"),
+  results: text("results"),
+  discontinuedAt: timestamp("discontinued_at"),
+  providerNotes: text("provider_notes"),
+  processingNotes: text("processing_notes"),
+  billingCode: text("billing_code"),
+  consentDate: timestamp("consent_date"),
+  cancellationReason: text("cancellation_reason"),
+  regulatoryCompliance: text("regulatory_compliance"),
+
+// imaging_results - Additional columns found in active use
+  encounterId: integer("encounter_id"),
+  accessionNumber: text("accession_number"),
+  recommendations: text("recommendations"),
+  technique: text("technique"),
+  addendum: text("addendum"),
+  procedureCode: text("procedure_code"),
+  limitations: text("limitations"),
+  relevantHistory: text("relevant_history"),
+  clinicalIndication: text("clinical_indication"),
+  extractionNotes: text("extraction_notes"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: text("merged_ids"),
+
+// medical_problems - Additional columns found in active use
+  riskFactors: text("risk_factors"),
+  followUpRequired: text("follow_up_required"),
+  reportedDate: timestamp("reported_date"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: text("merged_ids"),
+
+// orders - Additional columns found in active use
+  providerId: integer("provider_id"),
+  orderDate: timestamp("order_date"),
+  status: text("status"),
+  medicationDosage: text("medication_dosage"),
+  medicationRoute: text("medication_route"),
+  medicationFrequency: text("medication_frequency"),
+  medicationDuration: text("medication_duration"),
+  medicationQuantity: text("medication_quantity"),
+  medicationRefills: text("medication_refills"),
+  labTestName: text("lab_test_name"),
+  labTestCode: text("lab_test_code"),
+  imagingStudyType: text("imaging_study_type"),
+  imagingBodyPart: text("imaging_body_part"),
+  referralSpecialty: text("referral_specialty"),
+  referralReason: text("referral_reason"),
+  instructions: text("instructions"),
+  diagnosisCodes: text("diagnosis_codes"),
+  prescriber: text("prescriber"),
+  prescriberId: integer("prescriber_id"),
+  bodyPart: text("body_part"),
+  ndcCode: text("ndc_code"),
+  route: text("route"),
+  frequency: text("frequency"),
+  duration: text("duration"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  indication: text("indication"),
+  imagingOrderId: integer("imaging_order_id"),
+  externalOrderId: integer("external_order_id"),
+
+// encounters - Additional columns found in active use
+  encounterDate: timestamp("encounter_date"),
+  visitReason: text("visit_reason"),
+  status: text("status"),
+  insuranceVerified: text("insurance_verified"),
+  copayCollected: text("copay_collected"),
+  notes: text("notes"),
+  locationId: integer("location_id"),
+  signedBy: integer("signed_by"),
+  signedAt: timestamp("signed_at"),
+  isSigned: text("is_signed"),
+  assistantThreadId: integer("assistant_thread_id"),
+  alerts: text("alerts"),
+  dischargeSummary: text("discharge_summary"),
+  templateId: integer("template_id"),
+
+// medications - Additional columns found in active use
+  form: text("form"),
+  prescribedDate: timestamp("prescribed_date"),
+  pharmacy: text("pharmacy"),
+  refills: text("refills"),
+  deaSchedule: text("dea_schedule"),
+  isControlled: text("is_controlled"),
+  requiresPriorAuth: text("requires_prior_auth"),
+  priorAuthNumber: text("prior_auth_number"),
+  therapeuticClass: text("therapeutic_class"),
+  extractionNotes: text("extraction_notes"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: text("merged_ids"),
+
+// clinic_admin_verifications - Additional columns found in active use
+  website: text("website"),
+  verificationStatus: text("verification_status"),
+  verificationScore: text("verification_score"),
+  verificationDetails: text("verification_details"),
+  riskAssessment: text("risk_assessment"),
+  automatedDecision: text("automated_decision"),
+  reviewerId: integer("reviewer_id"),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+
+// patient_attachments - Additional columns found in active use
+  filename: text("filename"),
+  documentType: text("document_type"),
+  processingNotes: text("processing_notes"),
+  extractedData: text("extracted_data"),
+  sourceSystem: text("source_system"),
+  externalId: integer("external_id"),
+
+// diagnoses - Additional columns found in active use
+  claimSubmissionStatus: text("claim_submission_status"),
+  claimId: integer("claim_id"),
+  clearinghouseId: integer("clearinghouse_id"),
+  payerId: integer("payer_id"),
+  allowedAmount: text("allowed_amount"),
+  paidAmount: text("paid_amount"),
+  patientResponsibility: text("patient_responsibility"),
+  adjustmentAmount: text("adjustment_amount"),
+  denialReason: text("denial_reason"),
+  denialCode: text("denial_code"),
+  appealStatus: text("appeal_status"),
+  appealDeadline: text("appeal_deadline"),
+  billingNotes: text("billing_notes"),
+  lastBillingAction: text("last_billing_action"),
+  assignedBiller: text("assigned_biller"),
+  modifierApplied: text("modifier_applied"),
+  billingActionDate: timestamp("billing_action_date"),
+
+// surgical_history - Additional columns found in active use
+  surgeon: text("surgeon"),
+  facility: text("facility"),
+  findings: text("findings"),
+  procedureCode: text("procedure_code"),
+  approach: text("approach"),
+  durationMinutes: text("duration_minutes"),
+  mergedIds: text("merged_ids"),
+
+// user_note_preferences - Additional columns found in active use
+  defaultChiefComplaint: text("default_chief_complaint"),
+  defaultPhysicalExam: text("default_physical_exam"),
+  defaultRosNegatives: text("default_ros_negatives"),
+  defaultAssessmentStyle: text("default_assessment_style"),
+  useVoiceCommands: text("use_voice_commands"),
+  autoSaveInterval: text("auto_save_interval"),
+  showTemplateSuggestions: text("show_template_suggestions"),
+  includeTimeStamps: text("include_time_stamps"),
+  defaultNoteFontSize: text("default_note_font_size"),
+  defaultMacroSet: text("default_macro_set"),
+  preferredExamOrder: text("preferred_exam_order"),
+  customNormalExams: text("custom_normal_exams"),
+  abbreviationExpansions: text("abbreviation_expansions"),
+  quickPhrases: text("quick_phrases"),
+  billingReminderEnabled: text("billing_reminder_enabled"),
+  signReminderMinutes: text("sign_reminder_minutes"),
+
+// patient_physical_findings - Additional columns found in active use
+  encounterId: integer("encounter_id"),
+  finding: text("finding"),
+  severity: text("severity"),
+  laterality: text("laterality"),
+  quality: text("quality"),
+  duration: text("duration"),
+  context: text("context"),
+  providerId: integer("provider_id"),
+
+// email_notifications - Additional columns found in active use
+  recipientEmail: text("recipient_email"),
+  bodyHtml: text("body_html"),
+  bodyText: text("body_text"),
+  relatedUserId: integer("related_user_id"),
+  relatedEntityType: text("related_entity_type"),
+  relatedEntityId: integer("related_entity_id"),
+  status: text("status"),
+  errorMessage: text("error_message"),
+  retryCount: text("retry_count"),
+  createdAt: timestamp("created_at"),
+
+// external_labs - Additional columns found in active use
+  patientId: integer("patient_id"),
+  testName: text("test_name"),
+  testDate: timestamp("test_date"),
+  resultValue: text("result_value"),
+  unit: text("unit"),
+  referenceRange: text("reference_range"),
+  abnormalFlag: text("abnormal_flag"),
+  orderingProvider: text("ordering_provider"),
+  status: text("status"),
+  attachmentId: integer("attachment_id"),
+
+// lab_results - Additional columns found in active use
+  patientMessage: text("patient_message"),
+  patientMessageSentAt: timestamp("patient_message_sent_at"),
+  extractionNotes: text("extraction_notes"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: text("merged_ids"),
+  visitHistory: text("visit_history"),
+
+// medication_formulary - Additional columns found in active use
+  medicationName: text("medication_name"),
+  drugClass: text("drug_class"),
+  dosageForms: text("dosage_forms"),
+  strengths: text("strengths"),
+  route: text("route"),
+  tier: text("tier"),
+  priorAuthRequired: text("prior_auth_required"),
+  quantityLimits: text("quantity_limits"),
+  stepTherapy: text("step_therapy"),
+  alternatives: text("alternatives"),
+
+// schedule_preferences - Additional columns found in active use
+  preferredAppointmentDuration: text("preferred_appointment_duration"),
+  bufferTimeMinutes: text("buffer_time_minutes"),
+  lunchStart: text("lunch_start"),
+  lunchDuration: text("lunch_duration"),
+  maxDailyAppointments: text("max_daily_appointments"),
+  maxConsecutiveAppointments: text("max_consecutive_appointments"),
+  preferredBreakAfterNAppointments: text("preferred_break_after_n_appointments"),
+  breakDurationMinutes: text("break_duration_minutes"),
+  allowOvertime: text("allow_overtime"),
+  overtimeLimitMinutes: text("overtime_limit_minutes"),
+
+// imaging_orders - Additional columns found in active use
+  providerId: integer("provider_id"),
+  imagingType: text("imaging_type"),
+  indication: text("indication"),
+  priority: text("priority"),
+  status: text("status"),
+  facilityId: integer("facility_id"),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+
+// data_modification_logs - Additional columns found in active use
+  action: text("action"),
+  oldValues: jsonb("old_values"),
+  newValues: jsonb("new_values"),
+  reason: text("reason"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at"),
+  maxDailyAppointments: text("max_daily_appointments"),
+  maxConsecutiveAppointments: text("max_consecutive_appointments"),
+  preferredBreakAfterNAppointments: text("preferred_break_after_n_appointments"),
+  breakDurationMinutes: text("break_duration_minutes"),
+  allowOvertime: text("allow_overtime"),
+  overtimeLimitMinutes: text("overtime_limit_minutes"),
+
+// family_history - Additional columns found in active use
+  extractionNotes: text("extraction_notes"),
+  consolidationReasoning: text("consolidation_reasoning"),
+  mergedIds: text("merged_ids"),
+
+// imaging_orders - Additional columns found in active use
+  providerId: integer("provider_id"),
+  imagingType: text("imaging_type"),
+  indication: text("indication"),
+  priority: text("priority"),
+  status: text("status"),
+  facilityId: integer("facility_id"),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
+
+// data_modification_logs - Additional columns found in active use
+  action: text("action"),
+  oldValues: text("old_values"),
+  newValues: text("new_values"),
+  reason: text("reason"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at"),
+
+// gpt_lab_review_notes - Additional columns found in active use
+  labOrderId: integer("lab_order_id"),
+  reviewType: text("review_type"),
+  aiInterpretation: text("ai_interpretation"),
+  clinicalSignificance: text("clinical_significance"),
+  followUpRecommendations: text("follow_up_recommendations"),
+  riskAssessment: text("risk_assessment"),
+  reviewStatus: text("review_status"),
+
+// health_systems - Additional columns found in active use
+  type: text("type"),
+  subscriptionKey: text("subscription_key"),
+  isMigration: text("is_migration"),
+  stripeCustomerId: integer("stripe_customer_id"),
+  metadata: text("metadata"),
+  updatedAt: timestamp("updated_at"),
+  status: text("status"),
+
+// patient_scheduling_patterns - Additional columns found in active use
+  providerId: integer("provider_id"),
+  patternType: text("pattern_type"),
+  frequency: text("frequency"),
+  timePreferences: text("time_preferences"),
+  seasonalVariations: text("seasonal_variations"),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+
+// realtime_schedule_status - Additional columns found in active use
+  date: text("date"),
+  timeSlot: text("time_slot"),
+  status: text("status"),
+  appointmentId: integer("appointment_id"),
+  bufferStatus: text("buffer_status"),
+  efficiencyScore: text("efficiency_score"),
+  updatedAt: timestamp("updated_at"),
+
+// social_history - Additional columns found in active use
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  quantity: text("quantity"),
+  frequency: text("frequency"),
+  riskLevel: text("risk_level"),
+  mergedIds: text("merged_ids"),
+
+// subscription_history - Additional columns found in active use
+  previousStatus: text("previous_status"),
+  newStatus: text("new_status"),
+  changedBy: integer("changed_by"),
+  reason: text("reason"),
+  billingImpact: text("billing_impact"),
+  effectiveDate: timestamp("effective_date"),
+  createdAt: timestamp("created_at"),
+
+// appointment_types - Additional columns found in active use
+  name: text("name"),
+  durationMinutes: text("duration_minutes"),
+  color: text("color"),
+  description: text("description"),
+  isActive: text("is_active"),
+  updatedAt: timestamp("updated_at"),
+
+// medical_history - Additional columns found in active use
+  condition: text("condition"),
+  onsetDate: timestamp("onset_date"),
+  resolutionDate: timestamp("resolution_date"),
+  status: text("status"),
+  severity: text("severity"),
+  notes: text("notes"),
+
+// organization_documents - Additional columns found in active use
+  organizationId: integer("organization_id"),
+  filePath: text("file_path"),
+  fileSize: text("file_size"),
+  mimeType: text("mime_type"),
+  active: text("active"),
+  createdAt: timestamp("created_at"),
+
+// provider_scheduling_patterns - Additional columns found in active use
+  patternType: text("pattern_type"),
+  preferences: text("preferences"),
+  constraints: text("constraints"),
+  historicalData: text("historical_data"),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+
+// subscription_keys - Additional columns found in active use
+  keyValue: text("key_value"),
+  createdBy: integer("created_by"),
+  assignedTo: text("assigned_to"),
+  assignedAt: timestamp("assigned_at"),
+  usageCount: text("usage_count"),
+  lastUsedAt: timestamp("last_used_at"),
+
+// user_problem_list_preferences - Additional columns found in active use
+  id: text("id"),
+
+// emergency_access_logs - Additional columns found in active use
+  accessReason: text("access_reason"),
+  overrideRestrictions: text("override_restrictions"),
+  supervisorApproval: text("supervisor_approval"),
+  accessDuration: text("access_duration"),
+  ipAddress: text("ip_address"),
+
+// lab_reference_ranges - Additional columns found in active use
+  testCode: text("test_code"),
+  unit: text("unit"),
+  notes: text("notes"),
+
+// scheduling_templates - Additional columns found in active use
+  templateType: text("template_type"),
+  dayConfiguration: text("day_configuration"),
+  appointmentTypes: text("appointment_types"),
+  bufferRules: text("buffer_rules"),
+  breakConfiguration: text("break_configuration"),
+
+// signatures - Additional columns found in active use
+  encounterId: integer("encounter_id"),
+  signedBy: integer("signed_by"),
+  signatureType: text("signature_type"),
+  ipAddress: text("ip_address"),
+  attestationText: text("attestation_text"),
+
+// user_assistant_threads - Additional columns found in active use
+  assistantType: text("assistant_type"),
+  assistantId: integer("assistant_id"),
+  context: text("context"),
+  lastMessageAt: timestamp("last_message_at"),
+  active: text("active"),
+
+// user_edit_patterns - Additional columns found in active use
+  noteType: text("note_type"),
+  sectionName: text("section_name"),
+  editType: text("edit_type"),
+  editFrequency: text("edit_frequency"),
+  lastOccurrence: text("last_occurrence"),
+
+// admin_prompt_reviews - Additional columns found in active use
+  reviewerId: integer("reviewer_id"),
+  feedback: text("feedback"),
+  updatedAt: timestamp("updated_at"),
+
+// patient_order_preferences - Additional columns found in active use
+  providerId: integer("provider_id"),
+  orderType: text("order_type"),
+  preferences: text("preferences"),
+  standingOrders: text("standing_orders"),
+
+// provider_schedules - Additional columns found in active use
+  breakStart: text("break_start"),
+  breakEnd: text("break_end"),
+  effectiveTo: text("effective_to"),
+  maxAppointments: text("max_appointments"),
+
+// scheduling_ai_factors - Additional columns found in active use
+  category: text("category"),
+  description: text("description"),
+  isEnabled: text("is_enabled"),
+  updatedAt: timestamp("updated_at"),
+
+// scheduling_resources - Additional columns found in active use
+  name: text("name"),
+  availableHours: text("available_hours"),
+  requiresCleaning: text("requires_cleaning"),
+  cleaningDuration: text("cleaning_duration"),
+
+// scheduling_rules - Additional columns found in active use
+  name: text("name"),
+  appliesTo: text("applies_to"),
+  conditions: text("conditions"),
+  actions: text("actions"),
+
+// user_session_locations - Additional columns found in active use
+  isPrimary: text("is_primary"),
+  permissions: text("permissions"),
+  remembered: text("remembered"),
+  updatedAt: timestamp("updated_at"),
+
+// asymmetric_scheduling_config - Additional columns found in active use
+  weekdaySchedule: text("weekday_schedule"),
+  customRules: text("custom_rules"),
+  effectiveDate: timestamp("effective_date"),
+
+// organizations - Additional columns found in active use
+  type: text("type"),
+  website: text("website"),
+  updatedAt: timestamp("updated_at"),
+
+// problem_rank_overrides - Additional columns found in active use
+  patientId: integer("patient_id"),
+  reason: text("reason"),
+
+// appointment_resource_requirements - Additional columns found in active use
+  resourceType: text("resource_type"),
+  resourceId: integer("resource_id"),
+
+// authentication_logs - Additional columns found in active use
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at"),
+
+// migration_invitations - Additional columns found in active use
+  toHealthSystemId: integer("to_health_system_id"),
+
+// patients - Additional columns found in active use
+  insurancePolicyNumber: text("insurance_policy_number"),
+  insuranceGroupNumber: text("insurance_group_number"),
+
+// user_locations - Additional columns found in active use
+  permissions: text("permissions"),
+  updatedAt: timestamp("updated_at"),
+
+// webauthn_credentials - Additional columns found in active use
+  publicKey: text("public_key"),
+  deviceName: text("device_name"),
+
+// appointment_duration_history - Additional columns found in active use
+  predictedDuration: text("predicted_duration"),
+
+// magic_links - Additional columns found in active use
+  used: text("used"),
+
+// phi_access_logs - Additional columns found in active use
+  createdAt: timestamp("created_at"),
+
+// schedule_exceptions - Additional columns found in active use
+  affectsScheduling: text("affects_scheduling"),
+
+// vitals - Additional columns found in active use
+  alerts: text("alerts"),
