@@ -2538,6 +2538,7 @@ export class DatabaseStorage implements IStorage {
       startTime: data.appointmentTime,        // e.g., "09:00"
       endTime: endTime,                       // e.g., "09:30"
       duration: data.duration || 20,
+      durationMinutes: data.duration || 20,  // Also set duration_minutes column
       patientVisibleDuration: data.patientVisibleDuration || data.duration || 20,
       providerScheduledDuration: data.providerScheduledDuration || data.duration || 20,
       aiPredictedDuration: data.aiPredictedDuration,
