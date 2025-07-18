@@ -270,9 +270,6 @@ router.post("/surgical-history",
       // Set metadata for manual entry
       surgeryData.sourceType = "manual_entry";
       surgeryData.sourceConfidence = 1.0;
-      surgeryData.enteredBy = req.user?.id || 1;
-      surgeryData.createdAt = new Date();
-      surgeryData.updatedAt = new Date();
 
       const result = await db
         .insert(surgicalHistory)

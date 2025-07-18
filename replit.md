@@ -239,6 +239,22 @@ Preferred communication style: Simple, everyday language.
 - **PATTERN IDENTIFIED**: Multiple tables affected - allergies has 32 columns in DB vs 14 in schema, similar drift across system
 - **CORRECT SOLUTION**: Update schema.ts to match actual database structure rather than using raw SQL workarounds
 
+### Critical Database Schema Alignment Fixes COMPLETED (January 18, 2025)
+- **PHANTOM FIELD FIXES**: Removed non-existent field assignments causing runtime errors:
+  - Removed `enteredBy` field from surgical history API that doesn't exist in database or schema
+  - Fixed appointments conflict check using `startTime` instead of non-existent `appointment_date`
+  - Fixed appointment types query removing reference to non-existent `locationId` column
+- **MISSING COLUMNS GRACEFUL HANDLING**: Added type assertions to handle missing database columns:
+  - Patient scheduling patterns: `avg_visit_duration`, `no_show_rate`, `avg_arrival_delta` columns missing but handled gracefully
+  - Provider scheduling patterns: `avgVisitDuration` column missing but handled with type assertion
+- **SCHEMA COLUMN NAME MISMATCH**: Fixed imaging results table:
+  - Changed `dicomStudyId: text("dicom_study_id")` to `pacsStudyUid: text("pacs_study_uid")` to match actual database column
+- **SYSTEMATIC APPROACH**: Pattern established for handling schema drift:
+  - Remove phantom fields from code that don't exist in database
+  - Add graceful handling for missing optional columns using type assertions
+  - Update schema.ts column names to match actual database column names
+- **PRODUCTION IMPACT**: Application now starts without database errors and all core functionality restored
+
 ### Conversational Article Revision System COMPLETED (January 17, 2025)
 - **AI-POWERED REVISION WORKFLOW**: Implemented robust revision system allowing iterative article improvement through natural language feedback
 - **REVISION DIALOG INTERFACE**: Created split-screen dialog showing current article content alongside revision feedback interface

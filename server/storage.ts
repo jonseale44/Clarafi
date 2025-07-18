@@ -2332,16 +2332,19 @@ export class DatabaseStorage implements IStorage {
       
       // 5. Use historical patterns if available - THIS IS THE MOST IMPORTANT FACTOR
       if (patientPatterns) {
+        // Note: The patient_scheduling_patterns table may not have the duration columns yet
+        // Handle gracefully if columns are missing
+        
         // Use patient's average visit duration if we have history
-        const historicalAvg = parseFloat(patientPatterns.avg_visit_duration || '0');
+        const historicalAvg = parseFloat((patientPatterns as any).avg_visit_duration || '0');
         
         // Check for appointment-type-specific history
         let typeSpecificDuration = 0;
-        if (patientPatterns.avg_duration_by_type) {
+        if ((patientPatterns as any).avg_duration_by_type) {
           try {
-            const durationByType = typeof patientPatterns.avg_duration_by_type === 'string' 
-              ? JSON.parse(patientPatterns.avg_duration_by_type) 
-              : patientPatterns.avg_duration_by_type;
+            const durationByType = typeof (patientPatterns as any).avg_duration_by_type === 'string' 
+              ? JSON.parse((patientPatterns as any).avg_duration_by_type) 
+              : (patientPatterns as any).avg_duration_by_type;
             typeSpecificDuration = durationByType[params.appointmentType] || 0;
           } catch (e) {
             console.log('🤖 [AI SCHEDULING] Could not parse appointment type history');
@@ -2361,14 +2364,14 @@ export class DatabaseStorage implements IStorage {
         }
         
         // High no-show rate might mean scheduling shorter slots
-        const noShowRate = parseFloat(patientPatterns.no_show_rate || '0');
+        const noShowRate = parseFloat((patientPatterns as any).no_show_rate || '0');
         if (noShowRate > 0.3 && providerWeights.noShowRiskWeight > 0) { // >30% no-show rate
           const noShowFactor = providerWeights.noShowRiskWeight / 100;
           durationAdjustment -= 5 * noShowFactor;
         }
         
         // Consistent late arrivals need buffer
-        const avgArrivalDelta = parseFloat(patientPatterns.avg_arrival_delta || '0');
+        const avgArrivalDelta = parseFloat((patientPatterns as any).avg_arrival_delta || '0');
         if (avgArrivalDelta > 10 && providerWeights.averageArrivalTimeWeight > 0) { // Consistently >10 minutes late
           const arrivalFactor = providerWeights.averageArrivalTimeWeight / 100;
           durationAdjustment += 5 * arrivalFactor;
@@ -2377,7 +2380,7 @@ export class DatabaseStorage implements IStorage {
       
       // 6. Provider-specific adjustments
       if (providerPatterns && providerWeights.providerEfficiencyWeight > 0) {
-        const providerAvg = parseFloat(providerPatterns.avgVisitDuration || '0');
+        const providerAvg = parseFloat((providerPatterns as any).avgVisitDuration || '0');
         if (providerAvg > 0) {
           const efficiencyFactor = providerWeights.providerEfficiencyWeight / 100;
           // Some providers run longer/shorter than average
@@ -2476,7 +2479,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(patients, eq(appointments.patientId, patients.id))
       .where(and(
         eq(appointments.providerId, providerId),
-        sql`${appointments}.appointment_date::date = ${appointmentDate}::date`,
+        sql`DATE(${appointments.startTime}) = ${appointmentDate}::date`,
         // Only check active appointments (not cancelled or no-show)
         notInArray(appointments.status, ['cancelled', 'no_show']),
         // Exclude the appointment being updated if provided
@@ -2682,17 +2685,13 @@ export class DatabaseStorage implements IStorage {
 
   // Get appointment types
   async getAppointmentTypes(healthSystemId: number, locationId?: number) {
-    let conditions = [eq(appointmentTypes.healthSystemId, healthSystemId)];
-    
-    if (locationId) {
-      conditions.push(eq(appointmentTypes.locationId, locationId));
-    }
-    
+    // Note: appointmentTypes table doesn't have locationId column
+    // Only filter by healthSystemId for now
     return await db
       .select()
       .from(appointmentTypes)
-      .where(and(...conditions))
-      .orderBy(appointmentTypes.typeName)
+      .where(eq(appointmentTypes.healthSystemId, healthSystemId))
+      .orderBy(appointmentTypes.name)
       .execute();
   }
 

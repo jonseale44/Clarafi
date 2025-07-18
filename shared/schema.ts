@@ -2034,7 +2034,7 @@ export const imagingResults = pgTable("imaging_results", {
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Link to PDF report
   
   // DICOM details
-  dicomStudyId: text("dicom_study_id"),
+  pacsStudyUid: text("pacs_study_uid"), // Changed from dicom_study_id to match database
   dicomSeriesId: text("dicom_series_id"),
   imageFilePaths: text("image_file_paths").array(),
   
