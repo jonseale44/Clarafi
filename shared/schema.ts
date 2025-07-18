@@ -1266,7 +1266,7 @@ export const socialHistory = pgTable("social_history", {
   details: text("details").notNull(), // Required by database
   currentStatus: text("current_status").notNull(),
   historyNotes: text("history_notes"),
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
   
   // Source tracking for multi-source social history data
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'patient_reported', 'provider_observed', 'imported_records'
@@ -2984,7 +2984,7 @@ export const insertSocialHistorySchema = createInsertSchema(socialHistory).pick(
   category: true,
   currentStatus: true,
   historyNotes: true,
-  lastUpdatedEncounter: true,
+  lastUpdatedEncounterId: true,
   sourceType: true,
   sourceConfidence: true,
   extractedFromAttachmentId: true,
@@ -3019,7 +3019,7 @@ export const insertSurgicalHistorySchema = createInsertSchema(surgicalHistory).p
   sourceConfidence: true,
   sourceNotes: true,
   extractedFromAttachmentId: true,
-  lastUpdatedEncounter: true,
+  lastUpdatedEncounterId: true,
   enteredBy: true,
   consolidationReasoning: true,
   extractionNotes: true,

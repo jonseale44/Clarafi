@@ -239,6 +239,15 @@ Preferred communication style: Simple, everyday language.
 - **PATTERN IDENTIFIED**: Multiple tables affected - allergies has 32 columns in DB vs 14 in schema, similar drift across system
 - **CORRECT SOLUTION**: Update schema.ts to match actual database structure rather than using raw SQL workarounds
 
+### Critical Social History Schema Fix COMPLETED (January 18, 2025)
+- **ERROR RESOLVED**: Fixed "column 'last_updated_encounter' does not exist" error in social history queries
+- **ROOT CAUSE**: schema.ts defined column as "lastUpdatedEncounter" (camelCase) mapping to "last_updated_encounter" in database
+- **DATABASE REALITY**: Column was renamed to "last_updated_encounter_id" in database but schema.ts was not updated
+- **FIX APPLIED**: Updated socialHistory table definition to use "lastUpdatedEncounterId" mapping to "last_updated_encounter_id"
+- **INSERT SCHEMAS UPDATED**: Fixed both insertSocialHistorySchema and insertSurgicalHistorySchema to use "lastUpdatedEncounterId"
+- **LAB RESULTS FIX**: Added missing "communication_plan" JSONB column to lab_results table
+- **PRODUCTION IMPACT**: Social history extraction from attachments now works correctly without column errors
+
 ### Critical Database Schema Alignment Fixes COMPLETED (January 18, 2025)
 - **PHANTOM FIELD FIXES**: Removed non-existent field assignments causing runtime errors:
   - Removed `enteredBy` field from surgical history API that doesn't exist in database or schema
