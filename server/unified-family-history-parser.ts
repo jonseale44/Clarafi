@@ -457,7 +457,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
         .where(
           and(
             eq(familyHistory.patientId, patientId),
-            eq(familyHistory.familyMember, change.familyMember),
+            eq(familyHistory.relationship, change.familyMember),
           ),
         )
         .limit(1);
@@ -493,7 +493,7 @@ Only extract family history information that is explicitly mentioned. Do not inf
         await db
           .update(familyHistory)
           .set({
-            medicalHistory: change.medicalHistory,
+            condition: change.medicalHistory,
             visitHistory: newVisitHistory,
             lastUpdatedEncounter: encounterId,
             sourceType: change.visitEntry.source,
@@ -517,8 +517,8 @@ Only extract family history information that is explicitly mentioned. Do not inf
 
         await db.insert(familyHistory).values({
           patientId,
-          familyMember: change.familyMember,
-          medicalHistory: change.medicalHistory,
+          relationship: change.familyMember,
+          condition: change.medicalHistory,
           visitHistory: [visitEntryWithLocalDate],
           lastUpdatedEncounter: encounterId,
           sourceType: change.visitEntry.source,

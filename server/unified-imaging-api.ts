@@ -87,15 +87,13 @@ export function setupUnifiedImagingRoutes(app: Express) {
         modality: imagingData.modality,
         bodyPart: imagingData.bodyPart,
         laterality: imagingData.laterality || null,
-        clinicalSummary: imagingData.clinicalSummary,
         findings: imagingData.findings || null,
         impression: imagingData.impression || null,
-        radiologistName: imagingData.radiologistName || null,
-        facilityName: imagingData.facilityName || null,
-        resultStatus: imagingData.resultStatus || "final",
+        readingRadiologist: imagingData.radiologistName || null,
+        performingFacility: imagingData.facilityName || null,
+        reportStatus: imagingData.resultStatus || "final",
         sourceType: "manual_entry",
         sourceConfidence: "1.00",
-        enteredBy: 1, // jonseale user ID
         visitHistory: [initialVisit]
       }).returning();
 
@@ -246,20 +244,16 @@ export function setupUnifiedImagingRoutes(app: Express) {
       const currentHistory = existing[0].visitHistory || [];
       const statusVisit = {
         date: new Date().toISOString().split('T')[0],
-        notes: `Status changed from ${existing[0].resultStatus} to ${status}`,
+        notes: `Status changed from ${existing[0].reportStatus} to ${status}`,
         source: "manual_entry" as const,
         confidence: 1.0,
-        changesMade: [`status_${existing[0].resultStatus}_to_${status}`]
+        changesMade: [`status_${existing[0].reportStatus}_to_${status}`]
       };
 
       const updatedResult = await db
         .update(imagingResults)
         .set({
-          resultStatus: status,
-          providerNotes: providerNotes,
-          reviewedBy: 1, // jonseale user ID
-          reviewedAt: new Date(),
-          needsReview: status === "final" ? false : true,
+          reportStatus: status,
           visitHistory: [...currentHistory, statusVisit],
           updatedAt: new Date()
         })

@@ -2035,20 +2035,13 @@ export const imagingResults = pgTable("imaging_results", {
   
   // DICOM details
   pacsStudyUid: text("pacs_study_uid"), // Changed from dicom_study_id to match database
-  dicomSeriesId: text("dicom_series_id"),
-  imageFilePaths: text("image_file_paths").array(),
   
   // Status & review workflow (like labs)
-  resultStatus: text("result_status").default("preliminary"), // 'preliminary', 'final', 'addendum', 'corrected'
-  reviewedBy: integer("reviewed_by").references(() => users.id),
-  reviewedAt: timestamp("reviewed_at"),
-  providerNotes: text("provider_notes"),
-  needsReview: boolean("needs_review").default(true), // Auto-assign to ordering provider
+  reportStatus: text("report_status").default("preliminary"), // 'preliminary', 'final', 'addendum', 'corrected'
   
   // Source tracking for multi-source data integration
   sourceType: text("source_type").default("pdf_extract"), // 'pdf_extract', 'hl7_message', 'manual_entry', 'encounter_note'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("0.95"), // GPT extraction confidence
-  enteredBy: integer("entered_by").references(() => users.id),
   
   // Visit history tracking (like medical problems)
   visitHistory: jsonb("visit_history").default([]).$type<Array<{
@@ -2440,10 +2433,6 @@ export const imagingResultsRelations = relations(imagingResults, ({ one }) => ({
   patient: one(patients, {
     fields: [imagingResults.patientId],
     references: [patients.id],
-  }),
-  reviewedByUser: one(users, {
-    fields: [imagingResults.reviewedBy],
-    references: [users.id],
   }),
 }));
 
@@ -3053,24 +3042,15 @@ export const insertImagingResultSchema = createInsertSchema(imagingResults).pick
   modality: true,
   bodyPart: true,
   laterality: true,
-  clinicalSummary: true,
   findings: true,
   impression: true,
-  radiologistName: true,
-  facilityName: true,
-  attachmentId: true,
-  dicomStudyId: true,
-  dicomSeriesId: true,
-  imageFilePaths: true,
-  resultStatus: true,
-  reviewedBy: true,
-  reviewedAt: true,
-  providerNotes: true,
-  needsReview: true,
+  readingRadiologist: true,
+  performingFacility: true,
+  pacsStudyUid: true,
+  reportStatus: true,
   sourceType: true,
   sourceConfidence: true,
   extractedFromAttachmentId: true,
-  enteredBy: true,
   visitHistory: true,
 });
 

@@ -670,12 +670,11 @@ Return a JSON object with this exact structure:
             impression: change.impression || null,
             readingRadiologist: change.radiologist_name || null,
             performingFacility: change.facility_name || null,
-            resultStatus: change.result_status || "final",
+            reportStatus: change.result_status || "final",
             sourceType:
               sourceType === "encounter" ? "encounter_note" : "pdf_extract",
             sourceConfidence: change.confidence.toString(),
             extractedFromAttachmentId: attachmentId || null,
-            enteredBy: 1, // jonseale user ID
             visitHistory: [visitHistoryEntry],
           });
 
@@ -766,7 +765,7 @@ Return a JSON object with this exact structure:
               // clinical_summary column doesn't exist in database, skip it
               if (change.findings) updateData.findings = change.findings;
               if (change.impression) updateData.impression = change.impression;
-              if (change.result_status) updateData.resultStatus = change.result_status;
+              if (change.result_status) updateData.reportStatus = change.result_status;
               console.log(`🔄 [UnifiedImagingParser] Updating imaging with enhanced interpretation`);
             }
 
@@ -786,7 +785,7 @@ Return a JSON object with this exact structure:
               await db
                 .update(imagingResults)
                 .set({
-                  resultStatus: "superseded",
+                  reportStatus: "superseded",
                   updatedAt: new Date(),
                 })
                 .where(eq(imagingResults.id, change.transfer_visit_history_from));
@@ -816,11 +815,10 @@ Return a JSON object with this exact structure:
               impression: change.impression || null,
               readingRadiologist: change.radiologist_name || null,
               performingFacility: change.facility_name || null,
-              resultStatus: change.result_status || "final",
+              reportStatus: change.result_status || "final",
               sourceType: sourceType === "encounter" ? "encounter_note" : "pdf_extract",
               sourceConfidence: change.confidence.toString(),
               extractedFromAttachmentId: attachmentId || null,
-              enteredBy: 1,
               visitHistory: [visitHistoryEntry],
             });
 

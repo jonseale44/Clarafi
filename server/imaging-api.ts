@@ -67,24 +67,19 @@ router.get("/patients/:patientId/imaging/orders", async (req: Request, res: Resp
             studyDate: imagingResults.studyDate,
             modality: imagingResults.modality,
             bodyPart: imagingResults.bodyPart,
+            laterality: imagingResults.laterality,
             findings: imagingResults.findings,
             impression: imagingResults.impression,
-            radiologistName: imagingResults.radiologistName,
-            dicomStudyId: imagingResults.dicomStudyId,
-            dicomSeriesId: imagingResults.dicomSeriesId,
-            imageFilePaths: imagingResults.imageFilePaths,
-            resultStatus: imagingResults.resultStatus,
-            reviewedBy: imagingResults.reviewedBy,
-            reviewedAt: imagingResults.reviewedAt,
-            providerNotes: imagingResults.providerNotes,
-            reviewedByUser: {
-              firstName: users.firstName,
-              lastName: users.lastName,
-              credentials: users.credentials
-            }
+            readingRadiologist: imagingResults.readingRadiologist,
+            performingFacility: imagingResults.performingFacility,
+            pacsStudyUid: imagingResults.pacsStudyUid,
+            reportStatus: imagingResults.reportStatus,
+            sourceType: imagingResults.sourceType,
+            sourceConfidence: imagingResults.sourceConfidence,
+            extractedFromAttachmentId: imagingResults.extractedFromAttachmentId,
+            visitHistory: imagingResults.visitHistory
           })
           .from(imagingResults)
-          .leftJoin(users, eq(imagingResults.reviewedBy, users.id))
           .where(eq(imagingResults.imagingOrderId, order.id))
           .orderBy(desc(imagingResults.studyDate));
 
@@ -127,24 +122,19 @@ router.get("/patients/:patientId/imaging/results", async (req: Request, res: Res
         studyDate: imagingResults.studyDate,
         modality: imagingResults.modality,
         bodyPart: imagingResults.bodyPart,
+        laterality: imagingResults.laterality,
         findings: imagingResults.findings,
         impression: imagingResults.impression,
-        radiologistName: imagingResults.radiologistName,
-        dicomStudyId: imagingResults.dicomStudyId,
-        dicomSeriesId: imagingResults.dicomSeriesId,
-        imageFilePaths: imagingResults.imageFilePaths,
-        resultStatus: imagingResults.resultStatus,
-        reviewedBy: imagingResults.reviewedBy,
-        reviewedAt: imagingResults.reviewedAt,
-        providerNotes: imagingResults.providerNotes,
-        reviewedByUser: {
-          firstName: users.firstName,
-          lastName: users.lastName,
-          credentials: users.credentials
-        }
+        readingRadiologist: imagingResults.readingRadiologist,
+        performingFacility: imagingResults.performingFacility,
+        pacsStudyUid: imagingResults.pacsStudyUid,
+        reportStatus: imagingResults.reportStatus,
+        sourceType: imagingResults.sourceType,
+        sourceConfidence: imagingResults.sourceConfidence,
+        extractedFromAttachmentId: imagingResults.extractedFromAttachmentId,
+        visitHistory: imagingResults.visitHistory
       })
       .from(imagingResults)
-      .leftJoin(users, eq(imagingResults.reviewedBy, users.id))
       .where(eq(imagingResults.patientId, patientId))
       .orderBy(desc(imagingResults.studyDate));
 
@@ -171,9 +161,9 @@ router.put("/imaging/results/:resultId", async (req: Request, res: Response) => 
     }
 
     const updateSchema = z.object({
-      providerNotes: z.string().optional(),
-      resultStatus: z.enum(["pending", "reviewed", "finalized"]).optional(),
-      reviewedBy: z.number().optional()
+      reportStatus: z.enum(["preliminary", "final", "addendum", "superseded"]).optional(),
+      findings: z.string().optional(),
+      impression: z.string().optional()
     });
 
     const validation = updateSchema.safeParse(req.body);
@@ -185,10 +175,10 @@ router.put("/imaging/results/:resultId", async (req: Request, res: Response) => 
     
     console.log(`🩻 [ImagingAPI] Updating imaging result ${resultId}`);
 
-    // Add review timestamp if status is being updated to reviewed
+    // Simply use the validated update data
     const finalUpdateData = {
       ...updateData,
-      ...(updateData.resultStatus === "reviewed" ? { reviewedAt: new Date() } : {})
+      updatedAt: new Date()
     };
 
     const [updatedResult] = await db
