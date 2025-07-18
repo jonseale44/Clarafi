@@ -23,8 +23,8 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 interface FamilyHistoryEntry {
   id: number;
   patientId: number;
-  familyMember: string;
-  medicalHistory: string;
+  relationship: string;  // Changed from familyMember to match API
+  condition: string;     // Changed from medicalHistory to match API
   visitHistory?: Array<{
     date: string;
     notes: string;
@@ -67,8 +67,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
 
   // Form state for add/edit
   const [formData, setFormData] = useState({
-    familyMember: "",
-    medicalHistory: "",
+    relationship: "",
+    condition: "",
     sourceNotes: ""
   });
 
@@ -92,8 +92,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
       const optimisticEntry = {
         id: Date.now(), // Temporary ID
         patientId,
-        familyMember: newData.familyMember,
-        medicalHistory: newData.medicalHistory,
+        relationship: newData.relationship,
+        condition: newData.condition,
         sourceNotes: newData.sourceNotes,
         sourceType: "manual",
         sourceConfidence: "100",
@@ -151,8 +151,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
           entry.id === id 
             ? { 
                 ...entry, 
-                familyMember: data.familyMember,
-                medicalHistory: data.medicalHistory,
+                relationship: data.relationship,
+                condition: data.condition,
                 sourceNotes: data.sourceNotes,
                 updatedAt: new Date().toISOString(),
               }
@@ -230,8 +230,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
 
   const resetForm = () => {
     setFormData({
-      familyMember: "",
-      medicalHistory: "",
+      relationship: "",
+      condition: "",
       sourceNotes: ""
     });
   };
@@ -239,8 +239,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   const handleEdit = (entry: FamilyHistoryEntry) => {
     setEditingEntry(entry);
     setFormData({
-      familyMember: entry.familyMember,
-      medicalHistory: entry.medicalHistory,
+      relationship: entry.relationship,
+      condition: entry.condition,
       sourceNotes: entry.sourceNotes || ""
     });
   };
@@ -248,7 +248,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.familyMember.trim() || !formData.medicalHistory.trim()) {
+    if (!formData.relationship.trim() || !formData.condition.trim()) {
       toast({
         title: "Error",
         description: "Family member and medical history are required",
@@ -395,8 +395,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
               )}
               
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="dense-list-primary">{formatFamilyMember(entry.familyMember)}</span>
-                <span className="dense-list-secondary">{entry.medicalHistory}</span>
+                <span className="dense-list-primary">{formatFamilyMember(entry.relationship)}</span>
+                <span className="dense-list-secondary">{entry.condition}</span>
               </div>
               
               {mostRecentVisit && (
@@ -519,10 +519,10 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="familyMember">Family Member</Label>
+                    <Label htmlFor="relationship">Family Member</Label>
                     <Select
-                      value={formData.familyMember}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, familyMember: value }))}
+                      value={formData.relationship}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, relationship: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select family member" />
@@ -537,11 +537,11 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="medicalHistory">Medical History</Label>
+                    <Label htmlFor="condition">Medical Condition</Label>
                     <Textarea
-                      id="medicalHistory"
-                      value={formData.medicalHistory}
-                      onChange={(e) => setFormData(prev => ({ ...prev, medicalHistory: e.target.value }))}
+                      id="condition"
+                      value={formData.condition}
+                      onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value }))}
                       placeholder="e.g., HTN, DM2, died MI age 83"
                       rows={3}
                     />
@@ -598,10 +598,10 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
                       <div className="flex items-center gap-3">
                         <div className="text-left">
                           <div className="font-medium emr-ultra-compact-content">
-                            {formatFamilyMember(entry.familyMember)}
+                            {formatFamilyMember(entry.relationship)}
                           </div>
                           <div className="text-sm text-gray-600 emr-ultra-compact-content">
-                            {entry.medicalHistory}
+                            {entry.condition}
                           </div>
                         </div>
                       </div>
@@ -725,8 +725,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
             <div>
               <Label htmlFor="editFamilyMember">Family Member</Label>
               <Select
-                value={formData.familyMember}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, familyMember: value }))}
+                value={formData.relationship}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, relationship: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select family member" />
@@ -744,8 +744,8 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
               <Label htmlFor="editMedicalHistory">Medical History</Label>
               <Textarea
                 id="editMedicalHistory"
-                value={formData.medicalHistory}
-                onChange={(e) => setFormData(prev => ({ ...prev, medicalHistory: e.target.value }))}
+                value={formData.condition}
+                onChange={(e) => setFormData(prev => ({ ...prev, condition: e.target.value }))}
                 placeholder="e.g., HTN, DM2, died MI age 83"
                 rows={3}
               />
