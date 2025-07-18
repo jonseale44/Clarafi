@@ -1,0 +1,53 @@
+:"Main Clinic","shortNa…
+📍 [FIRST] GET /api/admin/users/5/locations
+❌ [AdminUserRoutes] Error fetching user locations: error: column user_locations.can_schedule does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async <anonymous> (/home/runner/workspace/server/admin-user-routes.ts:267:39) {
+  length: 126,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '159',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+11:25:56 AM [express] GET /api/admin/users/5/locations 500 in 296ms :: {"message":"Failed to fetch us…
+📍 [FIRST] POST /api/admin/users/5/locations
+❌ [AdminUserRoutes] SECURITY: Attempted cross-health-system assignment - User 5 (HS: 14) to Location 1 (HS: 2)
+11:26:02 AM [express] POST /api/admin/users/5/locations 403 in 383ms :: {"message":"Security violatio…
+📍 [FIRST] POST /api/logout
+Error logging authentication event: error: column "geolocation" of relation "authentication_logs" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async logAuthenticationEvent (/home/runner/workspace/server/audit-logging.ts:204:5)
+    at async <anonymous> (/home/runner/workspace/server/auth.ts:563:7) {
+  length: 144,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '165',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
