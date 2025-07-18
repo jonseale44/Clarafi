@@ -1,0 +1,560 @@
+📂 Loading file cache...
+✅ Loaded 354 files into cache
+
+🔍 ANALYZING ALL EXTRA COLUMNS FOR USAGE
+
+
+📊 Checking lab_orders (43 extra columns)...
+  [1/368] result_received_at... ❌ NOT FOUND
+  [2/368] transmission_response... ❌ NOT FOUND
+  [3/368] result_data... ❌ NOT FOUND
+  [4/368] provider_id... ✅ USED
+  [5/368] specimen_source... ❌ NOT FOUND
+  [6/368] collection_site... ❌ NOT FOUND
+  [7/368] collected_by... ❌ NOT FOUND
+  [8/368] expected_turnaround... ❌ NOT FOUND
+  [9/368] external_status... ❌ NOT FOUND
+  [10/368] abnormal_flags... ✅ USED
+  [11/368] discontinued_by... ❌ NOT FOUND
+  [12/368] discontinued_reason... ❌ NOT FOUND
+  [13/368] critical_values... ✅ USED
+  [14/368] stat_order... ❌ NOT FOUND
+  [15/368] patient_preparation... ❌ NOT FOUND
+  [16/368] collection_priority... ❌ NOT FOUND
+  [17/368] billing_code... ✅ USED
+  [18/368] insurance_preauth_date... ❌ NOT FOUND
+  [19/368] actual_cost... ❌ NOT FOUND
+  [20/368] patient_consent... ❌ NOT FOUND
+  [21/368] patient_copay... ❌ NOT FOUND
+  [22/368] billing_status... ❌ NOT FOUND
+  [23/368] billing_date... ❌ NOT FOUND
+  [24/368] result_interpretation... ❌ NOT FOUND
+  [25/368] ai_analysis... ❌ NOT FOUND
+  [26/368] result_notification_sent... ❌ NOT FOUND
+  [27/368] result_notification_date... ❌ NOT FOUND
+  [28/368] performing_lab_id... ❌ NOT FOUND
+  [29/368] lab_account_number... ❌ NOT FOUND
+  [30/368] quality_control_status... ❌ NOT FOUND
+  [31/368] quality_control_notes... ❌ NOT FOUND
+  [32/368] repeat_test_reason... ❌ NOT FOUND
+  [33/368] original_order_id... ❌ NOT FOUND
+  [34/368] test_methodology... ❌ NOT FOUND
+  [35/368] processing_lab_name... ❌ NOT FOUND
+  [36/368] processing_lab_director... ❌ NOT FOUND
+  [37/368] test_validation_status... ❌ NOT FOUND
+  [38/368] sample_rejection_reason... ❌ NOT FOUND
+  [39/368] clinical_trial_id... ❌ NOT FOUND
+  [40/368] research_study_id... ❌ NOT FOUND
+  [41/368] patient_location... ❌ NOT FOUND
+  [42/368] ordering_facility_id... ❌ NOT FOUND
+  [43/368] test_performed_at... ❌ NOT FOUND
+  Summary: 4 used, 39 unused
+
+📊 Checking medical_problems (27 extra columns)...
+  [44/368] care_plan_status... ❌ NOT FOUND
+  [45/368] functional_impact... ❌ NOT FOUND
+  [46/368] prognosis... ✅ USED
+  [47/368] associated_conditions... ❌ NOT FOUND
+  [48/368] treatment_goals... ❌ NOT FOUND
+  [49/368] monitoring_parameters... ❌ NOT FOUND
+  [50/368] problem_ranking... ❌ NOT FOUND
+  [51/368] display_in_summary... ❌ NOT FOUND
+  [52/368] patient_aware... ❌ NOT FOUND
+  [53/368] caregiver_aware... ❌ NOT FOUND
+  [54/368] reportable_condition... ❌ NOT FOUND
+  [55/368] reported_date... ✅ USED
+  [56/368] clinical_priority... ❌ NOT FOUND
+  [57/368] social_determinants... ❌ NOT FOUND
+  [58/368] cultural_considerations... ❌ NOT FOUND
+  [59/368] patient_goals... ❌ NOT FOUND
+  [60/368] barriers_to_care... ❌ NOT FOUND
+  [61/368] quality_measures... ❌ NOT FOUND
+  [62/368] outcome_measures... ❌ NOT FOUND
+  [63/368] care_team_members... ❌ NOT FOUND
+  [64/368] care_coordination_notes... ❌ NOT FOUND
+  [65/368] original_problem_text... ❌ NOT FOUND
+  [66/368] mapped_by_ai... ❌ NOT FOUND
+  [67/368] ai_confidence_score... ❌ NOT FOUND
+  [68/368] human_verified... ❌ NOT FOUND
+  [69/368] consolidation_reasoning... ✅ USED
+  [70/368] merged_ids... ✅ USED
+  Summary: 4 used, 23 unused
+
+📊 Checking imaging_results (25 extra columns)...
+  [71/368] ordering_provider_id... ❌ NOT FOUND
+  [72/368] comparison_studies... ❌ NOT FOUND
+  [73/368] contrast_used... ❌ NOT FOUND
+  [74/368] contrast_type... ❌ NOT FOUND
+  [75/368] radiation_dose... ❌ NOT FOUND
+  [76/368] number_of_images... ❌ NOT FOUND
+  [77/368] critical_findings... ❌ NOT FOUND
+  [78/368] critical_findings_communicated_at... ❌ NOT FOUND
+  [79/368] report_finalized_at... ❌ NOT FOUND
+  [80/368] addendum_date... ❌ NOT FOUND
+  [81/368] diagnostic_quality... ❌ NOT FOUND
+  [82/368] follow_up_needed... ❌ NOT FOUND
+  [83/368] follow_up_timeframe... ❌ NOT FOUND
+  [84/368] bi_rads_score... ❌ NOT FOUND
+  [85/368] lung_rads_score... ❌ NOT FOUND
+  [86/368] ti_rads_score... ❌ NOT FOUND
+  [87/368] pi_rads_score... ❌ NOT FOUND
+  [88/368] liver_rads_score... ❌ NOT FOUND
+  [89/368] incidental_findings... ❌ NOT FOUND
+  [90/368] protocol_name... ❌ NOT FOUND
+  [91/368] series_count... ❌ NOT FOUND
+  [92/368] image_count... ❌ NOT FOUND
+  [93/368] study_size_mb... ❌ NOT FOUND
+  [94/368] dicom_retrieval_url... ❌ NOT FOUND
+  [95/368] external_system_id... ❌ NOT FOUND
+  Summary: 0 used, 25 unused
+
+📊 Checking medications (20 extra columns)...
+  [96/368] form... ✅ USED
+  [97/368] discontinuation_date... ❌ NOT FOUND
+  [98/368] prescribed_by... ❌ NOT FOUND
+  [99/368] prescribed_date... ✅ USED
+  [100/368] pharmacy... ✅ USED
+  [101/368] prescriber_notes... ❌ NOT FOUND
+  [102/368] refills... ✅ USED
+  [103/368] lot_number... ❌ NOT FOUND
+  [104/368] expiration_date... ❌ NOT FOUND
+  [105/368] manufacturer... ❌ NOT FOUND
+  [106/368] dea_schedule... ✅ USED
+  [107/368] is_controlled... ✅ USED
+  [108/368] requires_prior_auth... ✅ USED
+  [109/368] prior_auth_number... ✅ USED
+  [110/368] therapeutic_class... ✅ USED
+  [111/368] extraction_notes... ✅ USED
+  [112/368] discontinuation_source... ❌ NOT FOUND
+  [113/368] original_order_id... ❌ NOT FOUND
+  [114/368] consolidation_reasoning... ✅ USED
+  [115/368] merged_ids... ✅ USED
+  Summary: 12 used, 8 unused
+
+📊 Checking patient_attachments (16 extra columns)...
+  [116/368] original_filename... ❌ NOT FOUND
+  [117/368] file_type... ❌ NOT FOUND
+  [118/368] upload_date... ❌ NOT FOUND
+  [119/368] document_date... ❌ NOT FOUND
+  [120/368] ocr_text... ❌ NOT FOUND
+  [121/368] ocr_completed... ❌ NOT FOUND
+  [122/368] ocr_completed_at... ❌ NOT FOUND
+  [123/368] chart_sections_updated... ❌ NOT FOUND
+  [124/368] confidence_scores... ✅ USED
+  [125/368] hash_value... ❌ NOT FOUND
+  [126/368] is_deleted... ❌ NOT FOUND
+  [127/368] deleted_at... ❌ NOT FOUND
+  [128/368] deleted_by... ❌ NOT FOUND
+  [129/368] retention_date... ❌ NOT FOUND
+  [130/368] access_count... ❌ NOT FOUND
+  [131/368] last_accessed_at... ❌ NOT FOUND
+  Summary: 1 used, 15 unused
+
+📊 Checking user_note_preferences (16 extra columns)...
+  [132/368] default_chief_complaint... ✅ USED
+  [133/368] default_physical_exam... ✅ USED
+  [134/368] default_ros_negatives... ✅ USED
+  [135/368] default_assessment_style... ✅ USED
+  [136/368] use_voice_commands... ✅ USED
+  [137/368] auto_save_interval... ✅ USED
+  [138/368] show_template_suggestions... ✅ USED
+  [139/368] include_time_stamps... ✅ USED
+  [140/368] default_note_font_size... ✅ USED
+  [141/368] default_macro_set... ✅ USED
+  [142/368] preferred_exam_order... ✅ USED
+  [143/368] custom_normal_exams... ✅ USED
+  [144/368] abbreviation_expansions... ✅ USED
+  [145/368] quick_phrases... ✅ USED
+  [146/368] billing_reminder_enabled... ✅ USED
+  [147/368] sign_reminder_minutes... ✅ USED
+  Summary: 16 used, 0 unused
+
+📊 Checking clinic_admin_verifications (12 extra columns)...
+  [148/368] applicant_first_name... ❌ NOT FOUND
+  [149/368] applicant_last_name... ❌ NOT FOUND
+  [150/368] applicant_email... ❌ NOT FOUND
+  [151/368] applicant_phone... ❌ NOT FOUND
+  [152/368] address_street... ❌ NOT FOUND
+  [153/368] address_city... ❌ NOT FOUND
+  [154/368] address_state... ❌ NOT FOUND
+  [155/368] address_zip... ❌ NOT FOUND
+  [156/368] preferred_ehr_tier... ❌ NOT FOUND
+  [157/368] automated_recommendations... ❌ NOT FOUND
+  [158/368] manual_review_notes... ❌ NOT FOUND
+  [159/368] api_verification_results... ❌ NOT FOUND
+  Summary: 0 used, 12 unused
+
+📊 Checking external_labs (10 extra columns)...
+  [160/368] patient_id... ✅ USED
+  [161/368] test_name... ✅ USED
+  [162/368] test_date... ✅ USED
+  [163/368] result_value... ✅ USED
+  [164/368] unit... ✅ USED
+  [165/368] reference_range... ✅ USED
+  [166/368] abnormal_flag... ✅ USED
+  [167/368] ordering_provider... ✅ USED
+  [168/368] status... ✅ USED
+  [169/368] attachment_id... ✅ USED
+  Summary: 10 used, 0 unused
+
+📊 Checking encounters (9 extra columns)...
+  [170/368] ai_scribe_mode... ❌ NOT FOUND
+  [171/368] transcription_id... ❌ NOT FOUND
+  [172/368] voice_recording_url... ❌ NOT FOUND
+  [173/368] referral_source... ❌ NOT FOUND
+  [174/368] estimated_copay... ❌ NOT FOUND
+  [175/368] billing_status... ❌ NOT FOUND
+  [176/368] claim_number... ❌ NOT FOUND
+  [177/368] primary_diagnosis_code... ❌ NOT FOUND
+  [178/368] reimbursement_amount... ❌ NOT FOUND
+  Summary: 0 used, 9 unused
+
+📊 Checking family_history (9 extra columns)...
+  [179/368] age_at_onset... ❌ NOT FOUND
+  [180/368] age_at_death... ❌ NOT FOUND
+  [181/368] cause_of_death... ❌ NOT FOUND
+  [182/368] extraction_notes... ✅ USED
+  [183/368] maternal_side... ❌ NOT FOUND
+  [184/368] living_status... ❌ NOT FOUND
+  [185/368] genetic_marker... ❌ NOT FOUND
+  [186/368] consolidation_reasoning... ✅ USED
+  [187/368] merged_ids... ✅ USED
+  Summary: 3 used, 6 unused
+
+📊 Checking surgical_history (8 extra columns)...
+  [188/368] implants_used... ❌ NOT FOUND
+  [189/368] pathology_results... ❌ NOT FOUND
+  [190/368] recovery_notes... ❌ NOT FOUND
+  [191/368] estimated_blood_loss_ml... ❌ NOT FOUND
+  [192/368] specimens_removed... ❌ NOT FOUND
+  [193/368] drains_placed... ❌ NOT FOUND
+  [194/368] discharge_instructions... ❌ NOT FOUND
+  [195/368] follow_up_date... ✅ USED
+  Summary: 1 used, 7 unused
+
+📊 Checking gpt_lab_review_notes (7 extra columns)...
+  [196/368] lab_order_id... ✅ USED
+  [197/368] review_type... ✅ USED
+  [198/368] ai_interpretation... ✅ USED
+  [199/368] clinical_significance... ✅ USED
+  [200/368] follow_up_recommendations... ✅ USED
+  [201/368] risk_assessment... ✅ USED
+  [202/368] review_status... ✅ USED
+  Summary: 7 used, 0 unused
+
+📊 Checking health_systems (7 extra columns)...
+  [203/368] type... ✅ USED
+  [204/368] subscription_key... ✅ USED
+  [205/368] is_migration... ✅ USED
+  [206/368] stripe_customer_id... ✅ USED
+  [207/368] metadata... ✅ USED
+  [208/368] updated_at... ✅ USED
+  [209/368] status... ✅ USED
+  Summary: 7 used, 0 unused
+
+📊 Checking patient_scheduling_patterns (7 extra columns)...
+  [210/368] provider_id... ✅ USED
+  [211/368] pattern_type... ✅ USED
+  [212/368] frequency... ✅ USED
+  [213/368] time_preferences... ✅ USED
+  [214/368] seasonal_variations... ✅ USED
+  [215/368] created_at... ✅ USED
+  [216/368] updated_at... ✅ USED
+  Summary: 7 used, 0 unused
+
+📊 Checking realtime_schedule_status (7 extra columns)...
+  [217/368] date... ✅ USED
+  [218/368] time_slot... ✅ USED
+  [219/368] status... ✅ USED
+  [220/368] appointment_id... ✅ USED
+  [221/368] buffer_status... ✅ USED
+  [222/368] efficiency_score... ✅ USED
+  [223/368] updated_at... ✅ USED
+  Summary: 7 used, 0 unused
+
+📊 Checking social_history (7 extra columns)...
+  [224/368] start_date... ✅ USED
+  [225/368] end_date... ✅ USED
+  [226/368] quantity... ✅ USED
+  [227/368] frequency... ✅ USED
+  [228/368] risk_level... ✅ USED
+  [229/368] counseling_provided... ❌ NOT FOUND
+  [230/368] merged_ids... ✅ USED
+  Summary: 6 used, 1 unused
+
+📊 Checking subscription_history (7 extra columns)...
+  [231/368] previous_status... ✅ USED
+  [232/368] new_status... ✅ USED
+  [233/368] changed_by... ✅ USED
+  [234/368] reason... ✅ USED
+  [235/368] billing_impact... ✅ USED
+  [236/368] effective_date... ✅ USED
+  [237/368] created_at... ✅ USED
+  Summary: 7 used, 0 unused
+
+📊 Checking appointment_types (6 extra columns)...
+  [238/368] name... ✅ USED
+  [239/368] duration_minutes... ✅ USED
+  [240/368] color... ✅ USED
+  [241/368] description... ✅ USED
+  [242/368] is_active... ✅ USED
+  [243/368] updated_at... ✅ USED
+  Summary: 6 used, 0 unused
+
+📊 Checking medical_history (6 extra columns)...
+  [244/368] condition... ✅ USED
+  [245/368] onset_date... ✅ USED
+  [246/368] resolution_date... ✅ USED
+  [247/368] status... ✅ USED
+  [248/368] severity... ✅ USED
+  [249/368] notes... ✅ USED
+  Summary: 6 used, 0 unused
+
+📊 Checking organization_documents (6 extra columns)...
+  [250/368] organization_id... ✅ USED
+  [251/368] file_path... ✅ USED
+  [252/368] file_size... ✅ USED
+  [253/368] mime_type... ✅ USED
+  [254/368] active... ✅ USED
+  [255/368] created_at... ✅ USED
+  Summary: 6 used, 0 unused
+
+📊 Checking patient_physical_findings (6 extra columns)...
+  [256/368] body_system... ❌ NOT FOUND
+  [257/368] associated_symptoms... ❌ NOT FOUND
+  [258/368] examined_at... ❌ NOT FOUND
+  [259/368] is_normal... ❌ NOT FOUND
+  [260/368] requires_follow_up... ❌ NOT FOUND
+  [261/368] follow_up_timeframe... ❌ NOT FOUND
+  Summary: 0 used, 6 unused
+
+📊 Checking provider_scheduling_patterns (6 extra columns)...
+  [262/368] pattern_type... ✅ USED
+  [263/368] preferences... ✅ USED
+  [264/368] constraints... ✅ USED
+  [265/368] historical_data... ✅ USED
+  [266/368] created_at... ✅ USED
+  [267/368] updated_at... ✅ USED
+  Summary: 6 used, 0 unused
+
+📊 Checking subscription_keys (6 extra columns)...
+  [268/368] key_value... ✅ USED
+  [269/368] created_by... ✅ USED
+  [270/368] assigned_to... ✅ USED
+  [271/368] assigned_at... ✅ USED
+  [272/368] usage_count... ✅ USED
+  [273/368] last_used_at... ✅ USED
+  Summary: 6 used, 0 unused
+
+📊 Checking user_problem_list_preferences (6 extra columns)...
+  [274/368] id... ✅ USED
+  [275/368] show_inactive_problems... ❌ NOT FOUND
+  [276/368] sort_by... ❌ NOT FOUND
+  [277/368] group_by_category... ❌ NOT FOUND
+  [278/368] highlight_recent_changes... ❌ NOT FOUND
+  [279/368] recent_change_days... ❌ NOT FOUND
+  Summary: 1 used, 5 unused
+
+📊 Checking emergency_access_logs (5 extra columns)...
+  [280/368] access_reason... ✅ USED
+  [281/368] override_restrictions... ✅ USED
+  [282/368] supervisor_approval... ✅ USED
+  [283/368] access_duration... ✅ USED
+  [284/368] ip_address... ✅ USED
+  Summary: 5 used, 0 unused
+
+📊 Checking lab_reference_ranges (5 extra columns)...
+  [285/368] test_code... ✅ USED
+  [286/368] reference_low... ❌ NOT FOUND
+  [287/368] reference_high... ❌ NOT FOUND
+  [288/368] unit... ✅ USED
+  [289/368] notes... ✅ USED
+  Summary: 3 used, 2 unused
+
+📊 Checking scheduling_templates (5 extra columns)...
+  [290/368] template_type... ✅ USED
+  [291/368] day_configuration... ✅ USED
+  [292/368] appointment_types... ✅ USED
+  [293/368] buffer_rules... ✅ USED
+  [294/368] break_configuration... ✅ USED
+  Summary: 5 used, 0 unused
+
+📊 Checking signatures (5 extra columns)...
+  [295/368] encounter_id... ✅ USED
+  [296/368] signed_by... ✅ USED
+  [297/368] signature_type... ✅ USED
+  [298/368] ip_address... ✅ USED
+  [299/368] attestation_text... ✅ USED
+  Summary: 5 used, 0 unused
+
+📊 Checking user_assistant_threads (5 extra columns)...
+  [300/368] assistant_type... ✅ USED
+  [301/368] assistant_id... ✅ USED
+  [302/368] context... ✅ USED
+  [303/368] last_message_at... ✅ USED
+  [304/368] active... ✅ USED
+  Summary: 5 used, 0 unused
+
+📊 Checking user_edit_patterns (5 extra columns)...
+  [305/368] note_type... ✅ USED
+  [306/368] section_name... ✅ USED
+  [307/368] edit_type... ✅ USED
+  [308/368] edit_frequency... ✅ USED
+  [309/368] last_occurrence... ✅ USED
+  Summary: 5 used, 0 unused
+
+📊 Checking admin_prompt_reviews (4 extra columns)...
+  [310/368] prompt_id... ❌ NOT FOUND
+  [311/368] reviewer_id... ✅ USED
+  [312/368] feedback... ✅ USED
+  [313/368] updated_at... ✅ USED
+  Summary: 3 used, 1 unused
+
+📊 Checking lab_results (4 extra columns)...
+  [314/368] patient_communication_sent... ❌ NOT FOUND
+  [315/368] patient_communication_method... ❌ NOT FOUND
+  [316/368] patient_communication_sent_at... ❌ NOT FOUND
+  [317/368] patient_notified_by... ❌ NOT FOUND
+  Summary: 0 used, 4 unused
+
+📊 Checking patient_order_preferences (4 extra columns)...
+  [318/368] provider_id... ✅ USED
+  [319/368] order_type... ✅ USED
+  [320/368] preferences... ✅ USED
+  [321/368] standing_orders... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking provider_schedules (4 extra columns)...
+  [322/368] break_start... ✅ USED
+  [323/368] break_end... ✅ USED
+  [324/368] effective_to... ✅ USED
+  [325/368] max_appointments... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking scheduling_ai_factors (4 extra columns)...
+  [326/368] category... ✅ USED
+  [327/368] description... ✅ USED
+  [328/368] is_enabled... ✅ USED
+  [329/368] updated_at... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking scheduling_resources (4 extra columns)...
+  [330/368] name... ✅ USED
+  [331/368] available_hours... ✅ USED
+  [332/368] requires_cleaning... ✅ USED
+  [333/368] cleaning_duration... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking scheduling_rules (4 extra columns)...
+  [334/368] name... ✅ USED
+  [335/368] applies_to... ✅ USED
+  [336/368] conditions... ✅ USED
+  [337/368] actions... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking user_session_locations (4 extra columns)...
+  [338/368] is_primary... ✅ USED
+  [339/368] permissions... ✅ USED
+  [340/368] remembered... ✅ USED
+  [341/368] updated_at... ✅ USED
+  Summary: 4 used, 0 unused
+
+📊 Checking asymmetric_scheduling_config (3 extra columns)...
+  [342/368] weekday_schedule... ✅ USED
+  [343/368] custom_rules... ✅ USED
+  [344/368] effective_date... ✅ USED
+  Summary: 3 used, 0 unused
+
+📊 Checking organizations (3 extra columns)...
+  [345/368] type... ✅ USED
+  [346/368] website... ✅ USED
+  [347/368] updated_at... ✅ USED
+  Summary: 3 used, 0 unused
+
+📊 Checking problem_rank_overrides (3 extra columns)...
+  [348/368] patient_id... ✅ USED
+  [349/368] custom_rank... ❌ NOT FOUND
+  [350/368] reason... ✅ USED
+  Summary: 2 used, 1 unused
+
+📊 Checking appointment_resource_requirements (2 extra columns)...
+  [351/368] resource_type... ✅ USED
+  [352/368] resource_id... ✅ USED
+  Summary: 2 used, 0 unused
+
+📊 Checking authentication_logs (2 extra columns)...
+  [353/368] error_message... ✅ USED
+  [354/368] created_at... ✅ USED
+  Summary: 2 used, 0 unused
+
+📊 Checking migration_invitations (2 extra columns)...
+  [355/368] from_health_system_id... ❌ NOT FOUND
+  [356/368] to_health_system_id... ✅ USED
+  Summary: 1 used, 1 unused
+
+📊 Checking patients (2 extra columns)...
+  [357/368] insurance_policy_number... ✅ USED
+  [358/368] insurance_group_number... ✅ USED
+  Summary: 2 used, 0 unused
+
+📊 Checking user_locations (2 extra columns)...
+  [359/368] permissions... ✅ USED
+  [360/368] updated_at... ✅ USED
+  Summary: 2 used, 0 unused
+
+📊 Checking webauthn_credentials (2 extra columns)...
+  [361/368] public_key... ✅ USED
+  [362/368] device_name... ✅ USED
+  Summary: 2 used, 0 unused
+
+📊 Checking appointment_duration_history (1 extra columns)...
+  [363/368] predicted_duration... ✅ USED
+  Summary: 1 used, 0 unused
+
+📊 Checking magic_links (1 extra columns)...
+  [364/368] used... ✅ USED
+  Summary: 1 used, 0 unused
+
+📊 Checking phi_access_logs (1 extra columns)...
+  [365/368] created_at... ✅ USED
+  Summary: 1 used, 0 unused
+
+📊 Checking schedule_exceptions (1 extra columns)...
+  [366/368] affects_scheduling... ✅ USED
+  Summary: 1 used, 0 unused
+
+📊 Checking users (1 extra columns)...
+  [367/368] is_verified... ❌ NOT FOUND
+  Summary: 0 used, 1 unused
+
+📊 Checking vitals (1 extra columns)...
+  [368/368] alerts... ✅ USED
+  Summary: 1 used, 0 unused
+
+
+📋 FINAL SUMMARY REPORT
+======================
+
+Total columns checked: 368
+Total used columns: 202 (55%)
+Total unused columns: 166 (45%)
+
+
+🏆 TABLES WITH MOST USED COLUMNS:
+1. user_note_preferences: 16 used, 0 unused
+2. medications: 12 used, 8 unused
+3. external_labs: 10 used, 0 unused
+4. gpt_lab_review_notes: 7 used, 0 unused
+5. health_systems: 7 used, 0 unused
+6. patient_scheduling_patterns: 7 used, 0 unused
+7. realtime_schedule_status: 7 used, 0 unused
+8. subscription_history: 7 used, 0 unused
+9. social_history: 6 used, 1 unused
+10. appointment_types: 6 used, 0 unused
+
+
+📄 Detailed report saved to all-columns-usage-report.json
+
+
+📝 GENERATING SCHEMA.TS ADDITIONS FOR USED COLUMNS...
+✅ Schema additions saved to schema-additions.txt
