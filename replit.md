@@ -180,6 +180,12 @@ Preferred communication style: Simple, everyday language.
   - Added missing `studyType` field to imagingResults table schema in schema.ts
   - Updated unified-imaging-parser.ts to ensure study_type is never null by combining modality and body_part
   - Added fallback logic: uses "modality body_part" format, or just modality, or "Imaging Study" as last resort
+- **LAB RESULTS MISSING COLUMNS FIX**: Added missing lab_results columns that were preventing lab extraction:
+  - Added `previous_value` DECIMAL(15,6) - for storing previous lab values for trend analysis
+  - Added `previous_date` TIMESTAMP - for tracking when previous value was recorded
+  - Added `trend_direction` TEXT - for tracking if values are increasing/decreasing/stable
+  - Added `percent_change` DECIMAL(5,2) - for storing percentage change from previous value
+  - Note: `ai_interpretation` JSONB column already existed
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
