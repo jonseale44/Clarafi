@@ -88,12 +88,11 @@ export class PatientChartService {
         .limit(5);
 
       // Get family history
-      const familyHistoryResult = await db.execute(sql`
-        SELECT * FROM family_history 
-        WHERE patient_id = ${patientId}
-        ORDER BY updated_at DESC
-      `);
-      const familyHistoryRecords = familyHistoryResult.rows;
+      const familyHistoryRecords = await db
+        .select()
+        .from(familyHistory)
+        .where(eq(familyHistory.patientId, patientId))
+        .orderBy(desc(familyHistory.updatedAt));
 
       // Get social history
       const socialHistoryRecords = await db

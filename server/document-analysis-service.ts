@@ -37,30 +37,38 @@ export class DocumentAnalysisService {
     );
 
     // Check if already queued or processed (skip check for reprocessing)
-    // Use raw SQL to avoid schema mismatch with last_attempt column
-    const existingQueueResult = await db.execute(sql`
-      SELECT id, attachment_id, status 
-      FROM document_processing_queue 
-      WHERE attachment_id = ${attachmentId}
-    `);
-    const existingQueue = existingQueueResult.rows[0];
+    // Use Drizzle query builder which handles camelCase to snake_case conversion
+    const existingQueue = await db
+      .select({
+        id: documentProcessingQueue.id,
+        attachmentId: documentProcessingQueue.attachmentId,
+        status: documentProcessingQueue.status
+      })
+      .from(documentProcessingQueue)
+      .where(eq(documentProcessingQueue.attachmentId, attachmentId))
+      .limit(1);
+    
+    const existingQueueItem = existingQueue[0];
 
     const [existingContent] = await db
       .select()
       .from(attachmentExtractedContent)
       .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
-    // Add to queue with only fields that exist in database
-    await db.execute(sql`
-      INSERT INTO document_processing_queue (attachment_id, status, attempts, processor_type)
-      VALUES (${attachmentId}, 'queued', 0, 'document_analysis')
-    `);
+    // Add to queue using Drizzle query builder
+    await db.insert(documentProcessingQueue).values({
+      attachmentId: attachmentId,
+      status: 'queued',
+      attempts: 0,
+      processorType: 'document_analysis'
+    });
 
-    // Create processing record using raw SQL to handle snake_case columns
-    await db.execute(sql`
-      INSERT INTO attachment_extracted_content (attachment_id, processing_status, content_type)
-      VALUES (${attachmentId}, 'pending', 'document')
-    `);
+    // Create processing record using Drizzle query builder
+    await db.insert(attachmentExtractedContent).values({
+      attachmentId: attachmentId,
+      processingStatus: 'pending',
+      contentType: 'document'
+    });
 
     console.log(
       `📄 [DocumentAnalysis] Attachment ${attachmentId} queued for processing`,

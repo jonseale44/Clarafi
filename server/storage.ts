@@ -662,20 +662,12 @@ export class DatabaseStorage implements IStorage {
 
   // Encounter management
   async getEncounter(id: number): Promise<Encounter | undefined> {
-    const result = await db.execute(sql`
-      SELECT * FROM encounters WHERE id = ${id}
-    `);
-    const encounter = result.rows[0];
-    // Map snake_case to camelCase for compatibility
-    if (encounter) {
-      return {
-        ...encounter,
-        providerId: encounter.provider_id,
-        patientId: encounter.patient_id,
-        // Keep other fields as-is since they might already be correct
-      } as Encounter;
-    }
-    return undefined;
+    const result = await db
+      .select()
+      .from(encounters)
+      .where(eq(encounters.id, id))
+      .limit(1);
+    return result[0];
   }
 
   async getPatientEncounters(patientId: number): Promise<Encounter[]> {
@@ -1517,41 +1509,24 @@ export class DatabaseStorage implements IStorage {
 
   // Medical Problems management (Enhanced JSONB approach)
   async getPatientMedicalProblems(patientId: number): Promise<MedicalProblem[]> {
-    // Use raw SQL with only columns that exist in production database
-    const result = await db.execute(sql`
-      SELECT 
-        id,
-        patient_id as "patientId",
-        problem_title as "problemTitle",
-        current_icd10_code as "currentIcd10Code",
-        problem_status as "problemStatus",
-        visit_history as "visitHistory",
-        encounter_id as "encounterId",
-        icd10_code as "icd10Code",
-        snomed_code as "snomedCode",
-        onset_date as "onsetDate",
-        resolution_date as "resolutionDate",
-        notes,
-        severity,
-        source_type as "sourceType",
-        source_confidence as "sourceConfidence",
-        extracted_from_attachment_id as "extractedFromAttachmentId",
-        created_at as "createdAt",
-        updated_at as "updatedAt",
-        provider_id as "providerId",
-        date_diagnosed as "firstDiagnosedDate"
-      FROM medical_problems
-      WHERE patient_id = ${patientId}
-    `);
+    // Use Drizzle query builder which automatically handles camelCase to snake_case conversion
+    const problems = await db.select()
+      .from(medicalProblems)
+      .where(eq(medicalProblems.patientId, patientId));
     
-    // Add default values for schema fields that don't exist in database
-    return result.rows.map((row: any) => ({
-      ...row,
-      changeLog: [],
-      lastRankedEncounterId: null,
-      rankingReason: null,
-      rankingFactors: null
-    })) as MedicalProblem[];
+    // Map the results to handle the field name differences between schema and database
+    return problems.map(problem => ({
+      ...problem,
+      // Handle fields that exist in schema but not in database
+      firstDiagnosedDate: (problem as any).dateDiagnosed || (problem as any).onsetDate,
+      firstEncounterId: problem.encounterId,
+      lastUpdatedEncounterId: problem.encounterId,
+      // Add default values for fields that might not exist in database
+      changeLog: problem.changeLog || [],
+      lastRankedEncounterId: (problem as any).lastRankedEncounterId || null,
+      rankingReason: (problem as any).rankingReason || null,
+      rankingFactors: (problem as any).rankingFactors || null
+    }));
   }
 
   async getMedicalProblem(id: number): Promise<MedicalProblem | undefined> {
@@ -2308,21 +2283,23 @@ export class DatabaseStorage implements IStorage {
       console.log('🤖 [AI SCHEDULING] Patient complexity:', complexity);
       
       // 2. Get patient scheduling patterns
-      const patterns = await db.execute(sql`
-        SELECT * FROM patient_scheduling_patterns 
-        WHERE patient_id = ${params.patientId}
-      `);
+      const patterns = await db
+        .select()
+        .from(patientSchedulingPatterns)
+        .where(eq(patientSchedulingPatterns.patientId, params.patientId))
+        .limit(1);
       
-      patientPatterns = patterns.rows[0] || null;
+      patientPatterns = patterns[0] || null;
         
       console.log('🤖 [AI SCHEDULING] Patient patterns:', patientPatterns);
       
       // 3. Get provider patterns
-      const providerPatternsResult = await db.execute(sql`
-        SELECT * FROM provider_scheduling_patterns 
-        WHERE provider_id = ${params.providerId}
-      `);
-      const providerPatterns = providerPatternsResult.rows[0] || null;
+      const providerPatternsResult = await db
+        .select()
+        .from(providerSchedulingPatterns)
+        .where(eq(providerSchedulingPatterns.providerId, params.providerId))
+        .limit(1);
+      const providerPatterns = providerPatternsResult[0] || null;
         
       console.log('🤖 [AI SCHEDULING] Provider patterns:', providerPatterns);
       
