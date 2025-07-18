@@ -33,7 +33,7 @@ export interface UnifiedFamilyHistoryVisitEntry {
 export interface UnifiedFamilyHistoryChange {
   action: "create" | "update" | "consolidate";
   familyMember: string;
-  medicalHistory: string;
+  condition: string; // Changed from medicalHistory to match database
   consolidationReason?: string;
   confidence: number;
   visitEntry: UnifiedFamilyHistoryVisitEntry;

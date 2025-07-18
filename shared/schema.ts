@@ -1208,7 +1208,7 @@ export const familyHistory = pgTable("family_history", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   relationship: text("relationship").notNull(), // 'father', 'mother', 'brother', 'sister', 'son', 'daughter', 'grandmother', 'grandfather'
-  medicalHistory: text("medical_history"), // "DM2, h/o CAD, died of MI at age 70"
+  condition: text("condition"), // Changed from medical_history to match database - "DM2, h/o CAD, died of MI at age 70"
   lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
   
   // Visit history tracking for family history updates over time

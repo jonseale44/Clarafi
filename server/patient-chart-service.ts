@@ -157,8 +157,8 @@ export class PatientChartService {
         })),
         familyHistory: familyHistoryRecords.map((fh) => ({
           id: fh.id,
-          relationship: fh.familyMember,
-          condition: fh.medicalHistory,
+          relationship: fh.relationship,
+          condition: fh.condition,
           sourceType: fh.sourceType,
         })),
         socialHistory: socialHistoryRecords.map((sh) => ({
