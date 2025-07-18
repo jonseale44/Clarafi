@@ -159,26 +159,6 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### Database Schema Cleanup - Actively Used Columns Added (January 18, 2025)
-- **COMPREHENSIVE ANALYSIS COMPLETED**: Analyzed all 542 extra database columns not defined in schema.ts
-- **USAGE STATISTICS**: Found 366 columns (68%) actively used in codebase, 176 columns (32%) unused
-- **SCHEMA.TS UPDATES**: Successfully added actively used columns to maintain schema.ts as single source of truth:
-  - lab_orders: Added 15 actively used columns (order_id, status, special_instructions, external_lab, result_status, etc.)
-  - imaging_results: Added 12 actively used columns (encounter_id, accession_number, recommendations, technique, etc.)
-  - orders: Added 29 actively used columns (provider_id, order_date, status, medication fields, lab fields, imaging fields, etc.)
-  - diagnoses: Added 17 billing/RCM columns (claim_submission_status, claim_id, payer_id, allowed_amount, paid_amount, etc.)
-  - patient_physical_findings: Added 8 actively used columns (encounter_id, finding, severity, laterality, quality, duration, context, provider_id)
-  - email_notifications: Added 10 columns (recipient_email, body_html, body_text, related_user_id, related_entity_type, related_entity_id, status, error_message, retry_count, created_at)
-  - lab_results: Added 6 additional columns (patient_message, patient_message_sent_at, extraction_notes, consolidation_reasoning, merged_ids, visit_history)
-  - medication_formulary: Added 10 columns (medication_name, drug_class, dosage_forms, strengths, route, tier, prior_auth_required, quantity_limits, step_therapy, alternatives)
-  - schedule_preferences: Added 10 columns (preferred_appointment_duration, buffer_time_minutes, lunch_start, lunch_duration, max_daily_appointments, max_consecutive_appointments, preferred_break_after_n_appointments, break_duration_minutes, allow_overtime, overtime_limit_minutes)
-  - imaging_orders: Added 8 columns (provider_id, imaging_type, indication, priority, status, facility_id, scheduled_date, completed_date)
-  - data_modification_logs: Added 6 columns (action, old_values, new_values, reason, ip_address, user_agent, created_at)
-  - patients: Added 5 critical columns (nickname, social_security_number, drivers_license_number, passport_number, military_id)
-- **SYSTEMATIC APPROACH**: Only adding columns that are actively referenced in the codebase to avoid bloat
-- **DATABASE MIGRATION**: Applied schema changes directly via SQL due to interactive db:push limitations
-- **PATIENT CREATION FIX**: Resolved "nickname" column error that was preventing patient creation
-
 ### Database Schema Alignment Fixes (January 18, 2025)
 - **FAMILY HISTORY API FIXED**: Fixed two critical schema mismatches in family_history table:
   - Changed `sourceNotes: text("source_notes")` to `sourceNotes: text("notes")` to match actual database column
