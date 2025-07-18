@@ -5,7 +5,7 @@
 
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { neon } from "@neondatabase/serverless";
-import { sql as sqlTemplate } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import * as schema from "./shared/schema.js";
 
 async function forcePush() {
@@ -16,8 +16,8 @@ async function forcePush() {
     throw new Error("DATABASE_URL not found in environment");
   }
 
-  const client = neon(databaseUrl);
-  const db = drizzle(client, { schema });
+  const sqlClient = neon(databaseUrl);
+  const db = drizzle(sqlClient, { schema });
 
   try {
     // Instead of using drizzle-kit push which has interactive prompts,
@@ -48,7 +48,8 @@ async function forcePush() {
     for (const fix of fixes) {
       try {
         console.log(`🔧 Running: ${fix.substring(0, 50)}...`);
-        await db.execute(sqlTemplate.raw(fix));
+        // Use the sql client directly with raw SQL
+        await sqlClient(fix);
         console.log(`✅ Applied successfully`);
       } catch (error: any) {
         if (error.message.includes("already exists")) {
