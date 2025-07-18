@@ -1209,7 +1209,7 @@ export const familyHistory = pgTable("family_history", {
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   relationship: text("relationship").notNull(), // 'father', 'mother', 'brother', 'sister', 'son', 'daughter', 'grandmother', 'grandfather'
   condition: text("condition"), // Changed from medical_history to match database - "DM2, h/o CAD, died of MI at age 70"
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
   
   // Visit history tracking for family history updates over time
   visitHistory: jsonb("visit_history").$type<Array<{
@@ -1336,7 +1336,7 @@ export const surgicalHistory = pgTable("surgical_history", {
   sourceType: text("source_type").default("manual_entry"), // 'manual_entry', 'attachment_extracted', 'soap_derived', 'operative_report', 'discharge_summary', 'imported_records'
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
   
   // GPT processing metadata
@@ -1396,7 +1396,7 @@ export const allergies = pgTable("allergies", {
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
   sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id), // Reference to source attachment
-  lastUpdatedEncounter: integer("last_updated_encounter").references(() => encounters.id),
+  lastUpdatedEncounterId: integer("last_updated_encounter_id").references(() => encounters.id),
   enteredBy: integer("entered_by").references(() => users.id), // Who entered the data
   
   // GPT processing metadata

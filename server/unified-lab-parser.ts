@@ -453,6 +453,9 @@ Input: "${labText}"`;
           extractedFromAttachmentId: attachmentId,
           needsReview: labResult.criticalFlag || false,
           reviewStatus: labResult.criticalFlag ? "pending" : "reviewed",
+          // Add missing fields with defaults
+          communicationStatus: "none",
+          enteredBy: null,
         });
 
         savedCount++;

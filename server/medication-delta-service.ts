@@ -2080,7 +2080,9 @@ ${existingMedications.map((med) => `- ${med.medicationName} ${med.dosage} ${med.
 DOCUMENT TO ANALYZE:
 ${extractedText}
 
-Extract all medications from this document. For each medication, determine if it should consolidate with existing medications or be created as new entry.`;
+Extract all medications from this document. For each medication, determine if it should consolidate with existing medications or be created as new entry.
+
+IMPORTANT: Return ONLY the JSON response with no additional text, explanations, or commentary before or after the JSON.`;
 
     try {
       const startTime = Date.now();
