@@ -3775,6 +3775,8 @@ export const authenticationLogs = pgTable("authentication_logs", {
   // Security info
   ipAddress: text("ip_address").notNull(),
   userAgent: text("user_agent"),
+  browserInfo: text("browser_info"), // Browser name, version, etc.
+  deviceInfo: text("device_info"), // Device type, OS, etc.
   geolocation: jsonb("geolocation").$type<{
     country?: string;
     region?: string;
@@ -3786,6 +3788,8 @@ export const authenticationLogs = pgTable("authentication_logs", {
   // Session info
   sessionId: text("session_id"),
   sessionDuration: integer("session_duration"), // seconds
+  logoutType: text("logout_type"), // 'manual', 'timeout', 'forced', etc.
+  logoutReason: text("logout_reason"), // Reason for logout if applicable
   
   // MFA info
   mfaType: text("mfa_type"), // 'totp', 'sms', 'email'
@@ -3798,6 +3802,33 @@ export const authenticationLogs = pgTable("authentication_logs", {
   // Immutable timestamp
   eventTime: timestamp("event_time").defaultNow().notNull(),
 });
+
+// Authentication log insert schema and types
+export const insertAuthenticationLogSchema = createInsertSchema(authenticationLogs).pick({
+  userId: true,
+  username: true,
+  email: true,
+  healthSystemId: true,
+  eventType: true,
+  success: true,
+  failureReason: true,
+  ipAddress: true,
+  userAgent: true,
+  browserInfo: true,
+  deviceInfo: true,
+  geolocation: true,
+  sessionId: true,
+  sessionDuration: true,
+  logoutType: true,
+  logoutReason: true,
+  mfaType: true,
+  mfaSuccess: true,
+  riskScore: true,
+  riskFactors: true,
+});
+
+export type AuthenticationLog = typeof authenticationLogs.$inferSelect;
+export type InsertAuthenticationLog = z.infer<typeof insertAuthenticationLogSchema>;
 
 /**
  * Data Modification Audit Log

@@ -995,6 +995,19 @@ Preferred communication style: Simple, everyday language.
 - **ROOT CAUSE**: Database and schema.ts have diverged significantly - database represents production state while schema.ts contains fields that were never migrated to production
 - **STRATEGY**: Fixed queries to work with actual database structure rather than modifying production database
 
+### User Locations and Authentication Logs Schema Fix COMPLETED (January 18, 2025)
+- **CRITICAL LEARNING**: Database schema changes must ALWAYS be done through schema.ts followed by `npm run db:push`, never through manual SQL scripts
+- **USER LOCATIONS COLUMNS**: The columns `can_schedule`, `can_view_all_patients`, and `can_create_orders` were already defined in schema.ts but missing from database - requires db:push to sync
+- **AUTHENTICATION LOGS SCHEMA UPDATE**: Added missing columns to authenticationLogs table definition in schema.ts:
+  - `browserInfo` (TEXT) - Browser details for audit trail
+  - `deviceInfo` (TEXT) - Device information for security monitoring
+  - `logoutType` (TEXT) - Distinguish between manual logout, timeout, etc.
+  - `logoutReason` (TEXT) - Store reason for logout when applicable
+- **INSERT SCHEMA CREATED**: Added `insertAuthenticationLogSchema` and type exports (`AuthenticationLog`, `InsertAuthenticationLog`) that were missing
+- **PROPER METHODOLOGY**: Updated schema.ts first as single source of truth, then use Drizzle's push command to sync database
+- **IMPORTANT**: Avoided manual SQL scripts which cause schema drift between code and database
+- **NEXT STEP**: Run `npm run db:push` (requires manual intervention for interactive prompts)
+
 ### Critical Database Constraint Fixes COMPLETED (January 17, 2025)
 - **ALLERGIES TABLE FIX**: Made 'reaction' column nullable to allow NKDA (No Known Drug Allergies) documentation - fixed "null value in column 'reaction' violates not-null constraint" error
 - **DOCUMENT PROCESSING FIX**: Fixed attachment_extracted_content insert by using raw SQL with snake_case column names - fixed "null value in column 'content_type' violates not-null constraint" error
