@@ -185,7 +185,12 @@ Preferred communication style: Simple, everyday language.
   - Added `previous_date` TIMESTAMP - for tracking when previous value was recorded
   - Added `trend_direction` TEXT - for tracking if values are increasing/decreasing/stable
   - Added `percent_change` DECIMAL(5,2) - for storing percentage change from previous value
+  - Added `qc_flags` JSONB - for quality control flags (hemolyzed, lipemic, etc.)
   - Note: `ai_interpretation` JSONB column already existed
+- **IMAGING RESULTS SECOND INSERT FIX**: Fixed missing studyType field in second insert location:
+  - Updated unified-imaging-parser.ts line 813 insert statement to include studyType field
+  - Applied same fallback logic for study_type value generation
+  - This fixes "null value in column study_type" constraint violations
 
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system

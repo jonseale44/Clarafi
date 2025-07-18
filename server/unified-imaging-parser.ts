@@ -810,10 +810,16 @@ Return a JSON object with this exact structure:
               confidence: change.confidence,
             };
 
+            // Ensure study_type has a value (not null constraint)
+            const studyTypeValue = change.modality && change.body_part 
+              ? `${change.modality} ${change.body_part}`.trim()
+              : change.modality || 'Imaging Study';
+
             await db.insert(imagingResults).values({
               patientId,
               imagingOrderId: null,
               studyDate: new Date(change.study_date!),
+              studyType: studyTypeValue, // Add the missing studyType field
               modality: change.modality!,
               bodyPart: change.body_part!,
               laterality: change.laterality || null,
