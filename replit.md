@@ -1013,6 +1013,24 @@ Preferred communication style: Simple, everyday language.
 - **IMAGING PARSER FIX**: Removed all references to non-existent clinical_summary column from unified-imaging-parser.ts database inserts
 - **IMAGING COLUMN NAME FIX**: Fixed column name mismatches - schema.ts now uses readingRadiologist/performingFacility to match database columns reading_radiologist/performing_facility instead of radiologistName/facilityName
 
+### Document Upload Column Fix COMPLETED (January 18, 2025)
+- **ISSUE**: Document uploads failing with "column 'last_attempt' of relation 'document_processing_queue' does not exist"
+- **ROOT CAUSE**: Schema.ts defined `lastAttempt` field which Drizzle converts to `last_attempt`, but this column doesn't exist in database
+- **FIX**: Removed `lastAttempt` field from documentProcessingQueue table in schema.ts to match actual database structure
+- **PRODUCTION IMPACT**: Document upload and processing now works correctly
+
+### Appointments Table Date Column Fix COMPLETED (January 18, 2025)
+- **ISSUE**: Appointments failing to fetch with "column appointments.appointment_date does not exist"
+- **ROOT CAUSE**: Code was filtering by non-existent `appointment_date` column; appointments table uses `start_time` and `end_time` timestamp columns
+- **FIX**: Updated getAppointments method to filter using `start_time` instead of `appointment_date`, and extract date from `start_time` for display
+- **PRODUCTION IMPACT**: Appointment scheduling queries now work correctly
+
+### Attachment Content Type Column Fix COMPLETED (January 18, 2025)
+- **ISSUE**: Document analysis failing with "null value in column 'content_type' violates not-null constraint"
+- **ROOT CAUSE**: Database has required `content_type` column but schema.ts was missing it entirely, along with other columns
+- **FIX**: Added missing columns to attachmentExtractedContent schema: contentType (NOT NULL), pageNumber, structuredData, confidenceScore, extractionMethod
+- **PRODUCTION IMPACT**: Document upload and AI analysis workflow now functioning correctly
+
 ### Tier 1 Individual Practice Registration Enhancement COMPLETED (January 11, 2025)
 - **PRACTICE INFORMATION NOW OPTIONAL**: Successfully made all practice information fields (name, address, city, state, zip, phone) optional for tier 1 individual practice registration
 - **UNIQUE PRACTICE NAME GENERATION**: When practice name not provided, system generates unique name using format: "FirstName LastName, MD - Private Practice (timestamp)"

@@ -2153,8 +2153,8 @@ export class DatabaseStorage implements IStorage {
     patientId?: number;
   }) {
     let conditions = [
-      gte(appointments.appointmentDate, params.startDate.toISOString().split('T')[0]),
-      lte(appointments.appointmentDate, params.endDate.toISOString().split('T')[0])
+      gte(appointments.startTime, params.startDate.toISOString()),
+      lte(appointments.startTime, params.endDate.toISOString())
     ];
     
     if (params.providerId) {
@@ -2177,7 +2177,7 @@ export class DatabaseStorage implements IStorage {
         providerId: appointments.providerId,
         providerName: sql<string>`${users.firstName} || ' ' || ${users.lastName}`,
         locationId: appointments.locationId,
-        appointmentDate: appointments.appointmentDate,
+        appointmentDate: sql<string>`DATE(${appointments.startTime})`,
         appointmentTime: appointments.startTime,
         startTime: appointments.startTime,
         endTime: appointments.endTime,
@@ -2187,7 +2187,7 @@ export class DatabaseStorage implements IStorage {
         appointmentType: appointments.appointmentType,
         status: appointments.status,
         chiefComplaint: appointments.chiefComplaint,
-        notes: appointments.schedulingNotes,
+        notes: appointments.notes,
         aiPredictedDuration: sql<number>`NULL` // TODO: Get from prediction history
       })
       .from(appointments)
@@ -2197,7 +2197,7 @@ export class DatabaseStorage implements IStorage {
       ))
       .innerJoin(users, eq(appointments.providerId, users.id))
       .where(and(...conditions))
-      .orderBy(appointments.appointmentDate, appointments.startTime)
+      .orderBy(appointments.startTime)
       .execute();
       
     return results;

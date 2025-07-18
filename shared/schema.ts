@@ -2840,7 +2840,12 @@ export const patientAttachments = pgTable("patient_attachments", {
 export const attachmentExtractedContent = pgTable("attachment_extracted_content", {
   id: serial("id").primaryKey(),
   attachmentId: integer("attachment_id").references(() => patientAttachments.id).notNull().unique(),
+  pageNumber: integer("page_number"),
+  contentType: text("content_type").notNull(), // Required by database
   extractedText: text("extracted_text"),
+  structuredData: jsonb("structured_data"),
+  confidenceScore: decimal("confidence_score", { precision: 5, scale: 2 }),
+  extractionMethod: text("extraction_method"),
   aiGeneratedTitle: text("ai_generated_title"),
   documentType: text("document_type"), // "lab_results", "H&P", "discharge_summary", etc.
   processingStatus: text("processing_status").default("pending"), // "pending", "processing", "completed", "failed"
@@ -2855,9 +2860,9 @@ export const documentProcessingQueue = pgTable("document_processing_queue", {
   attachmentId: integer("attachment_id").references(() => patientAttachments.id).notNull(),
   status: text("status").default("queued"), // "queued", "processing", "completed", "failed"
   attempts: integer("attempts").default(0),
-  lastAttempt: timestamp("last_attempt"),
+  // Removed lastAttempt - doesn't exist in database
   
-  // Missing columns that exist in database
+  // Columns that exist in database
   priority: integer("priority").default(100),
   processorType: text("processor_type").notNull().default("document_analysis"), // Added NOT NULL with default
   processingMetadata: jsonb("processing_metadata"),

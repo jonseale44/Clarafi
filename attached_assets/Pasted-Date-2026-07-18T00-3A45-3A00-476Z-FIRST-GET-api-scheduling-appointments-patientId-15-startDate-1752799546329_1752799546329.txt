@@ -1,0 +1,49 @@
+Date=2026-07-18T00%3A45%3A00.476Z
+📍 [FIRST] GET /api/scheduling/appointments?patientId=15&startDate=2024-07-18T00%3A45%3A00.477Z&endDate=2026-07-18T00%3A45%3A00.477Z
+🔒 [TenantIsolation] User 5 accessing data for health system 14
+🔒 [TenantIsolation] User 5 accessing data for health system 14
+Error fetching appointments: error: column appointments.appointment_date does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getAppointments (/home/runner/workspace/server/storage.ts:2172:21)
+    at async <anonymous> (/home/runner/workspace/server/scheduling-routes.ts:35:26) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '228',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+Error fetching appointments: error: column appointments.appointment_date does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async DatabaseStorage.getAppointments (/home/runner/workspace/server/storage.ts:2172:21)
+    at async <anonymous> (/home/runner/workspace/server/scheduling-routes.ts:35:26) {
+  length: 128,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '228',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
