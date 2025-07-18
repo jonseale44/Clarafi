@@ -203,6 +203,20 @@ Preferred communication style: Simple, everyday language.
   - Applied same fallback logic for study_type value generation
   - This fixes "null value in column study_type" constraint violations
 
+### Scheduling System Column Fixes COMPLETED (January 18, 2025)
+- **APPOINTMENTS TABLE FIX**: Added missing columns causing scheduling failures:
+  - `provider_scheduled_duration` INTEGER - Duration provider has blocked for appointment
+  - `appointment_date` DATE - Date of the appointment (separate from time)
+- **PATIENT SCHEDULING PATTERNS FIX**: Added missing columns for AI predictions:
+  - `avg_visit_duration` DECIMAL(5,2) - Average visit duration for patient
+  - `no_show_rate` DECIMAL(5,2) - Patient's no-show percentage 
+  - `avg_arrival_delta` DECIMAL(5,2) - Average minutes early/late
+  - `avg_duration_by_type` JSONB - Appointment type to duration mapping
+- **TIMESTAMP COMPARISON FIX**: Fixed appointment conflict checking:
+  - Changed from invalid timestamp comparisons to proper date field comparisons
+  - Used SQL string comparisons for time fields stored as TEXT
+- **RESULT**: Scheduling system now functional with systematic column fixes applied
+
 ### Pricing Update (January 17, 2025)
 - **PRICING CORRECTION**: Updated individual provider pricing from $99/month to $149/month across the entire system
 - **TRIAL PERIOD CHANGE**: Updated free trial period from 30 days to 14 days for both tiers

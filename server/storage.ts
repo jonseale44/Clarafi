@@ -2479,32 +2479,32 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(patients, eq(appointments.patientId, patients.id))
       .where(and(
         eq(appointments.providerId, providerId),
-        sql`DATE(${appointments.startTime}) = ${appointmentDate}::date`,
+        eq(appointments.appointmentDate, appointmentDate),
         // Only check active appointments (not cancelled or no-show)
         notInArray(appointments.status, ['cancelled', 'no_show']),
         // Exclude the appointment being updated if provided
         excludeAppointmentId ? ne(appointments.id, excludeAppointmentId) : sql`true`,
-        // Check for time overlap
+        // Check for time overlap using string comparison for time fields
         or(
           // New appointment starts during existing appointment
           and(
-            lte(appointments.startTime, startTime),
-            gt(appointments.endTime, startTime)
+            sql`${appointments.startTime} <= ${startTime}`,
+            sql`${appointments.endTime} > ${startTime}`
           ),
           // New appointment ends during existing appointment
           and(
-            lt(appointments.startTime, endTime),
-            gte(appointments.endTime, endTime)
+            sql`${appointments.startTime} < ${endTime}`,
+            sql`${appointments.endTime} >= ${endTime}`
           ),
           // New appointment completely encompasses existing appointment
           and(
-            gte(appointments.startTime, startTime),
-            lte(appointments.endTime, endTime)
+            sql`${appointments.startTime} >= ${startTime}`,
+            sql`${appointments.endTime} <= ${endTime}`
           ),
           // Existing appointment completely encompasses new appointment
           and(
-            lte(appointments.startTime, startTime),
-            gte(appointments.endTime, endTime)
+            sql`${appointments.startTime} <= ${startTime}`,
+            sql`${appointments.endTime} >= ${endTime}`
           )
         )
       ))
