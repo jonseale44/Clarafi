@@ -1,0 +1,159 @@
+{
+  "lab_orders": {
+    "used": {
+      "order_id": [
+        "server/comprehensive-database-alignment.ts:275 - lab_order_id INTEGER REFERENCES lab_orders(id),",
+        "server/comprehensive-database-alignment.ts:371 - order_id INTEGER NOT NULL REFERENCES orders(id),",
+        "server/encounter-signature-validation.ts:309 - orderIds: unsignedOrders.map((o: any) => o.id)"
+      ],
+      "external_lab": [
+        "server/comprehensive-database-alignment.ts:253 - name: \"external_labs\",",
+        "server/comprehensive-database-alignment.ts:254 - sql: `CREATE TABLE IF NOT EXISTS external_labs (",
+        "server/external-lab-mock-service.ts:229 - export const externalLabMockRouter = createExternalLabMockRouter();"
+      ],
+      "provider_notes": [
+        "server/dashboard-routes.ts:204 - providerNotes: reviewNote || null,",
+        "server/imaging-order-processor.ts:80 - schedulingNotes: order.providerNotes || null",
+        "server/lab-order-processor-fixed.ts:66 - clinicalIndication: order.clinicalIndication || order.providerNotes || 'Laboratory testing as ordered',"
+      ],
+      "result_status": [
+        "server/dashboard-routes.ts:44 - eq(labResults.resultStatus, \"final\"),",
+        "server/dashboard-routes.ts:161 - status: labResults.resultStatus,",
+        "server/dashboard-routes.ts:172 - eq(labResults.resultStatus, \"final\"),"
+      ],
+      "results": [
+        "server/admin-clinic-import-routes.ts:54 - const results = await db.select()",
+        "server/admin-clinic-import-routes.ts:65 - res.json(results);",
+        "server/attachment-chart-processor.ts:112 - // Check results and log any failures"
+      ],
+      "special_instructions": [
+        "server/external-lab-mock-service.ts:23 - special_instructions: this.getSpecialInstructions(orderData.test_code)",
+        "shared/schema (copy).ts:1070 - specialInstructions: text(\"special_instructions\"),",
+        "shared/schema.ts:1070 - specialInstructions: text(\"special_instructions\"),"
+      ]
+    },
+    "unused": [
+      "abnormal_flags",
+      "stat_order"
+    ]
+  },
+  "imaging_results": {
+    "used": {
+      "encounter_id": [
+        "server/attachment-chart-processor.ts:321 - // Ensure encounterId is either a valid number or null",
+        "server/attachment-chart-processor.ts:323 - if (attachment.encounterId) {",
+        "server/attachment-chart-processor.ts:324 - if (typeof attachment.encounterId === 'number') {"
+      ],
+      "recommendations": [
+        "server/clinic-admin-verification-service.ts:61 - recommendations: string[];",
+        "server/clinic-admin-verification-service.ts:190 - recommendations: automatedResult.recommendations,",
+        "server/clinic-admin-verification-service.ts:191 - // Reviewer recommendations are stored in database for internal use only"
+      ],
+      "technique": [
+        "server/enhanced-note-generation-service.ts:531 - - Continue CBT techniques for anxiety management.",
+        "server/enhanced-note-generation-service.ts:583 - Patient Education: Summarize psychoeducation provided (e.g., \"Discussed medication side effects, importance of compliance, sleep hygiene techniques\").",
+        "server/template-prompt-generator.ts:185 - Generate a complete procedure note with indication, technique, findings, and post-procedure plan.`;"
+      ],
+      "procedure_code": [
+        "server/comprehensive-database-alignment.ts:616 - { table: \"surgical_history\", column: \"icd10_procedure_code\", sql: `ALTER TABLE surgical_history ADD COLUMN IF NOT EXISTS icd10_procedure_code TEXT;` },",
+        "server/fix-final-tables.ts:23 - { name: \"icd10_procedure_code\", sql: `ALTER TABLE surgical_history ADD COLUMN IF NOT EXISTS icd10_procedure_code TEXT;` },",
+        "shared/schema (copy).ts:1320 - icd10ProcedureCode: text(\"icd10_procedure_code\"),"
+      ]
+    },
+    "unused": [
+      "contrast_used",
+      "critical_findings",
+      "ordering_provider_id"
+    ]
+  },
+  "orders": {
+    "used": {
+      "order_date": [
+        "server/create-essential-tables.ts:124 - \"order_date\" timestamp DEFAULT CURRENT_TIMESTAMP,",
+        "server/routes.ts:1357 - orderDate: order.orderedAt,",
+        "server/test-patient-generator.ts:524 - orderDate: encounterDate.toISOString().split('T')[0],"
+      ],
+      "prescriber": [
+        "server/enhanced-medication-routes.ts:63 - prescriber: medication.prescriber,",
+        "server/enhanced-medication-routes.ts:227 - prescriber: req.body.prescriber || 'Manual Entry',",
+        "server/enhanced-medication-routes.ts:228 - prescriberId: (req as any).user?.id || null,"
+      ],
+      "start_date": [
+        "server/admin-user-routes.ts:278 - startDate: userLocations.startDate,",
+        "server/admin-user-routes.ts:391 - startDate: new Date().toISOString().split(\"T\")[0],",
+        "server/enhanced-medication-routes.ts:59 - startDate: medication.startDate,"
+      ],
+      "end_date": [
+        "server/admin-user-routes.ts:279 - endDate: userLocations.endDate,",
+        "server/enhanced-medication-routes.ts:60 - endDate: medication.endDate,",
+        "server/enhanced-medication-routes.ts:225 - endDate: req.body.endDate || null,"
+      ],
+      "frequency": [
+        "server/comprehensive-database-alignment.ts:55 - frequency JSONB,",
+        "server/comprehensive-database-alignment.ts:452 - edit_frequency INTEGER DEFAULT 1,",
+        "server/create-essential-tables.ts:130 - \"medication_frequency\" varchar(100),"
+      ],
+      "imaging_study_type": [
+        "server/create-essential-tables.ts:136 - \"imaging_study_type\" varchar(100),"
+      ],
+      "lab_test_name": [
+        "server/create-essential-tables.ts:134 - \"lab_test_name\" varchar(255),"
+      ],
+      "referral_reason": [
+        "server/create-essential-tables.ts:139 - \"referral_reason\" text,",
+        "shared/schema (copy).ts:1062 - referralReason: text(\"referral_reason\"),",
+        "shared/schema.ts:1062 - referralReason: text(\"referral_reason\"),"
+      ]
+    },
+    "unused": []
+  },
+  "medical_problems": {
+    "used": {},
+    "unused": [
+      "follow_up_date",
+      "original_problem_text",
+      "ai_confidence_score",
+      "problem_ranking",
+      "treatment_goals",
+      "outcome_measures"
+    ]
+  },
+  "encounters": {
+    "used": {
+      "encounter_date": [
+        "server/create-essential-tables.ts:102 - \"encounter_date\" timestamp DEFAULT CURRENT_TIMESTAMP,",
+        "server/gpt-lab-review-service.ts:220 - encounterDate: encounters.encounterDate,",
+        "server/gpt-lab-review-service.ts:224 - .orderBy(desc(encounters.encounterDate))"
+      ],
+      "template_id": [
+        "server/comprehensive-database-alignment.ts:482 - parent_template_id INTEGER REFERENCES user_note_templates(id),",
+        "server/comprehensive-database-alignment.ts:492 - template_id INTEGER NOT NULL REFERENCES user_note_templates(id) ON DELETE CASCADE,",
+        "server/comprehensive-database-alignment.ts:507 - template_id INTEGER NOT NULL REFERENCES user_note_templates(id) ON DELETE CASCADE,"
+      ],
+      "signed_by": [
+        "server/comprehensive-database-alignment.ts:359 - signed_by INTEGER NOT NULL REFERENCES users(id),",
+        "server/comprehensive-database-alignment.ts:372 - signed_by INTEGER NOT NULL REFERENCES users(id),",
+        "server/dashboard-routes.ts:253 - // signedBy: userId,"
+      ],
+      "visit_reason": [
+        "server/create-essential-tables.ts:104 - \"visit_reason\" text,",
+        "server/scheduling-routes.ts:371 - chiefComplaint: appointment.chiefComplaint || appointment.visitReason || '',",
+        "server/storage.ts:2603 - visitReason: appointments.visitReason,"
+      ],
+      "notes": [
+        "server/admin-verification-routes.ts:491 - const { decision, notes } = req.body;",
+        "server/admin-verification-routes.ts:502 - notes,",
+        "server/attachment-chart-processor.ts:466 - // Build notes including warnings and time context"
+      ],
+      "location_id": [
+        "server/admin-user-routes.ts:115 - locationId: locations.id,",
+        "server/admin-user-routes.ts:134 - if (row.locationId) {",
+        "server/admin-user-routes.ts:136 - id: row.locationId,"
+      ]
+    },
+    "unused": [
+      "voice_recording_url",
+      "billing_status"
+    ]
+  }
+}
