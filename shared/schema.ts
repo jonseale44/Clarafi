@@ -1487,6 +1487,141 @@ export const vitals = pgTable("vitals", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Electronic Signatures for e-prescribing compliance
+export const electronicSignatures = pgTable("electronic_signatures", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  encounterId: integer("encounter_id").references(() => encounters.id),
+  
+  // Signature data
+  signatureType: text("signature_type").notNull(), // 'medication', 'encounter', 'lab', 'controlled_substance'
+  signatureData: text("signature_data").notNull(), // Base64 encoded signature image or cryptographic signature
+  signatureMethod: text("signature_method").notNull(), // 'drawn', 'typed', 'biometric', 'cryptographic'
+  
+  // Two-factor authentication for controlled substances
+  twoFactorMethod: text("two_factor_method"), // 'sms', 'authenticator', 'biometric'
+  twoFactorVerified: boolean("two_factor_verified").default(false),
+  twoFactorTimestamp: timestamp("two_factor_timestamp"),
+  
+  // GPT-enhanced compliance tracking
+  complianceChecks: jsonb("compliance_checks").default({}), // GPT-analyzed compliance requirements met
+  deaComplianceLevel: text("dea_compliance_level"), // 'standard', 'epcs_ready', 'epcs_verified'
+  
+  // Audit trail
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  signedAt: timestamp("signed_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"), // For time-limited signatures
+  revokedAt: timestamp("revoked_at"),
+  revocationReason: text("revocation_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Pharmacy Master Data for e-prescribing
+export const pharmacies = pgTable("pharmacies", {
+  id: serial("id").primaryKey(),
+  
+  // Core identification
+  ncpdpId: text("ncpdp_id").notNull().unique(), // NCPDP Provider ID (7 digits)
+  npi: text("npi"), // National Provider Identifier (10 digits)
+  deaNumber: text("dea_number"), // DEA registration number
+  
+  // Pharmacy details
+  name: text("name").notNull(),
+  dbaName: text("dba_name"), // Doing Business As name
+  corporateName: text("corporate_name"), // Parent company
+  
+  // Location
+  address: text("address").notNull(),
+  address2: text("address2"),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  
+  // Contact information
+  phone: text("phone").notNull(),
+  fax: text("fax"),
+  email: text("email"),
+  website: text("website"),
+  
+  // Hours and services
+  hours: jsonb("hours").default({}), // {"monday": {"open": "09:00", "close": "18:00"}, ...}
+  is24Hour: boolean("is_24_hour").default(false),
+  services: text("services").array().default([]), // ['retail', 'compounding', 'specialty', 'mail_order']
+  
+  // E-prescribing capabilities
+  acceptsEprescribing: boolean("accepts_eprescribing").default(true),
+  acceptsControlledSubstances: boolean("accepts_controlled_substances").default(false),
+  preferredTransmissionMethod: text("preferred_transmission_method").default("surescripts"), // 'surescripts', 'fax', 'phone'
+  sureScriptsVersion: text("surescripts_version"), // '10.6', '6.0', etc.
+  
+  // GPT-enhanced pharmacy intelligence
+  specialtyTypes: text("specialty_types").array().default([]), // ['oncology', 'pediatric', 'fertility']
+  insuranceNetworks: jsonb("insurance_networks").default([]), // GPT-parsed accepted insurances
+  preferredForConditions: text("preferred_for_conditions").array().default([]), // GPT recommendations
+  
+  // Status and metadata
+  status: text("status").default("active"), // 'active', 'inactive', 'suspended'
+  verificationStatus: text("verification_status").default("pending"), // 'pending', 'verified', 'failed'
+  lastVerified: timestamp("last_verified"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Prescription Transmission Tracking
+export const prescriptionTransmissions = pgTable("prescription_transmissions", {
+  id: serial("id").primaryKey(),
+  
+  // References
+  medicationId: integer("medication_id").references(() => medications.id).notNull(),
+  orderId: integer("order_id").references(() => orders.id),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  providerId: integer("provider_id").references(() => users.id).notNull(),
+  pharmacyId: integer("pharmacy_id").references(() => pharmacies.id),
+  electronicSignatureId: integer("electronic_signature_id").references(() => electronicSignatures.id),
+  
+  // Transmission details
+  transmissionType: text("transmission_type").notNull(), // 'new_rx', 'refill', 'change', 'cancel'
+  transmissionMethod: text("transmission_method").notNull(), // 'surescripts', 'fax', 'print', 'phone'
+  messageId: text("message_id").unique(), // SureScripts message ID
+  
+  // NCPDP transaction data
+  ncpdpTransactionId: text("ncpdp_transaction_id"),
+  ncpdpVersion: text("ncpdp_version"), // 'SCRIPT 10.6', etc.
+  ncpdpMessageType: text("ncpdp_message_type"), // 'NEWRX', 'RXFILL', 'RXCHG', 'CANRX'
+  
+  // Status tracking
+  status: text("status").notNull().default("pending"), // 'pending', 'queued', 'transmitted', 'accepted', 'rejected', 'error'
+  statusHistory: jsonb("status_history").default([]), // Array of status changes with timestamps
+  
+  // Response data
+  pharmacyResponse: jsonb("pharmacy_response").default({}), // Full response from pharmacy
+  pharmacyNotes: text("pharmacy_notes"), // Human-readable notes from pharmacy
+  
+  // Error handling
+  errorCode: text("error_code"),
+  errorMessage: text("error_message"),
+  retryCount: integer("retry_count").default(0),
+  maxRetries: integer("max_retries").default(3),
+  
+  // GPT-enhanced tracking
+  gptAnalysis: jsonb("gpt_analysis").default({}), // GPT analysis of transmission issues
+  gptRecommendations: text("gpt_recommendations").array().default([]), // GPT suggestions for resolution
+  
+  // Timestamps
+  queuedAt: timestamp("queued_at"),
+  transmittedAt: timestamp("transmitted_at"),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  completedAt: timestamp("completed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Enhanced Medications with EMR-standard fields
 export const medications = pgTable("medications", {
   id: serial("id").primaryKey(),
@@ -1576,6 +1711,15 @@ export const medications = pgTable("medications", {
   pharmacyOrderId: text("pharmacy_order_id"), // External pharmacy reference
   insuranceAuthStatus: text("insurance_auth_status"), // 'approved', 'pending', 'denied'
   priorAuthRequired: boolean("prior_auth_required").default(false),
+  
+  // E-prescribing fields
+  deaSchedule: text("dea_schedule"), // 'CI', 'CII', 'CIII', 'CIV', 'CV', null for non-controlled
+  pharmacyNcpdpId: text("pharmacy_ncpdp_id"), // NCPDP Provider ID for transmission
+  transmissionStatus: text("transmission_status"), // 'pending', 'transmitted', 'accepted', 'rejected', 'error'
+  transmissionTimestamp: timestamp("transmission_timestamp"),
+  transmissionMessageId: text("transmission_message_id"), // SureScripts transaction ID
+  transmissionErrors: jsonb("transmission_errors").default([]), // Array of transmission errors
+  electronicSignatureId: integer("electronic_signature_id").references(() => electronicSignatures.id),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -2523,6 +2667,85 @@ export const medicalProblemsRelations = relations(medicalProblems, ({ one }) => 
   }),
 }));
 
+export const medicationsRelations = relations(medications, ({ one, many }) => ({
+  patient: one(patients, {
+    fields: [medications.patientId],
+    references: [patients.id],
+  }),
+  encounter: one(encounters, {
+    fields: [medications.encounterId],
+    references: [encounters.id],
+  }),
+  prescriber: one(users, {
+    fields: [medications.prescriberId],
+    references: [users.id],
+  }),
+  firstEncounter: one(encounters, {
+    fields: [medications.firstEncounterId],
+    references: [encounters.id],
+  }),
+  lastUpdatedEncounter: one(encounters, {
+    fields: [medications.lastUpdatedEncounterId],
+    references: [encounters.id],
+  }),
+  extractedFromAttachment: one(patientAttachments, {
+    fields: [medications.extractedFromAttachmentId],
+    references: [patientAttachments.id],
+  }),
+  enteredByUser: one(users, {
+    fields: [medications.enteredBy],
+    references: [users.id],
+  }),
+  electronicSignature: one(electronicSignatures, {
+    fields: [medications.electronicSignatureId],
+    references: [electronicSignatures.id],
+  }),
+  transmissions: many(prescriptionTransmissions),
+}));
+
+export const electronicSignaturesRelations = relations(electronicSignatures, ({ one, many }) => ({
+  user: one(users, {
+    fields: [electronicSignatures.userId],
+    references: [users.id],
+  }),
+  encounter: one(encounters, {
+    fields: [electronicSignatures.encounterId],
+    references: [encounters.id],
+  }),
+  medications: many(medications),
+}));
+
+export const pharmaciesRelations = relations(pharmacies, ({ many }) => ({
+  prescriptionTransmissions: many(prescriptionTransmissions),
+}));
+
+export const prescriptionTransmissionsRelations = relations(prescriptionTransmissions, ({ one }) => ({
+  medication: one(medications, {
+    fields: [prescriptionTransmissions.medicationId],
+    references: [medications.id],
+  }),
+  order: one(orders, {
+    fields: [prescriptionTransmissions.orderId],
+    references: [orders.id],
+  }),
+  patient: one(patients, {
+    fields: [prescriptionTransmissions.patientId],
+    references: [patients.id],
+  }),
+  provider: one(users, {
+    fields: [prescriptionTransmissions.providerId],
+    references: [users.id],
+  }),
+  pharmacy: one(pharmacies, {
+    fields: [prescriptionTransmissions.pharmacyId],
+    references: [pharmacies.id],
+  }),
+  electronicSignature: one(electronicSignatures, {
+    fields: [prescriptionTransmissions.electronicSignatureId],
+    references: [electronicSignatures.id],
+  }),
+}));
+
 export const patientOrderPreferencesRelations = relations(patientOrderPreferences, ({ one }) => ({
   patient: one(patients, {
     fields: [patientOrderPreferences.patientId],
@@ -2820,6 +3043,97 @@ export const insertPatientOrderPreferencesSchema = createInsertSchema(patientOrd
 
 export type PatientOrderPreferences = typeof patientOrderPreferences.$inferSelect;
 export type InsertPatientOrderPreferences = z.infer<typeof insertPatientOrderPreferencesSchema>;
+
+// Signed Orders schema and types
+export const insertSignedOrderSchema = createInsertSchema(signedOrders).pick({
+  orderId: true,
+  patientId: true,
+  encounterId: true,
+  orderType: true,
+  deliveryMethod: true,
+  deliveryStatus: true,
+  deliveryAttempts: true,
+  lastDeliveryAttempt: true,
+  deliveryError: true,
+  canChangeDelivery: true,
+  deliveryLockReason: true,
+  originalDeliveryMethod: true,
+  deliveryChanges: true,
+  signedAt: true,
+  signedBy: true,
+});
+
+export type SignedOrder = typeof signedOrders.$inferSelect;
+export type InsertSignedOrder = z.infer<typeof insertSignedOrderSchema>;
+
+// Electronic Signature schema and types
+export const insertElectronicSignatureSchema = createInsertSchema(electronicSignatures).pick({
+  userId: true,
+  encounterId: true,
+  signatureType: true,
+  signatureString: true,
+  signatureCanvas: true,
+  certificationText: true,
+  ipAddress: true,
+  userAgent: true,
+  authenticationMethod: true,
+  twoFactorUsed: true,
+  deaSignature: true,
+});
+
+export type ElectronicSignature = typeof electronicSignatures.$inferSelect;
+export type InsertElectronicSignature = z.infer<typeof insertElectronicSignatureSchema>;
+
+// Pharmacy schema and types
+export const insertPharmacySchema = createInsertSchema(pharmacies).pick({
+  ncpdpId: true,
+  npi: true,
+  name: true,
+  address: true,
+  city: true,
+  state: true,
+  zipCode: true,
+  phone: true,
+  fax: true,
+  email: true,
+  pharmacyType: true,
+  acceptsEprescribe: true,
+  acceptsControlled: true,
+  preferredForControls: true,
+  hours: true,
+  acceptsCompounding: true,
+  compoundingLevel: true,
+  healthSystemId: true,
+});
+
+export type Pharmacy = typeof pharmacies.$inferSelect;
+export type InsertPharmacy = z.infer<typeof insertPharmacySchema>;
+
+// Prescription Transmission schema and types
+export const insertPrescriptionTransmissionSchema = createInsertSchema(prescriptionTransmissions).pick({
+  medicationId: true,
+  orderId: true,
+  patientId: true,
+  providerId: true,
+  pharmacyId: true,
+  transmissionMethod: true,
+  transmissionStatus: true,
+  surescriptsMessageId: true,
+  surescriptsThreadId: true,
+  ncpdpVersion: true,
+  requestPayload: true,
+  responsePayload: true,
+  pharmacyResponse: true,
+  refillRequestId: true,
+  electronicSignatureId: true,
+  printedCopy: true,
+  faxedCopy: true,
+  errorMessage: true,
+  retryCount: true,
+});
+
+export type PrescriptionTransmission = typeof prescriptionTransmissions.$inferSelect;
+export type InsertPrescriptionTransmission = z.infer<typeof insertPrescriptionTransmissionSchema>;
 
 // Patient Attachments
 export const patientAttachments = pgTable("patient_attachments", {
