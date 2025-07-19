@@ -1148,10 +1148,14 @@ export const scheduleExceptions = pgTable("schedule_exceptions", {
 
 // Signatures
 export const signatures = pgTable("signatures", {
-  id: varchar("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  signatureData: text("signature_data").notNull(),
+  id: serial("id").primaryKey(),
+  encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  signedBy: integer("signed_by").references(() => users.id).notNull(),
+  signatureType: text("signature_type").notNull(),
   signedAt: timestamp("signed_at").defaultNow(),
+  signatureData: text("signature_data"),
+  ipAddress: text("ip_address"),
+  attestationText: text("attestation_text"),
 });
 
 // Unified Encounters (replaces dual table system)
@@ -2312,18 +2316,53 @@ export const orders = pgTable("orders", {
   approvedBy: integer("approved_by").references(() => users.id),
   approvedAt: timestamp("approved_at"),
   
-  // Critical missing columns from database (actively used)
-  prescriber: text("prescriber"), // Prescribing provider name (147 references)
-  orderDate: timestamp("order_date"), // Order date (24 references)
-  startDate: timestamp("start_date"), // Start date (31 references)
-  endDate: timestamp("end_date"), // End date (11 references)
-  frequency: text("frequency"), // Dosing frequency (87 references)
-  imagingStudyType: text("imaging_study_type"), // Imaging type (12 references)
-  labTestName: text("lab_test_name"), // Lab test name (16 references)
-  referralReason: text("referral_reason"), // Referral reason (7 references)
+  // Database columns that were missing from schema
+  prescriber: text("prescriber"), // Prescribing provider name
+  prescriberId: integer("prescriber_id").references(() => users.id),
+  orderDate: timestamp("order_date").defaultNow(),
+  status: text("status").default("pending"), // Separate from order_status
+  
+  // Legacy medication fields from database
+  medicationDosage: text("medication_dosage"),
+  medicationRoute: text("medication_route"), 
+  medicationFrequency: text("medication_frequency"),
+  medicationDuration: text("medication_duration"),
+  medicationQuantity: integer("medication_quantity"),
+  medicationRefills: integer("medication_refills"),
+  
+  // Legacy lab fields from database
+  labTestName: text("lab_test_name"),
+  labTestCode: text("lab_test_code"),
+  
+  // Legacy imaging fields from database
+  imagingStudyType: text("imaging_study_type"),
+  imagingBodyPart: text("imaging_body_part"),
+  
+  // Legacy referral fields from database  
+  referralSpecialty: text("referral_specialty"),
+  referralReason: text("referral_reason"),
+  
+  // Additional database fields
+  instructions: text("instructions"),
+  diagnosisCodes: text("diagnosis_codes").array(),
+  ndcCode: text("ndc_code"),
+  route: text("route"),
+  frequency: text("frequency"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  indication: text("indication"),
+  imagingOrderId: integer("imaging_order_id"),
+  externalOrderId: text("external_order_id"),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Session table for express-session (missing from schema)
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
 });
 
 // Patient Order Delivery Preferences
@@ -2524,10 +2563,7 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
     fields: [encounters.appointmentId],
     references: [appointments.id],
   }),
-  signature: one(signatures, {
-    fields: [encounters.signatureId],
-    references: [signatures.id],
-  }),
+  signatures: many(signatures),
   vitals: many(vitals),
   medications: many(medications),
   diagnoses: many(diagnoses),
@@ -2540,11 +2576,14 @@ export const encountersRelations = relations(encounters, ({ one, many }) => ({
 // Replaced by appointmentsRelationsEnhanced below
 
 export const signaturesRelations = relations(signatures, ({ one, many }) => ({
-  user: one(users, {
-    fields: [signatures.userId],
+  signedByUser: one(users, {
+    fields: [signatures.signedBy],
     references: [users.id],
   }),
-  encounters: many(encounters),
+  encounter: one(encounters, {
+    fields: [signatures.encounterId],
+    references: [encounters.id],
+  }),
 }));
 
 export const labOrdersRelations = relations(labOrders, ({ one, many }) => ({

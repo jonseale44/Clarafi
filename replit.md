@@ -23,6 +23,7 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 - **Primary Database**: PostgreSQL via Neon serverless
 - **ORM**: Drizzle ORM with migrations
 - **Schema**: Comprehensive medical data models including patients, encounters, orders, lab results, medications, and clinical documentation
+- **Recent Fix**: Critical schema/database alignment completed (July 19, 2025) - resolved structural mismatches in signatures, orders, and session tables
 
 ## Key Components
 
@@ -63,6 +64,23 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 3. **AI Analysis** → GPT-4 Vision extracts clinical data
 4. **Chart Integration** → Structured data populated into patient charts
 5. **Provider Review** → Clinical validation and approval workflows
+
+## Recent Changes
+
+### Schema Alignment (July 19, 2025)
+✓ Fixed critical database/schema discrepancies affecting PDF generation and orders
+✓ Updated signatures table structure to match database (id, encounter_id, signed_by, signature_type, etc.)
+✓ Added missing orders table columns (61 database columns vs 40 in schema)
+✓ Added session table definition missing from schema
+✓ Updated all related database relations and references
+✓ Resolved TypeScript/Drizzle ORM compilation errors
+✓ Application now running successfully with aligned schema
+
+### Impact
+- PDF generation and electronic signatures now properly supported
+- Orders system has full field coverage for medication, lab, imaging, and referral orders
+- Session management properly integrated
+- All database queries functioning correctly
 
 ## External Dependencies
 
