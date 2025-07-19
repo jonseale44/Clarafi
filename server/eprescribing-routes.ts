@@ -147,9 +147,9 @@ router.post('/api/eprescribing/pharmacy/validate', requireAuth, async (req, res)
     console.log('✅ [EPrescribing] Validating pharmacy capability');
     const { pharmacyId, requirements } = req.body;
 
-    // For Google Places pharmacies (string IDs starting with ChI...), assume basic capabilities
-    if (typeof pharmacyId === 'string' && !pharmacyId.match(/^\d+$/)) {
-      console.log('🌐 [EPrescribing] Google Places pharmacy - assuming basic capabilities');
+    // For Google Places pharmacies (string IDs starting with google_), skip validation
+    if (typeof pharmacyId === 'string' && pharmacyId.startsWith('google_')) {
+      console.log('🌐 [EPrescribing] Google Places pharmacy - skipping validation');
       return res.json({
         canFill: true,
         issues: [],
@@ -234,13 +234,14 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
       // Transform Google Places results to our pharmacy format
       if (googleResults.length > 0) {
         const transformedPharmacies = googleResults.map(place => ({
-          id: place.place_id, // Use place_id as unique identifier
+          id: `google_${place.place_id}`, // Prefix with 'google_' to distinguish from database IDs
           name: place.name,
           address: place.vicinity || place.formatted_address?.split(',')[0] || '',
           city: place.formatted_address?.split(',')[1]?.trim() || city || 'Unknown',
           state: place.formatted_address?.split(',')[2]?.trim()?.split(' ')[0] || state || 'TX',
           zipCode: place.formatted_address?.match(/\d{5}/)?.[0] || '00000',
           phone: place.formatted_phone_number || '',
+          fax: null, // Google Places doesn't provide fax numbers
           pharmacyType: 'retail',
           acceptsEprescribe: true, // Most modern pharmacies accept e-prescribe
           acceptsControlled: place.types?.includes('pharmacy'), // Assume true pharmacies can handle controlled
@@ -280,13 +281,14 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
       console.log('🔍 [Pharmacy Search] No local pharmacies, returning mock data');
       const mockPharmacies = [
         {
-          id: 'mock-cvs-1',
+          id: 'google_mock-cvs-1',
           name: 'CVS Pharmacy',
           address: '123 Main Street',
           city: 'Waco',
           state: 'TX',
           zipCode: '76701',
           phone: '(254) 555-0100',
+          fax: '(254) 555-0101',
           pharmacyType: 'retail',
           acceptsEprescribe: true,
           acceptsControlled: true,
@@ -296,13 +298,14 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
           ncpdpId: null
         },
         {
-          id: 'mock-walgreens-1',
+          id: 'google_mock-walgreens-1',
           name: 'Walgreens',
           address: '456 Oak Avenue',
           city: 'Waco',
           state: 'TX',
           zipCode: '76702',
           phone: '(254) 555-0200',
+          fax: '(254) 555-0201',
           pharmacyType: 'retail',
           acceptsEprescribe: true,
           acceptsControlled: true,
@@ -312,13 +315,14 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
           ncpdpId: null
         },
         {
-          id: 'mock-heb-1',
+          id: 'google_mock-heb-1',
           name: 'HEB Pharmacy',
           address: '789 Valley Mills Dr',
           city: 'Waco',
           state: 'TX',
           zipCode: '76710',
           phone: '(254) 555-0300',
+          fax: '(254) 555-0301',
           pharmacyType: 'retail',
           acceptsEprescribe: true,
           acceptsControlled: false,
