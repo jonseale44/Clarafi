@@ -342,19 +342,19 @@ Provide your response as JSON with this structure:
     const recommendations: string[] = [];
 
     // Check e-prescribing capability
-    if (!pharmacy.acceptsEprescribe) {
+    if (!pharmacy.acceptsEprescribing) {
       issues.push('Pharmacy does not accept electronic prescriptions');
       recommendations.push('Print prescription for manual delivery or select e-prescribe capable pharmacy');
     }
 
     // Check controlled substance capability
-    if (requirements.hasControlled && !pharmacy.acceptsControlled) {
+    if (requirements.hasControlled && !pharmacy.acceptsControlledSubstances) {
       issues.push('Pharmacy cannot dispense controlled substances');
       recommendations.push('Select a pharmacy authorized for controlled substances');
     }
 
     // Check compounding capability
-    if (requirements.needsCompounding && !pharmacy.acceptsCompounding) {
+    if (requirements.needsCompounding && pharmacy.services && !pharmacy.services.includes('compounding')) {
       issues.push('Pharmacy does not offer compounding services');
       recommendations.push('Select a compounding pharmacy');
     }

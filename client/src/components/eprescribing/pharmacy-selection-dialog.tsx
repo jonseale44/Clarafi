@@ -51,9 +51,9 @@ interface Pharmacy {
   phone?: string;
   fax?: string;
   pharmacyType: string;
-  acceptsEprescribe: boolean;
-  acceptsControlled: boolean;
-  acceptsCompounding: boolean;
+  acceptsEprescribing: boolean;
+  acceptsControlledSubstances: boolean;
+  services?: string[];
   hours?: string;
   distance?: number;
 }
@@ -255,14 +255,14 @@ export function PharmacySelectionDialog({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-            {pharmacy.acceptsEprescribe && (
+            {pharmacy.acceptsEprescribing && (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 E-Prescribe
               </Badge>
             )}
             {isControlled && (
-              pharmacy.acceptsControlled ? (
+              pharmacy.acceptsControlledSubstances ? (
                 <Badge variant="outline" className="text-green-600">
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   DEA
