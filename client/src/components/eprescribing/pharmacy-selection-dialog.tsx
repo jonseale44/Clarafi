@@ -128,7 +128,7 @@ export function PharmacySelectionDialog({
   // Validate pharmacy capability
   const validatePharmacyMutation = useMutation({
     mutationFn: async (pharmacyId: string | number) => {
-      return apiRequest('POST', '/api/eprescribing/pharmacy/validate', {
+      const response = await apiRequest('POST', '/api/eprescribing/pharmacy/validate', {
         pharmacyId,
         requirements: {
           hasControlled: isControlled,
@@ -136,6 +136,7 @@ export function PharmacySelectionDialog({
           medications: [], // Would include medication details
         },
       });
+      return response.json();
     },
   });
 

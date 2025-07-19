@@ -229,101 +229,35 @@ Provide your response as JSON with this structure:
     location?: { lat: number; lng: number },
     preferredId?: number
   ): Promise<Pharmacy[]> {
-    // For now, get all active pharmacies
-    // In production, this would use geospatial queries
-    const pharmacyList = await db.select({
-      id: pharmacies.id,
-      ncpdpId: pharmacies.ncpdpId,
-      npi: pharmacies.npi,
-      deaNumber: pharmacies.deaNumber,
-      googlePlaceId: pharmacies.googlePlaceId,
-      name: pharmacies.name,
-      dbaName: pharmacies.dbaName,
-      corporateName: pharmacies.corporateName,
-      address: pharmacies.address,
-      address2: pharmacies.address2,
-      city: pharmacies.city,
-      state: pharmacies.state,
-      zipCode: pharmacies.zipCode,
-      latitude: pharmacies.latitude,
-      longitude: pharmacies.longitude,
-      phone: pharmacies.phone,
-      fax: pharmacies.fax,
-      email: pharmacies.email,
-      website: pharmacies.website,
-      hours: pharmacies.hours,
-      is24Hour: pharmacies.is24Hour,
-      services: pharmacies.services,
-      acceptsEprescribing: pharmacies.acceptsEprescribing,
-      acceptsControlledSubstances: pharmacies.acceptsControlledSubstances,
-      preferredTransmissionMethod: pharmacies.preferredTransmissionMethod,
-      sureScriptsVersion: pharmacies.sureScriptsVersion,
-      specialtyTypes: pharmacies.specialtyTypes,
-      insuranceNetworks: pharmacies.insuranceNetworks,
-      preferredForConditions: pharmacies.preferredForConditions,
-      status: pharmacies.status,
-      verificationStatus: pharmacies.verificationStatus,
-      lastVerified: pharmacies.lastVerified,
-      healthSystemId: pharmacies.healthSystemId,
-      createdAt: pharmacies.createdAt,
-      updatedAt: pharmacies.updatedAt,
-    })
-      .from(pharmacies)
-      .where(eq(pharmacies.status, 'active'))
-      .limit(10);
+    try {
+      // For now, get all active pharmacies
+      // In production, this would use geospatial queries
+      const pharmacyList = await db.select()
+        .from(pharmacies)
+        .where(eq(pharmacies.status, 'active'))
+        .limit(10);
 
-    // If preferred pharmacy specified, ensure it's included
-    if (preferredId) {
-      const hasPreferred = pharmacyList.some(p => p.id === preferredId);
-      
-      if (!hasPreferred) {
-        const [preferred] = await db.select({
-          id: pharmacies.id,
-          ncpdpId: pharmacies.ncpdpId,
-          npi: pharmacies.npi,
-          deaNumber: pharmacies.deaNumber,
-          googlePlaceId: pharmacies.googlePlaceId,
-          name: pharmacies.name,
-          dbaName: pharmacies.dbaName,
-          corporateName: pharmacies.corporateName,
-          address: pharmacies.address,
-          address2: pharmacies.address2,
-          city: pharmacies.city,
-          state: pharmacies.state,
-          zipCode: pharmacies.zipCode,
-          latitude: pharmacies.latitude,
-          longitude: pharmacies.longitude,
-          phone: pharmacies.phone,
-          fax: pharmacies.fax,
-          email: pharmacies.email,
-          website: pharmacies.website,
-          hours: pharmacies.hours,
-          is24Hour: pharmacies.is24Hour,
-          services: pharmacies.services,
-          acceptsEprescribing: pharmacies.acceptsEprescribing,
-          acceptsControlledSubstances: pharmacies.acceptsControlledSubstances,
-          preferredTransmissionMethod: pharmacies.preferredTransmissionMethod,
-          sureScriptsVersion: pharmacies.sureScriptsVersion,
-          specialtyTypes: pharmacies.specialtyTypes,
-          insuranceNetworks: pharmacies.insuranceNetworks,
-          preferredForConditions: pharmacies.preferredForConditions,
-          status: pharmacies.status,
-          verificationStatus: pharmacies.verificationStatus,
-          lastVerified: pharmacies.lastVerified,
-          healthSystemId: pharmacies.healthSystemId,
-          createdAt: pharmacies.createdAt,
-          updatedAt: pharmacies.updatedAt,
-        })
-          .from(pharmacies)
-          .where(eq(pharmacies.id, preferredId));
+      // If preferred pharmacy specified, ensure it's included
+      if (preferredId) {
+        const hasPreferred = pharmacyList.some(p => p.id === preferredId);
         
-        if (preferred) {
-          pharmacyList.unshift(preferred);
+        if (!hasPreferred) {
+          const [preferred] = await db.select()
+            .from(pharmacies)
+            .where(eq(pharmacies.id, preferredId));
+          
+          if (preferred) {
+            pharmacyList.unshift(preferred);
+          }
         }
       }
-    }
 
-    return pharmacyList;
+      return pharmacyList;
+    } catch (error) {
+      console.error('❌ [PharmacyIntelligence] Error getting nearby pharmacies:', error);
+      // Return empty array if no pharmacies found
+      return [];
+    }
   }
 
   /**

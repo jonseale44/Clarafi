@@ -159,6 +159,21 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### E-Prescribing Pharmacy Selection Fixes (January 19, 2025)
+- **CRITICAL BUGS FIXED**: Fixed multiple issues preventing pharmacy selection and AI recommendations from working
+- **ISSUE 1**: validatePharmacyMutation was not parsing JSON response properly
+- **SOLUTION 1**: Added `.json()` call to properly parse the API response before returning from mutation
+- **ISSUE 2**: getNearbyPharmacies method was failing with "Cannot convert undefined or null to object" when pharmacy database was empty
+- **SOLUTION 2**: Simplified getNearbyPharmacies to use standard db.select() syntax and added try-catch error handling
+- **ISSUE 3**: getAlternativePharmacies was failing with null/undefined arrays
+- **SOLUTION 3**: Added proper array validation and filtering for alternative pharmacy IDs
+- **PRODUCTION STATUS**: 
+  - Google Places pharmacy search and saving working correctly
+  - Two pharmacies successfully saved: Eagle Drug (ID: 2) and Walmart Pharmacy (ID: 3)
+  - Pharmacy validation correctly skips Google Places pharmacies during selection
+  - AI recommendations now handle empty pharmacy database gracefully
+- **HYBRID APPROACH VALIDATED**: System successfully uses Google Places API for discovery + organic database building
+
 ### One-Click Prescribing Workflow Implementation (January 19, 2025)
 - **CRITICAL WORKFLOW CHANGE**: Implemented streamlined one-click prescribing where pharmacy selection happens BEFORE signing
 - **PREVIOUS WORKFLOW**: Sign medication → Then send to pharmacy (two separate steps)
