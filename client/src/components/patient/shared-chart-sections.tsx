@@ -339,6 +339,24 @@ export function SharedChartSections({
       case "appointments":
         return <AppointmentsSection patientId={patientId} />;
       
+      case "prescription-history":
+        const PrescriptionHistorySection = React.lazy(() => import("./prescription-history-section"));
+        return (
+          <React.Suspense fallback={
+            <div className="emr-tight-spacing">
+              <Card>
+                <CardContent className="pt-3 emr-card-content-tight">
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-blue-600"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          }>
+            <PrescriptionHistorySection patientId={patientId} />
+          </React.Suspense>
+        );
+      
       default:
         return <div>Section not found</div>;
     }

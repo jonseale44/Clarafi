@@ -635,6 +635,83 @@ router.get('/api/eprescribing/transmissions/:patientId', requireAuth, tenantIsol
   }
 });
 
+// Retry failed transmission
+router.post('/api/eprescribing/transmission/:transmissionId/retry', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const transmissionId = parseInt(req.params.transmissionId);
+
+    // Get the transmission record
+    const [transmission] = await db.select()
+      .from(prescriptionTransmissions)
+      .where(eq(prescriptionTransmissions.id, transmissionId));
+
+    if (!transmission) {
+      return res.status(404).json({ error: 'Transmission not found' });
+    }
+
+    // Validate patient belongs to health system
+    const [patient] = await db.select()
+      .from(patients)
+      .where(and(
+        eq(patients.id, transmission.patientId),
+        eq(patients.healthSystemId, req.userHealthSystemId!)
+      ));
+
+    if (!patient) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Only allow retry for failed transmissions
+    if (transmission.transmissionStatus !== 'failed') {
+      return res.status(400).json({ error: 'Can only retry failed transmissions' });
+    }
+
+    // Get medication and pharmacy data
+    const [medication] = await db.select()
+      .from(medications)
+      .where(eq(medications.id, transmission.medicationId));
+
+    const [pharmacy] = await db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.id, transmission.pharmacyId!));
+
+    if (!medication || !pharmacy) {
+      return res.status(400).json({ error: 'Missing medication or pharmacy data' });
+    }
+
+    // Retry the transmission based on the original method
+    let result;
+    if (transmission.transmissionMethod === 'electronic') {
+      result = await transmissionService.transmitElectronic(medication, pharmacy, patient, req.user!);
+    } else if (transmission.transmissionMethod === 'fax') {
+      // Generate PDF and send fax
+      const pdfBuffer = await transmissionService.generatePrescriptionPDF(medication, patient, req.user!);
+      result = await transmissionService.transmitFax(medication, pharmacy, patient, req.user!, pdfBuffer);
+    } else {
+      return res.status(400).json({ error: 'Invalid transmission method for retry' });
+    }
+
+    // Update the transmission record with retry information
+    await db.update(prescriptionTransmissions)
+      .set({
+        transmissionStatus: 'pending',
+        transmissionMetadata: {
+          ...transmission.transmissionMetadata as any,
+          retryAttempt: ((transmission.transmissionMetadata as any)?.retryAttempt || 0) + 1,
+          retryInitiatedAt: new Date().toISOString(),
+          retryInitiatedBy: req.user!.username
+        },
+        updatedAt: new Date()
+      })
+      .where(eq(prescriptionTransmissions.id, transmissionId));
+
+    res.json({ success: true, message: 'Transmission queued for retry' });
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error retrying transmission:', error);
+    res.status(500).json({ error: 'Failed to retry transmission' });
+  }
+});
+
 // Get transmission status
 router.get('/api/eprescribing/transmission/:id/status', requireAuth, async (req, res) => {
   try {

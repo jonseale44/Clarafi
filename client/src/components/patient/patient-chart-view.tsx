@@ -31,12 +31,13 @@ const chartSections = [
   { id: "labs", label: "Labs", icon: null },
   { id: "vitals", label: "Vitals", icon: null },
   { id: "imaging", label: "Imaging", icon: null },
-  { id: "documents", label: "Patient Documents", icon: null },
   { id: "family-history", label: "Family History", icon: null },
   { id: "social-history", label: "Social History", icon: null },
   { id: "surgical-history", label: "Surgical History", icon: null },
   { id: "attachments", label: "Attachments", icon: null },
   { id: "appointments", label: "Appointments", icon: null },
+  { id: "documents", label: "Patient Documents", icon: null },
+  { id: "prescription-history", label: "Prescription History", icon: null },
 
 ];
 

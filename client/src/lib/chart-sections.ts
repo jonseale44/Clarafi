@@ -103,22 +103,12 @@ export const CHART_SECTIONS: ChartSection[] = [
     expandedWidth: "w-[500px]"
   },
   {
-    id: "documents",
-    label: "Patient Documents",
-    icon: FileText,
-    contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
-    roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 8,
-    allowExpanded: true,
-    expandedWidth: "w-[800px]"
-  },
-  {
     id: "family-history",
     label: "Family History",
     icon: Users,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
     roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 9,
+    priority: 8,
     allowExpanded: true,
     expandedWidth: "w-96"
   },
@@ -128,7 +118,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     icon: Users,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
     roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 10,
+    priority: 9,
     allowExpanded: true,
     expandedWidth: "w-96"
   },
@@ -138,7 +128,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     icon: History,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
     roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 11,
+    priority: 10,
     allowExpanded: true,
     expandedWidth: "w-[500px]"
   },
@@ -148,7 +138,7 @@ export const CHART_SECTIONS: ChartSection[] = [
     icon: Paperclip,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
     roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 12,
+    priority: 11,
     allowExpanded: true,
     expandedWidth: "w-[600px]"
   },
@@ -158,9 +148,29 @@ export const CHART_SECTIONS: ChartSection[] = [
     icon: Calendar,
     contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
     roles: ['admin', 'provider', 'nurse', 'ma'],
-    priority: 13,
+    priority: 12,
     allowExpanded: true,
     expandedWidth: "w-96"
+  },
+  {
+    id: "documents",
+    label: "Patient Documents",
+    icon: FileText,
+    contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
+    priority: 13,
+    allowExpanded: true,
+    expandedWidth: "w-[800px]"
+  },
+  {
+    id: "prescription-history",
+    label: "Prescription History",
+    icon: FileText,
+    contexts: ['patient-chart', 'provider-encounter', 'nurse-encounter'],
+    roles: ['admin', 'provider', 'nurse', 'ma'],
+    priority: 14,
+    allowExpanded: true,
+    expandedWidth: "w-[600px]"
   },
   // Nursing-specific sections
   {
