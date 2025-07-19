@@ -10,7 +10,7 @@ import {
   type Patient,
   type Medication
 } from '../shared/schema.js';
-import { eq, and, or, sql, desc, isNull } from 'drizzle-orm';
+import { eq, and, or, sql, desc, isNull, inArray } from 'drizzle-orm';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -214,7 +214,7 @@ Provide your response as JSON with this structure:
 
     return await db.select()
       .from(medications)
-      .where(sql`${medications.id} = ANY(${medicationIds})`);
+      .where(inArray(medications.id, medicationIds));
   }
 
   /**
@@ -280,7 +280,7 @@ Provide your response as JSON with this structure:
     return await db.select()
       .from(pharmacies)
       .where(and(
-        sql`${pharmacies.id} IN ${alternativeIds}`,
+        inArray(pharmacies.id, alternativeIds),
         sql`${pharmacies.id} != ${primaryId}`
       ));
   }

@@ -167,21 +167,24 @@ export function PharmacySelectionDialog({
   };
 
   const renderPharmacyCard = (pharmacy: Pharmacy, isRecommended = false) => (
-    <Card 
+    <label 
       key={pharmacy.id}
-      className={`cursor-pointer transition-all ${
-        selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary' : ''
-      }`}
-      onClick={() => setSelectedPharmacyId(pharmacy.id)}
+      htmlFor={`pharmacy-${pharmacy.id}`}
+      className="block"
     >
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex items-start gap-2">
-            <RadioGroupItem 
-              value={pharmacy.id.toString()} 
-              checked={selectedPharmacyId === pharmacy.id}
-              className="mt-1"
-            />
+      <Card 
+        className={`cursor-pointer transition-all ${
+          selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary' : ''
+        }`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="flex items-start gap-2">
+              <RadioGroupItem 
+                id={`pharmacy-${pharmacy.id}`}
+                value={pharmacy.id.toString()} 
+                className="mt-1"
+              />
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 {pharmacy.name}
@@ -247,6 +250,7 @@ export function PharmacySelectionDialog({
         )}
       </CardContent>
     </Card>
+    </label>
   );
 
   return (
@@ -304,44 +308,50 @@ export function PharmacySelectionDialog({
               </div>
             )}
 
-            {aiRecommendationQuery.data && useAiRecommendation && (
-              <div className="space-y-4">
-                {aiRecommendationQuery.data.confidence >= 0.8 && aiRecommendationQuery.data.reasoning && (
-                  <Alert>
-                    <Sparkles className="h-4 w-4" />
-                    <AlertDescription>
-                      <strong>AI Reasoning:</strong> {aiRecommendationQuery.data.reasoning}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="space-y-3">
-                  {aiRecommendationQuery.data.pharmacy && renderPharmacyCard(aiRecommendationQuery.data.pharmacy, true)}
-                  
-                  {aiRecommendationQuery.data.alternatives && aiRecommendationQuery.data.alternatives.length > 0 && (
-                    <>
-                      <div className="text-sm font-medium text-muted-foreground mt-4">
-                        Alternative Options:
-                      </div>
-                      {aiRecommendationQuery.data.alternatives.map((pharmacy: Pharmacy) => 
-                        renderPharmacyCard(pharmacy)
-                      )}
-                    </>
+            <RadioGroup 
+              value={selectedPharmacyId?.toString() || ''} 
+              onValueChange={(value) => setSelectedPharmacyId(parseInt(value))}
+              className="space-y-3"
+            >
+              {aiRecommendationQuery.data && useAiRecommendation && (
+                <div className="space-y-4">
+                  {aiRecommendationQuery.data.confidence >= 0.8 && aiRecommendationQuery.data.reasoning && (
+                    <Alert>
+                      <Sparkles className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>AI Reasoning:</strong> {aiRecommendationQuery.data.reasoning}
+                      </AlertDescription>
+                    </Alert>
                   )}
-                </div>
-              </div>
-            )}
 
-            {!useAiRecommendation && (
-              <div className="space-y-3">
-                {(searchQuery 
-                  ? (searchPharmaciesQuery.data || [])
-                  : (pharmaciesQuery.data || [])
-                ).map((pharmacy: Pharmacy) =>
-                  renderPharmacyCard(pharmacy)
-                )}
-              </div>
-            )}
+                  <div className="space-y-3">
+                    {aiRecommendationQuery.data.pharmacy && renderPharmacyCard(aiRecommendationQuery.data.pharmacy, true)}
+                    
+                    {aiRecommendationQuery.data.alternatives && aiRecommendationQuery.data.alternatives.length > 0 && (
+                      <>
+                        <div className="text-sm font-medium text-muted-foreground mt-4">
+                          Alternative Options:
+                        </div>
+                        {aiRecommendationQuery.data.alternatives.map((pharmacy: Pharmacy) => 
+                          renderPharmacyCard(pharmacy)
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!useAiRecommendation && (
+                <>
+                  {(searchQuery 
+                    ? (searchPharmaciesQuery.data || [])
+                    : (pharmaciesQuery.data || [])
+                  ).map((pharmacy: Pharmacy) =>
+                    renderPharmacyCard(pharmacy)
+                  )}
+                </>
+              )}
+            </RadioGroup>
           </ScrollArea>
 
           {isControlled && (

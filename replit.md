@@ -176,7 +176,8 @@ Preferred communication style: Simple, everyday language.
 - **SOLUTION**: Added validation check that prevents bulk signing when medicationDeliveryMethod not set
 - **USER GUIDANCE**: Toast message directs users to set pharmacy preferences via delivery indicator
 - **BACKEND FIXES**: 
-  - Fixed SQL syntax errors in pharmacy-intelligence-service.ts (IN clause to ANY operator)
+  - Fixed SQL syntax errors in pharmacy-intelligence-service.ts - replaced `ANY(${medicationIds})` with proper `inArray` function
+  - Fixed similar SQL array issue with alternativeIds using `IN` operator - replaced with `inArray` function
   - Fixed eprescribing routes pharmacy query to use simple active pharmacy selection
   - Fixed apiRequest parameter order in PharmacySelectionDialog (method, url, body)
   - Added null checks for AI recommendation data to prevent undefined errors
