@@ -25,14 +25,38 @@ export interface Order {
 export class PDFService {
 
   private async getPatientInfo(patientId: number) {
-    const [patient] = await db.select().from(patients).where(eq(patients.id, patientId));
+    // Select only the columns we need to avoid any schema mismatch issues
+    const [patient] = await db.select({
+      id: patients.id,
+      firstName: patients.firstName,
+      lastName: patients.lastName,
+      dateOfBirth: patients.dateOfBirth,
+      mrn: patients.mrn,
+      phone: patients.phone,
+      address: patients.address,
+      city: patients.city,
+      state: patients.state,
+      zipCode: patients.zipCode,
+      insurance: patients.insurance
+    }).from(patients).where(eq(patients.id, patientId));
     return patient;
   }
 
   private async getProviderInfo(providerId: number) {
     console.log(`📄 [PDFService] Getting provider info for providerId: ${providerId}`);
     
-    const [provider] = await db.select().from(users).where(eq(users.id, providerId));
+    // Select only the columns we need to avoid any schema mismatch issues
+    const [provider] = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      credentials: users.credentials,
+      email: users.email,
+      npi: users.npi,
+      specialties: users.specialties,
+      licenseNumber: users.licenseNumber,
+      licenseState: users.licenseState
+    }).from(users).where(eq(users.id, providerId));
     console.log(`📄 [PDFService] Provider found: ${provider ? `${provider.firstName} ${provider.lastName}` : 'NOT FOUND'}`);
     
     // Get provider's location information
