@@ -2415,6 +2415,7 @@ IMPORTANT: Return ONLY the JSON response with no additional text, explanations, 
           medicationName: existingMedication.medicationName,
           dosage: existingMedication.dosage,
           quantity: refillData.quantity,
+          quantity_unit: existingMedication.quantityUnit || this.inferQuantityUnit(existingMedication),
           sig: existingMedication.sig,
           refills: refillData.refills,
           form: existingMedication.dosageForm,
@@ -2744,6 +2745,50 @@ Please analyze whether this proposed medication represents a true duplicate that
     }
 
     return daysSupply * dailyCount;
+  }
+
+  /**
+   * Intelligently infer quantity unit based on medication form
+   */
+  private inferQuantityUnit(medication: any): string {
+    const form = (medication.dosageForm || medication.form || '').toLowerCase();
+    
+    // Common form to unit mappings
+    const formToUnit: Record<string, string> = {
+      'tablet': 'tablets',
+      'tablets': 'tablets',
+      'capsule': 'capsules',
+      'capsules': 'capsules',
+      'solution': 'mL',
+      'suspension': 'mL',
+      'syrup': 'mL',
+      'liquid': 'mL',
+      'drops': 'mL',
+      'inhaler': 'inhalers',
+      'patch': 'patches',
+      'patches': 'patches',
+      'cream': 'grams',
+      'ointment': 'grams',
+      'gel': 'grams',
+      'injection': 'mL',
+      'vial': 'vials',
+      'suppository': 'suppositories',
+      'powder': 'grams',
+      'spray': 'sprays',
+      'nasal spray': 'sprays',
+      'lozenge': 'lozenges',
+      'film': 'films'
+    };
+    
+    // Check for exact matches
+    for (const [formKey, unit] of Object.entries(formToUnit)) {
+      if (form.includes(formKey)) {
+        return unit;
+      }
+    }
+    
+    // Default to tablets for unknown forms
+    return 'tablets';
   }
 }
 

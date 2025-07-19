@@ -159,6 +159,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Critical Move-to-Orders Bug Fix (January 19, 2025)
+- **CRITICAL BUG FIXED**: "Move medication to orders" feature was failing due to missing `quantity_unit` field in `moveToOrders` method
+- **ROOT CAUSE**: Database schema was updated to require `quantity_unit` but medication-delta-service.ts wasn't updated accordingly
+- **SOLUTION IMPLEMENTED**: Added `quantity_unit` field to draft order creation with intelligent unit inference based on medication form
+- **INTELLIGENT UNIT INFERENCE**: Created `inferQuantityUnit` method that maps dosage forms to appropriate units:
+  - Tablets/Capsules → "tablets"/"capsules"
+  - Solutions/Liquids → "mL"
+  - Inhalers → "inhalers"
+  - Patches → "patches"
+  - Creams/Gels → "grams"
+- **SAFETY IMPACT**: Prevents dangerous prescription ambiguity where "30" could mean 30 tablets or 30 mL - a potentially lethal difference
+- **PRODUCTION READY**: Medication refill workflow now fully functional with proper quantity unit tracking
+
 ### Medication List Alphabetical Sorting Enhancement (January 19, 2025)
 - **TRUE ALPHABETICAL SORTING**: Fixed medication list sorting to provide pure A-Z ordering by medication name when alphabetical option is selected
 - **REMOVED GROUPING IN ALPHABETICAL MODE**: Eliminated first-letter grouping (A, B, C headers) - medications now display in continuous alphabetical list
