@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface OrderPreferencesIndicatorProps {
   patientId: number;
@@ -50,21 +56,29 @@ export function OrderPreferencesIndicator({ patientId, orderType }: OrderPrefere
         const medMethod = prefs.medicationDeliveryMethod || "preferred_pharmacy";
         const pharmacyName = prefs.preferredPharmacy;
         let methodDisplay = "Pharmacy";
+        let fullDisplay = "Pharmacy";
         let variantType: "default" | "outline" | "secondary" = "default";
         
         if (medMethod === "preferred_pharmacy") {
-          methodDisplay = pharmacyName ? pharmacyName.split(',')[0].trim() : "Pharmacy";
+          fullDisplay = pharmacyName ? pharmacyName.split(',')[0].trim() : "Pharmacy";
+          // Truncate long pharmacy names to prevent UI overflow
+          methodDisplay = fullDisplay.length > 20 
+            ? fullDisplay.substring(0, 20) + "..." 
+            : fullDisplay;
           variantType = "default";
         } else if (medMethod === "print") {
           methodDisplay = "Print PDF";
+          fullDisplay = methodDisplay;
           variantType = "outline";
         } else if (medMethod === "fax") {
           methodDisplay = "Fax to Pharmacy";
+          fullDisplay = methodDisplay;
           variantType = "secondary";
         }
         
         return {
           method: methodDisplay,
+          fullMethod: fullDisplay,
           variant: variantType
         } as const;
         
@@ -77,8 +91,32 @@ export function OrderPreferencesIndicator({ patientId, orderType }: OrderPrefere
   
   if (!display) return null;
 
+  // For medication orders, show tooltip if pharmacy name is truncated
+  if (orderType === "medication" && 'fullMethod' in display && display.method !== display.fullMethod) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge 
+              variant={display.variant} 
+              className="text-xs ml-1 px-1.5 py-0.5 max-w-[120px] truncate"
+            >
+              {display.method}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{display.fullMethod}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
   return (
-    <Badge variant={display.variant} className="text-xs ml-1 px-1.5 py-0.5">
+    <Badge 
+      variant={display.variant} 
+      className="text-xs ml-1 px-1.5 py-0.5 max-w-[120px] truncate"
+    >
       {display.method}
     </Badge>
   );
