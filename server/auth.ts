@@ -42,8 +42,9 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET || "fallback-secret-for-development-only";
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET!,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
