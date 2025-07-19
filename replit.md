@@ -160,9 +160,12 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### Critical Move-to-Orders Bug Fix (January 19, 2025)
-- **CRITICAL BUG FIXED**: "Move medication to orders" feature was failing due to missing `quantity_unit` field in `moveToOrders` method
-- **ROOT CAUSE**: Database schema was updated to require `quantity_unit` but medication-delta-service.ts wasn't updated accordingly
-- **SOLUTION IMPLEMENTED**: Added `quantity_unit` field to draft order creation with intelligent unit inference based on medication form
+- **CRITICAL BUGS FIXED**: "Move medication to orders" feature was failing due to TWO missing required fields
+- **BUG 1 - MISSING quantity_unit**: Database requires quantity_unit field but moveToOrders method wasn't providing it
+- **BUG 2 - MISSING provider_id**: Database constraint violation - orders table requires provider_id but code was only setting orderedBy
+- **SOLUTIONS IMPLEMENTED**: 
+  1. Added `quantity_unit` field with intelligent unit inference based on medication form
+  2. Added `providerId` field mapping from input.requestedBy to satisfy database constraint
 - **INTELLIGENT UNIT INFERENCE**: Created `inferQuantityUnit` method that maps dosage forms to appropriate units:
   - Tablets/Capsules → "tablets"/"capsules"
   - Solutions/Liquids → "mL"
@@ -170,7 +173,7 @@ Preferred communication style: Simple, everyday language.
   - Patches → "patches"
   - Creams/Gels → "grams"
 - **SAFETY IMPACT**: Prevents dangerous prescription ambiguity where "30" could mean 30 tablets or 30 mL - a potentially lethal difference
-- **PRODUCTION READY**: Medication refill workflow now fully functional with proper quantity unit tracking
+- **PRODUCTION READY**: Medication refill workflow now fully functional with both required fields properly set
 
 ### Medication List Alphabetical Sorting Enhancement (January 19, 2025)
 - **TRUE ALPHABETICAL SORTING**: Fixed medication list sorting to provide pure A-Z ordering by medication name when alphabetical option is selected

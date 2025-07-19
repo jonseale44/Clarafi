@@ -2424,6 +2424,7 @@ IMPORTANT: Return ONLY the JSON response with no additional text, explanations, 
           clinicalIndication:
             input.clinicalIndication || existingMedication.clinicalIndication,
           priority: "routine",
+          providerId: input.requestedBy, // Changed from orderedBy to providerId
           orderedBy: input.requestedBy,
           providerNotes: `Refill for existing medication ID ${input.medicationId}`,
         })
