@@ -914,6 +914,11 @@ Preferred communication style: Simple, everyday language.
 - **AUTOMATIC UNIT INFERENCE**: When validating orders, GPT intelligently infers appropriate units based on medication form and route
 - **PRODUCTION STANDARDS**: System now matches or exceeds EPIC and Athena EMR medication safety standards
 - **NATURAL LANGUAGE ORDER FIX**: Fixed bug where quantity_unit was not being extracted from AI-parsed medication orders (January 18, 2025)
+- **MEDICATION INTELLIGENCE UI FIX**: Updated FastMedicationIntelligence component to display quantity unit next to quantity field (January 19, 2025)
+  - Added quantityUnit state and prop to component interface
+  - Created visual display showing unit next to quantity input field (e.g., "3 inhalers")
+  - Updated handleQuantityChange to pass quantityUnit with quantity updates
+  - Fixed draft-orders.tsx to pass quantityUnit prop to FastMedicationIntelligence component
 
 ### Critical Medication Safety Validation Fix COMPLETED (January 18, 2025)
 - **CRITICAL SAFETY FIX**: Added MedicationStandardizationService.validateMedication() to PUT /api/orders/:id endpoint

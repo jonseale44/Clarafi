@@ -26,6 +26,7 @@ interface FastMedicationIntelligenceProps {
   initialRoute?: string;
   initialSig?: string;
   initialQuantity?: number;
+  initialQuantityUnit?: string;
   initialRefills?: number;
   initialDaysSupply?: number;
   onChange: (updates: {
@@ -34,6 +35,7 @@ interface FastMedicationIntelligenceProps {
     routeOfAdministration?: string;
     sig?: string;
     quantity?: number;
+    quantityUnit?: string;
     refills?: number;
     daysSupply?: number;
   }) => void;
@@ -47,6 +49,7 @@ interface FastMedicationIntelligenceProps {
   gptRecommendations?: {
     sig?: string;
     quantity?: number;
+    quantityUnit?: string;
     refills?: number;
     daysSupply?: number;
     route?: string;
@@ -60,6 +63,7 @@ export function FastMedicationIntelligence({
   initialRoute = '',
   initialSig = '',
   initialQuantity = 30,
+  initialQuantityUnit = '',
   initialRefills = 2,
   initialDaysSupply = 90,
   onChange,
@@ -69,7 +73,8 @@ export function FastMedicationIntelligence({
   console.log('🔥 [FastMedicationIntelligence] Component loaded with props:', {
     missingFields,
     gptRecommendations,
-    initialSig
+    initialSig,
+    initialQuantityUnit
   });
   
   const [strength, setStrength] = useState(initialStrength);
@@ -77,6 +82,7 @@ export function FastMedicationIntelligence({
   const [route, setRoute] = useState(initialRoute);
   const [sig, setSig] = useState(initialSig);
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [quantityUnit, setQuantityUnit] = useState(initialQuantityUnit);
   const [refills, setRefills] = useState(initialRefills);
   const [daysSupply, setDaysSupply] = useState(initialDaysSupply);
   const [manualSigEdit, setManualSigEdit] = useState(false);
@@ -94,6 +100,12 @@ export function FastMedicationIntelligence({
       setQuantity(initialQuantity);
     }
   }, [initialQuantity]); // Only depend on initialQuantity
+
+  useEffect(() => {
+    if (initialQuantityUnit !== undefined && initialQuantityUnit !== quantityUnit) {
+      setQuantityUnit(initialQuantityUnit);
+    }
+  }, [initialQuantityUnit]); // Only depend on initialQuantityUnit
 
   useEffect(() => {
     console.log('🔄 [FastMedicationIntelligence] Refills effect triggered:', { 
@@ -198,8 +210,8 @@ export function FastMedicationIntelligence({
 
   const handleQuantityChange = useCallback((newQuantity: number) => {
     setQuantity(newQuantity);
-    onChange({ quantity: newQuantity });
-  }, [onChange]);
+    onChange({ quantity: newQuantity, quantityUnit });
+  }, [onChange, quantityUnit]);
 
   const handleRefillsChange = useCallback((newRefills: number) => {
     console.log('🔄 [FastMedicationIntelligence] handleRefillsChange called:', {
@@ -318,13 +330,20 @@ export function FastMedicationIntelligence({
         {/* Quantity */}
         <div className="space-y-2">
           <Label htmlFor="quantity">Quantity</Label>
-          <Input
-            type="number"
-            value={quantity}
-            onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
-            placeholder="30"
-            className={missingFields?.quantity ? "border-4 border-red-500" : gptRecommendations?.quantity === quantity ? "text-red-600" : ""}
-          />
+          <div className="flex gap-2">
+            <Input
+              type="number"
+              value={quantity}
+              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 0)}
+              placeholder="30"
+              className={`flex-1 ${missingFields?.quantity ? "border-4 border-red-500" : gptRecommendations?.quantity === quantity ? "text-red-600" : ""}`}
+            />
+            {quantityUnit && (
+              <div className="px-3 py-2 border rounded-md bg-muted text-sm min-w-[80px] flex items-center justify-center">
+                {quantityUnit}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Refills */}

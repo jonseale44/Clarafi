@@ -1056,6 +1056,7 @@ function MedicationEditFields({ order, onChange }: { order: Order; onChange: (fi
           initialRoute={order.routeOfAdministration || ""}
           initialSig={order.sig || ""}
           initialQuantity={order.quantity || 30}
+          initialQuantityUnit={order.quantityUnit || ""}
           initialRefills={order.refills || 2}
           initialDaysSupply={order.daysSupply || 90}
           onChange={handleIntelligentUpdate}
