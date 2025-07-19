@@ -344,11 +344,12 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
           .limit(20);
         
         console.log(`📋 [Pharmacy Search] Found ${dbResults.length} pharmacies with fax numbers in ScriptFax™ database`);
+        console.log('📋 [Pharmacy Search] First result:', dbResults[0]);
         
         if (dbResults.length > 0) {
           // Format results for frontend
           const formattedResults = dbResults.map(pharmacy => ({
-            id: pharmacy.id,
+            id: pharmacy.id.toString(), // Convert to string for consistency
             name: pharmacy.name,
             address: pharmacy.address,
             city: pharmacy.city,
@@ -365,6 +366,7 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
           }));
           
           console.log('✅ [Pharmacy Search] Returning ScriptFax™ results with fax numbers');
+          console.log('✅ [Pharmacy Search] First formatted result:', formattedResults[0]);
           return res.json(formattedResults);
         }
       } catch (error) {
