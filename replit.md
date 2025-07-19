@@ -218,6 +218,32 @@ Preferred communication style: Simple, everyday language.
   - SURESCRIPTS_API_ENDPOINT
 - **USER EXPERIENCE**: System works immediately in simulation mode, automatically switches to real API when credentials added
 
+### Production Fax Prescription Management (January 19, 2025)
+- **TWILIO FAX INTEGRATION**: Implemented real Twilio fax service for prescription transmission
+- **THREE DELIVERY OPTIONS**: 
+  - E-prescribing to preferred pharmacy (existing)
+  - Print PDF for local printing (existing)
+  - Fax to pharmacy using Twilio (new)
+- **FAX SERVICE IMPLEMENTATION**:
+  - Created `twilio-fax-service.ts` with proper error handling and phone number formatting
+  - Integrated Twilio SDK with automatic simulation mode when credentials not available
+  - Added fax status callback endpoint for real-time transmission tracking
+  - Supports US/Canada phone numbers with automatic formatting
+- **AUTOMATIC FAX ON ORDER SIGNING**:
+  - When medication order is signed with "fax" delivery method, automatically triggers fax transmission
+  - Generates same PDF as Print PDF option but sends via Twilio
+  - Creates prescription transmission record for audit trail
+  - Tracks fax status (queued, sending, delivered, failed) via Twilio callbacks
+- **FRONTEND INTEGRATION**:
+  - "Fax to Pharmacy" option already available in order preferences dialog
+  - Pharmacy selection dialog provides fax numbers via Google Places API
+  - Patient preferences store pharmacy fax number for automatic transmission
+- **REQUIRED SECRETS** (for production fax):
+  - TWILIO_ACCOUNT_SID
+  - TWILIO_AUTH_TOKEN  
+  - TWILIO_PHONE_NUMBER or TWILIO_FAX_NUMBER
+- **PRODUCTION STATUS**: System works in simulation mode without Twilio credentials, automatically uses real service when configured
+
 ### Electronic Signature Requirements Match Industry Standards (January 19, 2025)
 - **CRITICAL UX FIX**: Modified system to only require electronic signatures for controlled substances, matching Epic/Athena standards
 - **PREVIOUS BEHAVIOR**: All prescriptions required re-authentication with electronic signature

@@ -4,9 +4,11 @@ import { ElectronicSignatureService } from './electronic-signature-service.js';
 import { PharmacyIntelligenceService } from './pharmacy-intelligence-service.js';
 import { PrescriptionTransmissionService } from './prescription-transmission-service.js';
 import { db } from './db.js';
-import { medications, orders, pharmacies, prescriptionTransmissions, electronicSignatures, patients } from '../shared/schema.js';
-import { eq, and, desc } from 'drizzle-orm';
+import { medications, orders, pharmacies, prescriptionTransmissions, electronicSignatures, patients, users } from '../shared/schema.js';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import OpenAI from 'openai';
+import { PrescriptionPdfService } from './prescription-pdf-service.js';
+import { twilioFaxService } from './twilio-fax-service.js';
 
 // Middleware to ensure user is authenticated
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -540,6 +542,74 @@ router.post('/api/eprescribing/transmit', requireAuth, tenantIsolation, async (r
   }
 });
 
+// Fax status callback endpoint for Twilio
+router.post('/api/eprescribing/fax-status', async (req, res) => {
+  try {
+    console.log('📠 [EPrescribing] Received fax status callback:', req.body);
+    
+    const {
+      FaxSid,
+      Status,
+      ErrorCode,
+      ErrorMessage,
+      From,
+      To,
+      NumPages,
+      Duration,
+      Direction
+    } = req.body;
+    
+    // Find transmission by fax SID using SQL JSON operators
+    const transmissions = await db.select()
+      .from(prescriptionTransmissions)
+      .where(sql`${prescriptionTransmissions.transmissionMetadata}->>'faxSid' = ${FaxSid}`);
+      
+    const transmission = transmissions[0];
+      
+    if (transmission) {
+      const metadata = transmission.transmissionMetadata as any || {};
+      
+      // Update transmission status based on Twilio status
+      const updateData: any = {
+        transmissionMetadata: {
+          ...metadata,
+          faxStatus: Status,
+          faxNumPages: NumPages,
+          faxDuration: Duration,
+          faxDirection: Direction,
+          lastStatusUpdate: new Date().toISOString()
+        }
+      };
+      
+      if (Status === 'delivered') {
+        updateData.transmissionStatus = 'transmitted';
+        updateData.transmittedAt = new Date();
+        console.log(`✅ [EPrescribing] Fax ${FaxSid} delivered successfully`);
+      } else if (Status === 'failed' || Status === 'no-answer' || Status === 'busy') {
+        updateData.transmissionStatus = 'failed';
+        updateData.errorMessage = ErrorMessage || `Fax failed with status: ${Status}`;
+        if (ErrorCode) {
+          updateData.transmissionMetadata.faxErrorCode = ErrorCode;
+        }
+        console.error(`❌ [EPrescribing] Fax ${FaxSid} failed: ${Status} - ${ErrorMessage}`);
+      }
+      
+      await db.update(prescriptionTransmissions)
+        .set(updateData)
+        .where(eq(prescriptionTransmissions.id, transmission.id));
+    } else {
+      console.warn(`⚠️ [EPrescribing] No transmission found for fax SID: ${FaxSid}`);
+    }
+    
+    // Always respond with 200 OK to acknowledge receipt
+    res.sendStatus(200);
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error processing fax status callback:', error);
+    // Still respond with 200 to avoid Twilio retries
+    res.sendStatus(200);
+  }
+});
+
 // Get transmission history
 router.get('/api/eprescribing/transmissions/:patientId', requireAuth, tenantIsolation, async (req, res) => {
   try {
@@ -784,9 +854,59 @@ router.post('/api/eprescribing/transmit-fax', requireAuth, tenantIsolation, asyn
       return res.status(400).json({ error: 'Prescription already sent via fax' });
     }
     
-    // TODO: Integrate with actual fax service (e.g., Twilio Fax, SRFax, etc.)
-    // For now, we'll simulate the fax transmission
-    console.log(`📠 [EPrescribing] Simulating fax to ${faxNumber}`);
+    // Get PDF for the prescription
+    console.log(`📠 [EPrescribing] Generating PDF for fax transmission`);
+    
+    // Get provider and pharmacy data for PDF generation
+    const [provider] = await db.select()
+      .from(users)
+      .where(eq(users.id, transmission.orders.orderedBy!));
+      
+    const pdfService = new PrescriptionPDFService();
+    const prescriptionData = {
+      prescriptionNumber: `RX-${transmission.prescriptionTransmissions.id}`,
+      date: new Date().toISOString(),
+      patient: {
+        name: `${transmission.patients.firstName} ${transmission.patients.lastName}`,
+        dateOfBirth: transmission.patients.dateOfBirth,
+        address: `${transmission.patients.address || ''}, ${transmission.patients.city || ''}, ${transmission.patients.state || ''} ${transmission.patients.zip || ''}`
+      },
+      prescriber: {
+        name: `${provider.firstName} ${provider.lastName}, ${provider.credentials || ''}`,
+        npi: provider.npi || undefined,
+        licenseNumber: provider.licenseNumber || undefined,
+        address: 'Clinic Address', // Would fetch from provider's location
+        phone: transmission.patients.contactNumber || undefined
+      },
+      pharmacy: {
+        name: 'Via Fax',
+        address: 'See fax header',
+        phone: undefined,
+        fax: cleanFaxNumber
+      },
+      medication: {
+        name: transmission.medications.name,
+        strength: transmission.medications.strength || undefined,
+        form: transmission.medications.dosageForm || undefined,
+        sig: transmission.medications.instructions || '',
+        quantity: transmission.medications.quantity || 0,
+        refills: transmission.medications.refills || 0,
+        genericSubstitution: !transmission.medications.brandRequired
+      }
+    };
+    
+    const pdfBuffer = await pdfService.generatePrescriptionPDF(prescriptionData);
+    
+    // Send fax using Twilio
+    const faxResult = await twilioFaxService.sendFax({
+      to: faxNumber,
+      pdfBuffer,
+      statusCallback: `${process.env.BASE_URL}/api/eprescribing/fax-status`
+    });
+    
+    if (!faxResult.success) {
+      return res.status(500).json({ error: faxResult.error || 'Failed to send fax' });
+    }
     
     // Update transmission record
     await db.update(prescriptionTransmissions)
@@ -799,7 +919,9 @@ router.post('/api/eprescribing/transmit-fax', requireAuth, tenantIsolation, asyn
           faxNumber: cleanFaxNumber,
           faxSentAt: new Date().toISOString(),
           faxStatus: 'sent',
-          faxProvider: 'simulation' // Would be 'twilio', 'srfax', etc. in production
+          faxProvider: 'twilio',
+          faxSid: faxResult.faxSid,
+          pdfData: pdfBuffer.toString('base64') // Store PDF for reference
         }
       })
       .where(eq(prescriptionTransmissions.id, transmissionId));

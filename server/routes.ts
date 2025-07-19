@@ -3924,11 +3924,16 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             );
             deliveryMethod =
               prefs?.medicationDeliveryMethod || "preferred_pharmacy";
-            shouldGeneratePDF = deliveryMethod === "print_pdf";
-            deliveryEndpoint =
-              deliveryMethod === "preferred_pharmacy"
-                ? prefs?.preferredPharmacy || "Preferred Pharmacy"
-                : "PDF Generation";
+            shouldGeneratePDF = deliveryMethod === "print_pdf" || deliveryMethod === "fax";
+            
+            if (deliveryMethod === "preferred_pharmacy") {
+              deliveryEndpoint = prefs?.preferredPharmacy || "Preferred Pharmacy";
+            } else if (deliveryMethod === "fax") {
+              deliveryEndpoint = `Fax: ${prefs?.pharmacyFax || "Pharmacy Fax"}`;
+            } else {
+              deliveryEndpoint = "PDF Generation";
+            }
+            
             console.log(
               `📋 [IndividualSign] MEDICATION ORDER - Final: method=${deliveryMethod}, shouldPDF=${shouldGeneratePDF}, endpoint=${deliveryEndpoint}`,
             );
@@ -4099,6 +4104,100 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
             console.log(
               `📄 [IndividualSign] Generated ${order.orderType} PDF for order ${orderId} (${pdfBuffer.length} bytes)`,
             );
+            
+            // For medication orders with fax delivery method, send the fax
+            if (order.orderType === "medication" && deliveryMethod === "fax") {
+              console.log(`📠 [IndividualSign] Initiating fax transmission for medication order ${orderId}`);
+              
+              try {
+                const prefs = (await db
+                  .select()
+                  .from(patientOrderPreferences)
+                  .where(eq(patientOrderPreferences.patientId, order.patientId))
+                  .limit(1))[0];
+                
+                const faxNumber = prefs?.pharmacyFax;
+                
+                if (!faxNumber) {
+                  console.error(`📠 [IndividualSign] No fax number found for patient ${order.patientId}`);
+                } else {
+                  // Import necessary modules
+                  const { twilioFaxService } = await import("./twilio-fax-service.js");
+                  const { medications, prescriptionTransmissions, electronicSignatures } = await import("../shared/schema.js");
+                  
+                  // Get medication details
+                  const [medication] = await db.select()
+                    .from(medications)
+                    .where(eq(medications.orderId, orderId))
+                    .limit(1);
+                    
+                  if (medication) {
+                    // Create prescription transmission record
+                    const [transmission] = await db.insert(prescriptionTransmissions)
+                      .values({
+                        medicationId: medication.id,
+                        orderId: orderId,
+                        patientId: order.patientId,
+                        providerId: userId,
+                        pharmacyId: null, // No pharmacy record for fax
+                        transmissionMethod: 'fax',
+                        transmissionStatus: 'pending',
+                        transmissionMetadata: {
+                          faxNumber: faxNumber,
+                          pharmacyName: prefs?.preferredPharmacy || 'Via Fax'
+                        }
+                      })
+                      .returning();
+                    
+                    // Send the fax
+                    const faxResult = await twilioFaxService.sendFax({
+                      to: faxNumber,
+                      pdfBuffer,
+                      statusCallback: `${process.env.BASE_URL}/api/eprescribing/fax-status`
+                    });
+                    
+                    if (faxResult.success) {
+                      // Update transmission record with success
+                      await db.update(prescriptionTransmissions)
+                        .set({
+                          transmissionStatus: 'transmitted',
+                          transmittedAt: new Date(),
+                          transmissionMetadata: {
+                            ...(transmission.transmissionMetadata as any || {}),
+                            faxNumber: faxNumber,
+                            faxSentAt: new Date().toISOString(),
+                            faxStatus: 'sent',
+                            faxProvider: 'twilio',
+                            faxSid: faxResult.faxSid,
+                            pdfData: pdfBuffer.toString('base64')
+                          }
+                        })
+                        .where(eq(prescriptionTransmissions.id, transmission.id));
+                        
+                      console.log(`✅ [IndividualSign] Fax transmitted successfully for order ${orderId}. Fax SID: ${faxResult.faxSid}`);
+                    } else {
+                      // Update transmission record with failure
+                      await db.update(prescriptionTransmissions)
+                        .set({
+                          transmissionStatus: 'failed',
+                          errorMessage: faxResult.error || 'Fax transmission failed',
+                          transmissionMetadata: {
+                            ...(transmission.transmissionMetadata as any || {}),
+                            faxError: faxResult.error
+                          }
+                        })
+                        .where(eq(prescriptionTransmissions.id, transmission.id));
+                        
+                      console.error(`❌ [IndividualSign] Fax transmission failed for order ${orderId}: ${faxResult.error}`);
+                    }
+                  } else {
+                    console.error(`❌ [IndividualSign] No medication found for order ${orderId}`);
+                  }
+                }
+              } catch (faxError) {
+                console.error(`❌ [IndividualSign] Fax transmission error for order ${orderId}:`, faxError);
+              }
+            }
           }
         } catch (pdfError) {
           console.error(

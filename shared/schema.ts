@@ -2357,7 +2357,7 @@ export const patientOrderPreferences = pgTable("patient_order_preferences", {
   imagingServiceProvider: text("imaging_service_provider"), // Name of the actual imaging service when real_service is selected
   
   // Medication order delivery preferences
-  medicationDeliveryMethod: text("medication_delivery_method").default("preferred_pharmacy"), // 'preferred_pharmacy', 'print_pdf'
+  medicationDeliveryMethod: text("medication_delivery_method").default("preferred_pharmacy"), // 'preferred_pharmacy', 'print_pdf', 'fax'
   preferredPharmacy: text("preferred_pharmacy"), // Name/address of preferred pharmacy
   pharmacyPhone: text("pharmacy_phone"), // Pharmacy contact number
   pharmacyFax: text("pharmacy_fax"), // Pharmacy fax number

@@ -182,6 +182,7 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
         return [
           { value: "preferred_pharmacy", label: "Send to Preferred Pharmacy" },
           { value: "print_pdf", label: "Print PDF" },
+          { value: "fax", label: "Fax to Pharmacy" },
         ];
       default:
         return [];
@@ -302,7 +303,7 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
             )}
 
             {/* Pharmacy details for medications */}
-            {orderType === "medication" && getCurrentValue() === "preferred_pharmacy" && (
+            {orderType === "medication" && (getCurrentValue() === "preferred_pharmacy" || getCurrentValue() === "fax") && (
               <div className="space-y-3">
                 <div>
                   <Label>Preferred Pharmacy</Label>
