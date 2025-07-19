@@ -233,7 +233,7 @@ Provide your response as JSON with this structure:
     // In production, this would use geospatial queries
     const pharmacyList = await db.select()
       .from(pharmacies)
-      .where(eq(pharmacies.active, true))
+      .where(eq(pharmacies.status, 'active'))
       .limit(10);
 
     // If preferred pharmacy specified, ensure it's included

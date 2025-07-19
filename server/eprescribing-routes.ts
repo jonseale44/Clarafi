@@ -238,7 +238,7 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
     
     let pharmacyQuery = db.select()
       .from(pharmacies)
-      .where(eq(pharmacies.active, true))
+      .where(eq(pharmacies.status, 'active'))
       .limit(20);
 
     // Add filters if provided
@@ -449,7 +449,7 @@ router.get('/api/eprescribing/pharmacies', requireAuth, tenantIsolation, async (
     // Get all active pharmacies - in production, this would be filtered by location
     const activePharmacies = await db.select()
       .from(pharmacies)
-      .where(eq(pharmacies.active, true))
+      .where(eq(pharmacies.status, 'active'))
       .orderBy(pharmacies.name)
       .limit(50);
 
