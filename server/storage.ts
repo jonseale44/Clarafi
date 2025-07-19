@@ -1168,6 +1168,19 @@ export class DatabaseStorage implements IStorage {
   // Unified Orders management (for draft orders processing system)
   async getOrder(id: number): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    
+    // Debug logging for quantity_unit field issue
+    if (order && order.orderType === 'medication') {
+      console.log(`🔍 [Storage] Retrieved order ${id} raw data:`, {
+        id: order.id,
+        medicationName: order.medicationName,
+        quantity: order.quantity,
+        quantityUnit: order.quantityUnit,
+        // Also check if it's coming through as snake_case
+        raw: JSON.stringify(order)
+      });
+    }
+    
     return order || undefined;
   }
 
