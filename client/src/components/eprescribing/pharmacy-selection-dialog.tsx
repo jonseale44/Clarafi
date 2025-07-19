@@ -115,22 +115,19 @@ export function PharmacySelectionDialog({
   // Validate pharmacy capability
   const validatePharmacyMutation = useMutation({
     mutationFn: async (pharmacyId: number) => {
-      return apiRequest('/api/eprescribing/pharmacy/validate', {
-        method: 'POST',
-        body: JSON.stringify({
-          pharmacyId,
-          requirements: {
-            hasControlled: isControlled,
-            needsCompounding: false, // Would be determined from medications
-            medications: [], // Would include medication details
-          },
-        }),
+      return apiRequest('POST', '/api/eprescribing/pharmacy/validate', {
+        pharmacyId,
+        requirements: {
+          hasControlled: isControlled,
+          needsCompounding: false, // Would be determined from medications
+          medications: [], // Would include medication details
+        },
       });
     },
   });
 
   useEffect(() => {
-    if (aiRecommendationQuery.data && useAiRecommendation) {
+    if (aiRecommendationQuery.data?.pharmacy && useAiRecommendation) {
       setSelectedPharmacyId(aiRecommendationQuery.data.pharmacy.id);
     }
   }, [aiRecommendationQuery.data, useAiRecommendation]);
@@ -309,7 +306,7 @@ export function PharmacySelectionDialog({
 
             {aiRecommendationQuery.data && useAiRecommendation && (
               <div className="space-y-4">
-                {aiRecommendationQuery.data.confidence >= 0.8 && (
+                {aiRecommendationQuery.data.confidence >= 0.8 && aiRecommendationQuery.data.reasoning && (
                   <Alert>
                     <Sparkles className="h-4 w-4" />
                     <AlertDescription>
@@ -319,14 +316,14 @@ export function PharmacySelectionDialog({
                 )}
 
                 <div className="space-y-3">
-                  {renderPharmacyCard(aiRecommendationQuery.data.pharmacy, true)}
+                  {aiRecommendationQuery.data.pharmacy && renderPharmacyCard(aiRecommendationQuery.data.pharmacy, true)}
                   
-                  {aiRecommendationQuery.data.alternatives.length > 0 && (
+                  {aiRecommendationQuery.data.alternatives && aiRecommendationQuery.data.alternatives.length > 0 && (
                     <>
                       <div className="text-sm font-medium text-muted-foreground mt-4">
                         Alternative Options:
                       </div>
-                      {aiRecommendationQuery.data.alternatives.map(pharmacy => 
+                      {aiRecommendationQuery.data.alternatives.map((pharmacy: Pharmacy) => 
                         renderPharmacyCard(pharmacy)
                       )}
                     </>
@@ -337,7 +334,10 @@ export function PharmacySelectionDialog({
 
             {!useAiRecommendation && (
               <div className="space-y-3">
-                {(searchQuery ? searchPharmaciesQuery.data : pharmaciesQuery.data || []).map((pharmacy: Pharmacy) =>
+                {(searchQuery 
+                  ? (searchPharmaciesQuery.data || [])
+                  : (pharmaciesQuery.data || [])
+                ).map((pharmacy: Pharmacy) =>
                   renderPharmacyCard(pharmacy)
                 )}
               </div>

@@ -170,6 +170,18 @@ Preferred communication style: Simple, everyday language.
   - Dialog automatically signs pending order after pharmacy selection or cancellation
 - **PRODUCTION STANDARD**: Matches Epic/Cerner workflow where e-prescribing details collected before signing
 
+### Bulk Medication Signing Pharmacy Integration (January 19, 2025)
+- **CRITICAL BUG FIX**: "Sign All medications" button now requires pharmacy preferences before signing
+- **ISSUE**: Bulk signing bypassed pharmacy selection, leaving medications without transmission destination
+- **SOLUTION**: Added validation check that prevents bulk signing when medicationDeliveryMethod not set
+- **USER GUIDANCE**: Toast message directs users to set pharmacy preferences via delivery indicator
+- **BACKEND FIXES**: 
+  - Fixed SQL syntax errors in pharmacy-intelligence-service.ts (IN clause to ANY operator)
+  - Fixed eprescribing routes pharmacy query to use simple active pharmacy selection
+  - Fixed apiRequest parameter order in PharmacySelectionDialog (method, url, body)
+  - Added null checks for AI recommendation data to prevent undefined errors
+- **WORKFLOW**: Users must click delivery indicator → select pharmacy preferences → then bulk sign works
+
 ### SureScripts API Integration with Fallback (January 19, 2025)
 - **PRODUCTION E-PRESCRIBING**: Implemented real SureScripts API integration with automatic fallback
 - **API INTEGRATION**:

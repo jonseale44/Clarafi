@@ -311,25 +311,14 @@ router.post('/api/eprescribing/refill', requireAuth, async (req, res) => {
 // Get pharmacies for dropdown
 router.get('/api/eprescribing/pharmacies', requireAuth, tenantIsolation, async (req, res) => {
   try {
-    // Get frequently used pharmacies for this health system
-    const recentPharmacies = await db.select({
-      pharmacy: pharmacies,
-      usageCount: (await db.$count(prescriptionTransmissions, 
-        and(
-          eq(prescriptionTransmissions.pharmacyId, pharmacies.id),
-          patients.healthSystemId as any
-        )
-      )) as any
-    })
-    .from(pharmacies)
-    .leftJoin(prescriptionTransmissions, eq(pharmacies.id, prescriptionTransmissions.pharmacyId))
-    .leftJoin(patients, eq(prescriptionTransmissions.patientId, patients.id))
-    .where(eq(pharmacies.active, true))
-    .groupBy(pharmacies.id)
-    .orderBy(desc('usageCount'))
-    .limit(50);
+    // Get all active pharmacies - in production, this would be filtered by location
+    const activePharmacies = await db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.active, true))
+      .orderBy(pharmacies.name)
+      .limit(50);
 
-    res.json(recentPharmacies.map(r => r.pharmacy));
+    res.json(activePharmacies);
   } catch (error) {
     console.error('❌ [EPrescribing] Error getting pharmacies:', error);
     res.status(500).json({ error: 'Failed to get pharmacies' });

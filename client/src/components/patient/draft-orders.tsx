@@ -93,6 +93,12 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
     refetchInterval: 2000, // Auto-refresh every 2 seconds for immediate draft orders
   });
 
+  // Fetch order preferences
+  const { data: orderPreferencesResponse } = useQuery({
+    queryKey: [`/api/patients/${patientId}/order-preferences`],
+  });
+  const orderPreferencesData = orderPreferencesResponse?.data;
+
   // Update order mutation
   const updateOrderMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: Partial<Order> }) => {
@@ -618,7 +624,16 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => bulkSignMutation.mutate(type)}
+                      onClick={() => {
+                        // For medications, ensure pharmacy is selected first
+                        if (type === 'medication' && !orderPreferencesData?.medicationDeliveryMethod) {
+                          toast.error("Please select pharmacy preferences before signing medications", {
+                            description: "Click on the delivery indicator to set up pharmacy preferences"
+                          });
+                        } else {
+                          bulkSignMutation.mutate(type);
+                        }
+                      }}
                       disabled={bulkSignMutation.isPending}
                       className="text-navy-blue-600 border-navy-blue-200 hover:bg-navy-blue-50"
                     >

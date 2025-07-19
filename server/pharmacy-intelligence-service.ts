@@ -214,7 +214,7 @@ Provide your response as JSON with this structure:
 
     return await db.select()
       .from(medications)
-      .where(sql`${medications.id} IN ${medicationIds}`);
+      .where(sql`${medications.id} = ANY(${medicationIds})`);
   }
 
   /**
@@ -226,14 +226,13 @@ Provide your response as JSON with this structure:
   ): Promise<Pharmacy[]> {
     // For now, get all active pharmacies
     // In production, this would use geospatial queries
-    let query = db.select()
+    const pharmacyList = await db.select()
       .from(pharmacies)
       .where(eq(pharmacies.active, true))
       .limit(10);
 
     // If preferred pharmacy specified, ensure it's included
     if (preferredId) {
-      const pharmacyList = await query;
       const hasPreferred = pharmacyList.some(p => p.id === preferredId);
       
       if (!hasPreferred) {
@@ -245,11 +244,9 @@ Provide your response as JSON with this structure:
           pharmacyList.unshift(preferred);
         }
       }
-      
-      return pharmacyList;
     }
 
-    return await query;
+    return pharmacyList;
   }
 
   /**
