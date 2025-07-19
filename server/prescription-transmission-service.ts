@@ -770,7 +770,7 @@ export class PrescriptionTransmissionService {
     })
     .from(prescriptionTransmissions)
     .innerJoin(medications, eq(prescriptionTransmissions.medicationId, medications.id))
-    .innerJoin(pharmacies, eq(prescriptionTransmissions.pharmacyId, pharmacies.id))
+    .leftJoin(pharmacies, eq(prescriptionTransmissions.pharmacyId, pharmacies.id))
     .innerJoin(users, eq(prescriptionTransmissions.providerId, users.id))
     .where(eq(prescriptionTransmissions.patientId, patientId))
     .orderBy(desc(prescriptionTransmissions.transmittedAt));

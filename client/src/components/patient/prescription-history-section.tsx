@@ -194,7 +194,10 @@ export default function PrescriptionHistorySection({ patientId }: PrescriptionHi
                       </TableCell>
                       <TableCell>
                         {pharmacy?.name || 
-                         (transmission.transmissionMethod === 'print' ? 'Printed' : 'N/A')}
+                         (transmission.transmissionMethod === 'print' ? 'Printed' : 
+                          transmission.transmissionMethod === 'fax' && transmission.transmissionMetadata?.pharmacyName ? 
+                           `${transmission.transmissionMetadata.pharmacyName} (Fax: ${transmission.transmissionMetadata.faxNumber})` : 
+                           'N/A')}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(transmission.transmissionStatus)}

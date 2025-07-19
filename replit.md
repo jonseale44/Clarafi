@@ -159,6 +159,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Prescription History Fix for Faxed Medications (January 19, 2025)
+- **ISSUE FIXED**: Faxed prescriptions were not appearing in the prescription history section
+- **ROOT CAUSE**: getTransmissionHistory method in prescription-transmission-service.ts used INNER JOIN with pharmacies table, but faxed prescriptions have null pharmacyId
+- **SOLUTION**: Changed INNER JOIN to LEFT JOIN for pharmacies table to include transmissions without pharmacy records
+- **ENHANCEMENT**: Updated prescription-history-section.tsx to display pharmacy name and fax number from transmission metadata for faxed prescriptions
+- **USER IMPACT**: All prescription transmissions (electronic, fax, and print) now properly display in prescription history with appropriate details
+
 ### Print PDF Option Fix for Medication Orders (January 19, 2025)
 - **BUG FIXED**: "Print PDF" option in medication order preferences wasn't displaying correctly after selection
 - **ROOT CAUSE**: Order preferences dialog saved value as "print_pdf" but indicator component checked for "print"
