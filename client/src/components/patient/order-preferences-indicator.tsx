@@ -66,7 +66,7 @@ export function OrderPreferencesIndicator({ patientId, orderType }: OrderPrefere
             ? fullDisplay.substring(0, 20) + "..." 
             : fullDisplay;
           variantType = "default";
-        } else if (medMethod === "print") {
+        } else if (medMethod === "print" || medMethod === "print_pdf") {
           methodDisplay = "Print PDF";
           fullDisplay = methodDisplay;
           variantType = "outline";

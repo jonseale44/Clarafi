@@ -159,6 +159,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Print PDF Option Fix for Medication Orders (January 19, 2025)
+- **BUG FIXED**: "Print PDF" option in medication order preferences wasn't displaying correctly after selection
+- **ROOT CAUSE**: Order preferences dialog saved value as "print_pdf" but indicator component checked for "print"
+- **SOLUTION**: Updated order-preferences-indicator.tsx to check for both "print" and "print_pdf" values
+- **USER IMPACT**: Print PDF selection now persists and displays correctly in the medication tab badge
+
 ### Pharmacy Database Management System COMPLETED (January 19, 2025)
 - **COMPREHENSIVE PHARMACY SEARCH**: Created multi-source pharmacy search endpoint combining local database and NPI Registry API
 - **FAX NUMBER PROMINENCE**: Enhanced pharmacy selection dialog to prominently display fax numbers with blue highlighting and "Fax Available" badges
