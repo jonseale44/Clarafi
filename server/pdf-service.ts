@@ -1,8 +1,8 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import { db } from './db.js';
-import { patients, users, orders } from '@shared/schema.js';
-import { eq } from 'drizzle-orm';
+import { patients, users, orders, locations, organizations, healthSystems, userLocations } from '@shared/schema.js';
+import { eq, and } from 'drizzle-orm';
 import { ensurePDFDirectory, getPDFFilePath } from './pdf-utils.js';
 
 export interface Order {
@@ -31,7 +31,40 @@ export class PDFService {
 
   private async getProviderInfo(providerId: number) {
     const [provider] = await db.select().from(users).where(eq(users.id, providerId));
-    return provider;
+    
+    // Get provider's location information
+    const providerLocation = await db.select({
+      location: locations,
+      organization: organizations,
+      healthSystem: healthSystems
+    })
+    .from(userLocations)
+    .innerJoin(locations, eq(userLocations.locationId, locations.id))
+    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
+    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
+    .where(
+      and(
+        eq(userLocations.userId, providerId),
+        eq(userLocations.isPrimary, true)
+      )
+    )
+    .limit(1);
+
+    // Use the first location if no primary is marked
+    const locationData = providerLocation[0] || await db.select({
+      location: locations,
+      organization: organizations,
+      healthSystem: healthSystems
+    })
+    .from(userLocations)
+    .innerJoin(locations, eq(userLocations.locationId, locations.id))
+    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
+    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
+    .where(eq(userLocations.userId, providerId))
+    .limit(1)
+    .then(results => results[0]);
+
+    return { provider, locationData };
   }
 
   private addHeader(doc: PDFKit.PDFDocument, title: string): void {
@@ -50,14 +83,66 @@ export class PDFService {
     return startY + 60;
   }
 
-  private addProviderInfo(doc: PDFKit.PDFDocument, provider: any, startY: number): number {
+  private addProviderInfo(doc: PDFKit.PDFDocument, providerData: any, startY: number): number {
+    const { provider, locationData } = providerData;
     doc.fontSize(12);
-    doc.text(`Ordering Provider: Dr. ${provider.firstName} ${provider.lastName}`, 50, startY);
-    if (provider.credentials) {
-      doc.text(`Credentials: ${provider.credentials}`, 50, startY + 15);
+    
+    // Provider name and credentials
+    const providerName = `Dr. ${provider.firstName} ${provider.lastName}${provider.credentials ? ', ' + provider.credentials : ''}`;
+    doc.text(`Ordering Provider: ${providerName}`, 50, startY);
+    startY += 15;
+    
+    // NPI
+    if (provider.npi) {
+      doc.text(`NPI: ${provider.npi}`, 50, startY);
+      startY += 15;
     }
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 50, startY + 30);
-    return startY + 60;
+    
+    // DEA number (if available)
+    if (provider.deaNumber) {
+      doc.text(`DEA: ${provider.deaNumber}`, 50, startY);
+      startY += 15;
+    }
+    
+    // License number
+    if (provider.licenseNumber) {
+      const licenseText = provider.licenseState 
+        ? `License: ${provider.licenseNumber} (${provider.licenseState})`
+        : `License: ${provider.licenseNumber}`;
+      doc.text(licenseText, 50, startY);
+      startY += 15;
+    }
+    
+    // Practice information
+    if (locationData) {
+      const { location, organization } = locationData;
+      
+      // Organization name
+      doc.text(`Practice: ${organization.name}`, 50, startY);
+      startY += 15;
+      
+      // Address
+      doc.text(location.address, 50, startY);
+      startY += 15;
+      
+      if (location.address2) {
+        doc.text(location.address2, 50, startY);
+        startY += 15;
+      }
+      
+      doc.text(`${location.city}, ${location.state} ${location.zipCode}`, 50, startY);
+      startY += 15;
+      
+      // Phone
+      if (location.phone) {
+        doc.text(`Phone: ${location.phone}`, 50, startY);
+        startY += 15;
+      }
+    }
+    
+    // Date
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 50, startY);
+    return startY + 30;
   }
 
   async generateMedicationPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
