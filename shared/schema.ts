@@ -2343,6 +2343,10 @@ export const orders = pgTable("orders", {
 export const patientOrderPreferences = pgTable("patient_order_preferences", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull().unique(),
+  providerId: integer("provider_id").references(() => users.id).notNull(), // Missing required column
+  orderType: text("order_type").notNull(), // Missing required column
+  preferences: jsonb("preferences"), // JSONB preferences field
+  standingOrders: jsonb("standing_orders"), // Standing orders config
   
   // Lab order delivery preferences
   labDeliveryMethod: text("lab_delivery_method").default("mock_service"), // 'mock_service', 'real_service', 'print_pdf'

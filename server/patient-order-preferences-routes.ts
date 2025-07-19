@@ -120,6 +120,7 @@ router.put("/:patientId/order-preferences", async (req, res) => {
         .values({
           patientId,
           providerId: userId,  // Add the missing provider_id
+          orderType: "all",   // Default to "all" for general preferences
           ...updateData,
           createdAt: new Date()
         })
