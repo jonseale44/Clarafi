@@ -3248,6 +3248,19 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
           cleanedUpdates.contrastNeeded === "true";
       }
 
+      // Convert date strings to Date objects for timestamp fields
+      const dateFields = ['orderDate', 'startDate', 'endDate', 'orderedAt', 'approvedAt'];
+      for (const field of dateFields) {
+        if (cleanedUpdates[field] && typeof cleanedUpdates[field] === 'string') {
+          try {
+            cleanedUpdates[field] = new Date(cleanedUpdates[field]);
+          } catch (e) {
+            console.warn(`⚠️ [Orders API] Invalid date format for ${field}: ${cleanedUpdates[field]}`);
+            delete cleanedUpdates[field]; // Remove invalid date fields
+          }
+        }
+      }
+
       console.log(
         `[Orders API] Cleaned update data:`,
         JSON.stringify(cleanedUpdates, null, 2),
@@ -3296,8 +3309,29 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         }
       }
 
-      const order = await storage.updateOrder(orderId, cleanedUpdates);
-      console.log(`[Orders API] Successfully updated order ${orderId}`);
+      let order;
+      try {
+        order = await storage.updateOrder(orderId, cleanedUpdates);
+        console.log(`[Orders API] Successfully updated order ${orderId}`);
+      } catch (storageError: any) {
+        console.error(`❌ [Orders API] Storage update failed for order ${orderId}:`, storageError);
+        console.error(`❌ [Orders API] Error details:`, {
+          message: storageError.message,
+          stack: storageError.stack,
+          cleanedUpdates: JSON.stringify(cleanedUpdates, null, 2)
+        });
+        
+        // Check if it's the toLowerCase error and provide more helpful message
+        if (storageError.message?.includes('toLowerCase')) {
+          return res.status(400).json({
+            message: "Failed to update order - invalid field format",
+            error: "One or more fields have invalid data types. Please check all fields are properly formatted.",
+            details: storageError.message
+          });
+        }
+        
+        throw storageError; // Re-throw for general error handling
+      }
 
       // If this is a medication order, trigger medication synchronization
       if (order.orderType === "medication") {
