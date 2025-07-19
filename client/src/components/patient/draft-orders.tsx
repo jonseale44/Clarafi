@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool, Settings, Maximize2, Minimize2 } from "lucide-react";
+import { Pill, FlaskConical, Scan, UserCheck, Edit, Trash2, Plus, Save, X, RefreshCw, PenTool, Settings, Maximize2, Minimize2, Send } from "lucide-react";
 import { MedicationInputHelper } from "./medication-input-helper";
 import { FastMedicationIntelligence } from "./fast-medication-intelligence";
 import { OrderPreferencesDialog } from "./order-preferences-dialog";
 import { OrderPreferencesIndicator } from "./order-preferences-indicator";
+import { PrescriptionTransmissionDialog } from "@/components/eprescribing/prescription-transmission-dialog";
 
 interface Order {
   id: number;
@@ -75,6 +76,8 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [showNewOrderDialog, setShowNewOrderDialog] = useState(false);
   const [isDialogExpanded, setIsDialogExpanded] = useState(false);
+  const [showEprescribingDialog, setShowEprescribingDialog] = useState(false);
+  const [selectedMedicationOrder, setSelectedMedicationOrder] = useState<Order | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -394,7 +397,8 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   }
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2 text-xl font-semibold">
           Orders
@@ -568,6 +572,10 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                   onEdit={setEditingOrder}
                   onDelete={handleDeleteOrder}
                   onSign={(id) => signOrderMutation.mutate(id)}
+                  onSendToPharmacy={order.orderType === 'medication' && order.orderStatus === 'signed' ? () => {
+                    setSelectedMedicationOrder(order);
+                    setShowEprescribingDialog(true);
+                  } : undefined}
                   isEditing={editingOrder?.id === order.id}
                   onSave={handleSaveOrder}
                   onCancelEdit={() => setEditingOrder(null)}
@@ -612,6 +620,10 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                     onEdit={setEditingOrder}
                     onDelete={handleDeleteOrder}
                     onSign={(id) => signOrderMutation.mutate(id)}
+                    onSendToPharmacy={order.orderType === 'medication' && order.orderStatus === 'signed' ? () => {
+                      setSelectedMedicationOrder(order);
+                      setShowEprescribingDialog(true);
+                    } : undefined}
                     isEditing={editingOrder?.id === order.id}
                     onSave={handleSaveOrder}
                     onCancelEdit={() => setEditingOrder(null)}
@@ -628,6 +640,29 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
         )}
       </CardContent>
     </Card>
+
+    {showEprescribingDialog && selectedMedicationOrder && (
+      <PrescriptionTransmissionDialog
+        open={showEprescribingDialog}
+        onOpenChange={setShowEprescribingDialog}
+        prescription={{
+          id: selectedMedicationOrder.id,
+          patientId: patientId,
+          medicationName: selectedMedicationOrder.medicationName || '',
+          dosage: selectedMedicationOrder.dosage || '',
+          sig: selectedMedicationOrder.sig || '',
+          quantity: selectedMedicationOrder.quantity || 0,
+          quantityUnit: selectedMedicationOrder.quantityUnit || '',
+          refills: selectedMedicationOrder.refills || 0,
+          daysSupply: selectedMedicationOrder.daysSupply || 30,
+          form: selectedMedicationOrder.form || '',
+          routeOfAdministration: selectedMedicationOrder.routeOfAdministration || '',
+          diagnosisCode: selectedMedicationOrder.diagnosisCode || '',
+          orderId: selectedMedicationOrder.id
+        }}
+      />
+    )}
+    </>
   );
 }
 
@@ -636,12 +671,13 @@ interface OrderCardProps {
   onEdit: (order: Order) => void;
   onDelete: (id: number) => void;
   onSign: (id: number) => void;
+  onSendToPharmacy?: () => void;
   isEditing: boolean;
   onSave: (order: Order) => void;
   onCancelEdit: () => void;
 }
 
-function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCancelEdit }: OrderCardProps) {
+function OrderCard({ order, onEdit, onDelete, onSign, onSendToPharmacy, isEditing, onSave, onCancelEdit }: OrderCardProps) {
   const [editedOrder, setEditedOrder] = useState<Order>(order);
 
   useEffect(() => {
@@ -707,6 +743,17 @@ function OrderCard({ order, onEdit, onDelete, onSign, isEditing, onSave, onCance
                 className="text-navy-blue-600 border-navy-blue-200 hover:bg-navy-blue-50"
               >
                 <PenTool className="h-4 w-4" />
+              </Button>
+            )}
+            {order.orderStatus === 'signed' && order.orderType === 'medication' && onSendToPharmacy && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onSendToPharmacy}
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                title="Send to Pharmacy"
+              >
+                <Send className="h-4 w-4" />
               </Button>
             )}
             <Button

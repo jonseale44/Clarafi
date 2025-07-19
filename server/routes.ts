@@ -5673,6 +5673,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Import and register e-prescribing routes
+  const { eprescribingRoutes } = await import("./eprescribing-routes.js");
+  app.use(eprescribingRoutes);
+
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
   registerBillingRoutes(app);
