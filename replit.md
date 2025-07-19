@@ -67,7 +67,7 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
-### Schema Alignment (July 19, 2025)
+### Schema Alignment (July 19, 2025) - PARTIAL FIX ONLY
 ✓ Fixed critical database/schema discrepancies affecting PDF generation and orders
 ✓ Updated signatures table structure to match database (id, encounter_id, signed_by, signature_type, etc.)
 ✓ Added missing orders table columns (61 database columns vs 40 in schema)
@@ -75,6 +75,14 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 ✓ Updated all related database relations and references
 ✓ Resolved TypeScript/Drizzle ORM compilation errors
 ✓ Application now running successfully with aligned schema
+
+**CRITICAL ISSUE DISCOVERED**: Comprehensive analysis reveals MASSIVE schema drift:
+- APPOINTMENTS table: 92 DB columns vs ~47 schema columns (45 MISSING!)
+- LAB_ORDERS table: 94 DB columns vs ~30 schema columns (60+ MISSING!)
+- MEDICATIONS table: 88 DB columns vs ~65 schema columns (20+ MISSING!)
+- PATIENTS table: 63 DB columns vs ~40 schema columns (20+ MISSING!)
+- Root cause: Replit rollbacks don't affect database, causing independent evolution
+- Impact: Many database features inaccessible through TypeScript/Drizzle ORM layer
 
 ### Impact
 - PDF generation and electronic signatures now properly supported

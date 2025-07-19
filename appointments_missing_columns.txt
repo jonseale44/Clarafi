@@ -1,0 +1,49 @@
+         column_name          |          data_type          | is_nullable 
+------------------------------+-----------------------------+-------------
+ actual_duration              | integer                     | YES
+ ai_confidence_score          | numeric                     | YES
+ ai_predicted_duration        | integer                     | YES
+ billing_notes                | text                        | YES
+ chart_reviewed               | boolean                     | YES
+ confirmation_sent            | boolean                     | YES
+ confirmation_sent_at         | timestamp without time zone | YES
+ copay_amount                 | numeric                     | YES
+ copay_collected              | boolean                     | YES
+ duration_manually_overridden | boolean                     | YES
+ duration_minutes             | integer                     | YES
+ forms_completed              | boolean                     | YES
+ images_reviewed              | boolean                     | YES
+ insurance_verification_notes | text                        | YES
+ intake_completed_at          | timestamp without time zone | YES
+ interpreter_language         | text                        | YES
+ interpreter_needed           | boolean                     | YES
+ labs_reviewed                | boolean                     | YES
+ late_cancellation_reason     | text                        | YES
+ medications_reconciled       | boolean                     | YES
+ no_show_reason               | text                        | YES
+ parent_appointment_id        | integer                     | YES
+ patient_confirmed            | boolean                     | YES
+ patient_confirmed_at         | timestamp without time zone | YES
+ post_appointment_notes       | text                        | YES
+ pre_appointment_notes        | text                        | YES
+ problems_reviewed            | boolean                     | YES
+ provider_ready_at            | timestamp without time zone | YES
+ recurrence_exceptions        | ARRAY                       | YES
+ recurrence_rule              | text                        | YES
+ referral_reason              | text                        | YES
+ referring_provider           | text                        | YES
+ reminder_preferences         | jsonb                       | YES
+ reminder_sent                | boolean                     | YES
+ reminder_sent_at             | timestamp without time zone | YES
+ rescheduled_from             | integer                     | YES
+ rescheduled_reason           | text                        | YES
+ resource_requirements        | jsonb                       | YES
+ room_number                  | text                        | YES
+ special_instructions         | text                        | YES
+ use_ai_scheduling            | boolean                     | YES
+ visit_completed_at           | timestamp without time zone | YES
+ vital_signs_taken            | boolean                     | YES
+ wait_list_priority           | integer                     | YES
+ wheelchair_accessible        | boolean                     | YES
+(45 rows)
+
