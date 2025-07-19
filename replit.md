@@ -175,6 +175,7 @@ Preferred communication style: Simple, everyday language.
 - **DATA STRUCTURE HANDLING**: Component properly handles nested data structure from getTransmissionHistory method (transmission, medication, pharmacy, provider objects)
 - **PRODUCTION FEATURES**: Refresh button, loading states, empty state message, responsive table design
 - **HIPAA COMPLIANCE**: Full audit trail with transmission metadata, retry attempts tracking, and user actions logging
+- **FAX BADGE DISPLAY FIX**: Fixed order preferences indicator to properly show "Fax to Pharmacy" badge when fax delivery method is selected (was incorrectly showing "Print PDF" for all non-pharmacy options)
 
 ### E-Prescribing Pharmacy Selection Fixes (January 19, 2025)
 - **CRITICAL BUGS FIXED**: Fixed multiple issues preventing pharmacy selection and AI recommendations from working

@@ -49,10 +49,23 @@ export function OrderPreferencesIndicator({ patientId, orderType }: OrderPrefere
       case "medication":
         const medMethod = prefs.medicationDeliveryMethod || "preferred_pharmacy";
         const pharmacyName = prefs.preferredPharmacy;
+        let methodDisplay = "Pharmacy";
+        let variantType: "default" | "outline" | "secondary" = "default";
+        
+        if (medMethod === "preferred_pharmacy") {
+          methodDisplay = pharmacyName ? pharmacyName.split(',')[0].trim() : "Pharmacy";
+          variantType = "default";
+        } else if (medMethod === "print") {
+          methodDisplay = "Print PDF";
+          variantType = "outline";
+        } else if (medMethod === "fax") {
+          methodDisplay = "Fax to Pharmacy";
+          variantType = "secondary";
+        }
+        
         return {
-          method: medMethod === "preferred_pharmacy" ? 
-                  (pharmacyName ? pharmacyName.split(',')[0].trim() : "Pharmacy") : "Print PDF",
-          variant: medMethod === "preferred_pharmacy" ? "default" : "outline"
+          method: methodDisplay,
+          variant: variantType
         } as const;
         
       default:
