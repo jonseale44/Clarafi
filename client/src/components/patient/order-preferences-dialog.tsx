@@ -17,8 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings, Check, X } from "lucide-react";
+import { Settings, Check, X, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PharmacySelectionDialog } from "@/components/eprescribing/pharmacy-selection-dialog";
 
 interface OrderPreferencesDialogProps {
   patientId: number;
@@ -45,6 +46,8 @@ interface PatientOrderPreferences {
 export function OrderPreferencesDialog({ patientId, orderType, children }: OrderPreferencesDialogProps) {
   const [open, setOpen] = useState(false);
   const [preferences, setPreferences] = useState<PatientOrderPreferences | null>(null);
+  const [showPharmacyDialog, setShowPharmacyDialog] = useState(false);
+  const [selectedPharmacy, setSelectedPharmacy] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -91,6 +94,34 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
       setPreferences(currentPreferences.data);
     }
   }, [currentPreferences]);
+
+  const handlePharmacySelect = (pharmacyId: number) => {
+    // In production, we'd fetch the full pharmacy details here
+    // For now, we'll get them from the pharmacy service
+    const mockPharmacy = {
+      id: pharmacyId,
+      name: "Selected Pharmacy",
+      address: "123 Main St",
+      city: "Anytown",
+      state: "CA",
+      zipCode: "12345",
+      phone: "(555) 123-4567",
+      fax: "(555) 123-4568"
+    };
+    
+    setSelectedPharmacy(mockPharmacy);
+    setShowPharmacyDialog(false);
+    
+    // Update preferences with pharmacy details
+    if (preferences) {
+      setPreferences({
+        ...preferences,
+        preferredPharmacy: `${mockPharmacy.name} - ${mockPharmacy.address}, ${mockPharmacy.city}, ${mockPharmacy.state} ${mockPharmacy.zipCode}`,
+        pharmacyPhone: mockPharmacy.phone || '',
+        pharmacyFax: mockPharmacy.fax || ''
+      });
+    }
+  };
 
   const handleSave = () => {
     if (preferences) {
@@ -168,14 +199,15 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children || (
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-            <Settings className="h-3 w-3" />
-          </Button>
-        )}
-      </DialogTrigger>
+    <div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {children || (
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Settings className="h-3 w-3" />
+            </Button>
+          )}
+        </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -238,39 +270,42 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
             {orderType === "medication" && getCurrentValue() === "preferred_pharmacy" && (
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="pharmacy-name">Preferred Pharmacy</Label>
-                  <Input
-                    id="pharmacy-name"
-                    placeholder="Enter pharmacy name and address"
-                    value={preferences?.preferredPharmacy || ""}
-                    onChange={(e) =>
-                      setPreferences(prev => prev ? { ...prev, preferredPharmacy: e.target.value } : null)
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="pharmacy-phone">Phone</Label>
-                    <Input
-                      id="pharmacy-phone"
-                      placeholder="(555) 123-4567"
-                      value={preferences?.pharmacyPhone || ""}
-                      onChange={(e) =>
-                        setPreferences(prev => prev ? { ...prev, pharmacyPhone: e.target.value } : null)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pharmacy-fax">Fax</Label>
-                    <Input
-                      id="pharmacy-fax"
-                      placeholder="(555) 123-4568"
-                      value={preferences?.pharmacyFax || ""}
-                      onChange={(e) =>
-                        setPreferences(prev => prev ? { ...prev, pharmacyFax: e.target.value } : null)
-                      }
-                    />
-                  </div>
+                  <Label>Preferred Pharmacy</Label>
+                  {selectedPharmacy ? (
+                    <div className="border rounded-md p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-primary" />
+                          <span className="font-medium">{selectedPharmacy.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowPharmacyDialog(true)}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedPharmacy.address}, {selectedPharmacy.city}, {selectedPharmacy.state} {selectedPharmacy.zipCode}
+                      </p>
+                      {selectedPharmacy.phone && (
+                        <p className="text-sm text-muted-foreground">Phone: {selectedPharmacy.phone}</p>
+                      )}
+                      {selectedPharmacy.fax && (
+                        <p className="text-sm text-muted-foreground">Fax: {selectedPharmacy.fax}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => setShowPharmacyDialog(true)}
+                    >
+                      <Store className="h-4 w-4 mr-2" />
+                      Select Pharmacy
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -289,5 +324,15 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Pharmacy Selection Dialog */}
+    <PharmacySelectionDialog
+      open={showPharmacyDialog}
+      onOpenChange={setShowPharmacyDialog}
+      onPharmacySelect={handlePharmacySelect}
+      patientId={patientId}
+      medicationIds={[]} // In real implementation, we'd pass actual medication IDs
+    />
+    </div>
   );
 }
