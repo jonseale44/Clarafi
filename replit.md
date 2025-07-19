@@ -176,28 +176,6 @@ Preferred communication style: Simple, everyday language.
   - Tertiary: Manual entry or Google Places (no fax support)
 - **PRODUCTION FOCUS**: System designed to maximize fax availability for prescription transmission to any pharmacy
 
-### Pharmacy Selection UX Improvements (January 19, 2025)
-- **AI RECOMMENDATIONS DEFAULT**: Changed default to disabled (`false`) to prevent immediate backend errors on dialog open
-- **SEARCH-FIRST WORKFLOW**: Pharmacy selection dialog now emphasizes search as primary method for finding pharmacies
-- **HELPFUL USER GUIDANCE**: Added contextual messages throughout the dialog:
-  - Empty state: "Start typing to search for pharmacies" with example pharmacy names
-  - Short query: "Type at least 3 characters to search..."
-  - Loading state: Shows loading spinner while searching
-  - No results: Provides tips for better search (shorter terms, check spelling, etc.)
-- **ERROR DEBUGGING**: Added development mode error details for AI recommendation failures
-- **REMOVED PHANTOM ENDPOINT**: Eliminated non-existent `/api/eprescribing/pharmacies` query that was never implemented
-- **PRODUCTION READINESS**: System now provides clear workflow - search for pharmacies, select one with fax capability, and transmit prescription
-
-### Pharmacy Search ID Type Fix (January 19, 2025)
-- **CRITICAL BUG FIX**: Fixed pharmacy search failing with "invalid input syntax for type integer: NaN" errors
-- **ROOT CAUSE**: Google Places API returns string IDs but backend was parsing them as integers
-- **SOLUTION**: Prefixed all Google Places IDs with "google_" to distinguish from numeric database IDs
-- **VALIDATION UPDATE**: Updated pharmacy validation to handle string IDs starting with "google_" without database lookup
-- **MOCK DATA FIX**: Updated mock pharmacy data to use consistent "google_" prefix for IDs and added fax numbers
-- **ERROR MESSAGE CLARITY**: Replaced misleading "Pharmacy does not accept electronic prescriptions" with accurate "E-Prescribing Not Available" message
-- **SURESCRIPTS MESSAGING**: Added prominent "SureScripts e-prescribing coming soon!" message in pharmacy selection dialog header
-- **USER IMPACT**: Pharmacy search now works correctly, and users understand that e-prescribing is a future feature not a pharmacy limitation
-
 ### Prescription Transmission History Interface COMPLETED (January 19, 2025)
 - **MAJOR ENHANCEMENT**: Added comprehensive prescription transmission history interface in patient chart view
 - **CHART SECTION REORDERING**: Moved patient documents section to bottom of chart and added prescription history section below appointments

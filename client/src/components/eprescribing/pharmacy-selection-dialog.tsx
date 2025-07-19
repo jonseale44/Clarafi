@@ -39,7 +39,6 @@ interface PharmacySelectionDialogProps {
   medicationIds: number[];
   isControlled?: boolean;
   urgency?: 'routine' | 'urgent' | 'emergency';
-  deliveryMethod?: 'electronic' | 'fax' | 'print';
 }
 
 interface Pharmacy {
@@ -74,12 +73,11 @@ export function PharmacySelectionDialog({
   medicationIds,
   isControlled = false,
   urgency = 'routine',
-  deliveryMethod = 'electronic',
 }: PharmacySelectionDialogProps) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
-  const [useAiRecommendation, setUseAiRecommendation] = useState(false);
+  const [useAiRecommendation, setUseAiRecommendation] = useState(true);
   
   // Debug logging
   useEffect(() => {
@@ -98,27 +96,13 @@ export function PharmacySelectionDialog({
   const aiRecommendationQuery = useQuery({
     queryKey: ['/api/eprescribing/pharmacy/select', patientId, medicationIds, isControlled, urgency],
     queryFn: async () => {
-      console.log('Calling AI pharmacy recommendation with:', {
-        patientId,
-        medicationIds,
-        isControlled,
-        urgency,
-      });
       const response = await apiRequest('POST', '/api/eprescribing/pharmacy/select', {
         patientId,
         medicationIds,
         isControlled,
         urgency,
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI recommendation failed:', response.status, errorText);
-        throw new Error(errorText);
-      }
-      
       const data = await response.json();
-      console.log('AI recommendation response:', data);
       return data as PharmacyRecommendation;
     },
     enabled: open && useAiRecommendation,
@@ -132,28 +116,14 @@ export function PharmacySelectionDialog({
 
   // Search pharmacies with fax numbers
   const searchPharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
+    queryKey: ['/api/eprescribing/pharmacies/search', searchQuery],
     queryFn: async () => {
-      console.log('🔍 [PharmacySearch] Starting search for:', searchQuery);
       const params = new URLSearchParams({ 
-        query: searchQuery,  // Changed from 'name' to 'query' to match backend
+        name: searchQuery,
         limit: '20'
       });
-      const url = `/api/eprescribing/pharmacy/search?${params}`;  // Changed from 'pharmacies' to 'pharmacy'
-      console.log('🔍 [PharmacySearch] Calling API:', url);
-      
-      const response = await apiRequest('GET', url);
-      console.log('🔍 [PharmacySearch] Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('🔍 [PharmacySearch] Error response:', errorText);
-        throw new Error(errorText);
-      }
-      
-      const data = await response.json();
-      console.log('🔍 [PharmacySearch] Results:', data);
-      return data;
+      const response = await apiRequest('GET', `/api/eprescribing/pharmacies/search?${params}`);
+      return response.json();
     },
     enabled: searchQuery.length > 2,
   });
@@ -208,7 +178,7 @@ export function PharmacySelectionDialog({
 
         // Save the Google Places pharmacy to our database
         const response = await apiRequest('POST', '/api/eprescribing/pharmacies/save-google-place', {
-          placeId: selectedPharmacyId, // Send the full ID with "google_" prefix
+          placeId: googlePlaceId,
           name: selectedPharmacy.name,
           address: selectedPharmacy.address,
         });
@@ -241,14 +211,9 @@ export function PharmacySelectionDialog({
       const validation = await validatePharmacyMutation.mutateAsync(selectedPharmacyId);
       
       if (!validation.canFill) {
-        // Show more accurate error message about our system limitations
-        const message = validation.issues.length > 0 
-          ? validation.issues.join('\n')
-          : 'SureScripts e-prescribing is coming soon! For now, you can send prescriptions by fax or print PDF.';
-          
         toast({
-          title: 'E-Prescribing Not Available',
-          description: message,
+          title: 'Pharmacy Cannot Fill Prescription',
+          description: validation.issues.join('\n'),
           variant: 'destructive',
         });
         return;
@@ -290,29 +255,17 @@ export function PharmacySelectionDialog({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-            {deliveryMethod === 'fax' ? (
-              pharmacy.fax ? (
-                <Badge variant="outline" className="text-green-600">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Fax Available
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-red-600">
-                  <XCircle className="h-3 w-3 mr-1" />
-                  No Fax Number
-                </Badge>
-              )
-            ) : pharmacy.acceptsEprescribe ? (
+            {pharmacy.acceptsEprescribe ? (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 E-Prescribe
               </Badge>
-            ) : (!pharmacy.fax && (
+            ) : (
               <Badge variant="outline" className="text-red-600">
                 <XCircle className="h-3 w-3 mr-1" />
                 Print Only
               </Badge>
-            ))}
+            )}
             {isControlled && (
               pharmacy.acceptsControlled ? (
                 <Badge variant="outline" className="text-green-600">
@@ -372,12 +325,7 @@ export function PharmacySelectionDialog({
             Select Pharmacy
           </DialogTitle>
           <DialogDescription>
-            <div className="space-y-2">
-              <p>Choose where to send this prescription</p>
-              <p className="text-xs text-blue-600 font-medium">
-                🚀 SureScripts e-prescribing coming soon! Currently supporting fax and print delivery.
-              </p>
-            </div>
+            Choose where to send this prescription
             {urgency !== 'routine' && (
               <Badge variant={urgency === 'emergency' ? 'destructive' : 'default'} className="ml-2">
                 {urgency.toUpperCase()}
@@ -432,14 +380,7 @@ export function PharmacySelectionDialog({
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    <div className="space-y-2">
-                      <p>Unable to get AI recommendations. Please select a pharmacy manually.</p>
-                      {process.env.NODE_ENV === 'development' && (
-                        <p className="text-xs font-mono">
-                          Error: {aiRecommendationQuery.error.message || 'Unknown error'}
-                        </p>
-                      )}
-                    </div>
+                    Unable to get AI recommendations. Please select a pharmacy manually.
                   </AlertDescription>
                 </Alert>
               )}
@@ -474,56 +415,12 @@ export function PharmacySelectionDialog({
 
               {(!useAiRecommendation || (useAiRecommendation && (aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)))) && (
                 <>
-                  {searchQuery.length === 0 && (
-                    <div className="text-center py-8 space-y-4">
-                      <Store className="h-12 w-12 text-muted-foreground mx-auto" />
-                      <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">
-                          Start typing to search for pharmacies
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Try searching for: "CVS", "Walgreens", "HEB", or your local pharmacy name
-                        </p>
-                      </div>
-                    </div>
+                  {(searchQuery 
+                    ? (searchPharmaciesQuery.data || [])
+                    : (pharmaciesQuery.data || [])
+                  ).map((pharmacy: Pharmacy) =>
+                    renderPharmacyCard(pharmacy)
                   )}
-                  
-                  {searchQuery.length > 0 && searchQuery.length < 3 && (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground">
-                        Type at least 3 characters to search...
-                      </p>
-                    </div>
-                  )}
-                  
-                  {searchQuery.length >= 3 && searchPharmaciesQuery.isLoading && (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="ml-2">Searching pharmacies...</span>
-                    </div>
-                  )}
-                  
-                  {searchQuery.length >= 3 && !searchPharmaciesQuery.isLoading && searchPharmaciesQuery.data && searchPharmaciesQuery.data.length === 0 && (
-                    <div className="text-center py-8 space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        No pharmacies found matching "{searchQuery}"
-                      </p>
-                      <div className="text-xs text-muted-foreground space-y-2">
-                        <p>Tips for better results:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>Try a shorter search term (e.g., "CVS" instead of "CVS Pharmacy")</li>
-                          <li>Search by street name or city</li>
-                          <li>Check your spelling</li>
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {searchPharmaciesQuery.data && searchPharmaciesQuery.data.length > 0 && 
-                    searchPharmaciesQuery.data.map((pharmacy: Pharmacy) =>
-                      renderPharmacyCard(pharmacy)
-                    )
-                  }
                 </>
               )}
             </div>

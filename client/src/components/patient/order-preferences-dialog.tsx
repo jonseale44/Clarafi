@@ -410,7 +410,6 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
       onPharmacySelect={handlePharmacySelect}
       patientId={patientId}
       medicationIds={[]} // In real implementation, we'd pass actual medication IDs
-      deliveryMethod={getCurrentValue() === 'fax' ? 'fax' : 'electronic'}
     />
     </div>
   );

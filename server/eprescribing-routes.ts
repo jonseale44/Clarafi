@@ -147,9 +147,9 @@ router.post('/api/eprescribing/pharmacy/validate', requireAuth, async (req, res)
     console.log('✅ [EPrescribing] Validating pharmacy capability');
     const { pharmacyId, requirements } = req.body;
 
-    // For Google Places pharmacies (string IDs starting with google_), skip validation
-    if (typeof pharmacyId === 'string' && pharmacyId.startsWith('google_')) {
-      console.log('🌐 [EPrescribing] Google Places pharmacy - skipping validation');
+    // For Google Places pharmacies (string IDs starting with ChI...), assume basic capabilities
+    if (typeof pharmacyId === 'string' && !pharmacyId.match(/^\d+$/)) {
+      console.log('🌐 [EPrescribing] Google Places pharmacy - assuming basic capabilities');
       return res.json({
         canFill: true,
         issues: [],
@@ -176,221 +176,167 @@ router.post('/api/eprescribing/pharmacy/validate', requireAuth, async (req, res)
   }
 });
 
-// Save Google Places pharmacy to our database
-router.post('/api/eprescribing/pharmacies/save-google-place', requireAuth, async (req, res) => {
+// Search pharmacies - using Google Places API as primary source
+router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, async (req, res) => {
   try {
-    const { placeId } = req.body;
+    const { query = '', city, state, lat, lng } = req.query;
+    console.log('🔍 [Pharmacy Search] Request:', { query, city, state, lat, lng });
+
+    // First try Google Places API
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     
-    if (!placeId || !placeId.startsWith('google_')) {
-      return res.status(400).json({ error: 'Invalid Google Places ID' });
+    if (apiKey) {
+      console.log('🔍 [Pharmacy Search] Using Google Places API');
+      
+      let googleResults = [];
+      
+      if (query) {
+        // Text search for pharmacies
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json`;
+        const params = new URLSearchParams({
+          key: apiKey,
+          query: `${query} pharmacy`,
+          type: 'pharmacy'
+        });
+        
+        try {
+          const response = await fetch(`${searchUrl}?${params}`);
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results) {
+            googleResults = data.results;
+          }
+        } catch (error) {
+          console.error('❌ [Pharmacy Search] Google Places API error:', error);
+        }
+      } else if (lat && lng) {
+        // Nearby search for pharmacies
+        const nearbyUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json`;
+        const params = new URLSearchParams({
+          key: apiKey,
+          location: `${lat},${lng}`,
+          radius: '5000', // 5km radius
+          type: 'pharmacy'
+        });
+        
+        try {
+          const response = await fetch(`${nearbyUrl}?${params}`);
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results) {
+            googleResults = data.results;
+          }
+        } catch (error) {
+          console.error('❌ [Pharmacy Search] Google Places API error:', error);
+        }
+      }
+      
+      // Transform Google Places results to our pharmacy format
+      if (googleResults.length > 0) {
+        const transformedPharmacies = googleResults.map(place => ({
+          id: place.place_id, // Use place_id as unique identifier
+          name: place.name,
+          address: place.vicinity || place.formatted_address?.split(',')[0] || '',
+          city: place.formatted_address?.split(',')[1]?.trim() || city || 'Unknown',
+          state: place.formatted_address?.split(',')[2]?.trim()?.split(' ')[0] || state || 'TX',
+          zipCode: place.formatted_address?.match(/\d{5}/)?.[0] || '00000',
+          phone: place.formatted_phone_number || '',
+          pharmacyType: 'retail',
+          acceptsEprescribe: true, // Most modern pharmacies accept e-prescribe
+          acceptsControlled: place.types?.includes('pharmacy'), // Assume true pharmacies can handle controlled
+          acceptsCompounding: place.name?.toLowerCase().includes('compound') || false,
+          hours: place.opening_hours?.weekday_text?.join(', ') || 'Hours not available',
+          active: true,
+          ncpdpId: null, // Google Places doesn't provide NCPDP ID
+          distance: undefined // Will be calculated client-side if needed
+        }));
+        
+        console.log(`✅ [Pharmacy Search] Found ${transformedPharmacies.length} pharmacies via Google Places`);
+        return res.json(transformedPharmacies);
+      }
     }
     
-    // Extract the actual place ID
-    const actualPlaceId = placeId.replace('google_', '');
+    // Fallback: Check local database
+    console.log('⚠️ [Pharmacy Search] Google Places API not available or no results, checking local database');
     
-    // Get details from Google Places API
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-    if (!apiKey) {
-      // Return basic data if no API key
-      return res.json({
-        pharmacy: {
-          id: placeId,
-          name: 'Pharmacy',
-          address: 'Address',
-          city: 'City',
-          state: 'State',
-          zipCode: '00000',
-          phone: '',
-          fax: '',
+    let pharmacyQuery = db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.status, 'active'))
+      .limit(20);
+
+    // Add filters if provided
+    if (query) {
+      pharmacyQuery = pharmacyQuery.where(
+        pharmacies.name as any,
+        'ilike',
+        `%${query}%`
+      );
+    }
+
+    const results = await pharmacyQuery;
+    
+    // If no local pharmacies either, return mock data for development
+    if (results.length === 0) {
+      console.log('🔍 [Pharmacy Search] No local pharmacies, returning mock data');
+      const mockPharmacies = [
+        {
+          id: 'mock-cvs-1',
+          name: 'CVS Pharmacy',
+          address: '123 Main Street',
+          city: 'Waco',
+          state: 'TX',
+          zipCode: '76701',
+          phone: '(254) 555-0100',
           pharmacyType: 'retail',
           acceptsEprescribe: true,
           acceptsControlled: true,
           acceptsCompounding: false,
-          active: true
+          hours: 'Mon-Fri: 9AM-9PM, Sat: 9AM-6PM, Sun: 10AM-5PM',
+          active: true,
+          ncpdpId: null
+        },
+        {
+          id: 'mock-walgreens-1',
+          name: 'Walgreens',
+          address: '456 Oak Avenue',
+          city: 'Waco',
+          state: 'TX',
+          zipCode: '76702',
+          phone: '(254) 555-0200',
+          pharmacyType: 'retail',
+          acceptsEprescribe: true,
+          acceptsControlled: true,
+          acceptsCompounding: false,
+          hours: 'Mon-Sun: 8AM-10PM',
+          active: true,
+          ncpdpId: null
+        },
+        {
+          id: 'mock-heb-1',
+          name: 'HEB Pharmacy',
+          address: '789 Valley Mills Dr',
+          city: 'Waco',
+          state: 'TX',
+          zipCode: '76710',
+          phone: '(254) 555-0300',
+          pharmacyType: 'retail',
+          acceptsEprescribe: true,
+          acceptsControlled: false,
+          acceptsCompounding: false,
+          hours: 'Mon-Sat: 8AM-9PM, Sun: 9AM-7PM',
+          active: true,
+          ncpdpId: null
         }
-      });
+      ];
+      return res.json(mockPharmacies);
     }
     
-    // Fetch place details from Google
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json`;
-    const params = new URLSearchParams({
-      key: apiKey,
-      place_id: actualPlaceId,
-      fields: 'name,formatted_address,formatted_phone_number,website,place_id,types'
-    });
-    
-    const response = await fetch(`${detailsUrl}?${params}`);
-    const data = await response.json();
-    
-    if (data.status !== 'OK' || !data.result) {
-      throw new Error('Failed to fetch place details');
-    }
-    
-    const place = data.result;
-    
-    // Parse address components
-    const addressParts = place.formatted_address?.split(',') || [];
-    const street = addressParts[0]?.trim() || '';
-    const city = addressParts[1]?.trim() || '';
-    const stateZip = addressParts[2]?.trim() || '';
-    const state = stateZip.split(' ')[0] || 'TX';
-    const zipCode = stateZip.match(/\d{5}/)?.[0] || '00000';
-    
-    // Check if this pharmacy exists in our database with fax info
-    let faxNumber = '';
-    try {
-      const existingPharmacy = await db.select()
-        .from(pharmacies)
-        .where(
-          and(
-            sql`LOWER(${pharmacies.name}) LIKE LOWER(${'%' + place.name + '%'})`,
-            sql`LOWER(${pharmacies.city}) = LOWER(${city})`
-          )
-        )
-        .limit(1);
-      
-      if (existingPharmacy.length > 0) {
-        faxNumber = existingPharmacy[0].fax || '';
-      }
-    } catch (error) {
-      console.error('⚠️ [Pharmacy Save] Error checking for existing pharmacy:', error);
-    }
-    
-    const pharmacy = {
-      id: placeId,
-      name: place.name,
-      address: street,
-      city: city,
-      state: state,
-      zipCode: zipCode,
-      phone: place.formatted_phone_number || '',
-      fax: faxNumber,
-      pharmacyType: 'retail',
-      acceptsEprescribe: true,
-      acceptsControlled: place.types?.includes('pharmacy'),
-      acceptsCompounding: place.name?.toLowerCase().includes('compound') || false,
-      active: true
-    };
-    
-    res.json({ pharmacy });
+    res.json(results);
   } catch (error) {
-    console.error('❌ [EPrescribing] Error saving pharmacy:', error);
-    res.status(500).json({ error: 'Failed to save pharmacy' });
-  }
-});
-
-// Get pharmacy details
-router.get('/api/eprescribing/pharmacies/:id', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    // For Google Places IDs, return basic data
-    if (id.startsWith('google_')) {
-      return res.json({
-        id,
-        name: 'Pharmacy',
-        address: 'Address',
-        city: 'City',
-        state: 'State', 
-        zipCode: '00000',
-        phone: '',
-        fax: '',
-        pharmacyType: 'retail',
-        acceptsEprescribe: true,
-        acceptsControlled: true,
-        acceptsCompounding: false,
-        active: true
-      });
-    }
-    
-    // For database IDs, fetch from database
-    const pharmacy = await db.select()
-      .from(pharmacies)
-      .where(eq(pharmacies.id, parseInt(id)))
-      .limit(1);
-      
-    if (!pharmacy.length) {
-      return res.status(404).json({ error: 'Pharmacy not found' });
-    }
-    
-    res.json(pharmacy[0]);
-  } catch (error) {
-    console.error('❌ [EPrescribing] Error fetching pharmacy:', error);
-    res.status(500).json({ error: 'Failed to fetch pharmacy' });
-  }
-});
-
-// Search pharmacies - using ScriptFax database ONLY
-router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, async (req, res) => {
-  try {
-    const { query = '' } = req.query;
-    console.log('🔍 [Pharmacy Search] Searching database for:', query);
-
-    // Search our ScriptFax™ database
-    let dbResults = [];
-    
-    if (query && query.length >= 3) {
-      // Search by name
-      dbResults = await db.select()
-        .from(pharmacies)
-        .where(
-          sql`LOWER(${pharmacies.name}) LIKE LOWER(${'%' + query + '%'})`
-        )
-        .orderBy(
-          // Order by: has fax first, then by name
-          sql`CASE WHEN ${pharmacies.fax} IS NOT NULL AND ${pharmacies.fax} != '' THEN 0 ELSE 1 END`,
-          pharmacies.name
-        )
-        .limit(50);
-    } else {
-      // Return all pharmacies if query is too short
-      dbResults = await db.select()
-        .from(pharmacies)
-        .orderBy(
-          sql`CASE WHEN ${pharmacies.fax} IS NOT NULL AND ${pharmacies.fax} != '' THEN 0 ELSE 1 END`,
-          pharmacies.name
-        )
-        .limit(50);
-    }
-    
-    console.log(`📋 [Pharmacy Search] Found ${dbResults.length} pharmacies in database`);
-    if (dbResults.length > 0) {
-      console.log('📋 [Pharmacy Search] First result:', {
-        name: dbResults[0].name,
-        city: dbResults[0].city,
-        state: dbResults[0].state,
-        fax: dbResults[0].fax
-      });
-    }
-    
-    // Format results for frontend
-    const formattedResults = dbResults.map(pharmacy => ({
-      id: pharmacy.id.toString(),
-      name: pharmacy.name,
-      address: pharmacy.address,
-      city: pharmacy.city,
-      state: pharmacy.state,
-      zipCode: pharmacy.zipCode,
-      phone: pharmacy.phone || '',
-      fax: pharmacy.fax || '',
-      pharmacyType: pharmacy.pharmacyType || 'retail',
-      acceptsEprescribe: pharmacy.acceptsEprescribe ?? true,
-      acceptsControlled: pharmacy.acceptsControlled ?? true,
-      acceptsCompounding: pharmacy.acceptsCompounding ?? false,
-      hours: '',
-      distance: 0
-    }));
-    
-    res.json(formattedResults);
-  } catch (error) {
-    console.error('❌ [Pharmacy Search] Database error:', error);
+    console.error('❌ [EPrescribing] Error searching pharmacies:', error);
     res.status(500).json({ error: 'Failed to search pharmacies' });
   }
 });
-
-
-
-
 
 // Save Google Places pharmacy to database
 router.post('/api/eprescribing/pharmacies/save-google-place', requireAuth, tenantIsolation, async (req, res) => {
