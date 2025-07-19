@@ -3688,6 +3688,23 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         return res.status(404).json({ error: "Order not found" });
       }
 
+      console.log(`🔍 [Order Signing] Order ${orderId} data:`, JSON.stringify({
+        orderType: order.orderType,
+        medicationName: order.medicationName,
+        dosage: order.dosage,
+        strength: order.strength,
+        form: order.form,
+        dosageForm: order.dosageForm,
+        routeOfAdministration: order.routeOfAdministration,
+        route: order.route,
+        quantity: order.quantity,
+        quantityUnit: order.quantityUnit,
+        quantity_unit: order.quantity_unit,
+        sig: order.sig,
+        refills: order.refills,
+        daysSupply: order.daysSupply
+      }, null, 2));
+
       // Validate medication orders before signing
       if (order.orderType === "medication") {
         const { PharmacyValidationService } = await import(
@@ -3695,20 +3712,24 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         );
         const pharmacyValidator = new PharmacyValidationService();
 
+        const validationData = {
+          medicationName: order.medicationName || "",
+          strength: order.dosage || order.strength || "",
+          dosageForm: order.form || order.dosageForm || "",
+          sig: order.sig || "",
+          quantity: order.quantity || 0,
+          quantityUnit: order.quantityUnit || order.quantity_unit, // Check both field names
+          refills: order.refills || 0,
+          daysSupply: order.daysSupply || 0,
+          route: order.routeOfAdministration || order.route || "",
+          clinicalIndication: order.clinicalIndication || "",
+          patientId: order.patientId,
+        };
+
+        console.log(`💊 [Order Signing] Validation data for order ${orderId}:`, JSON.stringify(validationData, null, 2));
+
         const validationResult =
-          await pharmacyValidator.validateMedicationOrder({
-            medicationName: order.medicationName || "",
-            strength: order.dosage || "",
-            dosageForm: order.form || "",
-            sig: order.sig || "",
-            quantity: order.quantity || 0,
-            quantityUnit: order.quantityUnit, // Pass existing unit to GPT
-            refills: order.refills || 0,
-            daysSupply: order.daysSupply || 0,
-            route: order.routeOfAdministration || "",
-            clinicalIndication: order.clinicalIndication || "",
-            patientId: order.patientId,
-          });
+          await pharmacyValidator.validateMedicationOrder(validationData);
 
         if (validationResult.errors.length > 0) {
           console.log(
