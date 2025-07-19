@@ -34,7 +34,7 @@ import {
 interface PharmacySelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPharmacySelect: (pharmacyId: number) => void;
+  onPharmacySelect: (pharmacyId: string | number) => void;
   patientId: number;
   medicationIds: number[];
   isControlled?: boolean;
@@ -42,7 +42,7 @@ interface PharmacySelectionDialogProps {
 }
 
 interface Pharmacy {
-  id: number;
+  id: string | number;
   name: string;
   address: string;
   city: string;
@@ -76,7 +76,7 @@ export function PharmacySelectionDialog({
 }: PharmacySelectionDialogProps) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPharmacyId, setSelectedPharmacyId] = useState<number | null>(null);
+  const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
   const [useAiRecommendation, setUseAiRecommendation] = useState(true);
 
   // Get AI pharmacy recommendation
@@ -114,7 +114,7 @@ export function PharmacySelectionDialog({
 
   // Validate pharmacy capability
   const validatePharmacyMutation = useMutation({
-    mutationFn: async (pharmacyId: number) => {
+    mutationFn: async (pharmacyId: string | number) => {
       return apiRequest('POST', '/api/eprescribing/pharmacy/validate', {
         pharmacyId,
         requirements: {
@@ -142,7 +142,14 @@ export function PharmacySelectionDialog({
       return;
     }
 
-    // Validate pharmacy before selection
+    // Skip validation for Google Places pharmacies (string IDs)
+    if (typeof selectedPharmacyId === 'string') {
+      onPharmacySelect(selectedPharmacyId);
+      onOpenChange(false);
+      return;
+    }
+
+    // Validate pharmacy before selection (for numeric IDs from database)
     try {
       const validation = await validatePharmacyMutation.mutateAsync(selectedPharmacyId);
       
