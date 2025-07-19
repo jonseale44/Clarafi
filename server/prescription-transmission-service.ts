@@ -345,16 +345,29 @@ export class PrescriptionTransmissionService {
   ): Promise<void> {
     console.log('🖨️ [PrescriptionTransmission] Processing print transmission');
 
-    // Generate prescription PDF
+    // Generate prescription data
     const prescriptionData = await this.generatePrescriptionData(transmission, medication, order);
 
-    // Update transmission status
+    // Import the PDF service
+    const { PrescriptionPdfService } = await import('./prescription-pdf-service.js');
+    
+    // Generate PDF buffer
+    const pdfBuffer = PrescriptionPdfService.generatePrescriptionPdf(prescriptionData);
+    
+    // Convert buffer to base64 for storage
+    const pdfBase64 = pdfBuffer.toString('base64');
+
+    // Update transmission status with PDF data
     await this.updateTransmissionStatus(transmission.id, 'transmitted', {
       printedCopy: prescriptionData,
+      transmissionMetadata: {
+        pdfData: pdfBase64,
+        pdfGeneratedAt: new Date().toISOString()
+      },
       transmissionStatus: 'printed'
     });
 
-    console.log('✅ [PrescriptionTransmission] Print transmission recorded');
+    console.log('✅ [PrescriptionTransmission] Print transmission recorded with PDF');
   }
 
   /**

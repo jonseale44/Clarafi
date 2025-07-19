@@ -20,6 +20,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ElectronicSignatureDialog } from './electronic-signature-dialog';
 import { PharmacySelectionDialog } from './pharmacy-selection-dialog';
+import { PrescriptionPdfViewer } from './prescription-pdf-viewer';
 import {
   Send,
   Printer,
@@ -73,6 +74,10 @@ export function PrescriptionTransmissionDialog({
   // Show signature dialog
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [showPharmacyDialog, setShowPharmacyDialog] = useState(false);
+  
+  // PDF viewer state for print method
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [currentPdfTransmissionId, setCurrentPdfTransmissionId] = useState<number | null>(null);
 
   // Check if any selected medications are controlled
   const hasControlledSubstances = medications
@@ -121,6 +126,16 @@ export function PrescriptionTransmissionDialog({
     },
     onSuccess: (results) => {
       setTransmissionResults(results);
+      
+      // If print method and successful, show PDF viewer for the first successful transmission
+      if (transmissionMethod === 'print') {
+        const firstSuccess = results.find(r => r.success);
+        if (firstSuccess) {
+          setCurrentPdfTransmissionId(firstSuccess.transmissionId);
+          setShowPdfViewer(true);
+        }
+      }
+      
       setCurrentStep('complete');
       
       const successCount = results.filter(r => r.success).length;
@@ -457,6 +472,21 @@ export function PrescriptionTransmissionDialog({
         isControlled={hasControlledSubstances}
         urgency="routine"
       />
+      
+      {/* PDF Viewer for print transmissions */}
+      {currentPdfTransmissionId && (
+        <PrescriptionPdfViewer
+          transmissionId={currentPdfTransmissionId}
+          open={showPdfViewer}
+          onOpenChange={setShowPdfViewer}
+          onFaxSent={() => {
+            toast({
+              title: 'Prescription Faxed',
+              description: 'The prescription has been successfully sent via fax',
+            });
+          }}
+        />
+      )}
     </>
   );
 }

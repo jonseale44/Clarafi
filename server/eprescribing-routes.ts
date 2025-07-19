@@ -632,4 +632,188 @@ router.get('/api/eprescribing/pharmacies', requireAuth, tenantIsolation, async (
   }
 });
 
+// Get prescription PDF
+router.get('/api/eprescribing/prescription-pdf/:transmissionId', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const transmissionId = parseInt(req.params.transmissionId);
+    console.log('📄 [EPrescribing] Retrieving prescription PDF for transmission:', transmissionId);
+    
+    // Get transmission record with all related data
+    const [transmission] = await db.select({
+      transmission: prescriptionTransmissions,
+      medication: medications,
+      order: orders,
+      patient: patients
+    })
+    .from(prescriptionTransmissions)
+    .innerJoin(medications, eq(prescriptionTransmissions.medicationId, medications.id))
+    .innerJoin(orders, eq(medications.orderId, orders.id))
+    .innerJoin(patients, eq(orders.patientId, patients.id))
+    .where(and(
+      eq(prescriptionTransmissions.id, transmissionId),
+      eq(patients.healthSystemId, req.userHealthSystemId!)
+    ));
+    
+    if (!transmission) {
+      return res.status(404).json({ error: 'Transmission not found' });
+    }
+    
+    // Check if PDF already exists in metadata
+    const metadata = transmission.transmission.transmissionMetadata as any;
+    if (metadata?.pdfData) {
+      // Return existing PDF
+      const pdfBuffer = Buffer.from(metadata.pdfData, 'base64');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="prescription-${transmissionId}.pdf"`);
+      return res.send(pdfBuffer);
+    }
+    
+    // Generate PDF if it doesn't exist
+    console.log('📄 [EPrescribing] Generating new PDF for transmission:', transmissionId);
+    
+    // Get provider and pharmacy data
+    const [provider] = await db.select()
+      .from(users)
+      .where(eq(users.id, transmission.transmission.providerId));
+      
+    const [pharmacy] = await db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.id, transmission.transmission.pharmacyId!));
+    
+    // Prepare prescription data
+    const prescriptionData = {
+      prescriptionNumber: `RX-${transmission.transmission.id}`,
+      date: transmission.transmission.transmittedAt?.toISOString() || new Date().toISOString(),
+      patient: {
+        name: `${transmission.patient.firstName} ${transmission.patient.lastName}`,
+        dateOfBirth: transmission.patient.dateOfBirth,
+        address: `${transmission.patient.address || ''}, ${transmission.patient.city || ''}, ${transmission.patient.state || ''} ${transmission.patient.zip || ''}`
+      },
+      prescriber: {
+        name: `${provider.firstName} ${provider.lastName}, ${provider.credentials || ''}`,
+        npi: provider.npi || undefined,
+        licenseNumber: provider.licenseNumber || undefined,
+        address: 'Clinic Address', // Would fetch from provider's location
+        phone: transmission.patient.contactNumber || undefined
+      },
+      pharmacy: pharmacy ? {
+        name: pharmacy.name,
+        address: `${pharmacy.address}, ${pharmacy.city}, ${pharmacy.state} ${pharmacy.zipCode}`,
+        phone: pharmacy.phone || undefined,
+        fax: pharmacy.fax || undefined
+      } : {
+        name: 'Print for Patient',
+        address: 'Patient will select pharmacy',
+        phone: undefined,
+        fax: undefined
+      },
+      medication: {
+        name: transmission.medication.name,
+        strength: transmission.medication.strength || undefined,
+        form: transmission.medication.dosageForm || undefined,
+        quantity: `${transmission.order.quantity} ${transmission.order.quantityUnit}`,
+        sig: transmission.medication.sig,
+        refills: transmission.order.refills || 0,
+        daysSupply: transmission.order.daysSupply || 30,
+        deaSchedule: transmission.medication.deaSchedule || undefined,
+        genericSubstitution: transmission.order.substitutionAllowed !== false ? 'Permitted' : 'Dispense as Written'
+      }
+    };
+    
+    // Generate PDF
+    const { PrescriptionPdfService } = await import('./prescription-pdf-service.js');
+    const pdfBuffer = PrescriptionPdfService.generatePrescriptionPdf(prescriptionData);
+    
+    // Update transmission with PDF data
+    await db.update(prescriptionTransmissions)
+      .set({
+        transmissionMetadata: {
+          ...metadata,
+          pdfData: pdfBuffer.toString('base64'),
+          pdfGeneratedAt: new Date().toISOString()
+        }
+      })
+      .where(eq(prescriptionTransmissions.id, transmissionId));
+    
+    // Return PDF
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="prescription-${transmissionId}.pdf"`);
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error retrieving prescription PDF:', error);
+    res.status(500).json({ error: 'Failed to retrieve prescription PDF' });
+  }
+});
+
+// Send prescription via fax
+router.post('/api/eprescribing/transmit-fax', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    console.log('📠 [EPrescribing] Sending prescription via fax');
+    
+    const { transmissionId, faxNumber } = req.body;
+    
+    if (!transmissionId || !faxNumber) {
+      return res.status(400).json({ error: 'Transmission ID and fax number are required' });
+    }
+    
+    // Validate fax number format
+    const cleanFaxNumber = faxNumber.replace(/\D/g, '');
+    if (cleanFaxNumber.length !== 10 && cleanFaxNumber.length !== 11) {
+      return res.status(400).json({ error: 'Invalid fax number format' });
+    }
+    
+    // Get transmission with verification
+    const [transmission] = await db.select()
+      .from(prescriptionTransmissions)
+      .innerJoin(medications, eq(prescriptionTransmissions.medicationId, medications.id))
+      .innerJoin(orders, eq(medications.orderId, orders.id))
+      .innerJoin(patients, eq(orders.patientId, patients.id))
+      .where(and(
+        eq(prescriptionTransmissions.id, transmissionId),
+        eq(patients.healthSystemId, req.userHealthSystemId!)
+      ));
+      
+    if (!transmission) {
+      return res.status(404).json({ error: 'Transmission not found' });
+    }
+    
+    // Check if transmission was already sent
+    if (transmission.prescriptionTransmissions.transmissionStatus === 'transmitted' && 
+        transmission.prescriptionTransmissions.transmissionMethod === 'fax') {
+      return res.status(400).json({ error: 'Prescription already sent via fax' });
+    }
+    
+    // TODO: Integrate with actual fax service (e.g., Twilio Fax, SRFax, etc.)
+    // For now, we'll simulate the fax transmission
+    console.log(`📠 [EPrescribing] Simulating fax to ${faxNumber}`);
+    
+    // Update transmission record
+    await db.update(prescriptionTransmissions)
+      .set({
+        transmissionMethod: 'fax',
+        transmissionStatus: 'transmitted',
+        transmittedAt: new Date(),
+        transmissionMetadata: {
+          ...(transmission.prescriptionTransmissions.transmissionMetadata as any || {}),
+          faxNumber: cleanFaxNumber,
+          faxSentAt: new Date().toISOString(),
+          faxStatus: 'sent',
+          faxProvider: 'simulation' // Would be 'twilio', 'srfax', etc. in production
+        }
+      })
+      .where(eq(prescriptionTransmissions.id, transmissionId));
+    
+    res.json({
+      success: true,
+      message: `Prescription faxed successfully to ${faxNumber}`,
+      transmissionId
+    });
+    
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error sending fax:', error);
+    res.status(500).json({ error: 'Failed to send prescription via fax' });
+  }
+});
+
 export { router as eprescribingRoutes };

@@ -119,6 +119,7 @@ router.put("/:patientId/order-preferences", async (req, res) => {
         .insert(patientOrderPreferences)
         .values({
           patientId,
+          providerId: userId,  // Add the missing provider_id
           ...updateData,
           createdAt: new Date()
         })
