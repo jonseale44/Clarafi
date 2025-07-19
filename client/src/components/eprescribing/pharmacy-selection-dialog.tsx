@@ -77,7 +77,7 @@ export function PharmacySelectionDialog({
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
-  const [useAiRecommendation, setUseAiRecommendation] = useState(true);
+  const [useAiRecommendation, setUseAiRecommendation] = useState(false);
   
   // Debug logging
   useEffect(() => {
