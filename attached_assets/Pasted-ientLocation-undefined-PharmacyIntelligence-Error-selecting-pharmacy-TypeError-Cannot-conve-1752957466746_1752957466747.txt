@@ -1,0 +1,49 @@
+ientLocation: undefined
+}
+❌ [PharmacyIntelligence] Error selecting pharmacy: TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)
+    at Array.reduce (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)
+    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+❌ [EPrescribing] Error selecting pharmacy: TypeError: Cannot convert undefined or null to object
+    at Function.entries (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:16)
+    at <anonymous> (/home/runner/workspace/node_modules/src/utils.ts:88:19)
+    at Array.reduce (<anonymous>)
+    at orderSelectedFields (/home/runner/workspace/node_modules/src/utils.ts:77:32)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:979:23)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase._prepare (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:978:17)
+    at <anonymous> (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1009:16)
+    at Object.startActiveSpan (/home/runner/workspace/node_modules/src/tracing.ts:27:11)
+    at PgSelectBase.execute (/home/runner/workspace/node_modules/src/pg-core/query-builders/select.ts:1008:17)
+    at PgSelectBase.then (/home/runner/workspace/node_modules/src/query-promise.ts:31:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+8:37:23 PM [express] POST /api/eprescribing/pharmacy/select 500 in 447ms :: {"error":"Failed to sele…
+📍 [FIRST] GET /api/eprescribing/pharmacies
+🔒 [TenantIsolation] User 5 accessing data for health system 14
+8:37:23 PM [express] GET /api/eprescribing/pharmacies 304 in 376ms :: [{"id":11,"ncpdpId":null,"npi"…
+📍 [FIRST] GET /api/patients/54/draft-orders
+8:37:24 PM [express] GET /api/patients/54/draft-orders 304 in 343ms :: [{"id":330,"patientId":54,"en…
+📍 [FIRST] GET /api/encounters/81/validation
+🔍 [Validation] Validating encounter 81
+🔍 [Validation] SOAP note length: 0
+🔍 [Validation] CPT codes count: 0
+🔍 [Validation] Diagnoses count: 0
+🔍 [Validation] Found 3 draft orders requiring signature
+8:37:25 PM [express] GET /api/encounters/81/validation 304 in 393ms :: {"canSign":false,"errors":["S…
+📍 [FIRST] GET /api/patients/54/draft-orders
+8:37:26 PM [express] GET /api/patients/54/draft-orders 304 in 302ms :: [{"id":330,"patientId":54,"en…
+📍 [FIRST] POST /api/eprescribing/pharmacy/validate
+✅ [EPrescribing] Validating pharmacy capability
+📍 [FIRST] GET /api/encounters/81/validation
+8:37:27 PM [express] POST /api/eprescribing/pharmacy/validate 200 in 299ms :: {"canFill":

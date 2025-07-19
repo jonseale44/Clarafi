@@ -264,19 +264,30 @@ Provide your response as JSON with this structure:
    * Gets recent transmission history for pattern analysis
    */
   private async getTransmissionHistory(patientId: number): Promise<any[]> {
-    const recentTransmissions = await db.select({
-      pharmacyName: pharmacies.name,
-      status: prescriptionTransmissions.transmissionStatus,
-      createdAt: prescriptionTransmissions.createdAt,
-      daysAgo: sql<number>`EXTRACT(DAY FROM NOW() - ${prescriptionTransmissions.createdAt})`
-    })
-    .from(prescriptionTransmissions)
-    .leftJoin(pharmacies, eq(prescriptionTransmissions.pharmacyId, pharmacies.id))
-    .where(eq(prescriptionTransmissions.patientId, patientId))
-    .orderBy(desc(prescriptionTransmissions.createdAt))
-    .limit(10);
+    try {
+      // Get transmission records with pharmacy info using query API
+      const transmissions = await db.query.prescriptionTransmissions.findMany({
+        where: eq(prescriptionTransmissions.patientId, patientId),
+        orderBy: [desc(prescriptionTransmissions.createdAt)],
+        limit: 10,
+        with: {
+          pharmacy: true
+        }
+      });
 
-    return recentTransmissions;
+      // Transform the data to include calculated fields
+      const recentTransmissions = transmissions.map(t => ({
+        pharmacyName: t.pharmacy?.name || 'Unknown Pharmacy',
+        status: t.transmissionStatus,
+        createdAt: t.createdAt,
+        daysAgo: Math.floor((Date.now() - new Date(t.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+      }));
+
+      return recentTransmissions;
+    } catch (error) {
+      console.error('❌ [PharmacyIntelligence] Error getting transmission history:', error);
+      return [];
+    }
   }
 
   /**
