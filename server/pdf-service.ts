@@ -30,9 +30,13 @@ export class PDFService {
   }
 
   private async getProviderInfo(providerId: number) {
+    console.log(`📄 [PDFService] Getting provider info for providerId: ${providerId}`);
+    
     const [provider] = await db.select().from(users).where(eq(users.id, providerId));
+    console.log(`📄 [PDFService] Provider found: ${provider ? `${provider.firstName} ${provider.lastName}` : 'NOT FOUND'}`);
     
     // Get provider's location information
+    console.log(`📄 [PDFService] Looking for primary location for provider ${providerId}`);
     const providerLocation = await db.select({
       location: locations,
       organization: organizations,
@@ -50,6 +54,8 @@ export class PDFService {
     )
     .limit(1);
 
+    console.log(`📄 [PDFService] Primary location found: ${providerLocation.length > 0 ? 'YES' : 'NO'}`);
+
     // Use the first location if no primary is marked
     const locationData = providerLocation[0] || await db.select({
       location: locations,
@@ -63,6 +69,19 @@ export class PDFService {
     .where(eq(userLocations.userId, providerId))
     .limit(1)
     .then(results => results[0]);
+
+    if (locationData) {
+      console.log(`📄 [PDFService] Location details:`, {
+        name: locationData.location.name,
+        address: locationData.location.address,
+        phone: locationData.location.phone,
+        fax: locationData.location.fax,
+        organization: locationData.organization.name,
+        healthSystem: locationData.healthSystem.name
+      });
+    } else {
+      console.log(`📄 [PDFService] WARNING: No location data found for provider ${providerId}`);
+    }
 
     return { provider, locationData };
   }
@@ -84,11 +103,15 @@ export class PDFService {
   }
 
   private addProviderInfo(doc: PDFKit.PDFDocument, providerData: any, startY: number): number {
+    console.log(`📄 [PDFService] addProviderInfo called with startY: ${startY}`);
+    console.log(`📄 [PDFService] Provider data structure:`, JSON.stringify(providerData, null, 2));
+    
     const { provider, locationData } = providerData;
     doc.fontSize(12);
     
     // Provider name and credentials
     const providerName = `Dr. ${provider.firstName} ${provider.lastName}${provider.credentials ? ', ' + provider.credentials : ''}`;
+    console.log(`📄 [PDFService] Provider name: ${providerName}`);
     doc.text(`Ordering Provider: ${providerName}`, 50, startY);
     startY += 15;
     
@@ -115,13 +138,16 @@ export class PDFService {
     
     // Practice information
     if (locationData) {
+      console.log(`📄 [PDFService] Location data available, adding practice information`);
       const { location, organization } = locationData;
       
       // Organization name
+      console.log(`📄 [PDFService] Organization: ${organization.name}`);
       doc.text(`Practice: ${organization.name}`, 50, startY);
       startY += 15;
       
       // Address
+      console.log(`📄 [PDFService] Address: ${location.address}`);
       doc.text(location.address, 50, startY);
       startY += 15;
       
@@ -135,9 +161,23 @@ export class PDFService {
       
       // Phone
       if (location.phone) {
+        console.log(`📄 [PDFService] Phone: ${location.phone}`);
         doc.text(`Phone: ${location.phone}`, 50, startY);
         startY += 15;
+      } else {
+        console.log(`📄 [PDFService] No phone number available`);
       }
+      
+      // Fax
+      if (location.fax) {
+        console.log(`📄 [PDFService] Fax: ${location.fax}`);
+        doc.text(`Fax: ${location.fax}`, 50, startY);
+        startY += 15;
+      } else {
+        console.log(`📄 [PDFService] No fax number available`);
+      }
+    } else {
+      console.log(`📄 [PDFService] WARNING: No location data available for provider`);
     }
     
     // Date
@@ -146,10 +186,24 @@ export class PDFService {
   }
 
   async generateMedicationPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
-    console.log(`📄 [PDFService] Generating medication PDF for ${orders.length} orders`);
+    console.log(`📄 [PDFService] Starting medication PDF generation`);
+    console.log(`📄 [PDFService] Orders: ${orders.length}, PatientId: ${patientId}, ProviderId: ${providerId}`);
     
     const patient = await this.getPatientInfo(patientId);
+    console.log(`📄 [PDFService] Patient retrieved: ${patient ? `${patient.firstName} ${patient.lastName} (DOB: ${patient.dateOfBirth})` : 'NOT FOUND'}`);
+    
     const provider = await this.getProviderInfo(providerId);
+    console.log(`📄 [PDFService] Provider retrieved: ${provider ? 'SUCCESS' : 'FAILED'}`);
+    
+    if (!patient) {
+      console.error(`📄 [PDFService] ERROR: Patient not found for ID ${patientId}`);
+      throw new Error('Patient not found');
+    }
+    
+    if (!provider) {
+      console.error(`📄 [PDFService] ERROR: Provider not found or location data missing for ID ${providerId}`);
+      throw new Error('Provider not found');
+    }
     
     const doc = new PDFDocument();
     const chunks: Buffer[] = [];
@@ -180,17 +234,24 @@ export class PDFService {
       doc.on('error', reject);
       
       // Generate PDF content
+      console.log(`📄 [PDFService] Starting PDF content generation`);
       this.addHeader(doc, 'Medication Orders');
+      console.log(`📄 [PDFService] Header added`);
       
       let currentY = 130;
       currentY = this.addPatientInfo(doc, patient, currentY);
+      console.log(`📄 [PDFService] Patient info added, currentY: ${currentY}`);
+      
       currentY = this.addProviderInfo(doc, provider, currentY);
+      console.log(`📄 [PDFService] Provider info added, currentY: ${currentY}`);
       
       // Add medication orders
       doc.fontSize(14).text('Prescribed Medications:', 50, currentY);
       currentY += 30;
+      console.log(`📄 [PDFService] Adding ${orders.length} medication orders`);
       
       orders.forEach((order, index) => {
+        console.log(`📄 [PDFService] Adding order ${index + 1}: ${order.medicationName}`);
         doc.fontSize(12);
         doc.text(`${index + 1}. ${order.medicationName}`, 70, currentY);
         currentY += 15;
@@ -224,11 +285,15 @@ export class PDFService {
         }
       });
       
+      console.log(`📄 [PDFService] All medication orders added`);
+      
       // Add signature section
       currentY += 30;
+      console.log(`📄 [PDFService] Adding signature section at Y: ${currentY}`);
       doc.moveTo(50, currentY).lineTo(300, currentY).stroke();
       doc.text('Provider Signature', 50, currentY + 10);
       
+      console.log(`📄 [PDFService] Ending PDF document generation`);
       doc.end();
     });
   }

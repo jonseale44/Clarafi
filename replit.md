@@ -166,6 +166,21 @@ Preferred communication style: Simple, everyday language.
 - **ENHANCEMENT**: Updated prescription-history-section.tsx to display pharmacy name and fax number from transmission metadata for faxed prescriptions
 - **USER IMPACT**: All prescription transmissions (electronic, fax, and print) now properly display in prescription history with appropriate details
 
+### Database Schema Drift Resolution - Locations Table (January 20, 2025)
+- **CRITICAL ISSUE FIXED**: Fax transmissions failing due to missing 'fax' column in locations table
+- **ROOT CAUSE**: Replit rollbacks don't rollback database changes, causing schema drift between code and actual database structure
+- **SOLUTION IMPLEMENTED**: 
+  - Added missing 'fax' column to locations table via SQL script
+  - Added comprehensive detailed logging throughout PDF service for debugging
+- **LOGGING ENHANCEMENTS**: Added extensive logging to PDF service including:
+  - Provider information retrieval with location data
+  - PDF content generation steps with position tracking
+  - Provider data structure JSON logging
+  - Location details including fax numbers
+  - PDF document generation start and end events
+  - Detailed medication order processing logs
+- **PRODUCTION IMPACT**: Fax transmission workflow now fully functional with comprehensive debugging capabilities
+
 ### Print PDF Option Fix for Medication Orders (January 19, 2025)
 - **BUG FIXED**: "Print PDF" option in medication order preferences wasn't displaying correctly after selection
 - **ROOT CAUSE**: Order preferences dialog saved value as "print_pdf" but indicator component checked for "print"
