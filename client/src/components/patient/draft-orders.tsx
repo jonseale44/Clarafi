@@ -78,6 +78,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   const [isDialogExpanded, setIsDialogExpanded] = useState(false);
   const [showEprescribingDialog, setShowEprescribingDialog] = useState(false);
   const [selectedMedicationOrder, setSelectedMedicationOrder] = useState<Order | null>(null);
+  const [pendingSignOrder, setPendingSignOrder] = useState<Order | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -331,6 +332,19 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
     }
   };
 
+  // One-click prescribing workflow
+  const handleSignOrder = (order: Order) => {
+    if (order.orderType === 'medication') {
+      // For medications, open pharmacy dialog first
+      setPendingSignOrder(order);
+      setSelectedMedicationOrder(order);
+      setShowEprescribingDialog(true);
+    } else {
+      // For non-medication orders, just sign directly
+      signOrderMutation.mutate(order.id);
+    }
+  };
+
   const getOrderIcon = (orderType: string) => {
     switch (orderType) {
       case "medication": return <Pill className="h-4 w-4" />;
@@ -571,7 +585,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                   order={order}
                   onEdit={setEditingOrder}
                   onDelete={handleDeleteOrder}
-                  onSign={(id) => signOrderMutation.mutate(id)}
+                  onSign={() => handleSignOrder(order)}
                   onSendToPharmacy={order.orderType === 'medication' && order.orderStatus === 'signed' ? () => {
                     setSelectedMedicationOrder(order);
                     setShowEprescribingDialog(true);
@@ -619,7 +633,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
                     order={order}
                     onEdit={setEditingOrder}
                     onDelete={handleDeleteOrder}
-                    onSign={(id) => signOrderMutation.mutate(id)}
+                    onSign={() => handleSignOrder(order)}
                     onSendToPharmacy={order.orderType === 'medication' && order.orderStatus === 'signed' ? () => {
                       setSelectedMedicationOrder(order);
                       setShowEprescribingDialog(true);
@@ -644,21 +658,35 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
     {showEprescribingDialog && selectedMedicationOrder && (
       <PrescriptionTransmissionDialog
         open={showEprescribingDialog}
-        onOpenChange={setShowEprescribingDialog}
-        prescription={{
+        onOpenChange={(open) => {
+          setShowEprescribingDialog(open);
+          if (!open && pendingSignOrder) {
+            // If dialog is closed and we have a pending order, sign it
+            signOrderMutation.mutate(pendingSignOrder.id);
+            setPendingSignOrder(null);
+          }
+        }}
+        patientId={patientId}
+        medications={[{
           id: selectedMedicationOrder.id,
-          patientId: patientId,
-          medicationName: selectedMedicationOrder.medicationName || '',
-          dosage: selectedMedicationOrder.dosage || '',
-          sig: selectedMedicationOrder.sig || '',
+          orderId: selectedMedicationOrder.id,
+          name: selectedMedicationOrder.medicationName || '',
+          strength: selectedMedicationOrder.dosage || '',
+          dosageForm: selectedMedicationOrder.form || '',
           quantity: selectedMedicationOrder.quantity || 0,
           quantityUnit: selectedMedicationOrder.quantityUnit || '',
+          sig: selectedMedicationOrder.sig || '',
           refills: selectedMedicationOrder.refills || 0,
-          daysSupply: selectedMedicationOrder.daysSupply || 30,
-          form: selectedMedicationOrder.form || '',
-          routeOfAdministration: selectedMedicationOrder.routeOfAdministration || '',
-          diagnosisCode: selectedMedicationOrder.diagnosisCode || '',
-          orderId: selectedMedicationOrder.id
+          deaSchedule: selectedMedicationOrder.deaSchedule
+        }]}
+        onTransmissionComplete={() => {
+          toast({ title: "Prescription sent successfully" });
+          setShowEprescribingDialog(false);
+          if (pendingSignOrder) {
+            // Sign the order after successful transmission
+            signOrderMutation.mutate(pendingSignOrder.id);
+            setPendingSignOrder(null);
+          }
         }}
       />
     )}

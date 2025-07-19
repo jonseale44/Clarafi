@@ -159,6 +159,37 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### One-Click Prescribing Workflow Implementation (January 19, 2025)
+- **CRITICAL WORKFLOW CHANGE**: Implemented streamlined one-click prescribing where pharmacy selection happens BEFORE signing
+- **PREVIOUS WORKFLOW**: Sign medication → Then send to pharmacy (two separate steps)
+- **NEW WORKFLOW**: Click "Sign" → Select pharmacy → Auto-sign and transmit (one seamless flow)
+- **IMPLEMENTATION**:
+  - Modified `handleSignOrder` function in draft-orders.tsx to differentiate medication vs other orders
+  - Medication orders open pharmacy selection dialog first, then auto-sign after selection
+  - Non-medication orders sign directly without pharmacy workflow
+  - Dialog automatically signs pending order after pharmacy selection or cancellation
+- **PRODUCTION STANDARD**: Matches Epic/Cerner workflow where e-prescribing details collected before signing
+
+### SureScripts API Integration with Fallback (January 19, 2025)
+- **PRODUCTION E-PRESCRIBING**: Implemented real SureScripts API integration with automatic fallback
+- **API INTEGRATION**:
+  - Added `sendToSureScripts` method with proper authentication and NCPDP SCRIPT 10.6 format
+  - Uses Basic Auth with SureScripts credentials when available
+  - Sends to `/prescriptions/transmit` endpoint with portal ID and account ID
+  - Proper error handling for API failures with detailed logging
+- **FALLBACK BEHAVIOR**:
+  - System checks for 5 SureScripts environment variables
+  - If all present: Uses real API for electronic transmission
+  - If missing: Falls back to simulation mode with clear console warning
+  - Transmission metadata tracks whether real or simulated
+- **REQUIRED SECRETS** (for production use):
+  - SURESCRIPTS_USERNAME
+  - SURESCRIPTS_PASSWORD
+  - SURESCRIPTS_PORTAL_ID
+  - SURESCRIPTS_ACCOUNT_ID
+  - SURESCRIPTS_API_ENDPOINT
+- **USER EXPERIENCE**: System works immediately in simulation mode, automatically switches to real API when credentials added
+
 ### Medication Order Signing Performance Optimization (January 19, 2025)
 - **CRITICAL PERFORMANCE ISSUE RESOLVED**: Eliminated redundant GPT validation calls during order signing
 - **PROBLEM**: System was calling GPT validation twice - once during real-time editing and again during signing (3-5 second delay)

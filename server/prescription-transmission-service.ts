@@ -204,7 +204,7 @@ export class PrescriptionTransmissionService {
   }
 
   /**
-   * Processes electronic transmission (would integrate with SureScripts)
+   * Processes electronic transmission with SureScripts API
    */
   private async processElectronicTransmission(
     transmission: PrescriptionTransmission,
@@ -216,24 +216,114 @@ export class PrescriptionTransmissionService {
     // Build NCPDP SCRIPT message
     const scriptMessage = await this.buildNCPDPMessage(transmission, medication, order);
 
-    // In production, this would send to SureScripts
-    // For now, we'll simulate the transmission
-    const mockResponse = {
-      messageId: `MSG-${Date.now()}`,
-      threadId: `THR-${Date.now()}`,
-      status: 'accepted',
-      timestamp: new Date().toISOString()
-    };
+    // Check if SureScripts credentials are available
+    const hasSureScriptsCredentials = 
+      process.env.SURESCRIPTS_USERNAME && 
+      process.env.SURESCRIPTS_PASSWORD && 
+      process.env.SURESCRIPTS_PORTAL_ID &&
+      process.env.SURESCRIPTS_ACCOUNT_ID &&
+      process.env.SURESCRIPTS_API_ENDPOINT;
+
+    let response: any;
+
+    if (hasSureScriptsCredentials) {
+      // Real SureScripts API integration
+      console.log('🔐 [PrescriptionTransmission] Using SureScripts API');
+      
+      try {
+        response = await this.sendToSureScripts(scriptMessage, transmission);
+      } catch (error) {
+        console.error('❌ [PrescriptionTransmission] SureScripts API error:', error);
+        throw new Error(`SureScripts transmission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } else {
+      // Simulation mode when credentials are not available
+      console.log('⚠️ [PrescriptionTransmission] SureScripts credentials not configured - using simulation mode');
+      
+      response = {
+        messageId: `MSG-${Date.now()}`,
+        threadId: `THR-${Date.now()}`,
+        status: 'accepted',
+        timestamp: new Date().toISOString(),
+        simulated: true
+      };
+    }
 
     // Update transmission with response
     await this.updateTransmissionStatus(transmission.id, 'transmitted', {
-      surescriptsMessageId: mockResponse.messageId,
-      surescriptsThreadId: mockResponse.threadId,
+      surescriptsMessageId: response.messageId,
+      surescriptsThreadId: response.threadId,
       requestPayload: scriptMessage,
-      responsePayload: mockResponse
+      responsePayload: response,
+      transmissionMetadata: {
+        simulated: !hasSureScriptsCredentials,
+        transmittedAt: new Date().toISOString()
+      }
     });
 
     console.log('✅ [PrescriptionTransmission] Electronic transmission successful');
+  }
+
+  /**
+   * Sends prescription to SureScripts API
+   */
+  private async sendToSureScripts(scriptMessage: any, transmission: PrescriptionTransmission): Promise<any> {
+    const endpoint = process.env.SURESCRIPTS_API_ENDPOINT!;
+    const username = process.env.SURESCRIPTS_USERNAME!;
+    const password = process.env.SURESCRIPTS_PASSWORD!;
+    const portalId = process.env.SURESCRIPTS_PORTAL_ID!;
+    const accountId = process.env.SURESCRIPTS_ACCOUNT_ID!;
+
+    // Prepare authentication header
+    const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
+
+    // Prepare the API request
+    const requestBody = {
+      portalId,
+      accountId,
+      messageType: 'NewRx',
+      message: scriptMessage,
+      format: 'NCPDP_SCRIPT_10_6'
+    };
+
+    console.log('📤 [PrescriptionTransmission] Sending to SureScripts:', {
+      endpoint,
+      portalId,
+      accountId,
+      messageType: 'NewRx'
+    });
+
+    // Make the API call
+    const response = await fetch(`${endpoint}/prescriptions/transmit`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-SureScripts-Version': '2.0'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [PrescriptionTransmission] SureScripts API error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`SureScripts API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+    console.log('✅ [PrescriptionTransmission] SureScripts API response:', responseData);
+
+    // Validate response
+    if (responseData.status !== 'accepted' && responseData.status !== 'success') {
+      throw new Error(`SureScripts rejected prescription: ${responseData.errorMessage || responseData.status}`);
+    }
+
+    return responseData;
   }
 
   /**
