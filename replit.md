@@ -914,6 +914,17 @@ Preferred communication style: Simple, everyday language.
 - **AUTOMATIC UNIT INFERENCE**: When validating orders, GPT intelligently infers appropriate units based on medication form and route
 - **PRODUCTION STANDARDS**: System now matches or exceeds EPIC and Athena EMR medication safety standards
 
+### Critical Medication Safety Validation Fix COMPLETED (January 18, 2025)
+- **CRITICAL SAFETY FIX**: Added MedicationStandardizationService.validateMedication() to PUT /api/orders/:id endpoint
+- **PREVENTS DANGEROUS ORDERS**: System now blocks saving medication orders without strength or quantity_unit at API level
+- **REQUIRED FIELDS ENFORCED**: 
+  - Medication name, strength/dosage, dosage form, sig (instructions)
+  - Quantity with units (prevents "30" ambiguity - must specify "30 tablets" or "30 mL")
+  - Number of refills (defaults to 2 for 90-day total supply)
+- **ERROR HANDLING IMPROVED**: API validation errors now properly displayed to users with detailed messages
+- **BUSINESS RULES**: Default 30-day supply with 2 refills unless specified otherwise
+- **PRODUCTION IMPACT**: Dangerous prescriptions like "Albuterol" without strength cannot be saved to database
+
 ### Medication Management System Enhanced with GPT Authority (January 18, 2025)
 - **BUSINESS LOGIC CLARIFIED**: Default prescriptions are 30 days with 2 refills (90 days total) unless specified otherwise
 - **GPT AS VALIDATION AUTHORITY**: System trusts GPT-4.1 to intelligently handle medication prescriptions without micromanagement

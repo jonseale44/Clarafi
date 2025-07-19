@@ -96,7 +96,14 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      if (!response.ok) throw new Error("Failed to update order");
+      if (!response.ok) {
+        const errorData = await response.json();
+        // If there are validation errors, throw them
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          throw new Error(errorData.errors.join('\n'));
+        }
+        throw new Error(errorData.message || "Failed to update order");
+      }
       return response.json();
     },
     onSuccess: () => {

@@ -3253,6 +3253,44 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         JSON.stringify(cleanedUpdates, null, 2),
       );
 
+      // CRITICAL SAFETY: Validate medication orders before saving
+      if (cleanedUpdates.orderType === "medication" || cleanedUpdates.medicationName) {
+        console.log(`💊 [Orders API] Validating medication order ${orderId} before update`);
+        
+        // Get current order to merge with updates
+        const currentOrder = await storage.getOrder(orderId);
+        const mergedOrder = { ...currentOrder, ...cleanedUpdates };
+        
+        // Validate medication fields
+        const { MedicationStandardizationService } = await import("./medication-standardization-service.js");
+        const validation = MedicationStandardizationService.validateMedication({
+          medicationName: mergedOrder.medicationName,
+          strength: mergedOrder.strength,
+          dosageForm: mergedOrder.form || mergedOrder.dosageForm,
+          sig: mergedOrder.sig,
+          quantity: mergedOrder.quantity,
+          quantityUnit: mergedOrder.quantityUnit || mergedOrder.quantity_unit,
+          refills: mergedOrder.refills,
+          daysSupply: mergedOrder.daysSupply,
+          route: mergedOrder.route
+        });
+        
+        if (!validation.isValid) {
+          console.error(`❌ [Orders API] Medication validation failed:`, validation.errors);
+          return res.status(400).json({ 
+            message: "Medication order validation failed",
+            errors: validation.errors,
+            warnings: validation.warnings
+          });
+        }
+        
+        // Ensure quantity_unit is set for medication orders
+        if (!cleanedUpdates.quantityUnit && !cleanedUpdates.quantity_unit && !currentOrder.quantityUnit) {
+          cleanedUpdates.quantityUnit = "tablets"; // Default to tablets if not specified
+          console.warn(`⚠️ [Orders API] No quantity unit specified, defaulting to 'tablets'`);
+        }
+      }
+
       const order = await storage.updateOrder(orderId, cleanedUpdates);
       console.log(`[Orders API] Successfully updated order ${orderId}`);
 

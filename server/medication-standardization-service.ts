@@ -16,6 +16,7 @@ export interface StandardizedMedication {
   route: string;               // Standardized route (e.g., "oral")
   sig: string;                 // Patient instructions
   quantity: number;            // Quantity to dispense
+  quantityUnit: string;        // Unit for quantity (e.g., "tablets", "mL", "inhalers") - REQUIRED for safety
   refills: number;             // Number of refills
   daysSupply: number;          // Days supply
   clinicalIndication?: string; // Why prescribed
@@ -271,6 +272,11 @@ export class MedicationStandardizationService {
       errors.push('Quantity to dispense is required');
     } else if (med.quantity > 360) {
       warnings.push('Quantity exceeds typical 90-day supply limits - may require prior auth');
+    }
+    
+    // CRITICAL SAFETY: Quantity unit is required to prevent dangerous ambiguity
+    if (!med.quantityUnit) {
+      errors.push('Quantity unit is required (e.g., tablets, mL, inhalers) - ambiguous quantities are dangerous');
     }
     
     if (med.refills === undefined || med.refills < 0) {
