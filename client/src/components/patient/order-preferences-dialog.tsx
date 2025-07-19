@@ -158,8 +158,28 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (preferences) {
+      // If user entered a fax number and there's a selected pharmacy, update the pharmacy record
+      if (preferences.medicationDeliveryMethod === 'fax' && 
+          preferences.pharmacyFax && 
+          preferences.preferredPharmacyId) {
+        try {
+          await fetch(`/api/eprescribing/pharmacies/${preferences.preferredPharmacyId}/fax`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fax: preferences.pharmacyFax }),
+          });
+          
+          // Update the selected pharmacy state with the new fax
+          if (selectedPharmacy) {
+            setSelectedPharmacy({ ...selectedPharmacy, fax: preferences.pharmacyFax });
+          }
+        } catch (error) {
+          console.error('Failed to update pharmacy fax:', error);
+        }
+      }
+      
       updatePreferencesMutation.mutate(preferences);
     }
   };
@@ -346,6 +366,25 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
                     </Button>
                   )}
                 </div>
+                
+                {/* Fax number input when fax delivery is selected */}
+                {getCurrentValue() === "fax" && (
+                  <div>
+                    <Label htmlFor="pharmacy-fax">Pharmacy Fax Number</Label>
+                    <Input
+                      id="pharmacy-fax"
+                      type="tel"
+                      placeholder="(555) 123-4567"
+                      value={preferences?.pharmacyFax || ""}
+                      onChange={(e) =>
+                        setPreferences(prev => prev ? { ...prev, pharmacyFax: e.target.value } : null)
+                      }
+                    />
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Enter the fax number where prescriptions should be sent
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

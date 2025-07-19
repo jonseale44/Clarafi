@@ -489,6 +489,41 @@ router.get('/api/eprescribing/pharmacies/:id', requireAuth, tenantIsolation, asy
   }
 });
 
+// Update pharmacy fax number
+router.put('/api/eprescribing/pharmacies/:id/fax', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const pharmacyId = parseInt(req.params.id);
+    const { fax } = req.body;
+    
+    console.log('📠 [EPrescribing] Updating pharmacy fax number:', pharmacyId, fax);
+    
+    // Verify pharmacy exists and belongs to health system
+    const [existingPharmacy] = await db.select()
+      .from(pharmacies)
+      .where(and(
+        eq(pharmacies.id, pharmacyId),
+        eq(pharmacies.healthSystemId, req.userHealthSystemId!)
+      ))
+      .limit(1);
+      
+    if (!existingPharmacy) {
+      return res.status(404).json({ error: 'Pharmacy not found' });
+    }
+    
+    // Update fax number
+    const [updatedPharmacy] = await db.update(pharmacies)
+      .set({ fax })
+      .where(eq(pharmacies.id, pharmacyId))
+      .returning();
+    
+    console.log('✅ [EPrescribing] Updated pharmacy fax number');
+    res.json(updatedPharmacy);
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error updating pharmacy fax:', error);
+    res.status(500).json({ error: 'Failed to update pharmacy fax number' });
+  }
+});
+
 // Transmit prescription
 router.post('/api/eprescribing/transmit', requireAuth, tenantIsolation, async (req, res) => {
   try {
