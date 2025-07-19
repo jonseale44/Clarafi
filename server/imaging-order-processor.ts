@@ -59,25 +59,19 @@ export class ImagingOrderProcessor {
         return;
       }
       
-      // Create production imaging order
+      // Create production imaging order using actual database column names
       const [newImagingOrder] = await db.insert(imagingOrders).values({
         patientId: order.patientId,
         encounterId: order.encounterId,
-        studyType: order.studyType || 'X-ray',
+        providerId: order.orderedBy || 2,
+        imagingType: order.studyType || 'X-ray',
         bodyPart: order.region || order.bodyPart || 'Chest',
         laterality: order.laterality || null,
-        contrastNeeded: order.contrastNeeded || false,
-        clinicalIndication: order.clinicalIndication || 'Clinical correlation',
+        indication: order.clinicalIndication || 'Clinical correlation',
         clinicalHistory: order.clinicalHistory || null,
-        relevantSymptoms: order.relevantSymptoms || null,
-        orderedBy: order.orderedBy || 2,
-        orderedAt: order.createdAt,
-        orderStatus: 'scheduled',
-        externalFacilityId: this.getPreferredImagingCenter(order.studyType),
-        externalOrderId: this.generateExternalOrderId(order.id),
-        dicomAccessionNumber: this.generateAccessionNumber(order.id),
-        prepInstructions: this.getPrepInstructions(order.studyType, order.contrastNeeded),
-        schedulingNotes: order.providerNotes || null
+        priority: 'routine',
+        status: 'scheduled',
+        facilityId: this.getPreferredImagingCenter(order.studyType || 'X-ray')
       }).returning();
       
       console.log(`✅ [ImagingProcessor] Created imaging order ${newImagingOrder.id} for external processing`);
@@ -101,16 +95,16 @@ export class ImagingOrderProcessor {
   /**
    * Get preferred imaging center based on study type
    */
-  private static getPreferredImagingCenter(studyType: string): string {
-    const centerMap: Record<string, string> = {
-      'MRI': 'RADIOLOGY_CENTER_MRI',
-      'CT': 'HOSPITAL_RADIOLOGY',
-      'X-ray': 'CLINIC_IMAGING',
-      'Ultrasound': 'CLINIC_IMAGING',
-      'Nuclear Medicine': 'HOSPITAL_NUCLEAR_MED'
+  private static getPreferredImagingCenter(studyType: string): number {
+    const centerMap: Record<string, number> = {
+      'MRI': 2,
+      'CT': 2,
+      'X-ray': 1,
+      'Ultrasound': 1,
+      'Nuclear Medicine': 2
     };
     
-    return centerMap[studyType] || 'CLINIC_IMAGING';
+    return centerMap[studyType] || 1;
   }
   
   /**
@@ -152,14 +146,14 @@ export class ImagingOrderProcessor {
    * Simulate imaging result (production EMRs integrate with PACS)
    */
   private static async simulateImagingResult(imagingOrder: any) {
-    console.log(`📊 [ImagingProcessor] Simulating imaging result for ${imagingOrder.studyType}`);
+    console.log(`📊 [ImagingProcessor] Simulating imaging result for ${imagingOrder.imagingType}`);
     
     try {
       // Update order status to completed
       await db.update(imagingOrders)
         .set({ 
-          orderStatus: 'completed',
-          completedAt: new Date()
+          status: 'completed',
+          completedDate: new Date()
         })
         .where(eq(imagingOrders.id, imagingOrder.id));
       

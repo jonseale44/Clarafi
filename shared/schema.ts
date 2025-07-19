@@ -2137,43 +2137,30 @@ export const gptLabReviewNotes = pgTable("gpt_lab_review_notes", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Imaging Orders
+// Imaging Orders (using actual database column names)
 export const imagingOrders = pgTable("imaging_orders", {
   id: serial("id").primaryKey(),
   patientId: integer("patient_id").references(() => patients.id).notNull(),
   encounterId: integer("encounter_id").references(() => encounters.id).notNull(),
+  providerId: integer("provider_id").references(() => users.id).notNull(),
   
-  // Order details
-  studyType: text("study_type").notNull(), // 'X-ray', 'CT', 'MRI', 'Ultrasound'
+  // Order details (matching actual database columns)
+  imagingType: text("imaging_type").notNull(), // 'X-ray', 'CT', 'MRI', 'Ultrasound'
   bodyPart: text("body_part").notNull(),
   laterality: text("laterality"), // 'left', 'right', 'bilateral'
-  contrastNeeded: boolean("contrast_needed").default(false),
   
-  // Clinical info
-  clinicalIndication: text("clinical_indication").notNull(),
+  // Clinical info (matching actual database columns)
+  indication: text("indication").notNull(),
   clinicalHistory: text("clinical_history"),
-  relevantSymptoms: text("relevant_symptoms"),
   
-  // Ordering provider
-  orderedBy: integer("ordered_by").references(() => users.id).notNull(),
-  orderedAt: timestamp("ordered_at").defaultNow(),
-  
-  // External integration
-  externalFacilityId: text("external_facility_id"),
-  externalOrderId: text("external_order_id"),
-  dicomAccessionNumber: text("dicom_accession_number"),
-  
-  // Status tracking
-  orderStatus: text("order_status").default("pending"),
-  scheduledAt: timestamp("scheduled_at"),
-  completedAt: timestamp("completed_at"),
-  
-  // Special instructions
-  prepInstructions: text("prep_instructions"),
-  schedulingNotes: text("scheduling_notes"),
+  // Status and scheduling (matching actual database columns)
+  priority: text("priority").default("routine"),
+  status: text("status").default("pending"),
+  facilityId: integer("facility_id"),
+  scheduledDate: timestamp("scheduled_date"),
+  completedDate: timestamp("completed_date"),
   
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Imaging Results - Enhanced with PDF-centric workflow and visit history tracking
@@ -2605,7 +2592,7 @@ export const imagingOrdersRelations = relations(imagingOrders, ({ one, many }) =
     references: [encounters.id],
   }),
   orderedByUser: one(users, {
-    fields: [imagingOrders.orderedBy],
+    fields: [imagingOrders.providerId],
     references: [users.id],
   }),
   results: many(imagingResults),
