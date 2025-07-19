@@ -472,7 +472,17 @@ router.post('/api/eprescribing/pharmacies/save-google-place', requireAuth, tenan
 // Get pharmacy details by ID
 router.get('/api/eprescribing/pharmacies/:id', requireAuth, tenantIsolation, async (req, res) => {
   try {
-    const pharmacyId = parseInt(req.params.id);
+    const id = req.params.id;
+    
+    // Check if it's a numeric ID (database pharmacy)
+    const pharmacyId = parseInt(id);
+    
+    if (isNaN(pharmacyId)) {
+      // If not a number, could be a Google Places ID or invalid
+      console.log('🔍 [EPrescribing] Invalid pharmacy ID:', id);
+      return res.status(400).json({ error: 'Invalid pharmacy ID' });
+    }
+    
     console.log('🔍 [EPrescribing] Fetching pharmacy details:', pharmacyId);
     
     const [pharmacy] = await db.select()

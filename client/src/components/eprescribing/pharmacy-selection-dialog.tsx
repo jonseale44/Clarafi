@@ -114,15 +114,15 @@ export function PharmacySelectionDialog({
     enabled: open && (!useAiRecommendation || !!aiRecommendationQuery.error || (!!aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy)),
   });
 
-  // Search pharmacies with fax numbers
+  // Search pharmacies with fax numbers (uses Google Places when local DB is empty)
   const searchPharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacies/search', searchQuery],
+    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({ 
-        name: searchQuery,
+        query: searchQuery,
         limit: '20'
       });
-      const response = await apiRequest('GET', `/api/eprescribing/pharmacies/search?${params}`);
+      const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
       return response.json();
     },
     enabled: searchQuery.length > 2,
