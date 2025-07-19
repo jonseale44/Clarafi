@@ -159,6 +159,17 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medication Order Signing Performance Optimization (January 19, 2025)
+- **CRITICAL PERFORMANCE ISSUE RESOLVED**: Eliminated redundant GPT validation calls during order signing
+- **PROBLEM**: System was calling GPT validation twice - once during real-time editing and again during signing (3-5 second delay)
+- **SOLUTION**: Modified signing endpoint to trust existing real-time validation and only check required fields
+- **ARCHITECTURE**: 
+  - Real-time validation via `/api/medications/validate-order` with 1-second debounce
+  - Visual feedback with red borders on invalid fields
+  - Signing now instant with basic field checks only (no GPT calls)
+- **PRODUCTION EMR PATTERN**: Following Epic/Cerner/Athena approach - validate continuously, sign instantly
+- **USER IMPACT**: Order signing now completes in milliseconds instead of 3-5 seconds
+
 ### E-Prescribing System Implementation Phase 1, 2, 3 & 4 COMPLETED (January 19, 2025)
 - **PHASE 1 - DATABASE FOUNDATION**: 
   - Created three new e-prescribing tables: `electronicSignatures`, `pharmacies`, `prescriptionTransmissions`

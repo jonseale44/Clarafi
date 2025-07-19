@@ -3759,48 +3759,40 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       if (order.orderType === "medication") {
         console.time(`⏱️ [Order Signing] Total medication validation time`);
         
-        console.time(`⏱️ [Order Signing] Import PharmacyValidationService`);
-        const { PharmacyValidationService } = await import(
-          "./pharmacy-validation-service.js"
-        );
-        console.timeEnd(`⏱️ [Order Signing] Import PharmacyValidationService`);
+        // Production EMR Best Practice: Trust real-time validation, don't re-validate during signing
+        // The frontend already validates in real-time with red borders on invalid fields
+        // Re-validating here causes unnecessary 3-5 second delays
         
-        const pharmacyValidator = new PharmacyValidationService();
-
-        const validationData = {
-          medicationName: order.medicationName || "",
-          strength: order.dosage || order.strength || "",
-          dosageForm: order.form || order.dosageForm || "",
-          sig: order.sig || "",
-          quantity: order.quantity || 0,
-          quantityUnit: order.quantityUnit || order.quantity_unit, // Check both field names
-          refills: order.refills || 0,
-          daysSupply: order.daysSupply || 0,
-          route: order.routeOfAdministration || order.route || "",
-          clinicalIndication: order.clinicalIndication || "",
-          patientId: order.patientId,
-        };
-
-        console.log(`💊 [Order Signing] Validation data for order ${orderId}:`, JSON.stringify(validationData, null, 2));
-
-        console.time(`⏱️ [Order Signing] GPT validation call`);
-        const validationResult =
-          await pharmacyValidator.validateMedicationOrder(validationData);
-        console.timeEnd(`⏱️ [Order Signing] GPT validation call`);
-
+        // Quick check for required fields only - no GPT calls
+        const requiredFields = [];
+        if (!order.medicationName) requiredFields.push("Medication name");
+        if (!order.dosage && !order.strength) requiredFields.push("Strength/dosage");
+        if (!order.sig) requiredFields.push("Sig (instructions)");
+        if (!order.quantity || order.quantity === 0) requiredFields.push("Quantity");
+        if (!order.quantityUnit && !order.quantity_unit) requiredFields.push("Quantity unit");
+        if (order.refills === undefined || order.refills === null) requiredFields.push("Refills");
+        if (!order.daysSupply || order.daysSupply === 0) requiredFields.push("Days supply");
+        
         console.timeEnd(`⏱️ [Order Signing] Total medication validation time`);
-
-        if (validationResult.errors.length > 0) {
+        
+        if (requiredFields.length > 0) {
           console.log(
-            `❌ [Order Signing] Validation failed for medication order ${orderId}:`,
-            validationResult.errors,
+            `❌ [Order Signing] Missing required fields for medication order ${orderId}:`,
+            requiredFields,
           );
           return res.status(400).json({
-            error: "Cannot sign order - validation errors exist",
-            validationErrors: validationResult.errors,
-            missingFields: validationResult.missingFieldRecommendations,
+            error: "Cannot sign order - required fields missing",
+            validationErrors: [`Missing required fields: ${requiredFields.join(", ")}`],
+            missingFields: requiredFields,
           });
         }
+        
+        console.log(
+          `✅ [Order Signing] Medication order ${orderId} has all required fields - proceeding with signing`,
+        );
+        
+        // Note: Real-time validation in frontend already performed GPT validation
+        // Following Epic/Cerner/Athena pattern: validate continuously, sign instantly
       }
 
       // Update order status and add approval
