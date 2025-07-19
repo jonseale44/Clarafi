@@ -67,7 +67,7 @@ export function PrescriptionTransmissionDialog({
   const [selectedMedicationIds, setSelectedMedicationIds] = useState<number[]>([]);
   const [transmissionMethod, setTransmissionMethod] = useState<TransmissionMethod>('electronic');
   const [signatureId, setSignatureId] = useState<number | null>(null);
-  const [selectedPharmacyId, setSelectedPharmacyId] = useState<number | null>(null);
+  const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
   const [transmissionResults, setTransmissionResults] = useState<any[]>([]);
   
   // Show signature dialog
@@ -89,17 +89,16 @@ export function PrescriptionTransmissionDialog({
         if (!medication) continue;
         
         try {
-          const result = await apiRequest('/api/eprescribing/transmit', {
-            method: 'POST',
-            body: JSON.stringify({
-              medicationId: medication.id,
-              orderId: medication.orderId,
-              pharmacyId: selectedPharmacyId,
-              transmissionMethod,
-              electronicSignatureId: signatureId,
-              urgency: 'routine',
-            }),
+          const response = await apiRequest('POST', '/api/eprescribing/transmit', {
+            medicationId: medication.id,
+            orderId: medication.orderId,
+            pharmacyId: selectedPharmacyId,
+            transmissionMethod,
+            electronicSignatureId: signatureId,
+            urgency: 'routine',
           });
+          
+          const result = await response.json();
           
           results.push({
             medicationId,
