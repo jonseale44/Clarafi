@@ -168,20 +168,12 @@ export function PharmacySelectionDialog({
 
   const renderPharmacyCard = (pharmacy: Pharmacy, isRecommended = false) => (
     <div key={pharmacy.id} className="relative">
-      <RadioGroupItem 
-        id={`pharmacy-${pharmacy.id}`}
-        value={pharmacy.id.toString()} 
-        className="sr-only"
-      />
-      <label 
-        htmlFor={`pharmacy-${pharmacy.id}`}
-        className="block cursor-pointer"
+      <Card 
+        className={`transition-all hover:shadow-md cursor-pointer ${
+          selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary bg-primary/5' : ''
+        } ${isRecommended ? 'border-primary' : ''}`}
+        onClick={() => setSelectedPharmacyId(pharmacy.id)}
       >
-        <Card 
-          className={`transition-all hover:shadow-md ${
-            selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary bg-primary/5' : ''
-          } ${isRecommended ? 'border-primary' : ''}`}
-        >
           <CardHeader className="pb-3">
             <div className="flex justify-between items-start">
               <div>
@@ -248,7 +240,6 @@ export function PharmacySelectionDialog({
         )}
       </CardContent>
     </Card>
-    </label>
     </div>
   );
 
@@ -307,11 +298,7 @@ export function PharmacySelectionDialog({
               </div>
             )}
 
-            <RadioGroup 
-              value={selectedPharmacyId?.toString() || ''} 
-              onValueChange={(value) => setSelectedPharmacyId(parseInt(value))}
-              className="space-y-3"
-            >
+            <div className="space-y-3">
               {aiRecommendationQuery.data && useAiRecommendation && (
                 <div className="space-y-4">
                   {aiRecommendationQuery.data.confidence >= 0.8 && aiRecommendationQuery.data.reasoning && (
@@ -350,7 +337,7 @@ export function PharmacySelectionDialog({
                   )}
                 </>
               )}
-            </RadioGroup>
+            </div>
           </ScrollArea>
 
           {isControlled && (
