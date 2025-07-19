@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Medication List Alphabetical Sorting Enhancement (January 19, 2025)
+- **TRUE ALPHABETICAL SORTING**: Fixed medication list sorting to provide pure A-Z ordering by medication name when alphabetical option is selected
+- **REMOVED GROUPING IN ALPHABETICAL MODE**: Eliminated first-letter grouping (A, B, C headers) - medications now display in continuous alphabetical list
+- **SIMPLIFIED SORTING LOGIC**: When alphabetical mode selected, all medications placed in single 'all' group and sorted by name using localeCompare
+- **UI CLEANUP**: Removed group headers, separators, and grouping indicators when alphabetical sorting is chosen
+- **PRESERVED MEDICAL PROBLEM GROUPING**: Medical problem grouping mode remains unchanged with visual indicators and headers
+- **PRODUCTION IMPACT**: Providers can now quickly find medications by name without navigating through letter groups
+
 ### Schema Cleanup - Critical Columns Added (January 18, 2025)
 - **SCHEMA CLEANUP PHASE 1 COMPLETED**: Added 22 critical columns to schema.ts that were causing application errors
 - **LAB_ORDERS TABLE**: Added orderId (231 refs), results (776 refs!), externalLab, providerNotes, resultStatus, specialInstructions

@@ -838,21 +838,17 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
     : ((medicationData as MedicationResponse)?.groupedByStatus?.[activeStatusTab] || []);
 
   // Group medications based on grouping mode
-  const groupedMedications = currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
-    let groupKey = 'Ungrouped';
-    
-    if (groupingMode === 'medical_problem') {
-      groupKey = medication.clinicalIndication || 'No indication specified';
-    } else if (groupingMode === 'alphabetical') {
-      groupKey = medication.medicationName.charAt(0).toUpperCase();
-    }
-    
-    if (!groups[groupKey]) {
-      groups[groupKey] = [];
-    }
-    groups[groupKey].push(medication);
-    return groups;
-  }, {});
+  const groupedMedications = groupingMode === 'alphabetical' 
+    ? { 'all': [...currentMedications].sort((a, b) => a.medicationName.localeCompare(b.medicationName)) }
+    : currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
+        const groupKey = medication.clinicalIndication || 'No indication specified';
+        
+        if (!groups[groupKey]) {
+          groups[groupKey] = [];
+        }
+        groups[groupKey].push(medication);
+        return groups;
+      }, {});
 
   if (isLoading) {
     return (
@@ -964,8 +960,8 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                   
                   return (
                     <div key={groupName}>
-                      {/* Only show traditional header for non-medical problem grouping or when not using side labels */}
-                      {groupingMode !== 'medical_problem' && (
+                      {/* Only show headers for medical problem grouping, never for alphabetical */}
+                      {groupingMode === 'medical_problem' && (
                         <h3 className="font-medium text-sm text-gray-700 dark:text-gray-300 emr-ultra-tight-spacing flex items-center emr-ultra-tight-gap">
                           <Zap className="h-3 w-3" />
                           {groupName}
@@ -979,7 +975,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                               {renderMedicationDenseList(medication, categoryAbbr, index === 0, index === medications.length - 1)}
                             </div> :
                             <div key={medication.id} className="flex items-start gap-2">
-                              {/* Grouping indicator for regular view */}
+                              {/* Grouping indicator only for medical problem grouping */}
                               {groupingMode === 'medical_problem' && (
                                 <div className="w-6 flex-shrink-0 flex items-center justify-center">
                                   {index === 0 && (
