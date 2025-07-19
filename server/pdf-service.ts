@@ -62,9 +62,19 @@ export class PDFService {
     // Get provider's location information
     console.log(`📄 [PDFService] Looking for primary location for provider ${providerId}`);
     const providerLocation = await db.select({
-      location: locations,
-      organization: organizations,
-      healthSystem: healthSystems
+      locationId: locations.id,
+      locationName: locations.name,
+      locationAddress: locations.address,
+      locationAddress2: locations.address2,
+      locationCity: locations.city,
+      locationState: locations.state,
+      locationZipCode: locations.zipCode,
+      locationPhone: locations.phone,
+      locationFax: locations.fax,
+      organizationId: organizations.id,
+      organizationName: organizations.name,
+      healthSystemId: healthSystems.id,
+      healthSystemName: healthSystems.name
     })
     .from(userLocations)
     .innerJoin(locations, eq(userLocations.locationId, locations.id))
@@ -82,9 +92,19 @@ export class PDFService {
 
     // Use the first location if no primary is marked
     const locationData = providerLocation[0] || await db.select({
-      location: locations,
-      organization: organizations,
-      healthSystem: healthSystems
+      locationId: locations.id,
+      locationName: locations.name,
+      locationAddress: locations.address,
+      locationAddress2: locations.address2,
+      locationCity: locations.city,
+      locationState: locations.state,
+      locationZipCode: locations.zipCode,
+      locationPhone: locations.phone,
+      locationFax: locations.fax,
+      organizationId: organizations.id,
+      organizationName: organizations.name,
+      healthSystemId: healthSystems.id,
+      healthSystemName: healthSystems.name
     })
     .from(userLocations)
     .innerJoin(locations, eq(userLocations.locationId, locations.id))
