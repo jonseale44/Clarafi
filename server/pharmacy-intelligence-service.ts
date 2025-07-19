@@ -71,9 +71,9 @@ export class PharmacyIntelligenceService {
       });
 
       // Fetch the recommended pharmacy
-      const [recommendedPharmacy] = await db.select()
-        .from(pharmacies)
-        .where(eq(pharmacies.id, gptDecision.recommendedPharmacyId));
+      const recommendedPharmacy = await db.query.pharmacies.findFirst({
+        where: eq(pharmacies.id, gptDecision.recommendedPharmacyId)
+      });
 
       if (!recommendedPharmacy) {
         throw new Error('Recommended pharmacy not found');
@@ -326,9 +326,9 @@ Provide your response as JSON with this structure:
     issues: string[];
     recommendations: string[];
   }> {
-    const [pharmacy] = await db.select()
-      .from(pharmacies)
-      .where(eq(pharmacies.id, pharmacyId));
+    const pharmacy = await db.query.pharmacies.findFirst({
+      where: eq(pharmacies.id, pharmacyId)
+    });
 
     if (!pharmacy) {
       return {
@@ -412,9 +412,9 @@ Provide your response as JSON with this structure:
     healthSystemId: number;
   }): Promise<Pharmacy> {
     // Check if pharmacy exists by NCPDP ID
-    const existing = await db.select()
-      .from(pharmacies)
-      .where(eq(pharmacies.ncpdpId, pharmacyData.ncpdpId));
+    const existing = await db.query.pharmacies.findMany({
+      where: eq(pharmacies.ncpdpId, pharmacyData.ncpdpId)
+    });
 
     if (existing.length > 0) {
       // Update existing
