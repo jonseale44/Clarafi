@@ -114,12 +114,15 @@ export function PharmacySelectionDialog({
     enabled: open && !useAiRecommendation,
   });
 
-  // Search pharmacies
+  // Search pharmacies with fax numbers
   const searchPharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
+    queryKey: ['/api/eprescribing/pharmacies/search', searchQuery],
     queryFn: async () => {
-      const params = new URLSearchParams({ query: searchQuery });
-      const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
+      const params = new URLSearchParams({ 
+        name: searchQuery,
+        limit: '20'
+      });
+      const response = await apiRequest('GET', `/api/eprescribing/pharmacies/search?${params}`);
       return response.json();
     },
     enabled: searchQuery.length > 2,
@@ -286,6 +289,13 @@ export function PharmacySelectionDialog({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Phone className="h-4 w-4" />
             <span>{pharmacy.phone}</span>
+          </div>
+        )}
+        {pharmacy.fax && (
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Phone className="h-4 w-4 text-blue-600" />
+            <span className="text-blue-600">Fax: {pharmacy.fax}</span>
+            <Badge variant="secondary" className="ml-auto">Fax Available</Badge>
           </div>
         )}
         {pharmacy.hours && (

@@ -41,6 +41,7 @@ import BlogPage from "@/pages/blog";
 import BlogArticlePage from "@/pages/blog-article";
 import AdminBlogManagement from "@/pages/admin-blog-management";
 import Pricing from "@/pages/pricing";
+import { AdminPharmacyImport } from "@/pages/AdminPharmacyImport";
 
 import NotFound from "@/pages/not-found";
 
@@ -74,6 +75,7 @@ function Router() {
       <ProtectedRoute path="/admin/verification-review" component={AdminVerificationReview} />
       <ProtectedRoute path="/admin/test-patients" component={SystemAdminTestPatients} />
       <ProtectedRoute path="/admin/blog" component={AdminBlogManagement} />
+      <ProtectedRoute path="/admin/pharmacy-import" component={AdminPharmacyImport} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

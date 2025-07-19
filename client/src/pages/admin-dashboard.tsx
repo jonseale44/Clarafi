@@ -119,7 +119,8 @@ export default function AdminDashboard() {
       actions: [
         { label: 'Clinic Import', href: '/admin/clinic-import', variant: 'default' },
         { label: 'Test Patients', href: '/admin/test-patients', variant: 'default' },
-        { label: 'Practice Migration', href: '/practice-migration', variant: 'secondary' }
+        { label: 'Practice Migration', href: '/practice-migration', variant: 'secondary' },
+        { label: 'Import Pharmacies', href: '/admin/pharmacy-import', variant: 'secondary' }
       ],
       stats: [
         { label: 'Total Clinics', value: stats?.totalClinics || 0 },

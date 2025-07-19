@@ -9,6 +9,8 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 import OpenAI from 'openai';
 import { PrescriptionPdfService } from './prescription-pdf-service.js';
 import { twilioFaxService } from './twilio-fax-service.js';
+import { npiRegistryService } from './npi-registry-service.js';
+import { pharmacyService } from './pharmacy-validation-service.js';
 
 // Middleware to ensure user is authenticated
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -521,6 +523,101 @@ router.put('/api/eprescribing/pharmacies/:id/fax', requireAuth, tenantIsolation,
   } catch (error) {
     console.error('❌ [EPrescribing] Error updating pharmacy fax:', error);
     res.status(500).json({ error: 'Failed to update pharmacy fax number' });
+  }
+});
+
+// Search pharmacies with fax numbers from both local DB and NPI Registry
+router.get('/api/eprescribing/pharmacies/search', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const { name, city, state, postalCode, limit = 20 } = req.query;
+    
+    console.log('🔍 [EPrescribing] Searching pharmacies:', { name, city, state, postalCode });
+    
+    // Search local database first
+    let localResults = await db.select()
+      .from(pharmacies)
+      .where(and(
+        eq(pharmacies.healthSystemId, req.userHealthSystemId!),
+        eq(pharmacies.status, 'active')
+      ))
+      .limit(Number(limit));
+    
+    // Filter by search criteria if provided
+    if (name) {
+      localResults = localResults.filter(p => 
+        p.name.toLowerCase().includes(String(name).toLowerCase())
+      );
+    }
+    if (city) {
+      localResults = localResults.filter(p => 
+        p.city?.toLowerCase() === String(city).toLowerCase()
+      );
+    }
+    if (state) {
+      localResults = localResults.filter(p => 
+        p.state?.toLowerCase() === String(state).toLowerCase()
+      );
+    }
+    
+    // If we have enough results with fax numbers, return them
+    const resultsWithFax = localResults.filter(p => p.fax);
+    if (resultsWithFax.length >= 5) {
+      console.log(`✅ [EPrescribing] Found ${resultsWithFax.length} pharmacies with fax numbers`);
+      return res.json(resultsWithFax);
+    }
+    
+    // Otherwise, search NPI Registry for additional pharmacies
+    console.log('🔍 [EPrescribing] Searching NPI Registry for additional pharmacies');
+    const npiResults = await npiRegistryService.searchPharmacies({
+      name: name as string,
+      city: city as string,
+      state: state as string,
+      postalCode: postalCode as string,
+      limit: 50
+    });
+    
+    // Convert NPI results and add to our database if they have fax numbers
+    const newPharmacies = [];
+    for (const npiResult of npiResults) {
+      const pharmacy = npiRegistryService.convertToPharmacy(npiResult);
+      if (pharmacy && pharmacy.fax) {
+        // Check if this pharmacy already exists in our DB
+        const existing = localResults.find(p => 
+          p.npiNumber === pharmacy.npiNumber ||
+          (p.name === pharmacy.name && p.address === pharmacy.address)
+        );
+        
+        if (!existing) {
+          // Add to our database
+          const [newPharmacy] = await db.insert(pharmacies)
+            .values({
+              name: pharmacy.name,
+              address: pharmacy.address,
+              city: pharmacy.city,
+              state: pharmacy.state,
+              zipCode: pharmacy.zipCode,
+              phone: pharmacy.phone,
+              fax: pharmacy.fax,
+              npiNumber: pharmacy.npiNumber,
+              healthSystemId: req.userHealthSystemId!,
+              source: 'npi_registry',
+              status: 'active'
+            })
+            .returning();
+          
+          newPharmacies.push(newPharmacy);
+        }
+      }
+    }
+    
+    // Combine local and new results
+    const allResults = [...localResults, ...newPharmacies];
+    
+    console.log(`✅ [EPrescribing] Found ${allResults.length} total pharmacies (${newPharmacies.length} from NPI)`);
+    res.json(allResults);
+  } catch (error) {
+    console.error('❌ [EPrescribing] Search error:', error);
+    res.status(500).json({ error: 'Failed to search pharmacies' });
   }
 });
 
@@ -1047,6 +1144,87 @@ router.post('/api/eprescribing/transmit-fax', requireAuth, tenantIsolation, asyn
   } catch (error) {
     console.error('❌ [EPrescribing] Error sending fax:', error);
     res.status(500).json({ error: 'Failed to send prescription via fax' });
+  }
+});
+
+// Bulk import pharmacies from CSV
+router.post('/api/eprescribing/pharmacies/import', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const { pharmacies: pharmacyData } = req.body;
+    
+    if (!Array.isArray(pharmacyData)) {
+      return res.status(400).json({ error: 'Invalid data format. Expected array of pharmacies.' });
+    }
+    
+    console.log(`📥 [EPrescribing] Importing ${pharmacyData.length} pharmacies`);
+    
+    let imported = 0;
+    let skipped = 0;
+    let errors = 0;
+    
+    for (const pharmacy of pharmacyData) {
+      try {
+        // Validate required fields
+        if (!pharmacy.name || !pharmacy.address || !pharmacy.fax) {
+          skipped++;
+          continue;
+        }
+        
+        // Check if pharmacy already exists
+        const existing = await db.select()
+          .from(pharmacies)
+          .where(and(
+            eq(pharmacies.healthSystemId, req.userHealthSystemId!),
+            eq(pharmacies.name, pharmacy.name),
+            eq(pharmacies.address, pharmacy.address)
+          ))
+          .limit(1);
+          
+        if (existing.length > 0) {
+          // Update fax if it's missing
+          if (!existing[0].fax && pharmacy.fax) {
+            await db.update(pharmacies)
+              .set({ fax: pharmacy.fax })
+              .where(eq(pharmacies.id, existing[0].id));
+            imported++;
+          } else {
+            skipped++;
+          }
+        } else {
+          // Insert new pharmacy
+          await db.insert(pharmacies)
+            .values({
+              name: pharmacy.name,
+              address: pharmacy.address,
+              city: pharmacy.city || '',
+              state: pharmacy.state || '',
+              zipCode: pharmacy.zipCode || '',
+              phone: pharmacy.phone || null,
+              fax: pharmacy.fax,
+              npiNumber: pharmacy.npiNumber || null,
+              healthSystemId: req.userHealthSystemId!,
+              source: pharmacy.source || 'csv_import',
+              status: 'active'
+            });
+          imported++;
+        }
+      } catch (error) {
+        console.error('❌ [EPrescribing] Error importing pharmacy:', error);
+        errors++;
+      }
+    }
+    
+    console.log(`✅ [EPrescribing] Import complete: ${imported} imported, ${skipped} skipped, ${errors} errors`);
+    res.json({
+      success: true,
+      imported,
+      skipped,
+      errors,
+      total: pharmacyData.length
+    });
+  } catch (error) {
+    console.error('❌ [EPrescribing] Import error:', error);
+    res.status(500).json({ error: 'Failed to import pharmacies' });
   }
 });
 
