@@ -83,16 +83,14 @@ export function PharmacySelectionDialog({
   const aiRecommendationQuery = useQuery({
     queryKey: ['/api/eprescribing/pharmacy/select', patientId, medicationIds, isControlled, urgency],
     queryFn: async () => {
-      const response = await apiRequest('/api/eprescribing/pharmacy/select', {
-        method: 'POST',
-        body: JSON.stringify({
-          patientId,
-          medicationIds,
-          isControlled,
-          urgency,
-        }),
+      const response = await apiRequest('POST', '/api/eprescribing/pharmacy/select', {
+        patientId,
+        medicationIds,
+        isControlled,
+        urgency,
       });
-      return response as PharmacyRecommendation;
+      const data = await response.json();
+      return data as PharmacyRecommendation;
     },
     enabled: open && useAiRecommendation,
   });
@@ -108,7 +106,8 @@ export function PharmacySelectionDialog({
     queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams({ query: searchQuery });
-      return apiRequest(`/api/eprescribing/pharmacy/search?${params}`);
+      const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
+      return response.json();
     },
     enabled: searchQuery.length > 2 && !useAiRecommendation,
   });
