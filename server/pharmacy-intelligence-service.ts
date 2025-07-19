@@ -177,6 +177,11 @@ Provide your response as JSON with this structure:
       throw new Error('Invalid GPT response format');
     }
 
+    // Ensure alternativeIds is always an array
+    if (!Array.isArray(response.alternativeIds)) {
+      response.alternativeIds = [];
+    }
+
     return response;
   }
 
@@ -275,14 +280,16 @@ Provide your response as JSON with this structure:
     primaryId: number,
     alternativeIds: number[]
   ): Promise<Pharmacy[]> {
-    if (alternativeIds.length === 0) return [];
+    // Ensure alternativeIds is an array and filter out invalid values
+    const validIds = Array.isArray(alternativeIds) 
+      ? alternativeIds.filter(id => typeof id === 'number' && id !== primaryId)
+      : [];
+    
+    if (validIds.length === 0) return [];
 
     return await db.select()
       .from(pharmacies)
-      .where(and(
-        inArray(pharmacies.id, alternativeIds),
-        sql`${pharmacies.id} != ${primaryId}`
-      ));
+      .where(inArray(pharmacies.id, validIds));
   }
 
   /**

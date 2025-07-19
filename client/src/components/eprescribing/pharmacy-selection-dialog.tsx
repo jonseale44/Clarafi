@@ -167,38 +167,36 @@ export function PharmacySelectionDialog({
   };
 
   const renderPharmacyCard = (pharmacy: Pharmacy, isRecommended = false) => (
-    <label 
-      key={pharmacy.id}
-      htmlFor={`pharmacy-${pharmacy.id}`}
-      className="block"
-    >
-      <Card 
-        className={`cursor-pointer transition-all ${
-          selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary' : ''
-        }`}
+    <div key={pharmacy.id} className="relative">
+      <RadioGroupItem 
+        id={`pharmacy-${pharmacy.id}`}
+        value={pharmacy.id.toString()} 
+        className="sr-only"
+      />
+      <label 
+        htmlFor={`pharmacy-${pharmacy.id}`}
+        className="block cursor-pointer"
       >
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <div className="flex items-start gap-2">
-              <RadioGroupItem 
-                id={`pharmacy-${pharmacy.id}`}
-                value={pharmacy.id.toString()} 
-                className="mt-1"
-              />
-            <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                {pharmacy.name}
-                {isRecommended && (
-                  <Badge variant="secondary" className="gap-1">
-                    <Sparkles className="h-3 w-3" />
-                    AI Recommended
-                  </Badge>
-                )}
-              </CardTitle>
-              <CardDescription>{pharmacy.pharmacyType}</CardDescription>
-            </div>
-          </div>
-          <div className="flex gap-2">
+        <Card 
+          className={`transition-all hover:shadow-md ${
+            selectedPharmacyId === pharmacy.id ? 'ring-2 ring-primary bg-primary/5' : ''
+          } ${isRecommended ? 'border-primary' : ''}`}
+        >
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  {pharmacy.name}
+                  {isRecommended && (
+                    <Badge variant="secondary" className="gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      AI Recommended
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>{pharmacy.pharmacyType}</CardDescription>
+              </div>
+              <div className="flex gap-2">
             {pharmacy.acceptsEprescribe ? (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -251,6 +249,7 @@ export function PharmacySelectionDialog({
       </CardContent>
     </Card>
     </label>
+    </div>
   );
 
   return (
