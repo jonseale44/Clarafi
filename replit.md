@@ -913,6 +913,7 @@ Preferred communication style: Simple, everyday language.
   - Validation system automatically applies GPT recommendations for missing units
 - **AUTOMATIC UNIT INFERENCE**: When validating orders, GPT intelligently infers appropriate units based on medication form and route
 - **PRODUCTION STANDARDS**: System now matches or exceeds EPIC and Athena EMR medication safety standards
+- **NATURAL LANGUAGE ORDER FIX**: Fixed bug where quantity_unit was not being extracted from AI-parsed medication orders (January 18, 2025)
 
 ### Critical Medication Safety Validation Fix COMPLETED (January 18, 2025)
 - **CRITICAL SAFETY FIX**: Added MedicationStandardizationService.validateMedication() to PUT /api/orders/:id endpoint

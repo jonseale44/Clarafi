@@ -1502,6 +1502,7 @@ function NewOrderForm({ onSubmit, isSubmitting, isExpanded = false }: {
               dosage: med.dosage,
               sig: med.sig,
               quantity: med.quantity,
+              quantityUnit: med.quantity_unit,
               refills: med.refills,
               form: med.form,
               routeOfAdministration: med.route_of_administration,
