@@ -255,15 +255,10 @@ export function PharmacySelectionDialog({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-            {pharmacy.acceptsEprescribe ? (
+            {pharmacy.acceptsEprescribe && (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 E-Prescribe
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-red-600">
-                <XCircle className="h-3 w-3 mr-1" />
-                Print Only
               </Badge>
             )}
             {isControlled && (
