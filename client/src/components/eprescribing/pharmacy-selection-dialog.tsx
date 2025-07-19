@@ -111,7 +111,7 @@ export function PharmacySelectionDialog({
   // Get all pharmacies for manual selection
   const pharmaciesQuery = useQuery({
     queryKey: ['/api/eprescribing/pharmacies'],
-    enabled: open && (!useAiRecommendation || aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy)),
+    enabled: open && (!useAiRecommendation || !!aiRecommendationQuery.error || (!!aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy)),
   });
 
   // Search pharmacies with fax numbers

@@ -232,27 +232,101 @@ Provide your response as JSON with this structure:
     try {
       // For now, get all active pharmacies
       // In production, this would use geospatial queries
-      const pharmacyList = await db.query.pharmacies.findMany({
-        where: eq(pharmacies.status, 'active'),
-        limit: 10
-      });
+      const pharmacyList = await db.select({
+        id: pharmacies.id,
+        ncpdpId: pharmacies.ncpdpId,
+        npi: pharmacies.npi,
+        deaNumber: pharmacies.deaNumber,
+        googlePlaceId: pharmacies.googlePlaceId,
+        name: pharmacies.name,
+        dbaName: pharmacies.dbaName,
+        corporateName: pharmacies.corporateName,
+        address: pharmacies.address,
+        address2: pharmacies.address2,
+        city: pharmacies.city,
+        state: pharmacies.state,
+        zipCode: pharmacies.zipCode,
+        latitude: pharmacies.latitude,
+        longitude: pharmacies.longitude,
+        phone: pharmacies.phone,
+        fax: pharmacies.fax,
+        email: pharmacies.email,
+        website: pharmacies.website,
+        hours: pharmacies.hours,
+        is24Hour: pharmacies.is24Hour,
+        acceptsEprescribing: pharmacies.acceptsEprescribing,
+        acceptsControlledSubstances: pharmacies.acceptsControlledSubstances,
+        preferredTransmissionMethod: pharmacies.preferredTransmissionMethod,
+        sureScriptsVersion: pharmacies.sureScriptsVersion,
+        status: pharmacies.status,
+        verificationStatus: pharmacies.verificationStatus,
+        lastVerified: pharmacies.lastVerified,
+        healthSystemId: pharmacies.healthSystemId,
+        createdAt: pharmacies.createdAt,
+        updatedAt: pharmacies.updatedAt,
+        // Omit array columns that might cause issues
+        services: sql<string[]>`'[]'::text[]`,
+        specialtyTypes: sql<string[]>`'[]'::text[]`,
+        insuranceNetworks: sql<any>`'{}'::jsonb`,
+        preferredForConditions: sql<string[]>`'[]'::text[]`,
+      })
+        .from(pharmacies)
+        .where(eq(pharmacies.status, 'active'))
+        .limit(10);
 
       // If preferred pharmacy specified, ensure it's included
       if (preferredId) {
         const hasPreferred = pharmacyList.some(p => p.id === preferredId);
         
         if (!hasPreferred) {
-          const preferred = await db.query.pharmacies.findFirst({
-            where: eq(pharmacies.id, preferredId)
-          });
+          const preferred = await db.select({
+            id: pharmacies.id,
+            ncpdpId: pharmacies.ncpdpId,
+            npi: pharmacies.npi,
+            deaNumber: pharmacies.deaNumber,
+            googlePlaceId: pharmacies.googlePlaceId,
+            name: pharmacies.name,
+            dbaName: pharmacies.dbaName,
+            corporateName: pharmacies.corporateName,
+            address: pharmacies.address,
+            address2: pharmacies.address2,
+            city: pharmacies.city,
+            state: pharmacies.state,
+            zipCode: pharmacies.zipCode,
+            latitude: pharmacies.latitude,
+            longitude: pharmacies.longitude,
+            phone: pharmacies.phone,
+            fax: pharmacies.fax,
+            email: pharmacies.email,
+            website: pharmacies.website,
+            hours: pharmacies.hours,
+            is24Hour: pharmacies.is24Hour,
+            acceptsEprescribing: pharmacies.acceptsEprescribing,
+            acceptsControlledSubstances: pharmacies.acceptsControlledSubstances,
+            preferredTransmissionMethod: pharmacies.preferredTransmissionMethod,
+            sureScriptsVersion: pharmacies.sureScriptsVersion,
+            status: pharmacies.status,
+            verificationStatus: pharmacies.verificationStatus,
+            lastVerified: pharmacies.lastVerified,
+            healthSystemId: pharmacies.healthSystemId,
+            createdAt: pharmacies.createdAt,
+            updatedAt: pharmacies.updatedAt,
+            services: sql<string[]>`'[]'::text[]`,
+            specialtyTypes: sql<string[]>`'[]'::text[]`,
+            insuranceNetworks: sql<any>`'{}'::jsonb`,
+            preferredForConditions: sql<string[]>`'[]'::text[]`,
+          })
+            .from(pharmacies)
+            .where(eq(pharmacies.id, preferredId))
+            .limit(1);
           
-          if (preferred) {
-            pharmacyList.unshift(preferred);
+          if (preferred.length > 0) {
+            pharmacyList.unshift(preferred[0]);
           }
         }
       }
 
-      return pharmacyList;
+      return pharmacyList as Pharmacy[];
     } catch (error) {
       console.error('❌ [PharmacyIntelligence] Error getting nearby pharmacies:', error);
       // Return empty array if no pharmacies found
@@ -293,11 +367,47 @@ Provide your response as JSON with this structure:
     
     if (validIds.length === 0) return [];
 
-    const alternatives = await db.query.pharmacies.findMany({
-      where: inArray(pharmacies.id, validIds)
-    });
+    const alternatives = await db.select({
+      id: pharmacies.id,
+      ncpdpId: pharmacies.ncpdpId,
+      npi: pharmacies.npi,
+      deaNumber: pharmacies.deaNumber,
+      googlePlaceId: pharmacies.googlePlaceId,
+      name: pharmacies.name,
+      dbaName: pharmacies.dbaName,
+      corporateName: pharmacies.corporateName,
+      address: pharmacies.address,
+      address2: pharmacies.address2,
+      city: pharmacies.city,
+      state: pharmacies.state,
+      zipCode: pharmacies.zipCode,
+      latitude: pharmacies.latitude,
+      longitude: pharmacies.longitude,
+      phone: pharmacies.phone,
+      fax: pharmacies.fax,
+      email: pharmacies.email,
+      website: pharmacies.website,
+      hours: pharmacies.hours,
+      is24Hour: pharmacies.is24Hour,
+      acceptsEprescribing: pharmacies.acceptsEprescribing,
+      acceptsControlledSubstances: pharmacies.acceptsControlledSubstances,
+      preferredTransmissionMethod: pharmacies.preferredTransmissionMethod,
+      sureScriptsVersion: pharmacies.sureScriptsVersion,
+      status: pharmacies.status,
+      verificationStatus: pharmacies.verificationStatus,
+      lastVerified: pharmacies.lastVerified,
+      healthSystemId: pharmacies.healthSystemId,
+      createdAt: pharmacies.createdAt,
+      updatedAt: pharmacies.updatedAt,
+      services: sql<string[]>`'[]'::text[]`,
+      specialtyTypes: sql<string[]>`'[]'::text[]`,
+      insuranceNetworks: sql<any>`'{}'::jsonb`,
+      preferredForConditions: sql<string[]>`'[]'::text[]`,
+    })
+      .from(pharmacies)
+      .where(inArray(pharmacies.id, validIds));
 
-    return alternatives;
+    return alternatives as Pharmacy[];
   }
 
   /**
