@@ -320,14 +320,59 @@ router.get('/api/eprescribing/pharmacies/:id', requireAuth, async (req, res) => 
   }
 });
 
-// Search pharmacies - using Google Places API as primary source
+// Search pharmacies - using ScriptFax database as primary source
 router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, async (req, res) => {
   try {
     console.log('🔍 [Pharmacy Search] ===== SEARCH REQUEST RECEIVED =====');
     const { query = '', city, state, lat, lng } = req.query;
     console.log('🔍 [Pharmacy Search] Request params:', { query, city, state, lat, lng });
 
-    // First try Google Places API
+    // First search our ScriptFax™ database for pharmacies with fax numbers
+    if (query && query.length >= 3) {
+      console.log('🔍 [Pharmacy Search] Searching ScriptFax™ database for:', query);
+      
+      try {
+        const dbResults = await db.select()
+          .from(pharmacies)
+          .where(
+            and(
+              sql`LOWER(${pharmacies.name}) LIKE LOWER(${'%' + query + '%'})`,
+              isNotNull(pharmacies.fax),
+              ne(pharmacies.fax, '')
+            )
+          )
+          .limit(20);
+        
+        console.log(`📋 [Pharmacy Search] Found ${dbResults.length} pharmacies with fax numbers in ScriptFax™ database`);
+        
+        if (dbResults.length > 0) {
+          // Format results for frontend
+          const formattedResults = dbResults.map(pharmacy => ({
+            id: pharmacy.id,
+            name: pharmacy.name,
+            address: pharmacy.address,
+            city: pharmacy.city,
+            state: pharmacy.state,
+            zipCode: pharmacy.zipCode,
+            phone: pharmacy.phone || '',
+            fax: pharmacy.fax || '',
+            pharmacyType: pharmacy.pharmacyType || 'retail',
+            acceptsEprescribe: pharmacy.acceptsEprescribe ?? true,
+            acceptsControlled: pharmacy.acceptsControlled ?? true,
+            acceptsCompounding: pharmacy.acceptsCompounding ?? false,
+            hours: '',
+            distance: 0
+          }));
+          
+          console.log('✅ [Pharmacy Search] Returning ScriptFax™ results with fax numbers');
+          return res.json(formattedResults);
+        }
+      } catch (error) {
+        console.error('❌ [Pharmacy Search] Error searching ScriptFax™ database:', error);
+      }
+    }
+
+    // Fall back to Google Places API if no results in ScriptFax™
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
     
     if (apiKey) {

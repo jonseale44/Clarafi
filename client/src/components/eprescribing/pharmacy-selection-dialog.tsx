@@ -208,7 +208,7 @@ export function PharmacySelectionDialog({
 
         // Save the Google Places pharmacy to our database
         const response = await apiRequest('POST', '/api/eprescribing/pharmacies/save-google-place', {
-          placeId: googlePlaceId,
+          placeId: selectedPharmacyId, // Send the full ID with "google_" prefix
           name: selectedPharmacy.name,
           address: selectedPharmacy.address,
         });
