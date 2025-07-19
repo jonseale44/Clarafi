@@ -79,6 +79,7 @@ export class PharmacyValidationService {
         dosageForm: order.dosageForm,
         sig: order.sig,
         quantity: order.quantity,
+        quantityUnit: order.quantityUnit,  // Add missing quantityUnit field
         refills: order.refills,
         daysSupply: order.daysSupply || 0,
         route: order.route,
