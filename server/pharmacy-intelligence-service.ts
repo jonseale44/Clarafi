@@ -189,9 +189,9 @@ Provide your response as JSON with this structure:
    * Gets patient details for context
    */
   private async getPatientDetails(patientId: number): Promise<Patient> {
-    const [patient] = await db.select()
-      .from(patients)
-      .where(eq(patients.id, patientId));
+    const patient = await db.query.patients.findFirst({
+      where: eq(patients.id, patientId)
+    });
 
     if (!patient) {
       throw new Error('Patient not found');
@@ -204,9 +204,9 @@ Provide your response as JSON with this structure:
    * Gets patient's pharmacy preferences
    */
   private async getPatientPreferences(patientId: number): Promise<PatientOrderPreferences | null> {
-    const [preferences] = await db.select()
-      .from(patientOrderPreferences)
-      .where(eq(patientOrderPreferences.patientId, patientId));
+    const preferences = await db.query.patientOrderPreferences.findFirst({
+      where: eq(patientOrderPreferences.patientId, patientId)
+    });
 
     return preferences || null;
   }
@@ -232,28 +232,27 @@ Provide your response as JSON with this structure:
     try {
       // For now, get all active pharmacies
       // In production, this would use geospatial queries
-      const pharmacyList = await db.select()
-        .from(pharmacies)
-        .where(eq(pharmacies.status, 'active'))
-        .limit(10);
+      const pharmacyList = await db.query.pharmacies.findMany({
+        where: eq(pharmacies.status, 'active'),
+        limit: 10
+      });
 
       // If preferred pharmacy specified, ensure it's included
       if (preferredId) {
         const hasPreferred = pharmacyList.some(p => p.id === preferredId);
         
         if (!hasPreferred) {
-          const preferred = await db.select()
-            .from(pharmacies)
-            .where(eq(pharmacies.id, preferredId))
-            .limit(1);
+          const preferred = await db.query.pharmacies.findFirst({
+            where: eq(pharmacies.id, preferredId)
+          });
           
-          if (preferred.length > 0) {
-            pharmacyList.unshift(preferred[0]);
+          if (preferred) {
+            pharmacyList.unshift(preferred);
           }
         }
       }
 
-      return pharmacyList as Pharmacy[];
+      return pharmacyList;
     } catch (error) {
       console.error('❌ [PharmacyIntelligence] Error getting nearby pharmacies:', error);
       // Return empty array if no pharmacies found
@@ -294,11 +293,11 @@ Provide your response as JSON with this structure:
     
     if (validIds.length === 0) return [];
 
-    const alternatives = await db.select()
-      .from(pharmacies)
-      .where(inArray(pharmacies.id, validIds));
+    const alternatives = await db.query.pharmacies.findMany({
+      where: inArray(pharmacies.id, validIds)
+    });
 
-    return alternatives as Pharmacy[];
+    return alternatives;
   }
 
   /**
