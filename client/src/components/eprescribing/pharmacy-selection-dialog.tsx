@@ -250,7 +250,9 @@ export function PharmacySelectionDialog({
                     </Badge>
                   )}
                 </CardTitle>
-                <CardDescription>{pharmacy.pharmacyType}</CardDescription>
+                <CardDescription>
+                  {pharmacy.city}, {pharmacy.state}
+                </CardDescription>
               </div>
               <div className="flex gap-2">
             {pharmacy.acceptsEprescribe ? (
@@ -298,10 +300,10 @@ export function PharmacySelectionDialog({
             <Badge variant="secondary" className="ml-auto">Fax Available</Badge>
           </div>
         )}
-        {pharmacy.hours && (
+        {pharmacy.is24Hour && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>{pharmacy.hours}</span>
+            <span>Open 24 Hours</span>
           </div>
         )}
         {pharmacy.distance && (

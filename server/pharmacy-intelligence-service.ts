@@ -217,9 +217,9 @@ Provide your response as JSON with this structure:
   private async getMedicationDetails(medicationIds: number[]): Promise<Medication[]> {
     if (medicationIds.length === 0) return [];
 
-    return await db.select()
-      .from(medications)
-      .where(inArray(medications.id, medicationIds));
+    return await db.query.medications.findMany({
+      where: inArray(medications.id, medicationIds)
+    });
   }
 
   /**
@@ -232,25 +232,22 @@ Provide your response as JSON with this structure:
     try {
       // For now, get all active pharmacies
       // In production, this would use geospatial queries
-      const pharmacyList = await db.select()
-        .from(pharmacies)
-        .where(eq(pharmacies.status, 'active'))
-        .limit(10)
-        .execute();
+      const pharmacyList = await db.query.pharmacies.findMany({
+        where: eq(pharmacies.status, 'active'),
+        limit: 10
+      });
 
       // If preferred pharmacy specified, ensure it's included
       if (preferredId) {
         const hasPreferred = pharmacyList.some(p => p.id === preferredId);
         
         if (!hasPreferred) {
-          const preferred = await db.select()
-            .from(pharmacies)
-            .where(eq(pharmacies.id, preferredId))
-            .limit(1)
-            .execute();
+          const preferred = await db.query.pharmacies.findFirst({
+            where: eq(pharmacies.id, preferredId)
+          });
           
-          if (preferred.length > 0) {
-            pharmacyList.unshift(preferred[0]);
+          if (preferred) {
+            pharmacyList.unshift(preferred);
           }
         }
       }
@@ -296,10 +293,11 @@ Provide your response as JSON with this structure:
     
     if (validIds.length === 0) return [];
 
-    return await db.select()
-      .from(pharmacies)
-      .where(inArray(pharmacies.id, validIds))
-      .execute();
+    const alternatives = await db.query.pharmacies.findMany({
+      where: inArray(pharmacies.id, validIds)
+    });
+
+    return alternatives;
   }
 
   /**
