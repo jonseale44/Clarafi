@@ -137,7 +137,6 @@ export const locations = pgTable("locations", {
   // Contact
   phone: text("phone"),
   fax: text("fax"),
-  email: text("email"),
   
   // Facility details
   facilityCode: text("facility_code"), // Internal code for billing/reporting
