@@ -2352,6 +2352,8 @@ export const orders = pgTable("orders", {
   indication: text("indication"),
   imagingOrderId: integer("imaging_order_id"),
   externalOrderId: text("external_order_id"),
+  bodyPart: text("body_part"), // Missing column from database
+  duration: text("duration"), // Missing column from database
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
