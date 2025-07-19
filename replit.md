@@ -185,6 +185,26 @@ Preferred communication style: Simple, everyday language.
   - Dialog automatically signs pending order after pharmacy selection or cancellation
 - **PRODUCTION STANDARD**: Matches Epic/Cerner workflow where e-prescribing details collected before signing
 
+### Prescription Legal Compliance Enhancement (January 19, 2025)
+- **CRITICAL LEGAL COMPLIANCE ISSUE FIXED**: Prescription PDFs/faxes now include all legally required provider information
+- **PREVIOUS ISSUE**: Prescriptions had hardcoded practice address and missing provider credentials (DEA number, license state, clinic information)
+- **SOLUTION IMPLEMENTED**: Enhanced `generatePrescriptionData` method in prescription-transmission-service.ts to retrieve complete provider information:
+  - Provider's DEA number from users table
+  - Complete clinic address from userLocations → locations → organizations → healthSystems join
+  - Clinic phone number from location record
+  - License number with state designation
+  - Practice/organization name for professional identification
+- **DATABASE INTEGRATION**: System now properly queries provider's primary location (or first available location) for complete practice details
+- **PDF GENERATION UPDATE**: prescription-pdf-service.ts updated to handle multi-line addresses properly
+- **LEGAL REQUIREMENTS MET**: Prescriptions now include all information required for legitimate prescription transmission:
+  - Provider full name with credentials
+  - NPI number
+  - DEA number (for controlled substances)
+  - State license number with state designation
+  - Complete practice address with organization name
+  - Practice phone number
+- **PRODUCTION IMPACT**: Prescriptions sent via fax or printed now meet all legal requirements for acceptance by pharmacies
+
 ### Bulk Medication Signing Pharmacy Integration (January 19, 2025)
 - **CRITICAL BUG FIX**: "Sign All medications" button now requires pharmacy preferences before signing
 - **ISSUE**: Bulk signing bypassed pharmacy selection, leaving medications without transmission destination

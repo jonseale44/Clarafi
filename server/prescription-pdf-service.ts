@@ -71,8 +71,12 @@ export class PrescriptionPdfService {
     yPos += 6;
     pdf.text(data.prescriber.name, 20, yPos);
     yPos += 5;
-    pdf.text(data.prescriber.address, 20, yPos);
-    yPos += 5;
+    // Handle multi-line addresses
+    const addressLines = data.prescriber.address.split('\n');
+    addressLines.forEach((line: string) => {
+      pdf.text(line, 20, yPos);
+      yPos += 5;
+    });
     if (data.prescriber.phone) {
       pdf.text(`Phone: ${data.prescriber.phone}`, 20, yPos);
       yPos += 5;

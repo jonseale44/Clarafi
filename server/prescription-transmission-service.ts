@@ -8,6 +8,10 @@ import {
   patients,
   users,
   signedOrders,
+  locations,
+  organizations,
+  healthSystems,
+  userLocations,
   type InsertPrescriptionTransmission,
   type PrescriptionTransmission,
   type Medication,
@@ -489,6 +493,72 @@ export class PrescriptionTransmissionService {
       db.select().from(pharmacies).where(eq(pharmacies.id, transmission.pharmacyId))
     ]);
 
+    // Get provider's location information
+    const providerLocation = await db.select({
+      location: locations,
+      organization: organizations,
+      healthSystem: healthSystems
+    })
+    .from(userLocations)
+    .innerJoin(locations, eq(userLocations.locationId, locations.id))
+    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
+    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
+    .where(
+      and(
+        eq(userLocations.userId, transmission.providerId),
+        eq(userLocations.isPrimary, true)
+      )
+    )
+    .limit(1);
+
+    // Use the first location if no primary is marked
+    const locationData = providerLocation[0] || await db.select({
+      location: locations,
+      organization: organizations,
+      healthSystem: healthSystems
+    })
+    .from(userLocations)
+    .innerJoin(locations, eq(userLocations.locationId, locations.id))
+    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
+    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
+    .where(eq(userLocations.userId, transmission.providerId))
+    .limit(1)
+    .then(results => results[0]);
+
+    // Get electronic signature if available for DEA number
+    let deaNumber = provider[0].deaNumber;
+    if (transmission.electronicSignatureId) {
+      const [signature] = await db.select()
+        .from(electronicSignatures)
+        .where(eq(electronicSignatures.id, transmission.electronicSignatureId));
+      
+      // Check if signature has DEA number stored in compliance checks
+      if (signature && signature.complianceChecks && typeof signature.complianceChecks === 'object') {
+        const checks = signature.complianceChecks as any;
+        if (checks.deaNumber) {
+          deaNumber = checks.deaNumber;
+        }
+      }
+    }
+
+    // Build prescriber address with complete information
+    let prescriberAddress = '';
+    let prescriberPhone = '';
+    
+    if (locationData) {
+      const { location, organization } = locationData;
+      prescriberAddress = `${organization.name}\n${location.address}`;
+      if (location.address2) {
+        prescriberAddress += `, ${location.address2}`;
+      }
+      prescriberAddress += `\n${location.city}, ${location.state} ${location.zipCode}`;
+      prescriberPhone = location.phone || '';
+    } else {
+      // Fallback if no location found
+      prescriberAddress = 'Practice Address Not Available';
+      console.warn(`⚠️ [PrescriptionTransmission] No location found for provider ${transmission.providerId}`);
+    }
+
     return {
       prescriptionNumber: `RX-${transmission.id}`,
       date: new Date().toISOString(),
@@ -498,15 +568,18 @@ export class PrescriptionTransmissionService {
         address: `${patient[0].address}, ${patient[0].city}, ${patient[0].state} ${patient[0].zipCode}`
       },
       prescriber: {
-        name: `${provider[0].firstName} ${provider[0].lastName}, ${provider[0].credentials || ''}`,
+        name: `${provider[0].firstName} ${provider[0].lastName}${provider[0].credentials ? ', ' + provider[0].credentials : ''}`,
         npi: provider[0].npi,
-        licenseNumber: provider[0].licenseNumber,
-        address: 'Clinic Address' // Would fetch from provider's location
+        licenseNumber: provider[0].licenseNumber ? `${provider[0].licenseNumber} (${provider[0].licenseState || 'State Not Specified'})` : undefined,
+        address: prescriberAddress,
+        deaNumber: deaNumber,
+        phone: prescriberPhone
       },
       pharmacy: {
         name: pharmacy[0].name,
         address: `${pharmacy[0].address}, ${pharmacy[0].city}, ${pharmacy[0].state} ${pharmacy[0].zipCode}`,
-        phone: pharmacy[0].phone
+        phone: pharmacy[0].phone,
+        fax: pharmacy[0].fax
       },
       medication: {
         name: medication.name,
