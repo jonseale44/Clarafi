@@ -3716,13 +3716,29 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const userId = (req.user as any).id;
       const { signatureNote } = req.body;
 
+      console.log(`\n🎯 [Order Signing] Starting sign process for order ${orderId}`);
+
       // Get the order
       const order = await storage.getOrder(orderId);
       if (!order) {
         return res.status(404).json({ error: "Order not found" });
       }
 
-      console.log(`🔍 [Order Signing] Order ${orderId} data:`, JSON.stringify({
+      // Log all fields of the order object
+      console.log(`📋 [Order Signing] Complete order object keys:`, Object.keys(order));
+      console.log(`📋 [Order Signing] Order ${orderId} full object:`, JSON.stringify(order, null, 2));
+
+      // Specific field checks
+      console.log(`🔍 [Order Signing] Field availability check:`, {
+        hasQuantityUnit: 'quantityUnit' in order,
+        quantityUnitValue: order.quantityUnit,
+        hasQuantity_unit: 'quantity_unit' in order,
+        quantity_unitValue: (order as any).quantity_unit,
+        typeofQuantityUnit: typeof order.quantityUnit,
+        typeofQuantity_unit: typeof (order as any).quantity_unit
+      });
+
+      console.log(`🔍 [Order Signing] Order ${orderId} medication fields:`, JSON.stringify({
         orderType: order.orderType,
         medicationName: order.medicationName,
         dosage: order.dosage,
@@ -3733,7 +3749,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         route: order.route,
         quantity: order.quantity,
         quantityUnit: order.quantityUnit,
-        quantity_unit: order.quantity_unit,
+        quantity_unit: (order as any).quantity_unit,
         sig: order.sig,
         refills: order.refills,
         daysSupply: order.daysSupply
