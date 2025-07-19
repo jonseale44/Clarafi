@@ -3757,9 +3757,14 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       // Validate medication orders before signing
       if (order.orderType === "medication") {
+        console.time(`⏱️ [Order Signing] Total medication validation time`);
+        
+        console.time(`⏱️ [Order Signing] Import PharmacyValidationService`);
         const { PharmacyValidationService } = await import(
           "./pharmacy-validation-service.js"
         );
+        console.timeEnd(`⏱️ [Order Signing] Import PharmacyValidationService`);
+        
         const pharmacyValidator = new PharmacyValidationService();
 
         const validationData = {
@@ -3778,8 +3783,12 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
         console.log(`💊 [Order Signing] Validation data for order ${orderId}:`, JSON.stringify(validationData, null, 2));
 
+        console.time(`⏱️ [Order Signing] GPT validation call`);
         const validationResult =
           await pharmacyValidator.validateMedicationOrder(validationData);
+        console.timeEnd(`⏱️ [Order Signing] GPT validation call`);
+
+        console.timeEnd(`⏱️ [Order Signing] Total medication validation time`);
 
         if (validationResult.errors.length > 0) {
           console.log(
@@ -3954,6 +3963,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           encounterId: order.encounterId,
           orderType: order.orderType,
           deliveryMethod: deliveryMethod,
+          originalDeliveryMethod: deliveryMethod, // Add missing required field
           deliveryEndpoint: deliveryEndpoint,
           deliveryStatus: "pending" as const,
           signedAt: new Date(),
