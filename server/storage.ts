@@ -2704,7 +2704,7 @@ export class DatabaseStorage implements IStorage {
   // Get appointment types
   async getAppointmentTypes(healthSystemId: number, locationId?: number) {
     // Use raw SQL to handle column name mismatches between schema and database
-    const query = `
+    const query = sql`
       SELECT 
         id,
         health_system_id,
@@ -2714,11 +2714,11 @@ export class DatabaseStorage implements IStorage {
         description,
         is_active
       FROM appointment_types
-      WHERE health_system_id = $1
+      WHERE health_system_id = ${healthSystemId}
       ORDER BY name
     `;
     
-    const result = await db.execute(sql.raw(query, [healthSystemId]));
+    const result = await db.execute(query);
     return result.rows;
   }
 

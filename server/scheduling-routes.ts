@@ -511,7 +511,7 @@ router.post('/api/scheduling/appointments/:id/complete', tenantIsolation, async 
 });
 
 // Get provider-specific AI weight preferences
-router.get('/api/scheduling/ai-weights/:providerId', tenantIsolation, async (req, res) => {
+router.get('/api/scheduling/provider-ai-weights/:providerId', tenantIsolation, async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const providerId = parseInt(req.params.providerId);

@@ -1002,6 +1002,19 @@ Preferred communication style: Simple, everyday language.
 - **STRATEGY**: Chose additive approach (extra columns) over destructive approach to preserve all features
 - **PRODUCTION READY**: System now has complete schema alignment between database and code
 
+### Database Schema Drift Resolution - Missing Columns (January 19, 2025)
+- **FIXED ISSUE**: Multiple database columns were missing that were defined in schema.ts, causing various API errors
+- **ROOT CAUSE**: Replit rollbacks don't rollback database changes, causing schema drift between code and actual database structure
+- **COLUMNS ADDED**:
+  - `no_show_by_time_of_day` JSONB column to `patient_scheduling_patterns` table - fixes AI scheduling predictions
+  - `dea_number` TEXT column to `users` table - fixes prescription PDF generation for providers
+- **PRODUCTION IMPACT**: Scheduling AI predictions and prescription generation now work without database errors
+
+### UI Accessibility Fix - Dialog Description (January 19, 2025)
+- **FIXED WARNING**: "Missing Description or aria-describedby for DialogContent" console warning
+- **SOLUTION**: Added DialogDescription component to signed-orders.tsx dialog for changing delivery methods
+- **ACCESSIBILITY IMPROVEMENT**: All dialogs now have proper ARIA descriptions for screen reader support
+
 ### Development Test Data Cleanup Endpoint COMPLETED (January 15, 2025)
 - **COMPREHENSIVE DATA CLEANUP**: Created /api/dev/clear-all-test-data endpoint that removes all test data while preserving admin accounts
 - **FOREIGN KEY CASCADE HANDLING**: Systematically deletes data in correct order respecting all foreign key constraints:

@@ -8,6 +8,7 @@ import { RefreshCw, Settings, Clock, CheckCircle, XCircle, AlertCircle } from "l
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -241,6 +242,9 @@ export function SignedOrders({ patientId }: SignedOrdersProps) {
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>Change Delivery Method</DialogTitle>
+                              <DialogDescription>
+                                Select a new delivery method for this order.
+                              </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
                               <div>
