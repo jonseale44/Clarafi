@@ -39,6 +39,7 @@ interface PharmacySelectionDialogProps {
   medicationIds: number[];
   isControlled?: boolean;
   urgency?: 'routine' | 'urgent' | 'emergency';
+  deliveryMethod?: 'electronic' | 'fax' | 'print';
 }
 
 interface Pharmacy {
@@ -73,6 +74,7 @@ export function PharmacySelectionDialog({
   medicationIds,
   isControlled = false,
   urgency = 'routine',
+  deliveryMethod = 'electronic',
 }: PharmacySelectionDialogProps) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,14 +132,28 @@ export function PharmacySelectionDialog({
 
   // Search pharmacies with fax numbers
   const searchPharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacies/search', searchQuery],
+    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
     queryFn: async () => {
+      console.log('🔍 [PharmacySearch] Starting search for:', searchQuery);
       const params = new URLSearchParams({ 
-        name: searchQuery,
+        query: searchQuery,  // Changed from 'name' to 'query' to match backend
         limit: '20'
       });
-      const response = await apiRequest('GET', `/api/eprescribing/pharmacies/search?${params}`);
-      return response.json();
+      const url = `/api/eprescribing/pharmacy/search?${params}`;  // Changed from 'pharmacies' to 'pharmacy'
+      console.log('🔍 [PharmacySearch] Calling API:', url);
+      
+      const response = await apiRequest('GET', url);
+      console.log('🔍 [PharmacySearch] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔍 [PharmacySearch] Error response:', errorText);
+        throw new Error(errorText);
+      }
+      
+      const data = await response.json();
+      console.log('🔍 [PharmacySearch] Results:', data);
+      return data;
     },
     enabled: searchQuery.length > 2,
   });
@@ -274,7 +290,19 @@ export function PharmacySelectionDialog({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-            {pharmacy.acceptsEprescribe ? (
+            {deliveryMethod === 'fax' ? (
+              pharmacy.fax ? (
+                <Badge variant="outline" className="text-green-600">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Fax Available
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-red-600">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  No Fax Number
+                </Badge>
+              )
+            ) : pharmacy.acceptsEprescribe ? (
               <Badge variant="outline" className="text-green-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 E-Prescribe

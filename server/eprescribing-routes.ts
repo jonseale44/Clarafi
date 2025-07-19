@@ -179,8 +179,9 @@ router.post('/api/eprescribing/pharmacy/validate', requireAuth, async (req, res)
 // Search pharmacies - using Google Places API as primary source
 router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, async (req, res) => {
   try {
+    console.log('🔍 [Pharmacy Search] ===== SEARCH REQUEST RECEIVED =====');
     const { query = '', city, state, lat, lng } = req.query;
-    console.log('🔍 [Pharmacy Search] Request:', { query, city, state, lat, lng });
+    console.log('🔍 [Pharmacy Search] Request params:', { query, city, state, lat, lng });
 
     // First try Google Places API
     const apiKey = process.env.GOOGLE_PLACES_API_KEY;
