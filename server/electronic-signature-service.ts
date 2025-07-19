@@ -301,4 +301,47 @@ export class ElectronicSignatureService {
       concerns: []
     };
   }
+
+  /**
+   * Creates a session-based signature for non-controlled medications
+   * This matches Epic/Athena behavior where login session is sufficient authorization
+   */
+  async createSessionBasedSignature(userId: number): Promise<number> {
+    console.log('🔐 [ElectronicSignature] Creating session-based signature for non-controlled prescription');
+    
+    try {
+      // Get provider info
+      const [provider] = await db.select()
+        .from(users)
+        .where(eq(users.id, userId));
+      
+      if (!provider) {
+        throw new Error('Provider not found');
+      }
+
+      // Create a session-based signature record
+      const [signature] = await db.insert(electronicSignatures)
+        .values({
+          userId,
+          signatureType: 'typed',
+          signatureData: `${provider.firstName} ${provider.lastName}`,
+          signatureHash: this.hashSignatureData(`session-${userId}-${Date.now()}`),
+          certificationText: `Session-based authorization for non-controlled prescription by ${provider.firstName} ${provider.lastName}`,
+          authenticationMethod: 'password', // User already authenticated via login
+          twoFactorUsed: false,
+          deaSignature: false,
+          signatureString: `${provider.firstName} ${provider.lastName}`,
+          // Mark this as a session-based auto-signature
+          ipAddress: 'session-based',
+          userAgent: 'auto-generated'
+        })
+        .returning();
+
+      console.log('✅ [ElectronicSignature] Session-based signature created:', signature.id);
+      return signature.id;
+    } catch (error) {
+      console.error('❌ [ElectronicSignature] Error creating session-based signature:', error);
+      throw error;
+    }
+  }
 }

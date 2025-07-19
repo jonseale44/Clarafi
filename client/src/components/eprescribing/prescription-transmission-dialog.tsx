@@ -188,7 +188,21 @@ export function PrescriptionTransmissionDialog({
       });
       return;
     }
-    setShowSignatureDialog(true);
+    
+    // Check if any selected medications are controlled
+    const hasControlled = medications
+      .filter(med => selectedMedicationIds.includes(med.id))
+      .some(med => med.deaSchedule && ['II', 'III', 'IV', 'V', '2', '3', '4', '5'].includes(med.deaSchedule));
+    
+    if (hasControlled) {
+      // Controlled substances require electronic signature
+      setShowSignatureDialog(true);
+    } else {
+      // Non-controlled medications can skip signature and go directly to pharmacy selection
+      console.log('📝 Non-controlled medications - skipping signature step');
+      setCurrentStep('signature'); // Mark signature as complete
+      setShowPharmacyDialog(true);
+    }
   };
 
   const handleSignatureComplete = (newSignatureId: number) => {

@@ -59,23 +59,32 @@ export class PrescriptionTransmissionService {
 
       // Get or create electronic signature
       let signatureId = params.electronicSignatureId;
-      if (!signatureId) {
-        const recentSignature = await this.signatureService.getRecentSignature(
-          params.providerId,
-          requiresDea
-        );
-        
-        if (!recentSignature) {
-          throw new Error(`${requiresDea ? 'DEA ' : ''}Electronic signature required`);
+      
+      // Only require explicit signature for controlled substances
+      if (requiresDea) {
+        if (!signatureId) {
+          const recentSignature = await this.signatureService.getRecentSignature(
+            params.providerId,
+            requiresDea
+          );
+          
+          if (!recentSignature) {
+            throw new Error('DEA Electronic signature required for controlled substances');
+          }
+          
+          signatureId = recentSignature.id;
         }
-        
-        signatureId = recentSignature.id;
-      }
 
-      // Verify signature is valid
-      const signatureValid = await this.signatureService.verifySignature(signatureId);
-      if (!signatureValid) {
-        throw new Error('Electronic signature is invalid or revoked');
+        // Verify signature is valid
+        const signatureValid = await this.signatureService.verifySignature(signatureId);
+        if (!signatureValid) {
+          throw new Error('Electronic signature is invalid or revoked');
+        }
+      } else {
+        // For non-controlled medications, create an implicit signature based on login session
+        // This matches Epic/Athena behavior where login is sufficient authorization
+        console.log('📝 [PrescriptionTransmission] Non-controlled medication - using session authentication');
+        signatureId = await this.signatureService.createSessionBasedSignature(params.providerId);
       }
 
       // Select pharmacy if not provided

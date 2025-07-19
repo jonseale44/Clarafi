@@ -190,6 +190,19 @@ Preferred communication style: Simple, everyday language.
   - SURESCRIPTS_API_ENDPOINT
 - **USER EXPERIENCE**: System works immediately in simulation mode, automatically switches to real API when credentials added
 
+### Electronic Signature Requirements Match Industry Standards (January 19, 2025)
+- **CRITICAL UX FIX**: Modified system to only require electronic signatures for controlled substances, matching Epic/Athena standards
+- **PREVIOUS BEHAVIOR**: All prescriptions required re-authentication with electronic signature
+- **NEW BEHAVIOR**: 
+  - Non-controlled medications: Login session serves as implicit authorization (no signature dialog)
+  - Controlled substances: Electronic signature still required (DEA compliance)
+- **IMPLEMENTATION**:
+  - Added `createSessionBasedSignature` method that creates automatic signature for non-controlled meds
+  - PrescriptionTransmissionService checks DEA schedule and only requires signature for controlled substances
+  - Frontend dialog skips signature step for non-controlled medications
+- **PRODUCTION STANDARD**: Matches Epic, Cerner, and Athena EMRs where provider login is sufficient for most prescriptions
+- **USER IMPACT**: Streamlined workflow - providers no longer need to re-authenticate for every prescription
+
 ### Medication Order Signing Performance Optimization (January 19, 2025)
 - **CRITICAL PERFORMANCE ISSUE RESOLVED**: Eliminated redundant GPT validation calls during order signing
 - **PROBLEM**: System was calling GPT validation twice - once during real-time editing and again during signing (3-5 second delay)
