@@ -95,30 +95,65 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
     }
   }, [currentPreferences]);
 
-  const handlePharmacySelect = (pharmacyId: number) => {
-    // In production, we'd fetch the full pharmacy details here
-    // For now, we'll get them from the pharmacy service
-    const mockPharmacy = {
-      id: pharmacyId,
-      name: "Selected Pharmacy",
-      address: "123 Main St",
-      city: "Anytown",
-      state: "CA",
-      zipCode: "12345",
-      phone: "(555) 123-4567",
-      fax: "(555) 123-4568"
-    };
-    
-    setSelectedPharmacy(mockPharmacy);
-    setShowPharmacyDialog(false);
-    
-    // Update preferences with pharmacy details
-    if (preferences) {
-      setPreferences({
-        ...preferences,
-        preferredPharmacy: `${mockPharmacy.name} - ${mockPharmacy.address}, ${mockPharmacy.city}, ${mockPharmacy.state} ${mockPharmacy.zipCode}`,
-        pharmacyPhone: mockPharmacy.phone || '',
-        pharmacyFax: mockPharmacy.fax || ''
+  const handlePharmacySelect = async (pharmacyId: number | string) => {
+    try {
+      // If it's a Google Places ID (string), save it to our database first
+      if (typeof pharmacyId === 'string') {
+        const response = await fetch('/api/eprescribing/pharmacies/save-google-place', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ placeId: pharmacyId }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to save pharmacy');
+        }
+        
+        const { pharmacy } = await response.json();
+        
+        setSelectedPharmacy(pharmacy);
+        setShowPharmacyDialog(false);
+        
+        // Update preferences with pharmacy details
+        if (preferences) {
+          setPreferences({
+            ...preferences,
+            preferredPharmacyId: pharmacy.id,
+            preferredPharmacy: `${pharmacy.name} - ${pharmacy.address}, ${pharmacy.city}, ${pharmacy.state} ${pharmacy.zipCode}`,
+            pharmacyPhone: pharmacy.phone || '',
+            pharmacyFax: pharmacy.fax || ''
+          });
+        }
+      } else {
+        // It's a database pharmacy ID, fetch the details
+        const response = await fetch(`/api/eprescribing/pharmacies/${pharmacyId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch pharmacy details');
+        }
+        
+        const pharmacy = await response.json();
+        
+        setSelectedPharmacy(pharmacy);
+        setShowPharmacyDialog(false);
+        
+        // Update preferences with pharmacy details
+        if (preferences) {
+          setPreferences({
+            ...preferences,
+            preferredPharmacyId: pharmacy.id,
+            preferredPharmacy: `${pharmacy.name} - ${pharmacy.address}, ${pharmacy.city}, ${pharmacy.state} ${pharmacy.zipCode}`,
+            pharmacyPhone: pharmacy.phone || '',
+            pharmacyFax: pharmacy.fax || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error selecting pharmacy:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to select pharmacy. Please try again.",
       });
     }
   };

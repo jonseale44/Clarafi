@@ -1523,9 +1523,10 @@ export const pharmacies = pgTable("pharmacies", {
   id: serial("id").primaryKey(),
   
   // Core identification
-  ncpdpId: text("ncpdp_id").notNull().unique(), // NCPDP Provider ID (7 digits)
+  ncpdpId: text("ncpdp_id").unique(), // NCPDP Provider ID (7 digits) - optional for Google Places pharmacies
   npi: text("npi"), // National Provider Identifier (10 digits)
   deaNumber: text("dea_number"), // DEA registration number
+  googlePlaceId: text("google_place_id").unique(), // Google Places ID for organic pharmacy database building
   
   // Pharmacy details
   name: text("name").notNull(),
@@ -1542,7 +1543,7 @@ export const pharmacies = pgTable("pharmacies", {
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   
   // Contact information
-  phone: text("phone").notNull(),
+  phone: text("phone"), // Optional since Google Places might not have phone
   fax: text("fax"),
   email: text("email"),
   website: text("website"),
@@ -1567,6 +1568,9 @@ export const pharmacies = pgTable("pharmacies", {
   status: text("status").default("active"), // 'active', 'inactive', 'suspended'
   verificationStatus: text("verification_status").default("pending"), // 'pending', 'verified', 'failed'
   lastVerified: timestamp("last_verified"),
+  
+  // Multi-tenant support for production
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -3088,21 +3092,35 @@ export type InsertElectronicSignature = z.infer<typeof insertElectronicSignature
 export const insertPharmacySchema = createInsertSchema(pharmacies).pick({
   ncpdpId: true,
   npi: true,
+  deaNumber: true,
+  googlePlaceId: true,
   name: true,
+  dbaName: true,
+  corporateName: true,
   address: true,
+  address2: true,
   city: true,
   state: true,
   zipCode: true,
+  latitude: true,
+  longitude: true,
   phone: true,
   fax: true,
   email: true,
-  pharmacyType: true,
-  acceptsEprescribe: true,
-  acceptsControlled: true,
-  preferredForControls: true,
+  website: true,
   hours: true,
-  acceptsCompounding: true,
-  compoundingLevel: true,
+  is24Hour: true,
+  services: true,
+  acceptsEprescribing: true,
+  acceptsControlledSubstances: true,
+  preferredTransmissionMethod: true,
+  sureScriptsVersion: true,
+  specialtyTypes: true,
+  insuranceNetworks: true,
+  preferredForConditions: true,
+  status: true,
+  verificationStatus: true,
+  lastVerified: true,
   healthSystemId: true,
 });
 

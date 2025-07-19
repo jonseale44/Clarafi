@@ -155,11 +155,51 @@ export function PharmacySelectionDialog({
       return;
     }
 
-    // Skip validation for Google Places pharmacies (string IDs)
-    if (typeof selectedPharmacyId === 'string') {
-      onPharmacySelect(selectedPharmacyId);
-      onOpenChange(false);
-      return;
+    // Handle Google Places pharmacies (string IDs starting with 'google_')
+    if (typeof selectedPharmacyId === 'string' && selectedPharmacyId.startsWith('google_')) {
+      try {
+        // Find the pharmacy in the search results
+        const googlePlaceId = selectedPharmacyId.replace('google_', '');
+        const searchResults = searchPharmaciesQuery.data || [];
+        const selectedPharmacy = searchResults.find((p: any) => p.id === selectedPharmacyId);
+        
+        if (!selectedPharmacy) {
+          toast({
+            title: 'Error',
+            description: 'Could not find pharmacy details',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Save the Google Places pharmacy to our database
+        const response = await apiRequest('POST', '/api/eprescribing/pharmacies/save-google-place', {
+          placeId: googlePlaceId,
+          name: selectedPharmacy.name,
+          address: selectedPharmacy.address,
+        });
+
+        const savedPharmacy = await response.json();
+        
+        // Use the saved pharmacy's database ID
+        onPharmacySelect(savedPharmacy.id);
+        onOpenChange(false);
+        
+        toast({
+          title: 'Pharmacy Saved',
+          description: `${selectedPharmacy.name} has been added to your pharmacy network`,
+        });
+        
+        return;
+      } catch (error) {
+        console.error('Error saving pharmacy:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save pharmacy. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     // Validate pharmacy before selection (for numeric IDs from database)

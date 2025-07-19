@@ -6,6 +6,7 @@ import { PrescriptionTransmissionService } from './prescription-transmission-ser
 import { db } from './db.js';
 import { medications, orders, pharmacies, prescriptionTransmissions, electronicSignatures, patients } from '../shared/schema.js';
 import { eq, and, desc } from 'drizzle-orm';
+import OpenAI from 'openai';
 
 // Middleware to ensure user is authenticated
 const requireAuth = (req: Request, res: Response, next: NextFunction) => {
@@ -312,6 +313,159 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
   } catch (error) {
     console.error('❌ [EPrescribing] Error searching pharmacies:', error);
     res.status(500).json({ error: 'Failed to search pharmacies' });
+  }
+});
+
+// Save Google Places pharmacy to database
+router.post('/api/eprescribing/pharmacies/save-google-place', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    console.log('💾 [EPrescribing] Saving Google Places pharmacy to database');
+    
+    const { placeId } = req.body;
+    if (!placeId) {
+      return res.status(400).json({ error: 'Place ID is required' });
+    }
+    
+    // First check if this pharmacy already exists in our database
+    const existing = await db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.googlePlaceId, placeId))
+      .limit(1);
+      
+    if (existing.length > 0) {
+      console.log('✅ [EPrescribing] Pharmacy already exists in database:', existing[0].id);
+      return res.json({ pharmacy: existing[0] });
+    }
+    
+    // Fetch details from Google Places
+    const placesApiKey = process.env.GOOGLE_PLACES_API_KEY;
+    if (!placesApiKey) {
+      return res.status(500).json({ error: 'Google Places API key not configured' });
+    }
+    
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,formatted_address,formatted_phone_number,opening_hours,types,geometry&key=${placesApiKey}`;
+    const detailsResponse = await fetch(detailsUrl);
+    const detailsData = await detailsResponse.json();
+    
+    if (!detailsData.result) {
+      return res.status(404).json({ error: 'Pharmacy not found' });
+    }
+    
+    const place = detailsData.result;
+    
+    // Parse address components from formatted address
+    const addressParts = place.formatted_address.split(',').map(part => part.trim());
+    const stateZipMatch = addressParts[addressParts.length - 2]?.match(/([A-Z]{2})\s+(\d{5})/);
+    
+    // Use GPT to enrich pharmacy data
+    const enrichmentPrompt = `
+      Analyze this pharmacy information and provide enriched data:
+      
+      Name: ${place.name}
+      Address: ${place.formatted_address}
+      Phone: ${place.formatted_phone_number || 'Not available'}
+      Hours: ${place.opening_hours?.weekday_text?.join(', ') || 'Not available'}
+      
+      Determine:
+      1. Pharmacy type (retail, hospital, specialty, compounding, mail-order)
+      2. If it's a chain pharmacy, identify the chain
+      3. Parse operating hours into a standardized format
+      4. Extract city, state, and zip code from the address
+      5. Identify any special services based on the name (24-hour, compounding, etc.)
+      
+      Return as JSON with fields:
+      {
+        "pharmacyType": "retail|hospital|specialty|compounding|mail-order",
+        "chainName": "CVS|Walgreens|HEB|etc or null",
+        "parsedHours": "human-readable hours string",
+        "city": "city name",
+        "state": "2-letter state code",
+        "zipCode": "5-digit zip",
+        "acceptsCompounding": boolean,
+        "is24Hour": boolean
+      }
+    `;
+    
+    let enrichedData = {
+      pharmacyType: 'retail',
+      chainName: null,
+      parsedHours: place.opening_hours?.weekday_text?.join(', ') || 'Hours not available',
+      city: addressParts[addressParts.length - 3] || '',
+      state: stateZipMatch?.[1] || '',
+      zipCode: stateZipMatch?.[2] || '',
+      acceptsCompounding: false,
+      is24Hour: false
+    };
+    
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const enrichmentResponse = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: enrichmentPrompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0
+      });
+      
+      if (enrichmentResponse.choices[0]?.message?.content) {
+        enrichedData = JSON.parse(enrichmentResponse.choices[0].message.content);
+      }
+    } catch (error) {
+      console.error('⚠️ [EPrescribing] GPT enrichment failed, using basic parsing:', error);
+    }
+    
+    // Create pharmacy record
+    const [newPharmacy] = await db.insert(pharmacies).values({
+      healthSystemId: req.userHealthSystemId,
+      name: place.name,
+      address: addressParts[0] || place.formatted_address,
+      city: enrichedData.city,
+      state: enrichedData.state,
+      zipCode: enrichedData.zipCode,
+      phone: place.formatted_phone_number || null,
+      fax: null,
+      pharmacyType: enrichedData.pharmacyType,
+      chainAffiliation: enrichedData.chainName,
+      acceptsEprescribe: true, // Most modern pharmacies accept e-prescribing
+      acceptsControlled: enrichedData.chainName ? true : false, // Major chains usually accept controlled
+      acceptsCompounding: enrichedData.acceptsCompounding,
+      preferredForControlled: false,
+      hours: enrichedData.parsedHours,
+      googlePlaceId: placeId,
+      latitude: place.geometry?.location?.lat || null,
+      longitude: place.geometry?.location?.lng || null,
+      ncpdpId: null, // Will need to be added later for actual e-prescribing
+      npi: null,
+      status: 'active'
+    }).returning();
+    
+    console.log('✅ [EPrescribing] Saved new pharmacy:', newPharmacy[0].id);
+    res.json({ pharmacy: newPharmacy[0] });
+    
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error saving pharmacy:', error);
+    res.status(500).json({ error: 'Failed to save pharmacy' });
+  }
+});
+
+// Get pharmacy details by ID
+router.get('/api/eprescribing/pharmacies/:id', requireAuth, tenantIsolation, async (req, res) => {
+  try {
+    const pharmacyId = parseInt(req.params.id);
+    console.log('🔍 [EPrescribing] Fetching pharmacy details:', pharmacyId);
+    
+    const [pharmacy] = await db.select()
+      .from(pharmacies)
+      .where(eq(pharmacies.id, pharmacyId))
+      .limit(1);
+      
+    if (!pharmacy) {
+      return res.status(404).json({ error: 'Pharmacy not found' });
+    }
+    
+    res.json(pharmacy);
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error fetching pharmacy:', error);
+    res.status(500).json({ error: 'Failed to fetch pharmacy' });
   }
 });
 
