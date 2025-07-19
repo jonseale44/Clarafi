@@ -3261,19 +3261,24 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         const currentOrder = await storage.getOrder(orderId);
         const mergedOrder = { ...currentOrder, ...cleanedUpdates };
         
-        // Validate medication fields
-        const { MedicationStandardizationService } = await import("./medication-standardization-service.js");
-        const validation = MedicationStandardizationService.validateMedication({
+        // Map frontend field names to backend validation field names
+        const medicationForValidation = {
           medicationName: mergedOrder.medicationName,
-          strength: mergedOrder.strength,
+          strength: mergedOrder.strength || mergedOrder.dosage,  // Frontend uses 'dosage'
           dosageForm: mergedOrder.form || mergedOrder.dosageForm,
           sig: mergedOrder.sig,
           quantity: mergedOrder.quantity,
           quantityUnit: mergedOrder.quantityUnit || mergedOrder.quantity_unit,
           refills: mergedOrder.refills,
           daysSupply: mergedOrder.daysSupply,
-          route: mergedOrder.route
-        });
+          route: mergedOrder.route || mergedOrder.routeOfAdministration  // Frontend uses 'routeOfAdministration'
+        };
+        
+        console.log(`💊 [Orders API] Medication data for validation:`, medicationForValidation);
+        
+        // Validate medication fields
+        const { MedicationStandardizationService } = await import("./medication-standardization-service.js");
+        const validation = MedicationStandardizationService.validateMedication(medicationForValidation);
         
         if (!validation.isValid) {
           console.error(`❌ [Orders API] Medication validation failed:`, validation.errors);
