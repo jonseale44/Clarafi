@@ -332,7 +332,8 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
       console.log('🔍 [Pharmacy Search] Searching ScriptFax™ database for:', query);
       
       try {
-        const dbResults = await db.select()
+        // First try to find pharmacies with fax numbers
+        let dbResults = await db.select()
           .from(pharmacies)
           .where(
             and(
@@ -343,8 +344,26 @@ router.get('/api/eprescribing/pharmacy/search', requireAuth, tenantIsolation, as
           )
           .limit(20);
         
-        console.log(`📋 [Pharmacy Search] Found ${dbResults.length} pharmacies with fax numbers in ScriptFax™ database`);
-        console.log('📋 [Pharmacy Search] First result:', dbResults[0]);
+        // If no results with fax, search without fax requirement
+        if (dbResults.length === 0) {
+          console.log('🔍 [Pharmacy Search] No results with fax, searching all pharmacies');
+          dbResults = await db.select()
+            .from(pharmacies)
+            .where(
+              sql`LOWER(${pharmacies.name}) LIKE LOWER(${'%' + query + '%'})`
+            )
+            .limit(20);
+        }
+        
+        console.log(`📋 [Pharmacy Search] Found ${dbResults.length} pharmacies in ScriptFax™ database`);
+        if (dbResults.length > 0) {
+          console.log('📋 [Pharmacy Search] First result:', {
+            name: dbResults[0].name,
+            city: dbResults[0].city,
+            state: dbResults[0].state,
+            fax: dbResults[0].fax
+          });
+        }
         
         if (dbResults.length > 0) {
           // Format results for frontend
