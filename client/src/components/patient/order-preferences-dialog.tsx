@@ -300,7 +300,10 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => setShowPharmacyDialog(true)}
+                      onClick={() => {
+                        console.log("Opening pharmacy selection dialog");
+                        setShowPharmacyDialog(true);
+                      }}
                     >
                       <Store className="h-4 w-4 mr-2" />
                       Select Pharmacy

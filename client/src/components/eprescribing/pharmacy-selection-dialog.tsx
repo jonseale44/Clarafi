@@ -78,6 +78,19 @@ export function PharmacySelectionDialog({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
   const [useAiRecommendation, setUseAiRecommendation] = useState(true);
+  
+  // Debug logging
+  useEffect(() => {
+    if (open) {
+      console.log("PharmacySelectionDialog opened with:", {
+        patientId,
+        medicationIds,
+        isControlled,
+        urgency,
+        useAiRecommendation
+      });
+    }
+  }, [open, patientId, medicationIds, isControlled, urgency, useAiRecommendation]);
 
   // Get AI pharmacy recommendation
   const aiRecommendationQuery = useQuery({
