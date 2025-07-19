@@ -81,8 +81,8 @@ export class PharmacyIntelligenceService {
 
       // Get alternative pharmacies
       const alternatives = await this.getAlternativePharmacies(
-        gptDecision.recommendedPharmacyId,
-        gptDecision.alternativeIds
+        gptDecision.alternativeIds,
+        gptDecision.recommendedPharmacyId
       );
 
       return {
@@ -235,19 +235,22 @@ Provide your response as JSON with this structure:
       const pharmacyList = await db.select()
         .from(pharmacies)
         .where(eq(pharmacies.status, 'active'))
-        .limit(10);
+        .limit(10)
+        .execute();
 
       // If preferred pharmacy specified, ensure it's included
       if (preferredId) {
         const hasPreferred = pharmacyList.some(p => p.id === preferredId);
         
         if (!hasPreferred) {
-          const [preferred] = await db.select()
+          const preferred = await db.select()
             .from(pharmacies)
-            .where(eq(pharmacies.id, preferredId));
+            .where(eq(pharmacies.id, preferredId))
+            .limit(1)
+            .execute();
           
-          if (preferred) {
-            pharmacyList.unshift(preferred);
+          if (preferred.length > 0) {
+            pharmacyList.unshift(preferred[0]);
           }
         }
       }
@@ -283,8 +286,8 @@ Provide your response as JSON with this structure:
    * Gets alternative pharmacy options
    */
   private async getAlternativePharmacies(
-    primaryId: number,
-    alternativeIds: number[]
+    alternativeIds: number[],
+    primaryId: number
   ): Promise<Pharmacy[]> {
     // Ensure alternativeIds is an array and filter out invalid values
     const validIds = Array.isArray(alternativeIds) 
@@ -295,7 +298,8 @@ Provide your response as JSON with this structure:
 
     return await db.select()
       .from(pharmacies)
-      .where(inArray(pharmacies.id, validIds));
+      .where(inArray(pharmacies.id, validIds))
+      .execute();
   }
 
   /**

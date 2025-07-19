@@ -111,7 +111,7 @@ export function PharmacySelectionDialog({
   // Get all pharmacies for manual selection
   const pharmaciesQuery = useQuery({
     queryKey: ['/api/eprescribing/pharmacies'],
-    enabled: open && !useAiRecommendation,
+    enabled: open && (!useAiRecommendation || aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy)),
   });
 
   // Search pharmacies with fax numbers
@@ -374,7 +374,16 @@ export function PharmacySelectionDialog({
             )}
 
             <div className="space-y-3">
-              {aiRecommendationQuery.data && useAiRecommendation && (
+              {aiRecommendationQuery.error && useAiRecommendation && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Unable to get AI recommendations. Please select a pharmacy manually.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {aiRecommendationQuery.data && useAiRecommendation && !aiRecommendationQuery.error && (
                 <div className="space-y-4">
                   {aiRecommendationQuery.data.confidence >= 0.8 && aiRecommendationQuery.data.reasoning && (
                     <Alert>
@@ -402,7 +411,7 @@ export function PharmacySelectionDialog({
                 </div>
               )}
 
-              {(!useAiRecommendation || (useAiRecommendation && aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)) && (
+              {(!useAiRecommendation || (useAiRecommendation && (aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)))) && (
                 <>
                   {(searchQuery 
                     ? (searchPharmaciesQuery.data || [])
