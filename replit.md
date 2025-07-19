@@ -943,6 +943,10 @@ Preferred communication style: Simple, everyday language.
   - Created visual display showing unit next to quantity input field (e.g., "3 inhalers")
   - Updated handleQuantityChange to pass quantityUnit with quantity updates
   - Fixed draft-orders.tsx to pass quantityUnit prop to FastMedicationIntelligence component
+- **MOVE TO ORDERS UI CONSISTENCY FIX**: Fixed UI inconsistency where "Move to Orders" didn't show quantity units (January 19, 2025)
+  - Added missing quantityUnit field to Order TypeScript interface in draft-orders.tsx
+  - Now both "Move to Orders" and AI natural language parsing show quantity with units consistently
+  - Resolved issue where backend was saving quantity_unit correctly but frontend didn't know about the field
 
 ### Critical Medication Safety Validation Fix COMPLETED (January 18, 2025)
 - **CRITICAL SAFETY FIX**: Added MedicationStandardizationService.validateMedication() to PUT /api/orders/:id endpoint

@@ -31,6 +31,7 @@ interface Order {
   medicationName?: string;
   dosage?: string;
   quantity?: number;
+  quantityUnit?: string;
   sig?: string;
   refills?: number;
   form?: string;
