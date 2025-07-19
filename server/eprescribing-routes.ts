@@ -140,10 +140,28 @@ router.post('/api/eprescribing/pharmacy/select', requireAuth, tenantIsolation, a
 // Validate pharmacy capability
 router.post('/api/eprescribing/pharmacy/validate', requireAuth, async (req, res) => {
   try {
+    console.log('✅ [EPrescribing] Validating pharmacy capability');
     const { pharmacyId, requirements } = req.body;
 
+    // For Google Places pharmacies (string IDs starting with ChI...), assume basic capabilities
+    if (typeof pharmacyId === 'string' && !pharmacyId.match(/^\d+$/)) {
+      console.log('🌐 [EPrescribing] Google Places pharmacy - assuming basic capabilities');
+      return res.json({
+        canFill: true,
+        issues: [],
+        recommendations: []
+      });
+    }
+
+    // Convert to number for database pharmacies
+    const numericPharmacyId = typeof pharmacyId === 'string' ? parseInt(pharmacyId, 10) : pharmacyId;
+    
+    if (isNaN(numericPharmacyId)) {
+      return res.status(400).json({ error: 'Invalid pharmacy ID' });
+    }
+
     const validation = await pharmacyService.validatePharmacyCapability(
-      pharmacyId,
+      numericPharmacyId,
       requirements
     );
 

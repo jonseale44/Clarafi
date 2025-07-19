@@ -122,7 +122,7 @@ export function PharmacySelectionDialog({
       const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
       return response.json();
     },
-    enabled: searchQuery.length > 2 && !useAiRecommendation,
+    enabled: searchQuery.length > 2,
   });
 
   // Validate pharmacy capability
@@ -334,9 +334,13 @@ export function PharmacySelectionDialog({
             </Label>
           </div>
 
-          {!useAiRecommendation && (
+          {(!useAiRecommendation || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)) && (
             <div className="space-y-2">
-              <Label htmlFor="pharmacy-search">Search Pharmacies</Label>
+              <Label htmlFor="pharmacy-search">
+                {useAiRecommendation && aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy
+                  ? 'No pharmacies found. Search to add your first pharmacy:'
+                  : 'Search Pharmacies'}
+              </Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -387,7 +391,7 @@ export function PharmacySelectionDialog({
                 </div>
               )}
 
-              {!useAiRecommendation && (
+              {(!useAiRecommendation || (useAiRecommendation && aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)) && (
                 <>
                   {(searchQuery 
                     ? (searchPharmaciesQuery.data || [])
