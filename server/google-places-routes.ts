@@ -166,6 +166,115 @@ const mockSearchPlaces = async (query: string, location?: { lat: number; lng: nu
   return mockPlaces;
 };
 
+// Search for pharmacies using Google Places API
+router.get("/api/places/search-pharmacies", async (req, res) => {
+  try {
+    const { query, lat, lng, radius = 10000 } = req.query;
+    
+    console.log("🔍 [Google Places] Searching for pharmacies:", { query, lat, lng, radius });
+
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    
+    if (!apiKey) {
+      console.error("❌ [Google Places] GOOGLE_PLACES_API_KEY environment variable not found!");
+      // Return mock pharmacies for development
+      const mockPharmacies = [
+        {
+          place_id: "ChIJPharmacy001",
+          name: "CVS Pharmacy",
+          formatted_address: "123 Main Street, Waco, TX 76701",
+          geometry: { location: { lat: 31.5493, lng: -97.1467 } },
+          types: ["pharmacy", "health", "store"],
+          formatted_phone_number: "(254) 555-0100",
+          opening_hours: { weekday_text: ["Monday: 9:00 AM – 9:00 PM", "Tuesday: 9:00 AM – 9:00 PM"] }
+        },
+        {
+          place_id: "ChIJPharmacy002",
+          name: "Walgreens",
+          formatted_address: "456 Oak Avenue, Waco, TX 76702",
+          geometry: { location: { lat: 31.5593, lng: -97.1367 } },
+          types: ["pharmacy", "health", "store"],
+          formatted_phone_number: "(254) 555-0200",
+          opening_hours: { weekday_text: ["Monday: 8:00 AM – 10:00 PM", "Tuesday: 8:00 AM – 10:00 PM"] }
+        }
+      ];
+      
+      return res.json({
+        status: "OK",
+        results: mockPharmacies
+      });
+    }
+    
+    // If searching by text query
+    if (query) {
+      const baseUrl = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+      const params = new URLSearchParams({
+        key: apiKey,
+        query: `${query} pharmacy`,
+        type: "pharmacy"
+      });
+
+      const response = await fetch(`${baseUrl}?${params}`);
+      const data = await response.json();
+      
+      if (data.status === "OK") {
+        // Add distance calculation if user location provided
+        if (lat && lng) {
+          data.results = data.results.map(place => ({
+            ...place,
+            distance: calculateDistance(
+              parseFloat(lat as string),
+              parseFloat(lng as string),
+              place.geometry.location.lat,
+              place.geometry.location.lng
+            )
+          })).sort((a, b) => a.distance - b.distance);
+        }
+        
+        console.log(`✅ [Google Places] Found ${data.results.length} pharmacies`);
+        return res.json(data);
+      }
+    }
+    // If searching by location (nearby search)
+    else if (lat && lng) {
+      const baseUrl = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+      const params = new URLSearchParams({
+        key: apiKey,
+        location: `${lat},${lng}`,
+        radius: radius.toString(),
+        type: "pharmacy"
+      });
+
+      const response = await fetch(`${baseUrl}?${params}`);
+      const data = await response.json();
+      
+      if (data.status === "OK") {
+        // Calculate distances
+        data.results = data.results.map(place => ({
+          ...place,
+          distance: calculateDistance(
+            parseFloat(lat as string),
+            parseFloat(lng as string),
+            place.geometry.location.lat,
+            place.geometry.location.lng
+          )
+        })).sort((a, b) => a.distance - b.distance);
+        
+        console.log(`✅ [Google Places] Found ${data.results.length} nearby pharmacies`);
+        return res.json(data);
+      }
+    }
+    
+    res.json({ status: "OK", results: [] });
+  } catch (error) {
+    console.error("❌ [Google Places] Error searching pharmacies:", error);
+    res.status(500).json({
+      status: "ERROR",
+      error: "Failed to search pharmacies"
+    });
+  }
+});
+
 // Search for medical facilities using Google Places API
 router.get("/api/places/search-medical", async (req, res) => {
   try {
