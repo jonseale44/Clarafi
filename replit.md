@@ -202,6 +202,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### SMART on FHIR Implementation Planning (January 20, 2025)
+- **Created comprehensive TODO document**: Added `docs/SMART_ON_FHIR_IMPLEMENTATION_TODO.md` outlining complete implementation plan
+- **Documented interoperability research**: Captured findings on EMR integration approaches (FHIR, HL7, SMART on FHIR)
+- **Identified integration pathways**: Epic App Orchard, Cerner/Oracle Health developer program, Athena Health APIs
+- **Recommended approach**: SMART on FHIR as gold standard for plugin architecture
+- **Timeline estimate**: 10-15 weeks for full implementation, 3-4 weeks for MVP
+
 ### Codebase Organization and Documentation Cleanup (July 20, 2025) 
 - **DOCUMENTATION REORGANIZATION**: Reduced root directory markdown files from 61 to just 3 (replit.md, TECHNICAL_DEBT_ASSESSMENT.md, SERVER_SERVICE_MAP.md)
 - **CREATED SERVER SERVICE MAP**: Added comprehensive SERVER_SERVICE_MAP.md documenting all 150+ server files for better AI agent navigation
