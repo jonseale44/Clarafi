@@ -65,7 +65,7 @@ export class WebAuthnService {
     try {
       // Use raw SQL to avoid column name mismatch between schema and database
       existingCredentials = await db.execute(sql`
-        SELECT id, user_id, credential_id, public_key, counter, device_name, transports
+        SELECT id, user_id, credential_id, credential_public_key, counter, device_type, transports
         FROM webauthn_credentials
         WHERE user_id = ${userId}
       `);
@@ -162,9 +162,9 @@ export class WebAuthnService {
         INSERT INTO webauthn_credentials (
           user_id,
           credential_id,
-          public_key,
+          credential_public_key,
           counter,
-          device_name,
+          device_type,
           transports,
           created_at
         ) VALUES (
@@ -264,7 +264,7 @@ export class WebAuthnService {
 
       console.log('🔍 [WebAuthn] Verifying with credential:', {
         credentialId: credential.credential_id,
-        hasPublicKey: !!credential.public_key,
+        hasPublicKey: !!credential.credential_public_key,
         counter: credential.counter
       });
 
@@ -275,7 +275,7 @@ export class WebAuthnService {
         expectedRPID: this.RP_ID,
         authenticator: {
           credentialID: Buffer.from(credential.credential_id, 'base64url'),
-          credentialPublicKey: Buffer.from(credential.public_key, 'base64'),
+          credentialPublicKey: Buffer.from(credential.credential_public_key, 'base64'),
           counter: credential.counter
         },
         requireUserVerification: false
@@ -317,7 +317,7 @@ export class WebAuthnService {
           credential_id,
           created_at,
           last_used_at,
-          device_name,
+          device_type,
           transports
         FROM webauthn_credentials
         WHERE user_id = ${userId}
@@ -333,9 +333,9 @@ export class WebAuthnService {
         credentialId: cred.credential_id,
         createdAt: cred.created_at,
         lastUsedAt: cred.last_used_at,
-        deviceType: cred.device_name || 'unknown',
-        displayName: this.getPasskeyDisplayName(cred.device_name || 'unknown', false),
-        registeredDevice: cred.device_name // Use device_name as registeredDevice
+        deviceType: cred.device_type || 'unknown',
+        displayName: this.getPasskeyDisplayName(cred.device_type || 'unknown', false),
+        registeredDevice: cred.device_type // Use device_type as registeredDevice
       }));
     } catch (error) {
       console.error(`❌ [WebAuthn] Error fetching passkeys for user ${userId}:`, error);
