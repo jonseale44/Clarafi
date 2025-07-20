@@ -2,14 +2,15 @@ admin_prompt_reviews
 allergies
 appointment_duration_history
 appointment_resource_requirements
-appointments
 appointment_types
+appointments
 article_comments
 article_generation_queue
 article_revisions
 articles
 asymmetric_scheduling_config
 attachment_extracted_content
+attachments
 authentication_logs
 clinic_admin_verifications
 data_modification_logs
@@ -19,7 +20,6 @@ electronic_signatures
 email_notifications
 emergency_access_logs
 encounters
-export const migrationInvitations = pgTable('migration_invitations', {
 external_labs
 family_history
 gpt_lab_review_notes
@@ -35,6 +35,7 @@ medical_history
 medical_problems
 medication_formulary
 medications
+migration_invitations
 newsletter_subscribers
 orders
 organization_documents
@@ -42,8 +43,8 @@ organizations
 patient_attachments
 patient_order_preferences
 patient_physical_findings
-patients
 patient_scheduling_patterns
+patients
 pharmacies
 phi_access_logs
 prescription_transmissions
@@ -74,7 +75,7 @@ user_locations
 user_note_preferences
 user_note_templates
 user_problem_list_preferences
-users
 user_session_locations
+users
 vitals
 webauthn_credentials
