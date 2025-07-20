@@ -90,6 +90,12 @@ export class UnifiedAllergyParser {
     console.log(
       `🚨 [UnifiedAllergy] Trigger: ${triggerType}, EncounterID: ${encounterId}, AttachmentID: ${attachmentId}`,
     );
+    
+    // Critical debug logging for attachment ID
+    if (attachmentId) {
+      console.log(`🚨🚨🚨 [UnifiedAllergy] CRITICAL DEBUG: Attachment ID passed to processUnifiedAllergies: ${attachmentId}`);
+      console.log(`🚨🚨🚨 [UnifiedAllergy] CRITICAL DEBUG: Attachment ID type: ${typeof attachmentId}`);
+    }
 
     if (soapNote) {
       console.log(
@@ -227,6 +233,30 @@ export class UnifiedAllergyParser {
             .join("\n")
         : "No existing allergies documented";
 
+    // Build visitEntry fields dynamically
+    let visitEntryFields = '';
+    if (attachmentId) {
+      visitEntryFields += `"attachmentId": ${attachmentId},\n      `;
+    }
+    if (encounterId) {
+      visitEntryFields += `"encounterId": ${encounterId},\n      `;
+    }
+
+    // Debug logging for attachment ID
+    if (attachmentId) {
+      console.log(`🚨🚨🚨 [UnifiedAllergy] Building prompt with attachmentId: ${attachmentId}`);
+    }
+
+    // Build the example visitEntry JSON
+    const exampleVisitEntry = `{
+      "date": "${new Date().toLocaleDateString("en-CA")}",
+      "notes": "Patient reports penicillin allergy causing rash and hives, moderate severity",
+      "source": "${triggerType === "attachment_processing" ? "attachment" : "encounter"}",
+      ${visitEntryFields}"changesMade": ["allergy_documented", "severity_specified", "reaction_detailed"],
+      "confidence": 0.95,
+      "conflictResolution": "No temporal conflicts - first documentation of this allergy"
+    }`;
+
     const prompt = `You are an expert clinical allergist with 20+ years of experience in allergy documentation and drug safety. Process the following clinical content to extract and manage allergy information with sophisticated temporal awareness and conflict resolution.
 
 EXISTING ALLERGIES:
@@ -329,15 +359,7 @@ RESPONSE FORMAT (JSON Array):
     "status": "active", // For resolve_conflict on NKDA, use "resolved"
     "consolidationReason": "Combined PCN and Amoxicillin into Penicillins class",
     "confidence": 0.95,
-    "visitEntry": {
-      "date": "${new Date().toLocaleDateString("en-CA")}",
-      "notes": "Patient reports penicillin allergy causing rash and hives, moderate severity",
-      "source": "${triggerType === "attachment_processing" ? "attachment" : "encounter"}",
-      ${attachmentId ? `"attachmentId": ${attachmentId},` : ""}${encounterId ? `"encounterId": ${encounterId},` : ""}
-      "changesMade": ["allergy_documented", "severity_specified", "reaction_detailed"],
-      "confidence": 0.95,
-      "conflictResolution": "No temporal conflicts - first documentation of this allergy"
-    },
+    "visitEntry": ${exampleVisitEntry},
     "drugClass": "penicillins",
     "crossReactivity": ["amoxicillin", "ampicillin"],
     "temporalConflictResolution": "No conflicts detected"
@@ -401,6 +423,15 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
       console.log(`🎯 [UnifiedAllergy] === FULL GPT RESPONSE ===`);
       console.log(`🎯 [UnifiedAllergy] Raw response:`, content);
       console.log(`🎯 [UnifiedAllergy] Parsed changes:`, JSON.stringify(changes, null, 2));
+      
+      // Critical debug logging for attachment IDs in GPT response
+      console.log(`🚨🚨🚨 [UnifiedAllergy] CRITICAL DEBUG: Checking attachment IDs in GPT response`);
+      changes.forEach((change, idx) => {
+        if (change.visitEntry && change.visitEntry.attachmentId) {
+          console.log(`🚨🚨🚨 [UnifiedAllergy] Change ${idx}: visitEntry.attachmentId = ${change.visitEntry.attachmentId} (type: ${typeof change.visitEntry.attachmentId})`);
+        }
+      });
+      console.log(`🚨🚨🚨 [UnifiedAllergy] CRITICAL DEBUG: Expected attachment ID was: ${attachmentId}`);
       
       // Log specifically for NKDA resolution debugging
       console.log(`🎯 [UnifiedAllergy] === NKDA RESOLUTION DEBUG ===`);
@@ -469,7 +500,7 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
                   : "soap_derived",
               sourceConfidence: change.confidence.toString(),
               extractedFromAttachmentId: change.visitEntry.attachmentId || null,
-              lastUpdatedEncounter: encounterId || null,
+              lastUpdatedEncounterId: encounterId || null,
               enteredBy: 1, // Default user ID
               consolidationReasoning: change.consolidationReason || null,
               temporalConflictResolution:
@@ -551,8 +582,8 @@ Extract all allergy information that is explicitly mentioned. Handle NKDA scenar
               crossReactivity:
                 change.crossReactivity || existingRecord.crossReactivity,
               sourceConfidence: change.confidence.toString(),
-              lastUpdatedEncounter:
-                encounterId || existingRecord.lastUpdatedEncounter,
+              lastUpdatedEncounterId:
+                encounterId || existingRecord.lastUpdatedEncounterId,
               consolidationReasoning:
                 change.consolidationReason ||
                 existingRecord.consolidationReasoning,
