@@ -115,6 +115,15 @@ async function generateClinicalNote(
   const { PatientChartService } = await import("./patient-chart-service.js");
   const patientChart = await PatientChartService.getPatientChartData(patientId);
 
+  // Get encounter information to get the encounter date
+  const encounter = await db
+    .select()
+    .from(encountersTable)
+    .where(eq(encountersTable.id, parseInt(encounterId)))
+    .limit(1);
+
+  const encounterDate = encounter[0]?.createdAt ? new Date(encounter[0].createdAt) : new Date();
+
   // Get encounter-specific vitals
   const encounterVitalsList = await db
     .select()
@@ -175,7 +184,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${formatVitalsForSOAP(encounterVitalsList)}
+${formatVitalsForSOAP(encounterVitalsList, encounterDate)}
   `.trim();
 
   // Use EnhancedNoteGenerationService for all note types with full patient context
@@ -246,6 +255,15 @@ async function generateNursingTemplateDirect(
   const { PatientChartService } = await import("./patient-chart-service.js");
   const patientChart = await PatientChartService.getPatientChartData(patientId);
 
+  // Get encounter information to get the encounter date
+  const encounter = await db
+    .select()
+    .from(encountersTable)
+    .where(eq(encountersTable.id, parseInt(encounterId)))
+    .limit(1);
+
+  const encounterDate = encounter[0]?.createdAt ? new Date(encounter[0].createdAt) : new Date();
+
   // Get encounter-specific vitals
   const encounterVitalsList = await db
     .select()
@@ -295,7 +313,7 @@ KNOWN ALLERGIES:
 ${knownAllergies}
 
 RECENT VITALS:
-${formatVitalsForSOAP(encounterVitalsList)}
+${formatVitalsForSOAP(encounterVitalsList, encounterDate)}
 
 FAMILY HISTORY:
 ${
@@ -518,12 +536,31 @@ Example output format:
 }
 
 // Helper function to format vitals consistently
-function formatVitalsForSOAP(vitals: any[]): string {
-  if (vitals.length === 0) {
-    return "- No vitals recorded for this encounter";
+function formatVitalsForSOAP(vitals: any[], encounterDate?: Date): string {
+  // Filter vitals to only include those from the same day as the encounter
+  let filteredVitals = vitals;
+  
+  if (encounterDate) {
+    // Get the date components of the encounter date
+    const encounterDateOnly = new Date(encounterDate);
+    encounterDateOnly.setHours(0, 0, 0, 0);
+    const encounterDateEnd = new Date(encounterDate);
+    encounterDateEnd.setHours(23, 59, 59, 999);
+    
+    // Filter vitals to only include those from the same day
+    filteredVitals = vitals.filter((v: any) => {
+      const vitalDate = new Date(v.recordedAt);
+      return vitalDate >= encounterDateOnly && vitalDate <= encounterDateEnd;
+    });
+    
+    console.log(`[formatVitalsForSOAP] Filtered ${vitals.length} vitals to ${filteredVitals.length} for encounter date ${encounterDate.toLocaleDateString()}`);
+  }
+  
+  if (filteredVitals.length === 0) {
+    return "- No vitals recorded for this encounter date";
   }
 
-  return vitals
+  return filteredVitals
     .map((v: any) => {
       const parts = [];
       const date = new Date(v.recordedAt).toLocaleDateString("en-US", {
