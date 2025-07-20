@@ -63,6 +63,21 @@ export class PDFService {
       let result;
       try {
         console.log(`📄 [PDFService] Building select object...`);
+        
+        // Check each column individually
+        console.log(`📄 [PDFService] Checking individual columns:`);
+        console.log(`  - patients.id:`, patients.id ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.firstName:`, patients.firstName ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.lastName:`, patients.lastName ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.dateOfBirth:`, patients.dateOfBirth ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.mrn:`, patients.mrn ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.phone:`, patients.phone ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.address:`, patients.address ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.city:`, patients.city ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.state:`, patients.state ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.zipCode:`, patients.zipCode ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.insurance:`, patients.insurance ? 'defined' : 'UNDEFINED!');
+        
         const selectObject = {
           id: patients.id,
           firstName: patients.firstName,
