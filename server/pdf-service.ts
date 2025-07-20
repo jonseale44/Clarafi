@@ -45,89 +45,101 @@ export class PDFService {
   private async getProviderInfo(providerId: number) {
     console.log(`📄 [PDFService] Getting provider info for providerId: ${providerId}`);
     
-    // Select only the columns we need to avoid any schema mismatch issues
-    const [provider] = await db.select({
-      id: users.id,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      credentials: users.credentials,
-      email: users.email,
-      npi: users.npi,
-      specialties: users.specialties,
-      licenseNumber: users.licenseNumber,
-      licenseState: users.licenseState
-    }).from(users).where(eq(users.id, providerId));
-    console.log(`📄 [PDFService] Provider found: ${provider ? `${provider.firstName} ${provider.lastName}` : 'NOT FOUND'}`);
-    
-    // Get provider's location information
-    console.log(`📄 [PDFService] Looking for primary location for provider ${providerId}`);
-    const providerLocation = await db.select({
-      locationId: locations.id,
-      locationName: locations.name,
-      locationAddress: locations.address,
-      locationAddress2: locations.address2,
-      locationCity: locations.city,
-      locationState: locations.state,
-      locationZipCode: locations.zipCode,
-      locationPhone: locations.phone,
-      locationFax: locations.fax,
-      organizationId: organizations.id,
-      organizationName: organizations.name,
-      healthSystemId: healthSystems.id,
-      healthSystemName: healthSystems.name
-    })
-    .from(userLocations)
-    .innerJoin(locations, eq(userLocations.locationId, locations.id))
-    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
-    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
-    .where(
-      and(
-        eq(userLocations.userId, providerId),
-        eq(userLocations.isPrimary, true)
-      )
-    )
-    .limit(1);
-
-    console.log(`📄 [PDFService] Primary location found: ${providerLocation.length > 0 ? 'YES' : 'NO'}`);
-
-    // Use the first location if no primary is marked
-    const locationData = providerLocation[0] || await db.select({
-      locationId: locations.id,
-      locationName: locations.name,
-      locationAddress: locations.address,
-      locationAddress2: locations.address2,
-      locationCity: locations.city,
-      locationState: locations.state,
-      locationZipCode: locations.zipCode,
-      locationPhone: locations.phone,
-      locationFax: locations.fax,
-      organizationId: organizations.id,
-      organizationName: organizations.name,
-      healthSystemId: healthSystems.id,
-      healthSystemName: healthSystems.name
-    })
-    .from(userLocations)
-    .innerJoin(locations, eq(userLocations.locationId, locations.id))
-    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
-    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
-    .where(eq(userLocations.userId, providerId))
-    .limit(1)
-    .then(results => results[0]);
-
-    if (locationData) {
-      console.log(`📄 [PDFService] Location details:`, {
-        name: locationData.location.name,
-        address: locationData.location.address,
-        phone: locationData.location.phone,
-        fax: locationData.location.fax,
-        organization: locationData.organization.name,
-        healthSystem: locationData.healthSystem.name
-      });
-    } else {
-      console.log(`📄 [PDFService] WARNING: No location data found for provider ${providerId}`);
+    try {
+      // Get provider information
+      const [provider] = await db.select({
+        id: users.id,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        credentials: users.credentials,
+        email: users.email,
+        npi: users.npi,
+        specialties: users.specialties,
+        licenseNumber: users.licenseNumber,
+        licenseState: users.licenseState
+      }).from(users).where(eq(users.id, providerId));
+      
+      if (!provider) {
+        console.log(`📄 [PDFService] Provider not found for ID ${providerId}`);
+        return null;
+      }
+      
+      console.log(`📄 [PDFService] Provider found: ${provider.firstName} ${provider.lastName}`);
+      
+      // Try to get location data - using a simpler query to avoid Drizzle issues
+      let locationData = null;
+      
+      try {
+        // First get the user's location ID
+        const [userLocation] = await db.select({
+          locationId: userLocations.locationId
+        })
+        .from(userLocations)
+        .where(eq(userLocations.userId, providerId))
+        .limit(1);
+        
+        if (userLocation) {
+          // Then get the location details
+          const [location] = await db.select({
+            locationId: locations.id,
+            locationName: locations.name,
+            locationAddress: locations.address,
+            locationAddress2: locations.address2,
+            locationCity: locations.city,
+            locationState: locations.state,
+            locationZipCode: locations.zipCode,
+            locationPhone: locations.phone,
+            locationFax: locations.fax,
+            organizationId: locations.organizationId
+          })
+          .from(locations)
+          .where(eq(locations.id, userLocation.locationId));
+          
+          if (location) {
+            // Get organization info
+            const [organization] = await db.select({
+              organizationName: organizations.name,
+              healthSystemId: organizations.healthSystemId
+            })
+            .from(organizations)
+            .where(eq(organizations.id, location.organizationId));
+            
+            if (organization) {
+              // Get health system info
+              const [healthSystem] = await db.select({
+                healthSystemName: healthSystems.name
+              })
+              .from(healthSystems)
+              .where(eq(healthSystems.id, organization.healthSystemId));
+              
+              // Combine all the data
+              locationData = {
+                ...location,
+                organizationName: organization?.organizationName || 'Unknown Organization',
+                healthSystemName: healthSystem?.healthSystemName || 'Unknown Health System'
+              };
+            }
+          }
+        }
+      } catch (locationError) {
+        console.log(`📄 [PDFService] Error getting location data:`, locationError);
+      }
+      
+      if (locationData) {
+        console.log(`📄 [PDFService] Location details:`, {
+          name: locationData.locationName,
+          address: locationData.locationAddress,
+          organization: locationData.organizationName
+        });
+      } else {
+        console.log(`📄 [PDFService] WARNING: No location data found for provider ${providerId}`);
+      }
+      
+      return { provider, locationData };
+    } catch (error) {
+      console.error(`📄 [PDFService] Error in getProviderInfo:`, error);
+      return null;
     }
-
-    return { provider, locationData };
   }
 
   private addHeader(doc: PDFKit.PDFDocument, title: string): void {
