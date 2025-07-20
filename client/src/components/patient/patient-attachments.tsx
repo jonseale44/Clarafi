@@ -347,7 +347,7 @@ export function PatientAttachments({
   const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
 
   // Get attachments - always show all patient attachments, regardless of mode
-  const { data: attachments = [], isLoading } = useQuery({
+  const { data: attachments = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/patients", patientId, "attachments"],
     queryFn: async () => {
       const response = await fetch(`/api/patients/${patientId}/attachments`);
@@ -355,7 +355,25 @@ export function PatientAttachments({
       return response.json() as Promise<PatientAttachment[]>;
     },
     refetchInterval: 3000, // Poll every 3 seconds to update processing status
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
+
+  // Effect to handle refetching when component mounts to ensure latest status
+  useEffect(() => {
+    console.log('🔗 [PatientAttachments] Component mounted, checking for processing attachments');
+    
+    // Check if any attachments are still processing
+    const hasProcessingAttachments = attachments.some(att => 
+      att.extractedContent?.processingStatus === 'processing' || 
+      att.extractedContent?.processingStatus === 'pending'
+    );
+    
+    if (hasProcessingAttachments) {
+      console.log('🔗 [PatientAttachments] Found processing attachments, ensuring fresh data');
+      refetch();
+    }
+  }, [patientId]); // Only depend on patientId to run on mount
 
   // Single file upload mutation
   const uploadMutation = useMutation({

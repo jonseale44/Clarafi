@@ -67,6 +67,11 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Attachment Processing Status Updates (July 20, 2025)
+✓ **Frontend Enhancement**: Fixed attachment analysis status visibility when users navigate away from charts
+✓ **Polling Improvement**: Added `refetchOnWindowFocus` and `refetchOnMount` to ensure fresh status on return
+✓ **User Experience**: Processing now continues seamlessly in background with accurate status on chart re-entry
+
 ### Deployment Error Resolution (July 20, 2025)
 ✓ **Security Fix**: Replaced unsafe eval() usage in password-validation.ts with proper module imports
 ✓ **Missing Files**: Created token-cost-analyzer.js with corresponding TypeScript declarations
