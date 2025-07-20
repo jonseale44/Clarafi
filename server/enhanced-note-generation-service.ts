@@ -1280,15 +1280,24 @@ IMPORTANT INSTRUCTIONS:
       if (encounterId) {
         try {
           const encounter = await db
-            .select({ createdAt: encounters.createdAt })
+            .select({ 
+              encounterDate: encounters.encounterDate,
+              createdAt: encounters.createdAt 
+            })
             .from(encounters)
             .where(eq(encounters.id, parseInt(encounterId)))
             .limit(1);
           
-          if (encounter[0]?.createdAt) {
+          // Use encounterDate if available (actual visit date), fallback to createdAt
+          if (encounter[0]?.encounterDate) {
+            encounterDate = new Date(encounter[0].encounterDate);
+            console.log(
+              `🔍 [EnhancedNotes] Using encounter date (visit date) for vitals filtering: ${encounterDate.toISOString()}`
+            );
+          } else if (encounter[0]?.createdAt) {
             encounterDate = new Date(encounter[0].createdAt);
             console.log(
-              `🔍 [EnhancedNotes] Found encounter date for vitals filtering: ${encounterDate.toISOString()}`
+              `⚠️ [EnhancedNotes] No encounterDate found, using createdAt for vitals filtering: ${encounterDate.toISOString()}`
             );
           }
         } catch (error) {
@@ -1360,9 +1369,34 @@ IMPORTANT INSTRUCTIONS:
             endOfDay.setHours(23, 59, 59, 999);
 
             const filtered = vitalsList.filter((vital: any) => {
-              if (!vital.recordedAt) return false;
+              if (!vital.recordedAt) {
+                console.log(`⚠️ [EnhancedNotes] Vital missing recordedAt:`, vital);
+                return false;
+              }
+              
               const vitalDate = new Date(vital.recordedAt);
-              return vitalDate >= startOfDay && vitalDate <= endOfDay;
+              // Check for invalid dates
+              if (isNaN(vitalDate.getTime())) {
+                console.log(`⚠️ [EnhancedNotes] Invalid recordedAt date for vital:`, {
+                  vitalId: vital.id,
+                  recordedAt: vital.recordedAt
+                });
+                return false;
+              }
+              
+              const isWithinDay = vitalDate >= startOfDay && vitalDate <= endOfDay;
+              
+              // Enhanced debugging for vitals filtering
+              if (!isWithinDay) {
+                console.log(`🚫 [EnhancedNotes] Excluding vital from different day:`, {
+                  vitalId: vital.id,
+                  vitalDate: vitalDate.toISOString(),
+                  encounterDate: encounterDate.toISOString(),
+                  daysDifference: Math.floor((encounterDate.getTime() - vitalDate.getTime()) / (1000 * 60 * 60 * 24))
+                });
+              }
+              
+              return isWithinDay;
             });
 
             console.log(
@@ -1371,6 +1405,11 @@ IMPORTANT INSTRUCTIONS:
                 originalCount: vitalsList.length,
                 filteredCount: filtered.length,
                 dateRange: `${startOfDay.toISOString()} to ${endOfDay.toISOString()}`,
+                keptVitals: filtered.map((v: any) => ({
+                  id: v.id,
+                  recordedAt: v.recordedAt,
+                  encounterId: v.encounterId
+                }))
               },
             );
 

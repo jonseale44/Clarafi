@@ -67,6 +67,16 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Enhanced Vitals Date Filtering for SOAP Notes (Jan 20, 2025)
+✓ **ISSUE ADDRESSED**: Old vitals entered during an encounter were appearing in SOAP notes despite being from previous dates
+✓ **ROOT CAUSE**: Code was using encounter `createdAt` (system entry time) instead of `encounterDate` (actual visit date) for filtering
+✓ **SOLUTION IMPLEMENTED**:
+  - Updated buildMedicalContext to use `encounterDate` field for accurate visit date filtering
+  - Added fallback to `createdAt` if `encounterDate` is null
+  - Enhanced debugging logs to track excluded vitals and date comparisons
+  - Added validation for invalid date formats
+✓ **USER IMPACT**: SOAP notes now strictly include only vitals recorded on the actual visit date, regardless of when they were entered into the system
+
 ### Critical Vitals Filtering Fix for SOAP Notes (July 20, 2025)
 ✓ **BUG FIXED**: Vitals from years ago (e.g., 2010) were appearing in current SOAP notes (2025)
 ✓ **ROOT CAUSE**: buildMedicalContext function in enhanced-note-generation-service.ts was not filtering vitals by encounter date
