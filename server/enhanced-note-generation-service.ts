@@ -4,6 +4,9 @@
  */
 
 import { storage } from "./storage";
+import { db } from "./db.js";
+import { encounters } from "../shared/schema.js";
+import { eq } from "drizzle-orm";
 import { PatientChartService } from "./patient-chart-service";
 import { TemplatePromptGenerator } from "./template-prompt-generator";
 import OpenAI from "openai";
@@ -1025,7 +1028,7 @@ IMPORTANT INSTRUCTIONS:
         vitalsCount: patientChart?.vitals?.length || 0,
       });
 
-      const medicalContext = this.buildMedicalContext(
+      const medicalContext = await this.buildMedicalContext(
         patientChart,
         encounterId,
       );
@@ -1264,13 +1267,37 @@ IMPORTANT INSTRUCTIONS:
   /**
    * Builds medical context string for templates
    */
-  private static buildMedicalContext(
+  private static async buildMedicalContext(
     patientChart: any,
     encounterId: string,
-  ): string {
+  ): Promise<string> {
     try {
       const demographics = patientChart.demographics || {};
       const age = demographics.age || "Unknown";
+
+      // Fetch encounter date for proper vitals filtering
+      let encounterDate: Date | null = null;
+      if (encounterId) {
+        try {
+          const encounter = await db
+            .select({ createdAt: encounters.createdAt })
+            .from(encounters)
+            .where(eq(encounters.id, parseInt(encounterId)))
+            .limit(1);
+          
+          if (encounter[0]?.createdAt) {
+            encounterDate = new Date(encounter[0].createdAt);
+            console.log(
+              `🔍 [EnhancedNotes] Found encounter date for vitals filtering: ${encounterDate.toISOString()}`
+            );
+          }
+        } catch (error) {
+          console.error(
+            `❌ [EnhancedNotes] Error fetching encounter date:`,
+            error
+          );
+        }
+      }
 
       console.log(
         `🔧 [EnhancedNotes] Building medical context with chart data:`,
@@ -1322,7 +1349,52 @@ IMPORTANT INSTRUCTIONS:
           return "- No recent vitals recorded";
         }
 
-        const latestVitals = vitalsList[0];
+        // Filter vitals by encounter date if available
+        const recentVitals = (() => {
+          if (encounterDate) {
+            // Filter to only show vitals from the same day as the encounter
+            const startOfDay = new Date(encounterDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            
+            const endOfDay = new Date(encounterDate);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            const filtered = vitalsList.filter((vital: any) => {
+              if (!vital.recordedAt) return false;
+              const vitalDate = new Date(vital.recordedAt);
+              return vitalDate >= startOfDay && vitalDate <= endOfDay;
+            });
+
+            console.log(
+              `🔍 [EnhancedNotes] Filtered vitals for encounter date ${encounterDate.toISOString()}:`,
+              {
+                originalCount: vitalsList.length,
+                filteredCount: filtered.length,
+                dateRange: `${startOfDay.toISOString()} to ${endOfDay.toISOString()}`,
+              },
+            );
+
+            return filtered;
+          } else {
+            // Fallback: filter to last 24 hours if no encounter date
+            const twentyFourHoursAgo = new Date();
+            twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+            return vitalsList.filter((vital: any) => {
+              if (!vital.recordedAt) return false;
+              const vitalDate = new Date(vital.recordedAt);
+              return vitalDate >= twentyFourHoursAgo;
+            });
+          }
+        })();
+
+        if (recentVitals.length === 0) {
+          return encounterDate 
+            ? "- No vitals recorded for this encounter date"
+            : "- No vitals recorded in the last 24 hours";
+        }
+
+        const latestVitals = recentVitals[0];
         const vitalParts = [];
 
         if (

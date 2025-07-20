@@ -67,6 +67,16 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Critical Vitals Filtering Fix for SOAP Notes (July 20, 2025)
+✓ **BUG FIXED**: Vitals from years ago (e.g., 2010) were appearing in current SOAP notes (2025)
+✓ **ROOT CAUSE**: buildMedicalContext function in enhanced-note-generation-service.ts was not filtering vitals by encounter date
+✓ **SOLUTION IMPLEMENTED**: 
+  - Made buildMedicalContext function async to support database queries
+  - Added encounter date fetching from database using encounterId
+  - Implemented proper date filtering to only show vitals from same day as encounter
+  - Added fallback 24-hour filter if encounter date unavailable
+✓ **USER IMPACT**: SOAP notes now only display vitals from the actual encounter date, preventing confusion from historical vitals
+
 ### Attachment Processing Status Updates (July 20, 2025)
 ✓ **Frontend Enhancement**: Fixed attachment analysis status visibility when users navigate away from charts
 ✓ **Polling Improvement**: Added `refetchOnWindowFocus` and `refetchOnMount` to ensure fresh status on return
