@@ -140,8 +140,8 @@ export class ReferralOrderProcessor {
       // Update referral status
       await db.update(orders)
         .set({
-          deliveryStatus: 'appointment_scheduled',
-          deliveryNotes: `Appointment scheduled with ${referralData.specialtyType} for ${appointmentDate.toLocaleDateString()}`
+          orderStatus: 'completed',
+          providerNotes: `Appointment scheduled with ${referralData.specialtyType} for ${appointmentDate.toLocaleDateString()}`
         })
         .where(eq(orders.id, orderId));
       

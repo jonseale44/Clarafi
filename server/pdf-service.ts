@@ -183,39 +183,38 @@ export class PDFService {
     // Practice information
     if (locationData) {
       console.log(`📄 [PDFService] Location data available, adding practice information`);
-      const { location, organization } = locationData;
       
       // Organization name
-      console.log(`📄 [PDFService] Organization: ${organization.name}`);
-      doc.text(`Practice: ${organization.name}`, 50, startY);
+      console.log(`📄 [PDFService] Organization: ${locationData.organizationName}`);
+      doc.text(`Practice: ${locationData.organizationName}`, 50, startY);
       startY += 15;
       
       // Address
-      console.log(`📄 [PDFService] Address: ${location.address}`);
-      doc.text(location.address, 50, startY);
+      console.log(`📄 [PDFService] Address: ${locationData.locationAddress}`);
+      doc.text(locationData.locationAddress, 50, startY);
       startY += 15;
       
-      if (location.address2) {
-        doc.text(location.address2, 50, startY);
+      if (locationData.locationAddress2) {
+        doc.text(locationData.locationAddress2, 50, startY);
         startY += 15;
       }
       
-      doc.text(`${location.city}, ${location.state} ${location.zipCode}`, 50, startY);
+      doc.text(`${locationData.locationCity}, ${locationData.locationState} ${locationData.locationZipCode}`, 50, startY);
       startY += 15;
       
       // Phone
-      if (location.phone) {
-        console.log(`📄 [PDFService] Phone: ${location.phone}`);
-        doc.text(`Phone: ${location.phone}`, 50, startY);
+      if (locationData.locationPhone) {
+        console.log(`📄 [PDFService] Phone: ${locationData.locationPhone}`);
+        doc.text(`Phone: ${locationData.locationPhone}`, 50, startY);
         startY += 15;
       } else {
         console.log(`📄 [PDFService] No phone number available`);
       }
       
       // Fax
-      if (location.fax) {
-        console.log(`📄 [PDFService] Fax: ${location.fax}`);
-        doc.text(`Fax: ${location.fax}`, 50, startY);
+      if (locationData.locationFax) {
+        console.log(`📄 [PDFService] Fax: ${locationData.locationFax}`);
+        doc.text(`Fax: ${locationData.locationFax}`, 50, startY);
         startY += 15;
       } else {
         console.log(`📄 [PDFService] No fax number available`);
