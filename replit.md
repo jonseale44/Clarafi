@@ -315,6 +315,19 @@ Preferred communication style: Simple, everyday language.
   - Practice phone number
 - **PRODUCTION IMPACT**: Prescriptions sent via fax or printed now meet all legal requirements for acceptance by pharmacies
 
+### Fax to Pharmacy Database-Only Mode Implementation (January 20, 2025)
+- **CRITICAL REQUIREMENT IMPLEMENTED**: "Fax to Pharmacy" now only shows database pharmacies with fax numbers, not Google API results
+- **NEW API ENDPOINT**: Created `/api/eprescribing/pharmacies/fax` that returns only database pharmacies with fax numbers
+- **PHARMACY SELECTION DIALOG ENHANCEMENT**: Modified PharmacySelectionDialog to support conditional "fax" mode:
+  - When mode='fax': Hides AI recommendations, shows only database pharmacies, skips validation
+  - When mode='eprescribe': Full functionality with AI recommendations and Google Places search
+  - Title changes from "Select Pharmacy" to "Select Pharmacy for Fax" in fax mode
+  - Description emphasizes "Select a pharmacy with a fax number" in fax mode
+- **SEARCH FUNCTIONALITY**: Updated searchPharmaciesQuery to filter from database pharmacies when in fax mode
+- **ORDER PREFERENCES INTEGRATION**: order-preferences-dialog now passes mode='fax' when fax delivery selected
+- **VALIDATION SKIP**: Pharmacy validation is bypassed in fax mode since we're only sending faxes
+- **USER EXPERIENCE**: Clear separation between e-prescribing (full features) and fax mode (database-only)
+
 ### Bulk Medication Signing Pharmacy Integration (January 19, 2025)
 - **CRITICAL BUG FIX**: "Sign All medications" button now requires pharmacy preferences before signing
 - **ISSUE**: Bulk signing bypassed pharmacy selection, leaving medications without transmission destination

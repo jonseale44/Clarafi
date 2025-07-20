@@ -410,6 +410,7 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
       onPharmacySelect={handlePharmacySelect}
       patientId={patientId}
       medicationIds={[]} // In real implementation, we'd pass actual medication IDs
+      mode={getCurrentValue() === 'fax' ? 'fax' : 'eprescribe'} // Fax mode shows only database pharmacies with fax numbers
     />
     </div>
   );

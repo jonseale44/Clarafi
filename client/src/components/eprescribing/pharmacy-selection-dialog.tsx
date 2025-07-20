@@ -39,6 +39,7 @@ interface PharmacySelectionDialogProps {
   medicationIds: number[];
   isControlled?: boolean;
   urgency?: 'routine' | 'urgent' | 'emergency';
+  mode?: 'eprescribe' | 'fax'; // New mode parameter
 }
 
 interface Pharmacy {
@@ -73,11 +74,12 @@ export function PharmacySelectionDialog({
   medicationIds,
   isControlled = false,
   urgency = 'routine',
+  mode = 'eprescribe',
 }: PharmacySelectionDialogProps) {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPharmacyId, setSelectedPharmacyId] = useState<string | number | null>(null);
-  const [useAiRecommendation, setUseAiRecommendation] = useState(false);
+  const [useAiRecommendation, setUseAiRecommendation] = useState(mode !== 'fax');
   
   // Debug logging
   useEffect(() => {
@@ -110,22 +112,41 @@ export function PharmacySelectionDialog({
 
   // Get all pharmacies for manual selection
   const pharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacies'],
-    enabled: open && (!useAiRecommendation || !!aiRecommendationQuery.error || (!!aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy)),
+    queryKey: mode === 'fax' ? ['/api/eprescribing/pharmacies/fax'] : ['/api/eprescribing/pharmacies'],
+    enabled: open && (mode === 'fax' || (!useAiRecommendation || !!aiRecommendationQuery.error || (!!aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy))),
   });
 
   // Search pharmacies with fax numbers (uses Google Places when local DB is empty)
   const searchPharmaciesQuery = useQuery({
-    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
+    queryKey: mode === 'fax' 
+      ? ['/api/eprescribing/pharmacies/fax', searchQuery]
+      : ['/api/eprescribing/pharmacy/search', searchQuery],
     queryFn: async () => {
-      const params = new URLSearchParams({ 
-        query: searchQuery,
-        limit: '20'
-      });
-      const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
-      return response.json();
+      if (mode === 'fax') {
+        // For fax mode, filter from the fax pharmacies list
+        const response = await apiRequest('GET', '/api/eprescribing/pharmacies/fax');
+        const pharmacies = await response.json();
+        // Filter by search query if provided
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          return pharmacies.filter((p: Pharmacy) => 
+            p.name.toLowerCase().includes(query) ||
+            p.city?.toLowerCase().includes(query) ||
+            p.address?.toLowerCase().includes(query)
+          );
+        }
+        return pharmacies;
+      } else {
+        // Regular search for e-prescribing
+        const params = new URLSearchParams({ 
+          query: searchQuery,
+          limit: '20'
+        });
+        const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
+        return response.json();
+      }
     },
-    enabled: searchQuery.length > 2,
+    enabled: mode === 'fax' || searchQuery.length > 2,
   });
 
   // Validate pharmacy capability
@@ -156,6 +177,13 @@ export function PharmacySelectionDialog({
         description: 'Please select a pharmacy to continue',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // For fax mode, skip validation as we're only sending faxes to database pharmacies
+    if (mode === 'fax') {
+      onPharmacySelect(selectedPharmacyId);
+      onOpenChange(false);
       return;
     }
 
@@ -317,11 +345,13 @@ export function PharmacySelectionDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store className="h-5 w-5 text-primary" />
-            Select Pharmacy
+            {mode === 'fax' ? 'Select Pharmacy for Fax' : 'Select Pharmacy'}
           </DialogTitle>
           <DialogDescription>
-            Choose where to send this prescription
-            {urgency !== 'routine' && (
+            {mode === 'fax' 
+              ? 'Choose a pharmacy with fax capability to send this prescription'
+              : 'Choose where to send this prescription'}
+            {urgency !== 'routine' && mode !== 'fax' && (
               <Badge variant={urgency === 'emergency' ? 'destructive' : 'default'} className="ml-2">
                 {urgency.toUpperCase()}
               </Badge>
@@ -330,17 +360,19 @@ export function PharmacySelectionDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={useAiRecommendation}
-                onChange={(e) => setUseAiRecommendation(e.target.checked)}
-                className="rounded"
-              />
-              Use AI Recommendation
-            </Label>
-          </div>
+          {mode !== 'fax' && (
+            <div className="flex items-center gap-4">
+              <Label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={useAiRecommendation}
+                  onChange={(e) => setUseAiRecommendation(e.target.checked)}
+                  className="rounded"
+                />
+                Use AI Recommendation
+              </Label>
+            </div>
+          )}
 
           {(!useAiRecommendation || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)) && (
             <div className="space-y-2">

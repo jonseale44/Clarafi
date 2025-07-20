@@ -91,6 +91,29 @@ router.get('/api/eprescribing/signature/recent', requireAuth, async (req, res) =
   }
 });
 
+// Get pharmacies with fax numbers for fax transmission
+router.get('/api/eprescribing/pharmacies/fax', requireAuth, async (req, res) => {
+  try {
+    console.log('📠 [EPrescribing] Getting pharmacies with fax numbers');
+    
+    // Get only pharmacies that have fax numbers
+    const pharmaciesWithFax = await db.select()
+      .from(pharmacies)
+      .where(and(
+        eq(pharmacies.status, 'active'),
+        sql`${pharmacies.fax} IS NOT NULL AND ${pharmacies.fax} != ''`
+      ))
+      .limit(100);
+    
+    console.log(`✅ [EPrescribing] Found ${pharmaciesWithFax.length} pharmacies with fax numbers`);
+    
+    res.json(pharmaciesWithFax);
+  } catch (error) {
+    console.error('❌ [EPrescribing] Error getting fax pharmacies:', error);
+    res.status(500).json({ error: 'Failed to get pharmacies' });
+  }
+});
+
 // Select best pharmacy for prescription
 router.post('/api/eprescribing/pharmacy/select', requireAuth, tenantIsolation, async (req, res) => {
   try {
