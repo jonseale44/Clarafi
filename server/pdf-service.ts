@@ -244,11 +244,39 @@ export class PDFService {
     console.log(`📄 [PDFService] Starting medication PDF generation`);
     console.log(`📄 [PDFService] Orders: ${orders.length}, PatientId: ${patientId}, ProviderId: ${providerId}`);
     
-    const patient = await this.getPatientInfo(patientId);
-    console.log(`📄 [PDFService] Patient retrieved: ${patient ? `${patient.firstName} ${patient.lastName} (DOB: ${patient.dateOfBirth})` : 'NOT FOUND'}`);
+    // Validate and clean orders array to avoid Drizzle ORM issues
+    const validOrders = orders.filter(order => {
+      if (!order || typeof order !== 'object') {
+        console.warn(`📄 [PDFService] Invalid order detected (null or non-object), skipping`);
+        return false;
+      }
+      // Ensure we have the required fields for medication orders
+      if (!order.medicationName) {
+        console.warn(`📄 [PDFService] Order ${order.id} missing medicationName, skipping`);
+        return false;
+      }
+      return true;
+    });
     
-    const provider = await this.getProviderInfo(providerId);
-    console.log(`📄 [PDFService] Provider retrieved: ${provider ? 'SUCCESS' : 'FAILED'}`);
+    console.log(`📄 [PDFService] Valid orders after filtering: ${validOrders.length}`);
+    
+    // Fetch patient and provider info with error handling
+    let patient, provider;
+    try {
+      patient = await this.getPatientInfo(patientId);
+      console.log(`📄 [PDFService] Patient retrieved: ${patient ? `${patient.firstName} ${patient.lastName} (DOB: ${patient.dateOfBirth})` : 'NOT FOUND'}`);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching patient info:`, error);
+      patient = null;
+    }
+    
+    try {
+      provider = await this.getProviderInfo(providerId);
+      console.log(`📄 [PDFService] Provider retrieved: ${provider ? 'SUCCESS' : 'FAILED'}`);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching provider info:`, error);
+      provider = null;
+    }
     
     if (!patient) {
       console.error(`📄 [PDFService] ERROR: Patient not found for ID ${patientId}`);
@@ -303,9 +331,9 @@ export class PDFService {
       // Add medication orders
       doc.fontSize(14).text('Prescribed Medications:', 50, currentY);
       currentY += 30;
-      console.log(`📄 [PDFService] Adding ${orders.length} medication orders`);
+      console.log(`📄 [PDFService] Adding ${validOrders.length} medication orders`);
       
-      orders.forEach((order, index) => {
+      validOrders.forEach((order, index) => {
         console.log(`📄 [PDFService] Adding order ${index + 1}: ${order.medicationName}`);
         doc.fontSize(12);
         doc.text(`${index + 1}. ${order.medicationName}`, 70, currentY);
