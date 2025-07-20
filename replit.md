@@ -202,6 +202,18 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Codebase Organization and Documentation Cleanup (July 20, 2025) 
+- **DOCUMENTATION REORGANIZATION**: Reduced root directory markdown files from 61 to just 3 (replit.md, TECHNICAL_DEBT_ASSESSMENT.md, SERVER_SERVICE_MAP.md)
+- **CREATED SERVER SERVICE MAP**: Added comprehensive SERVER_SERVICE_MAP.md documenting all 150+ server files for better AI agent navigation
+- **ARCHIVE STRUCTURE CREATED**:
+  - `docs/migrations-archive/` - 79 old migration attempts, SQL scripts, and schema analysis files
+  - `docs/scripts-archive/` - Analysis scripts, test files, and one-time utilities
+  - `docs/guides/` - Technical guides and documentation
+  - `docs/architecture/` - System design and architectural documents
+  - `docs/historical/` - Old project documentation for reference
+- **ROOT DIRECTORY CLEANUP**: Moved 30+ temporary analysis files (.txt, .json) out of root directory
+- **IMPACT**: Significantly improved codebase navigability for AI agents and developers
+
 ### Express Body Parser Limit Fix (July 20, 2025)
 - **ISSUE FIXED**: PayloadTooLargeError when uploading patient documents to `/api/parse-patient-info`
 - **ROOT CAUSE**: Default Express body parser limit of 100kb was too small for base64-encoded images and documents
