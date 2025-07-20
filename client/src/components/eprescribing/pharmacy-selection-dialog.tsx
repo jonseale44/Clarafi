@@ -421,7 +421,7 @@ export function PharmacySelectionDialog({
                 </div>
               )}
 
-              {(!useAiRecommendation || (useAiRecommendation && (aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)))) && (
+              {(mode === 'fax' || !useAiRecommendation || (useAiRecommendation && (aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)))) && (
                 <>
                   {(() => {
                     let pharmaciesToDisplay: Pharmacy[] = [];
