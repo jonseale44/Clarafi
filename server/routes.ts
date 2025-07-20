@@ -1041,6 +1041,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patient = await storage.createPatient(validatedData);
       res.status(201).json(patient);
     } catch (error: any) {
+      console.error("Patient creation error:", error);
+      if (error.issues) {
+        console.error("Validation issues:", JSON.stringify(error.issues, null, 2));
+      }
       res.status(500).json({ message: error.message });
     }
   });
