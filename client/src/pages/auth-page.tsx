@@ -248,9 +248,11 @@ export default function AuthPage() {
   });
 
   // Update available health systems when data loads
-  if (healthSystemsData && availableHealthSystems.length === 0) {
-    setAvailableHealthSystems(healthSystemsData);
-  }
+  useEffect(() => {
+    if (healthSystemsData && availableHealthSystems.length === 0) {
+      setAvailableHealthSystems(healthSystemsData);
+    }
+  }, [healthSystemsData]);
 
   // Check if user has existing session location
   const { data: sessionLocation, refetch: refetchSessionLocation } = useQuery({

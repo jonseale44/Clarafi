@@ -185,6 +185,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Auth Page Infinite Render Loop Fix (January 20, 2025)
+- **ISSUE FIXED**: React infinite render loop in AuthPage component causing "Too many re-renders" error
+- **ROOT CAUSE**: State was being updated directly during the render phase when health systems data loaded
+- **SOLUTION**: Wrapped the state update in a useEffect hook with proper dependencies
+- **TECHNICAL DETAILS**: The code `setAvailableHealthSystems(healthSystemsData)` was running on every render, causing immediate re-renders
+- **USER IMPACT**: Auth page now loads correctly without crashes, users can log in and register normally
+
 ### Prescription History Fix for Faxed Medications (January 19, 2025)
 - **ISSUE FIXED**: Faxed prescriptions were not appearing in the prescription history section
 - **ROOT CAUSE**: getTransmissionHistory method in prescription-transmission-service.ts used INNER JOIN with pharmacies table, but faxed prescriptions have null pharmacyId
