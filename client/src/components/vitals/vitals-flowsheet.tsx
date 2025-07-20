@@ -138,6 +138,7 @@ export function VitalsFlowsheet({
   const [editingEntry, setEditingEntry] = useState<VitalsEntry | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [quickParseText, setQuickParseText] = useState("");
+  const [showQuickParse, setShowQuickParse] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
