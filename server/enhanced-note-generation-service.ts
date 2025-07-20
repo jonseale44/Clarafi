@@ -1398,11 +1398,11 @@ IMPORTANT INSTRUCTIONS:
         const vitalParts = [];
 
         if (
-          latestVitals.bloodPressureSystolic &&
-          latestVitals.bloodPressureDiastolic
+          latestVitals.systolicBp &&
+          latestVitals.diastolicBp
         ) {
           vitalParts.push(
-            `BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic} mmHg`,
+            `BP: ${latestVitals.systolicBp}/${latestVitals.diastolicBp} mmHg`,
           );
         }
         if (latestVitals.heartRate)

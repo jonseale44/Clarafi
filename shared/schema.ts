@@ -1194,7 +1194,7 @@ export const encounters = pgTable("encounters", {
   // Metadata
   location: text("location"),
   appointmentId: integer("appointment_id").references(() => appointments.id),
-  signatureId: varchar("signature_id").references(() => signatures.id),
+  signatureId: integer("signature_id").references(() => signatures.id),
   
   // Critical missing columns from database (actively used)
   encounterDate: timestamp("encounter_date"), // Encounter date (58 references)
@@ -1461,12 +1461,7 @@ export const vitals = pgTable("vitals", {
   painScale: integer("pain_scale"),
   
   // Additional vital fields from database
-  bloodPressure: text("blood_pressure"), // Legacy text format
   bloodGlucose: integer("blood_glucose"),
-  systolic: integer("systolic"), // Legacy duplicate fields
-  diastolic: integer("diastolic"),
-  bloodPressureSystolic: integer("blood_pressure_systolic"), // Legacy duplicates
-  bloodPressureDiastolic: integer("blood_pressure_diastolic"),
   
   // Additional data
   notes: text("notes"),

@@ -40,7 +40,7 @@ export class PrivacyService {
     // De-identify vitals (remove timestamps, keep values)
     const latestVitals = vitals[0];
     const vitalsString = latestVitals
-      ? `BP: ${latestVitals.bloodPressureSystolic}/${latestVitals.bloodPressureDiastolic}, HR: ${latestVitals.heartRate}, Temp: ${latestVitals.temperature}°F, O2 Sat: ${latestVitals.oxygenSaturation}%`
+      ? `BP: ${latestVitals.systolicBp}/${latestVitals.diastolicBp}, HR: ${latestVitals.heartRate}, Temp: ${latestVitals.temperature}°F, O2 Sat: ${latestVitals.oxygenSaturation}%`
       : "No recent vitals available";
 
     return {

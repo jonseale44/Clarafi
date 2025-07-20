@@ -310,7 +310,9 @@ Input: "${vitalsText}"`;
         // Check if GPT provided individual confidence scores
         if (vitalSet.confidence !== undefined && vitalSet.confidence !== null) {
           hasIndividualConfidences = true;
-          overallConfidence += parseFloat(vitalSet.confidence);
+          overallConfidence += typeof vitalSet.confidence === 'number' 
+            ? vitalSet.confidence 
+            : parseFloat(String(vitalSet.confidence));
         }
 
         // Add default parsedText if not present

@@ -1530,7 +1530,7 @@ ${
 RECENT VITALS:
 ${
   chart.vitals?.length > 0
-    ? `- BP: ${chart.vitals[0].systolic}/${chart.vitals[0].diastolic} mmHg
+    ? `- BP: ${chart.vitals[0].systolicBp}/${chart.vitals[0].diastolicBp} mmHg
 - HR: ${chart.vitals[0].heartRate} bpm
 - Temp: ${chart.vitals[0].temperature}°F
 - RR: ${chart.vitals[0].respiratoryRate || "Not recorded"}
