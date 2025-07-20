@@ -999,6 +999,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      console.log("Original request body:", req.body);
+      
       // Helper function to convert camelCase to snake_case
       const camelToSnakeCase = (str: string): string => {
         return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
@@ -1012,6 +1014,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ])
       );
 
+      console.log("Transformed body:", transformedBody);
+
       const patientDataWithHealthSystem = {
         ...transformedBody,
         health_system_id: healthSystemId,
@@ -1020,6 +1024,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         creation_context: creationContext,
         original_facility_id: healthSystemId, // Current facility where patient was created
       };
+      
+      console.log("Final patient data:", patientDataWithHealthSystem);
 
       // Parse with the complete data including healthSystemId
       const validatedData = insertPatientSchema.parse(
