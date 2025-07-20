@@ -369,21 +369,21 @@ export function PatientParser() {
         return `${prefix}${timestamp}`;
       };
 
-      // Transform form data to match API expectations
+      // Transform form data to match API expectations (using snake_case for database fields)
       const requestBody = {
         mrn: generateMRN(),
-        firstName: data.firstName,
-        lastName: data.lastName,
-        dateOfBirth: data.dateOfBirth,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        date_of_birth: data.dateOfBirth,
         gender: data.gender,
-        contactNumber: data.phoneNumber,
+        contact_number: data.phoneNumber,
         email: data.email,
         address: data.address,
-        emergencyContact: data.emergencyContact,
-        insurancePrimary: data.insurancePrimary,
-        insuranceSecondary: data.insuranceSecondary,
-        policyNumber: data.policyNumber,
-        groupNumber: data.groupNumber,
+        emergency_contact: data.emergencyContact,
+        insurance_primary: data.insurancePrimary,
+        insurance_secondary: data.insuranceSecondary,
+        policy_number: data.policyNumber,
+        group_number: data.groupNumber,
       };
 
       const response = await fetch('/api/patients', {
