@@ -1,6 +1,8 @@
 // Server-side password strength calculation
 // Implements evidence-based password security following NIST guidelines
 
+import crypto from 'crypto';
+
 export interface PasswordStrength {
   score: number; // 0-100
   strength: 'weak' | 'fair' | 'good' | 'strong';
@@ -151,7 +153,6 @@ export function calculatePasswordStrength(password: string): PasswordStrength {
 // Generate cryptographically secure random password
 export function generateSecurePassword(length: number = 16): string {
   // Use crypto.randomInt which is available in Node.js
-  const crypto = eval('require')('crypto');
   
   // Use a character set that's easy to read and type
   const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';

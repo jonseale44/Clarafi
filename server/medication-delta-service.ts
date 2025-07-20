@@ -121,7 +121,7 @@ export class MedicationDeltaService {
 
       // Log all medication orders
       medicationOrders.forEach((order, index) => {
-        console.log(`💊 [MedicationDelta] Order ${index + 1}: ${order.medicationName || order.orderDescription} (ID: ${order.id}, Status: ${order.orderStatus})`);
+        console.log(`💊 [MedicationDelta] Order ${index + 1}: ${order.medicationName || 'N/A'} (ID: ${order.id}, Status: ${order.orderStatus})`);
       });
 
       // Get existing medications for context
@@ -131,7 +131,7 @@ export class MedicationDeltaService {
       // Process each medication order
       const changes: MedicationChange[] = [];
       for (const order of medicationOrders) {
-        console.log(`💊 [MedicationDelta] Processing order ID ${order.id}: ${order.medicationName || order.orderDescription}`);
+        console.log(`💊 [MedicationDelta] Processing order ID ${order.id}: ${order.medicationName || 'N/A'}`);
         const change = await this.processIndividualMedicationOrder(
           order,
           existingMedications,
@@ -1869,8 +1869,24 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       sourceConfidence: medicationData.confidence || 0.85,
       extractedFromAttachmentId: attachmentId,
       sourceNotes: `Extracted from uploaded document`,
-      visitHistory: initialVisitHistory,
-      medicationHistory: initialVisitHistory,
+      visitHistory: [
+        {
+          date: extractedDate || new Date().toISOString().split("T")[0],
+          notes: `Extracted from uploaded document`,
+          source: "attachment" as const,
+          encounterId: encounterId,
+          attachmentId: attachmentId
+        }
+      ],
+      medicationHistory: [
+        {
+          date: extractedDate || new Date().toISOString().split("T")[0],
+          notes: `Extracted from uploaded document`,
+          source: "attachment" as const,
+          encounterId: encounterId,
+          attachmentId: attachmentId
+        }
+      ],
       changeLog: [
         {
           timestamp: new Date().toISOString(),
@@ -1883,7 +1899,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const [newMedication] = await db
       .insert(medications)
-      .values(medicationRecord)
+      .values([medicationRecord])
       .returning();
 
     console.log(
@@ -2415,7 +2431,7 @@ IMPORTANT: Return ONLY the JSON response with no additional text, explanations, 
           medicationName: existingMedication.medicationName,
           dosage: existingMedication.dosage,
           quantity: refillData.quantity,
-          quantity_unit: existingMedication.quantityUnit || this.inferQuantityUnit(existingMedication),
+          quantityUnit: existingMedication.quantityUnit || this.inferQuantityUnit(existingMedication),
           sig: existingMedication.sig,
           refills: refillData.refills,
           form: existingMedication.dosageForm,
@@ -2671,14 +2687,14 @@ Please analyze whether this proposed medication represents a true duplicate that
       )
       .limit(1);
 
-    if (existingChartEncounter.length > 0) {
+    if (Array.isArray(existingChartEncounter) && existingChartEncounter.length > 0) {
       return existingChartEncounter[0];
     }
 
     // Create new chart management encounter
     const [chartEncounter] = await db
       .insert(encounters)
-      .values({
+      .values([{
         patientId,
         providerId,
         encounterType: "Chart Management",
@@ -2687,7 +2703,7 @@ Please analyze whether this proposed medication represents a true duplicate that
         encounterStatus: "active",
         chiefComplaint: "Chart medication management",
         note: "Virtual encounter for direct chart medication management",
-      })
+      }])
       .returning();
 
     console.log(

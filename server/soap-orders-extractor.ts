@@ -263,6 +263,7 @@ export class SOAPOrdersExtractor {
           // Convert existing orders to InsertOrder format for comparison
           const existingInsertOrders: InsertOrder[] = existingOrders.map((order: any) => ({
             patientId: order.patientId,
+            providerId: order.providerId || providerId, // Ensure providerId is included
             encounterId: order.encounterId,
             orderType: order.orderType as any,
             orderStatus: order.orderStatus as any,
@@ -526,23 +527,13 @@ Return only the JSON object, no markdown formatting or additional text.`;
 
       // Log comprehensive token usage and cost analysis
       if (response.usage) {
-        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'Orders_Extractor',
-          response.usage,
-          'gpt-4.1',
-          {
-            soapNoteLength: soapNote.length,
-            maxTokensRequested: 2000,
-            temperature: 0.1
-          }
-        );
+        const analyzer = new TokenCostAnalyzer();
+        const costAnalysis = analyzer.analyzeUsage(response, 'gpt-4.1');
+        TokenCostAnalyzer.logCostAnalysis(costAnalysis, 'Orders_Extractor');
         
         // Log cost projections for operational planning
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
-        console.log(`💰 [Orders_Extractor] COST PROJECTIONS:`);
-        console.log(`💰 [Orders_Extractor] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [Orders_Extractor] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [Orders_Extractor] Yearly: ${projections.formatted.yearly}`);
+        const projections = TokenCostAnalyzer.calculateProjections();
+        console.log(`💰 [Orders_Extractor] COST PROJECTIONS: ${projections.note}`);
       }
 
       const content = response.choices[0]?.message?.content?.trim();

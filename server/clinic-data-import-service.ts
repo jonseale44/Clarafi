@@ -4,7 +4,7 @@ import { eq, and, or, like } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import * as csv from 'csv-parser';
+import csv from 'csv-parser';
 import { createReadStream } from 'fs';
 
 interface NPPESProvider {
@@ -212,7 +212,7 @@ export class ClinicDataImportService {
       .where(eq(healthSystems.name, info.name))
       .limit(1);
 
-    if (existing.length > 0) {
+    if (Array.isArray(existing) && existing.length > 0) {
       this.healthSystemCache.set(info.name, existing[0].id);
       return existing[0].id;
     }
@@ -230,7 +230,7 @@ export class ClinicDataImportService {
     };
 
     const [created] = await db.insert(healthSystems)
-      .values(newHealthSystem)
+      .values([newHealthSystem])
       .returning();
 
     this.healthSystemCache.set(info.name, created.id);
@@ -261,8 +261,8 @@ export class ClinicDataImportService {
   }
 
   private determineLocationType(row: NPPESProvider): string {
-    const taxonomyCode = row.Healthcare_Provider_Taxonomy_Code_1;
-    const orgName = row.Provider_Organization_Name_Legal_Business_Name.toUpperCase();
+    const taxonomyCode = row['Healthcare Provider Taxonomy Code_1'];
+    const orgName = row['Provider Organization Name (Legal Business Name)'].toUpperCase();
 
     if (taxonomyCode === '261QF0400X') return 'fqhc';
     if (taxonomyCode === '261QR1300X') return 'rural_health';
@@ -290,7 +290,7 @@ export class ClinicDataImportService {
 
   private extractServices(row: NPPESProvider): string[] {
     const services: string[] = ['primary_care'];
-    const taxonomyCode = row.Healthcare_Provider_Taxonomy_Code_1;
+    const taxonomyCode = row['Healthcare Provider Taxonomy Code_1'];
     
     if (taxonomyCode === '208000000X' || taxonomyCode === '2080A0000X') {
       services.push('pediatrics');

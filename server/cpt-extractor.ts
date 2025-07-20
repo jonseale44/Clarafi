@@ -106,24 +106,13 @@ export class CPTExtractor {
 
       // Log comprehensive token usage and cost analysis
       if (response.usage) {
-        const costAnalysis = TokenCostAnalyzer.logCostAnalysis(
-          'CPT_Extractor',
-          response.usage,
-          'gpt-4.1',
-          {
-            clinicalTextLength: clinicalText.length,
-            isNewPatient: patientContext?.isNewPatient,
-            patientAge: patientContext?.patientAge,
-            previousEncounters: patientContext?.previousEncounterCount
-          }
-        );
+        const analyzer = new TokenCostAnalyzer();
+        const costAnalysis = analyzer.analyzeUsage(response, 'gpt-4.1');
+        TokenCostAnalyzer.logCostAnalysis(costAnalysis, 'CPT_Extractor');
         
         // Log cost projections for billing optimization
-        const projections = TokenCostAnalyzer.calculateProjections(costAnalysis.totalCost, 50);
-        console.log(`💰 [CPT_Extractor] COST PROJECTIONS:`);
-        console.log(`💰 [CPT_Extractor] Daily (50 encounters): ${projections.formatted.daily}`);
-        console.log(`💰 [CPT_Extractor] Monthly: ${projections.formatted.monthly}`);
-        console.log(`💰 [CPT_Extractor] Yearly: ${projections.formatted.yearly}`);
+        const projections = TokenCostAnalyzer.calculateProjections();
+        console.log(`💰 [CPT_Extractor] COST PROJECTIONS: ${projections.note}`);
       }
 
       const content = response.choices[0].message.content;
