@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { EncounterDetailView } from "./encounter-detail-view";
 import { NursingEncounterView } from "./nursing-encounter-view";
-import type { SelectPatients as Patient, SelectUsers as UserType } from "@shared/schema";
+import type { Patient, User as UserType } from "@shared/schema";
 
 interface RoleBasedEncounterViewProps {
   patient: Patient;

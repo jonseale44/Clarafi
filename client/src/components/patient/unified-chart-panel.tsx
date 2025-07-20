@@ -17,7 +17,7 @@ import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
 import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { SelectUsers as UserType, SelectUserNotePreferences } from "@shared/schema";
+import type { User as UserType, SelectUserNotePreferences } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { 
   getAvailableSections, 

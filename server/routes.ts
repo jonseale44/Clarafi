@@ -6,9 +6,9 @@ import { tenantIsolation } from "./tenant-isolation";
 import { APIResponseHandler } from "./api-response-handler.js";
 import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
-  insertPatientsSchema as insertPatientSchema,
-  insertEncountersSchema as insertEncounterSchema,
-  insertOrdersSchema as insertOrderSchema,
+  insertPatientSchema,
+  insertEncounterSchema,
+  insertOrderSchema,
 } from "@shared/schema";
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
@@ -999,19 +999,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Convert empty strings to null and handle date conversion
+      // Convert empty strings to null for proper database handling
       const cleanedBody = Object.fromEntries(
-        Object.entries(req.body).map(([key, value]) => {
-          if (value === '') return [key, null];
-          // Convert dateOfBirth string to Date object
-          if (key === 'dateOfBirth' && value) {
-            return [key, new Date(value as string)];
-          }
-          return [key, value];
-        })
+        Object.entries(req.body).map(([key, value]) => [
+          key,
+          value === '' ? null : value
+        ])
       );
 
-      // Add system fields using camelCase (as expected by the Zod schema)
       const patientDataWithHealthSystem = {
         ...cleanedBody,
         healthSystemId,
@@ -1041,10 +1036,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const patient = await storage.createPatient(validatedData);
       res.status(201).json(patient);
     } catch (error: any) {
-      console.error("Patient creation error:", error);
-      if (error.issues) {
-        console.error("Validation issues:", JSON.stringify(error.issues, null, 2));
-      }
       res.status(500).json({ message: error.message });
     }
   });

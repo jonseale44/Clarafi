@@ -52,7 +52,7 @@ interface NursingTemplateData {
   ros: string;
   vitals: string;
 }
-import type { SelectPatients as Patient, SelectUsers as UserType } from "@shared/schema";
+import type { Patient, User as UserType } from "@shared/schema";
 
 interface NursingEncounterViewProps {
   patient: Patient;

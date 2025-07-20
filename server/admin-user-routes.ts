@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db.js";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUsersSchema, phiAccessLogs, authenticationLogs } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs } from "@shared/schema";
 import { eq, sql, and, isNull, desc } from "drizzle-orm";
 import { z } from "zod";
 
@@ -453,14 +453,14 @@ export function registerAdminUserRoutes(app: Express) {
   // Create user
   app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {
-      // Extract healthSystemId separately since it's not in insertUsersSchema
+      // Extract healthSystemId separately since it's not in insertUserSchema
       const { healthSystemId, specialties = [], ...userData } = req.body;
       // Ensure specialties is an array (might come as empty array from frontend)
       const dataToValidate = {
         ...userData,
         specialties: Array.isArray(specialties) ? specialties : []
       };
-      const data = insertUsersSchema.parse(dataToValidate);
+      const data = insertUserSchema.parse(dataToValidate);
       console.log(`➕ [AdminUserRoutes] Creating new user: ${data.username} for health system ${healthSystemId}`);
 
       // Validate healthSystemId
