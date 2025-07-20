@@ -333,6 +333,18 @@ export function VitalsFlowsheet({
     onSuccess: (result) => {
       console.log("🩺 [VitalsFlowsheet] Parse-only vitals response:", result);
       
+      // Handle case when no vitals are found
+      if (result.success && !result.vitals && result.message) {
+        toast({
+          title: "No vitals detected",
+          description: result.message,
+          variant: "default",
+        });
+        setQuickParseText("");
+        setShowQuickParse(false);
+        return;
+      }
+      
       if (result.success && result.vitals) {
         // Get the current encounter ID from URL or props
         const currentEncounterId = encounterId || getCurrentEncounterId();

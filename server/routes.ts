@@ -857,10 +857,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Return first vitals set for quick parse functionality
       const firstVitalsSet = parseResult.data?.[0];
+      
+      // If no vitals found, return a successful response with empty vitals
       if (!firstVitalsSet) {
-        return res.status(400).json({
-          success: false,
-          errors: ["No vitals data extracted"],
+        return res.json({
+          success: true,
+          vitals: null,
+          confidence: 0,
+          totalSetsFound: 0,
+          message: "No vitals detected in the text. Please enter vitals in a recognized format (e.g., 'BP 120/80, HR 72, Temp 98.6')."
         });
       }
 
