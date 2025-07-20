@@ -999,12 +999,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Convert empty strings to null for proper database handling
+      // Convert empty strings to null and handle date conversion
       const cleanedBody = Object.fromEntries(
-        Object.entries(req.body).map(([key, value]) => [
-          key,
-          value === '' ? null : value
-        ])
+        Object.entries(req.body).map(([key, value]) => {
+          if (value === '') return [key, null];
+          // Convert dateOfBirth string to Date object
+          if (key === 'dateOfBirth' && value) {
+            return [key, new Date(value as string)];
+          }
+          return [key, value];
+        })
       );
 
       // Add system fields using camelCase (as expected by the Zod schema)
