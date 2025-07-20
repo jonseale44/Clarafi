@@ -460,6 +460,11 @@ router.post('/api/eprescribing/pharmacies/save-google-place', requireAuth, tenan
       status: 'active'
     }).returning();
     
+    if (!newPharmacy || newPharmacy.length === 0) {
+      console.error('❌ [EPrescribing] Failed to save pharmacy - no record returned');
+      return res.status(500).json({ error: 'Failed to save pharmacy' });
+    }
+    
     console.log('✅ [EPrescribing] Saved new pharmacy:', newPharmacy[0].id);
     res.json({ pharmacy: newPharmacy[0] });
     
