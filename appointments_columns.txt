@@ -1,0 +1,86 @@
+         column_name          |          data_type          
+------------------------------+-----------------------------
+ id                           | integer
+ patient_id                   | integer
+ provider_id                  | integer
+ location_id                  | integer
+ appointment_date             | date
+ start_time                   | text
+ end_time                     | text
+ duration                     | integer
+ patient_visible_duration     | integer
+ provider_scheduled_duration  | integer
+ appointment_type             | text
+ appointment_type_id          | integer
+ chief_complaint              | text
+ visit_reason                 | text
+ status                       | text
+ confirmation_status          | text
+ checked_in_at                | timestamp without time zone
+ checked_in_by                | integer
+ room_assignment              | text
+ urgency_level                | text
+ scheduling_notes             | text
+ patient_preferences          | jsonb
+ ai_scheduling_data           | jsonb
+ reminders_sent               | integer
+ last_reminder_sent           | timestamp without time zone
+ communication_preferences    | jsonb
+ external_appointment_id      | text
+ synced_at                    | timestamp without time zone
+ insurance_verified           | boolean
+ verified_by                  | integer
+ copay_amount                 | numeric
+ actual_duration              | integer
+ ai_predicted_duration        | integer
+ billing_notes                | text
+ cancellation_reason          | text
+ cancelled_at                 | timestamp without time zone
+ cancelled_by                 | integer
+ chart_reviewed               | boolean
+ completed_at                 | timestamp without time zone
+ completed_by                 | integer
+ confirmation_sent            | boolean
+ confirmation_sent_at         | timestamp without time zone
+ copay_collected              | boolean
+ duration_minutes             | integer
+ forms_completed              | boolean
+ images_reviewed              | boolean
+ insurance_verification_notes | text
+ intake_completed_at          | timestamp without time zone
+ interpreter_language         | text
+ interpreter_needed           | boolean
+ labs_reviewed                | boolean
+ late_cancellation_reason     | text
+ medications_reconciled       | boolean
+ no_show_reason               | text
+ notes                        | text
+ parent_appointment_id        | integer
+ patient_confirmed            | boolean
+ patient_confirmed_at         | timestamp without time zone
+ post_appointment_notes       | text
+ pre_appointment_notes        | text
+ problems_reviewed            | boolean
+ provider_ready_at            | timestamp without time zone
+ recurrence_exceptions        | jsonb
+ recurrence_rule              | text
+ referral_reason              | text
+ referring_provider           | text
+ reminder_sent                | boolean
+ reminder_sent_at             | timestamp without time zone
+ rescheduled_from             | integer
+ rescheduled_reason           | text
+ resource_requirements        | jsonb
+ room_number                  | text
+ special_instructions         | text
+ tags                         | jsonb
+ use_ai_scheduling            | boolean
+ visit_completed_at           | timestamp without time zone
+ vital_signs_taken            | boolean
+ wait_list_priority           | integer
+ wheelchair_accessible        | boolean
+ created_at                   | timestamp without time zone
+ updated_at                   | timestamp without time zone
+ created_by                   | integer
+(82 rows)
+

@@ -1,0 +1,105 @@
+                                                 Table "public.appointments"
+            Column            |            Type             | Collation | Nullable |                 Default                  
+------------------------------+-----------------------------+-----------+----------+------------------------------------------
+ id                           | integer                     |           | not null | nextval('appointments_id_seq'::regclass)
+ patient_id                   | integer                     |           | not null | 
+ provider_id                  | integer                     |           | not null | 
+ location_id                  | integer                     |           | not null | 
+ appointment_date             | date                        |           | not null | 
+ start_time                   | text                        |           | not null | 
+ end_time                     | text                        |           | not null | 
+ duration                     | integer                     |           | not null | 
+ patient_visible_duration     | integer                     |           |          | 
+ provider_scheduled_duration  | integer                     |           |          | 
+ appointment_type             | text                        |           | not null | 
+ appointment_type_id          | integer                     |           |          | 
+ chief_complaint              | text                        |           |          | 
+ visit_reason                 | text                        |           |          | 
+ status                       | text                        |           |          | 'scheduled'::text
+ confirmation_status          | text                        |           |          | 'pending'::text
+ checked_in_at                | timestamp without time zone |           |          | 
+ checked_in_by                | integer                     |           |          | 
+ room_assignment              | text                        |           |          | 
+ urgency_level                | text                        |           |          | 'routine'::text
+ scheduling_notes             | text                        |           |          | 
+ patient_preferences          | jsonb                       |           |          | 
+ ai_scheduling_data           | jsonb                       |           |          | 
+ reminders_sent               | integer                     |           |          | 0
+ last_reminder_sent           | timestamp without time zone |           |          | 
+ communication_preferences    | jsonb                       |           |          | 
+ external_appointment_id      | text                        |           |          | 
+ synced_at                    | timestamp without time zone |           |          | 
+ insurance_verified           | boolean                     |           |          | false
+ verified_by                  | integer                     |           |          | 
+ copay_amount                 | numeric(10,2)               |           |          | 
+ actual_duration              | integer                     |           |          | 
+ ai_predicted_duration        | integer                     |           |          | 
+ billing_notes                | text                        |           |          | 
+ cancellation_reason          | text                        |           |          | 
+ cancelled_at                 | timestamp without time zone |           |          | 
+ cancelled_by                 | integer                     |           |          | 
+ chart_reviewed               | boolean                     |           |          | false
+ completed_at                 | timestamp without time zone |           |          | 
+ completed_by                 | integer                     |           |          | 
+ confirmation_sent            | boolean                     |           |          | false
+ confirmation_sent_at         | timestamp without time zone |           |          | 
+ copay_collected              | boolean                     |           |          | false
+ duration_minutes             | integer                     |           |          | 
+ forms_completed              | boolean                     |           |          | false
+ images_reviewed              | boolean                     |           |          | false
+ insurance_verification_notes | text                        |           |          | 
+ intake_completed_at          | timestamp without time zone |           |          | 
+ interpreter_language         | text                        |           |          | 
+ interpreter_needed           | boolean                     |           |          | false
+ labs_reviewed                | boolean                     |           |          | false
+ late_cancellation_reason     | text                        |           |          | 
+ medications_reconciled       | boolean                     |           |          | false
+ no_show_reason               | text                        |           |          | 
+ notes                        | text                        |           |          | 
+ parent_appointment_id        | integer                     |           |          | 
+ patient_confirmed            | boolean                     |           |          | false
+ patient_confirmed_at         | timestamp without time zone |           |          | 
+ post_appointment_notes       | text                        |           |          | 
+ pre_appointment_notes        | text                        |           |          | 
+ problems_reviewed            | boolean                     |           |          | false
+ provider_ready_at            | timestamp without time zone |           |          | 
+ recurrence_exceptions        | jsonb                       |           |          | '[]'::jsonb
+ recurrence_rule              | text                        |           |          | 
+ referral_reason              | text                        |           |          | 
+ referring_provider           | text                        |           |          | 
+ reminder_sent                | boolean                     |           |          | false
+ reminder_sent_at             | timestamp without time zone |           |          | 
+ rescheduled_from             | integer                     |           |          | 
+ rescheduled_reason           | text                        |           |          | 
+ resource_requirements        | jsonb                       |           |          | '{}'::jsonb
+ room_number                  | text                        |           |          | 
+ special_instructions         | text                        |           |          | 
+ tags                         | jsonb                       |           |          | '[]'::jsonb
+ use_ai_scheduling            | boolean                     |           |          | true
+ visit_completed_at           | timestamp without time zone |           |          | 
+ vital_signs_taken            | boolean                     |           |          | false
+ wait_list_priority           | integer                     |           |          | 
+ wheelchair_accessible        | boolean                     |           |          | false
+ created_at                   | timestamp without time zone |           |          | now()
+ updated_at                   | timestamp without time zone |           |          | now()
+ created_by                   | integer                     |           | not null | 
+Indexes:
+    "appointments_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "appointments_appointment_type_id_appointment_types_id_fk" FOREIGN KEY (appointment_type_id) REFERENCES appointment_types(id)
+    "appointments_cancelled_by_users_id_fk" FOREIGN KEY (cancelled_by) REFERENCES users(id)
+    "appointments_checked_in_by_users_id_fk" FOREIGN KEY (checked_in_by) REFERENCES users(id)
+    "appointments_completed_by_users_id_fk" FOREIGN KEY (completed_by) REFERENCES users(id)
+    "appointments_created_by_users_id_fk" FOREIGN KEY (created_by) REFERENCES users(id)
+    "appointments_location_id_locations_id_fk" FOREIGN KEY (location_id) REFERENCES locations(id)
+    "appointments_parent_appointment_id_appointments_id_fk" FOREIGN KEY (parent_appointment_id) REFERENCES appointments(id)
+    "appointments_patient_id_patients_id_fk" FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+    "appointments_provider_id_users_id_fk" FOREIGN KEY (provider_id) REFERENCES users(id)
+    "appointments_rescheduled_from_appointments_id_fk" FOREIGN KEY (rescheduled_from) REFERENCES appointments(id)
+    "appointments_verified_by_users_id_fk" FOREIGN KEY (verified_by) REFERENCES users(id)
+Referenced by:
+    TABLE "appointment_duration_history" CONSTRAINT "appointment_duration_history_appointment_id_appointments_id_fk" FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+    TABLE "appointments" CONSTRAINT "appointments_parent_appointment_id_appointments_id_fk" FOREIGN KEY (parent_appointment_id) REFERENCES appointments(id)
+    TABLE "appointments" CONSTRAINT "appointments_rescheduled_from_appointments_id_fk" FOREIGN KEY (rescheduled_from) REFERENCES appointments(id)
+    TABLE "encounters" CONSTRAINT "encounters_appointment_id_appointments_id_fk" FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+
