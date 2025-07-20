@@ -478,6 +478,120 @@ export class PDFService {
     });
   }
 
+  async generateMedicationPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
+    console.log(`📄 [PDFService] Generating medication PDF for ${orders.length} orders`);
+    
+    // Validate and clean orders array to avoid Drizzle ORM issues
+    const validOrders = orders.filter(order => {
+      if (!order || typeof order !== 'object') {
+        console.warn(`📄 [PDFService] Invalid order detected (null or non-object), skipping`);
+        return false;
+      }
+      // Ensure we have the required fields for medications
+      if (!order.medicationName) {
+        console.warn(`📄 [PDFService] Order ${order.id} missing medicationName, skipping`);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`📄 [PDFService] Valid orders after filtering: ${validOrders.length}`);
+    
+    // Fetch patient and provider info with error handling
+    let patient, provider;
+    try {
+      patient = await this.getPatientInfo(patientId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching patient info:`, error);
+      patient = { name: 'Unknown Patient', dateOfBirth: '', mrn: '' };
+    }
+    
+    try {
+      provider = await this.getProviderInfo(providerId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching provider info:`, error);
+      provider = { name: 'Unknown Provider', npi: '', locationName: '', address: '' };
+    }
+    
+    const doc = new PDFDocument();
+    const chunks: Buffer[] = [];
+    
+    doc.on('data', chunk => chunks.push(chunk));
+    
+    return new Promise((resolve, reject) => {
+      doc.on('end', async () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        console.log(`📄 [PDFService] Medication PDF generated: ${pdfBuffer.length} bytes`);
+        
+        try {
+          // Save to filesystem
+          await ensurePDFDirectory();
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `medication-orders-${patientId}-${timestamp}.pdf`;
+          const filepath = getPDFFilePath(filename);
+          
+          await fs.promises.writeFile(filepath, pdfBuffer);
+          console.log(`📄 [PDFService] PDF saved: ${filepath}`);
+          
+          resolve(pdfBuffer);
+        } catch (error) {
+          reject(error);
+        }
+      });
+      
+      doc.on('error', reject);
+      
+      // Generate PDF content
+      this.addHeader(doc, 'Medication Orders');
+      
+      let currentY = 130;
+      currentY = this.addPatientInfo(doc, patient, currentY);
+      currentY = this.addProviderInfo(doc, provider, currentY);
+      
+      // Add medication orders
+      doc.fontSize(14).text('Medications Prescribed:', 50, currentY);
+      currentY += 30;
+      
+      validOrders.forEach((order, index) => {
+        doc.fontSize(12);
+        // Use optional chaining in case fields are undefined
+        const medicationName = order.medicationName || 'Unknown Medication';
+        const dose = order.dose || '';
+        const frequency = order.frequency || '';
+        const quantity = order.quantity || '';
+        const unit = order.quantityUnit || order.quantity_unit || '';
+        
+        doc.text(`${index + 1}. ${medicationName}`, 70, currentY);
+        currentY += 20;
+        
+        if (dose || frequency) {
+          doc.fontSize(10).text(`   Sig: ${dose} ${frequency}`, 70, currentY);
+          currentY += 15;
+        }
+        
+        if (quantity) {
+          doc.fontSize(10).text(`   Quantity: ${quantity} ${unit}`, 70, currentY);
+          currentY += 15;
+        }
+        
+        currentY += 10; // Extra spacing between medications
+        
+        // Add new page if needed
+        if (currentY > 700) {
+          doc.addPage();
+          currentY = 50;
+        }
+      });
+      
+      // Add signature section
+      currentY += 30;
+      doc.moveTo(50, currentY).lineTo(300, currentY).stroke();
+      doc.text('Provider Signature', 50, currentY + 10);
+      
+      doc.end();
+    });
+  }
+
   async generateImagingPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
     console.log(`📄 [PDFService] Generating imaging PDF for ${orders.length} orders`);
     
