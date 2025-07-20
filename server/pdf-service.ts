@@ -5,6 +5,18 @@ import { patients, users, orders, locations, organizations, healthSystems, userL
 import { eq, and } from 'drizzle-orm';
 import { ensurePDFDirectory, getPDFFilePath } from './pdf-utils.js';
 
+// Debug logging for imports
+console.log(`📄 [PDFService] === MODULE INITIALIZATION ===`);
+console.log(`📄 [PDFService] patients table imported:`, typeof patients);
+console.log(`📄 [PDFService] db object imported:`, typeof db);
+if (patients) {
+  console.log(`📄 [PDFService] patients table structure:`, Object.keys(patients).slice(0, 10));
+}
+if (db) {
+  console.log(`📄 [PDFService] db object structure:`, Object.keys(db).slice(0, 10));
+}
+console.log(`📄 [PDFService] === MODULE INITIALIZATION END ===`);
+
 export interface Order {
   id: number;
   patientId: number;
@@ -26,7 +38,9 @@ export class PDFService {
 
   private async getPatientInfo(patientId: number) {
     try {
-      console.log(`📄 [PDFService] Fetching patient info for ID: ${patientId}`);
+      console.log(`📄 [PDFService] === GETPATIENTINFO START ===`);
+      console.log(`📄 [PDFService] Input patientId:`, patientId);
+      console.log(`📄 [PDFService] Type of patientId:`, typeof patientId);
       
       // Validate patientId
       if (!patientId || typeof patientId !== 'number') {
@@ -34,22 +48,63 @@ export class PDFService {
         return null;
       }
       
-      // Select only the columns we need to avoid any schema mismatch issues
-      const result = await db.select({
-        id: patients.id,
-        firstName: patients.firstName,
-        lastName: patients.lastName,
-        dateOfBirth: patients.dateOfBirth,
-        mrn: patients.mrn,
-        phone: patients.phone,
-        address: patients.address,
-        city: patients.city,
-        state: patients.state,
-        zipCode: patients.zipCode,
-        insurance: patients.insurance
-      }).from(patients).where(eq(patients.id, patientId));
+      console.log(`📄 [PDFService] Building database query...`);
+      console.log(`📄 [PDFService] patients table:`, typeof patients);
+      console.log(`📄 [PDFService] db object:`, typeof db);
       
+      // Log table columns to debug
+      console.log(`📄 [PDFService] Checking patients table columns...`);
+      console.log(`📄 [PDFService] patients.id:`, typeof patients?.id);
+      console.log(`📄 [PDFService] patients.firstName:`, typeof patients?.firstName);
+      
+      // Select only the columns we need to avoid any schema mismatch issues
+      console.log(`📄 [PDFService] Executing database query...`);
+      
+      let result;
+      try {
+        console.log(`📄 [PDFService] Building select object...`);
+        const selectObject = {
+          id: patients.id,
+          firstName: patients.firstName,
+          lastName: patients.lastName,
+          dateOfBirth: patients.dateOfBirth,
+          mrn: patients.mrn,
+          phone: patients.phone,
+          address: patients.address,
+          city: patients.city,
+          state: patients.state,
+          zipCode: patients.zipCode,
+          insurance: patients.insurance
+        };
+        console.log(`📄 [PDFService] Select object built successfully`);
+        
+        console.log(`📄 [PDFService] Creating db.select()...`);
+        const query = db.select(selectObject);
+        console.log(`📄 [PDFService] db.select() created, type:`, typeof query);
+        
+        console.log(`📄 [PDFService] Adding from(patients)...`);
+        const fromQuery = query.from(patients);
+        console.log(`📄 [PDFService] from() added, type:`, typeof fromQuery);
+        
+        console.log(`📄 [PDFService] Adding where clause...`);
+        const whereQuery = fromQuery.where(eq(patients.id, patientId));
+        console.log(`📄 [PDFService] where() added, type:`, typeof whereQuery);
+        
+        console.log(`📄 [PDFService] Executing query...`);
+        result = await whereQuery;
+        console.log(`📄 [PDFService] Query executed!`);
+      } catch (queryError) {
+        console.error(`📄 [PDFService] Error during query building:`, queryError);
+        console.error(`📄 [PDFService] Query error name:`, (queryError as Error).name);
+        console.error(`📄 [PDFService] Query error message:`, (queryError as Error).message);
+        console.error(`📄 [PDFService] Query error stack:`, (queryError as Error).stack);
+        throw queryError;
+      }
+      
+      console.log(`📄 [PDFService] Query executed successfully`);
       console.log(`📄 [PDFService] Query result for patient ${patientId}:`, result?.length || 0, 'records found');
+      console.log(`📄 [PDFService] Result type:`, typeof result);
+      console.log(`📄 [PDFService] Result is array:`, Array.isArray(result));
       
       if (!result || result.length === 0) {
         console.log(`📄 [PDFService] No patient found with ID: ${patientId}`);
@@ -58,11 +113,16 @@ export class PDFService {
       
       const patient = result[0];
       console.log(`📄 [PDFService] Patient found: ${patient.firstName} ${patient.lastName}`);
+      console.log(`📄 [PDFService] === GETPATIENTINFO END SUCCESS ===`);
       return patient;
     } catch (error) {
+      console.error(`📄 [PDFService] === GETPATIENTINFO ERROR ===`);
       console.error(`📄 [PDFService] Error in getPatientInfo:`, error);
       console.error(`📄 [PDFService] Error type:`, typeof error);
+      console.error(`📄 [PDFService] Error name:`, (error as Error).name);
+      console.error(`📄 [PDFService] Error message:`, (error as Error).message);
       console.error(`📄 [PDFService] Error stack:`, (error as Error).stack);
+      console.error(`📄 [PDFService] === GETPATIENTINFO ERROR END ===`);
       throw error;
     }
   }
