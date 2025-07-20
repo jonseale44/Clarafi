@@ -66,6 +66,7 @@ import {
   encounters as encountersTable,
   labOrders,
   labResults,
+  patientOrderPreferences,
 } from "../shared/schema.js";
 
 import { eq, desc, and, ne, sql } from "drizzle-orm";
@@ -3854,10 +3855,8 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       try {
         // Get patient delivery preferences
         console.log(
-          `📋 [IndividualSign] About to import schema and drizzle-orm`,
+          `📋 [IndividualSign] About to query patient preferences`,
         );
-        const { patientOrderPreferences } = await import("../shared/schema.js");
-        const { eq } = await import("drizzle-orm");
 
         console.log(
           `📋 [IndividualSign] Querying preferences for patient ${order.patientId}`,

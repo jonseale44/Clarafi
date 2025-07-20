@@ -1,7 +1,7 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import { db } from './db.js';
-import { patients, users, orders, locations, organizations, healthSystems, userLocations } from '@shared/schema.js';
+import { patients, users, orders, locations, organizations, healthSystems, userLocations } from '../shared/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { ensurePDFDirectory, getPDFFilePath } from './pdf-utils.js';
 
@@ -25,21 +25,46 @@ export interface Order {
 export class PDFService {
 
   private async getPatientInfo(patientId: number) {
-    // Select only the columns we need to avoid any schema mismatch issues
-    const [patient] = await db.select({
-      id: patients.id,
-      firstName: patients.firstName,
-      lastName: patients.lastName,
-      dateOfBirth: patients.dateOfBirth,
-      mrn: patients.mrn,
-      phone: patients.phone,
-      address: patients.address,
-      city: patients.city,
-      state: patients.state,
-      zipCode: patients.zipCode,
-      insurance: patients.insurance
-    }).from(patients).where(eq(patients.id, patientId));
-    return patient;
+    try {
+      console.log(`📄 [PDFService] Fetching patient info for ID: ${patientId}`);
+      
+      // Validate patientId
+      if (!patientId || typeof patientId !== 'number') {
+        console.error(`📄 [PDFService] Invalid patientId: ${patientId}`);
+        return null;
+      }
+      
+      // Select only the columns we need to avoid any schema mismatch issues
+      const result = await db.select({
+        id: patients.id,
+        firstName: patients.firstName,
+        lastName: patients.lastName,
+        dateOfBirth: patients.dateOfBirth,
+        mrn: patients.mrn,
+        phone: patients.phone,
+        address: patients.address,
+        city: patients.city,
+        state: patients.state,
+        zipCode: patients.zipCode,
+        insurance: patients.insurance
+      }).from(patients).where(eq(patients.id, patientId));
+      
+      console.log(`📄 [PDFService] Query result for patient ${patientId}:`, result?.length || 0, 'records found');
+      
+      if (!result || result.length === 0) {
+        console.log(`📄 [PDFService] No patient found with ID: ${patientId}`);
+        return null;
+      }
+      
+      const patient = result[0];
+      console.log(`📄 [PDFService] Patient found: ${patient.firstName} ${patient.lastName}`);
+      return patient;
+    } catch (error) {
+      console.error(`📄 [PDFService] Error in getPatientInfo:`, error);
+      console.error(`📄 [PDFService] Error type:`, typeof error);
+      console.error(`📄 [PDFService] Error stack:`, (error as Error).stack);
+      throw error;
+    }
   }
 
   private async getProviderInfo(providerId: number) {
@@ -114,7 +139,7 @@ export class PDFService {
               
               // Combine all the data
               locationData = {
-                ...location,
+                ...(location || {}),
                 organizationName: organization?.organizationName || 'Unknown Organization',
                 healthSystemName: healthSystem?.healthSystemName || 'Unknown Health System'
               };
@@ -271,8 +296,9 @@ export class PDFService {
     }
     
     try {
-      provider = await this.getProviderInfo(providerId);
-      console.log(`📄 [PDFService] Provider retrieved: ${provider ? 'SUCCESS' : 'FAILED'}`);
+      const providerData = await this.getProviderInfo(providerId);
+      provider = providerData;
+      console.log(`📄 [PDFService] Provider retrieved: ${providerData && providerData.provider ? 'SUCCESS' : 'FAILED'}`);
     } catch (error) {
       console.error(`📄 [PDFService] Error fetching provider info:`, error);
       provider = null;
@@ -283,7 +309,7 @@ export class PDFService {
       throw new Error('Patient not found');
     }
     
-    if (!provider) {
+    if (!provider || !provider.provider) {
       console.error(`📄 [PDFService] ERROR: Provider not found or location data missing for ID ${providerId}`);
       throw new Error('Provider not found');
     }
