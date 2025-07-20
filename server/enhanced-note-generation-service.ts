@@ -1397,6 +1397,17 @@ IMPORTANT INSTRUCTIONS:
         const latestVitals = recentVitals[0];
         const vitalParts = [];
 
+        // Debug log to see what vitals data we have
+        console.log("🔍 [EnhancedNotes] Latest vitals data:", {
+          systolicBp: latestVitals.systolicBp,
+          diastolicBp: latestVitals.diastolicBp,
+          heartRate: latestVitals.heartRate,
+          temperature: latestVitals.temperature,
+          respiratoryRate: latestVitals.respiratoryRate,
+          oxygenSaturation: latestVitals.oxygenSaturation,
+          recordedAt: latestVitals.recordedAt
+        });
+
         if (
           latestVitals.systolicBp &&
           latestVitals.diastolicBp
