@@ -75,8 +75,8 @@ export class PDFService {
         console.log(`  - patients.address:`, patients.address ? 'defined' : 'UNDEFINED!');
         console.log(`  - patients.city:`, patients.city ? 'defined' : 'UNDEFINED!');
         console.log(`  - patients.state:`, patients.state ? 'defined' : 'UNDEFINED!');
-        console.log(`  - patients.zipCode:`, patients.zipCode ? 'defined' : 'UNDEFINED!');
-        console.log(`  - patients.insurance:`, patients.insurance ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.zip:`, patients.zip ? 'defined' : 'UNDEFINED!');
+        console.log(`  - patients.insurancePrimary:`, patients.insurancePrimary ? 'defined' : 'UNDEFINED!');
         
         const selectObject = {
           id: patients.id,
@@ -88,8 +88,8 @@ export class PDFService {
           address: patients.address,
           city: patients.city,
           state: patients.state,
-          zipCode: patients.zipCode,
-          insurance: patients.insurance
+          zip: patients.zip,
+          insurancePrimary: patients.insurancePrimary
         };
         console.log(`📄 [PDFService] Select object built successfully`);
         
@@ -184,7 +184,6 @@ export class PDFService {
             locationId: locations.id,
             locationName: locations.name,
             locationAddress: locations.address,
-            locationAddress2: locations.address2,
             locationCity: locations.city,
             locationState: locations.state,
             locationZipCode: locations.zipCode,
