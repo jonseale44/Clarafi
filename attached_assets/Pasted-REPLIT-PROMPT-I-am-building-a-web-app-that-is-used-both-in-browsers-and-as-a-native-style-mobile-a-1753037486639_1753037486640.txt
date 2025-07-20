@@ -1,0 +1,27 @@
+REPLIT PROMPT: 
+I am building a web app that is used both in browsers and as a native-style mobile app using Median. While the responsive design works well for the web, there are sometimes UI components or entire page sections that do not display ideally or need to be hidden, modified, or styled differently when running inside the Median-powered mobile app.
+Why:
+To help create a smooth, visually consistent user experience in the Median app—without affecting the regular web experience—I want to systematically "tag" certain React components or UI elements. This will allow me to easily target these elements with custom CSS or JavaScript overrides inside the Median platform, giving me full control over mobile app appearance and function.
+Instructions:
+For any UI element, component, or section that:
+Should be hidden in the Median app
+Should have different spacing, reduced content, or special behavior in the Median app
+Might need mobile-specific styling or functionality in the Median app → Add a clear "tag" using a unique data attribute and/or CSS class name to the outermost JSX element of that section/component.
+Use data-median as the attribute (e.g. data-median="hide-on-mobile-app", data-median="mobile-reduced-padding", etc), and/or descriptive utility classes (e.g. className="median-hide-mobile").
+Names should clearly describe the intention for mobile (Median app) handling.
+Examples:
+To hide a hero/marketing panel only in the Median app:<div data-median="hide-on-mobile-app">...</div>
+
+To adjust layout or spacing only in the Median app:<section data-median="mobile-reduced-padding">...</section>
+
+Or using classes:<div className="median-hide-mobile">...</div>
+
+These tags must be invisible and have no effect on how the app behaves in a standard web browser.
+Do NOT implement any Median-specific logic in the components themselves—just add the tagging for post-processing.
+If there’s already an outer wrapper, add the attribute/class there. If not, it’s OK to wrap the target section/component in a <div> or <section> solely for this purpose.
+Summary:
+Add a descriptive data-median attribute (and/or a median-* class) to every React component or section that might need to be handled differently—hidden, restyled, or changed—when my web app is running as a Median mobile app. Leave all other logic and appearance unchanged.
+
+This will let me use Median’s “Web Overrides” (CSS/JS) to control mobile app rendering of these tagged elements.
+
+—————————————————————
