@@ -1,3 +1,20 @@
+/**
+ * Main Express Routes Configuration
+ * 
+ * This is the central routing file that configures all API endpoints for the EMR system.
+ * 
+ * Key sections:
+ * - Authentication & Session Management
+ * - Patient Management APIs
+ * - Clinical Documentation (SOAP notes, encounters)
+ * - Order Management (labs, medications, imaging)
+ * - Document Processing & AI Analysis
+ * - E-Prescribing & Pharmacy Integration
+ * - Scheduling & Appointments
+ * - Admin & Billing Management
+ * 
+ * For specific functionality, search for the relevant section below.
+ */
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";

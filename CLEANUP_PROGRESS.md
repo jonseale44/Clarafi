@@ -52,6 +52,12 @@ components/
 ### 3. Mobile App Consolidation
 - 4 mobile app directories exist (clarafi-mobile, clarafi-mobile-capacitor, clarafi-mobile-expo, clarafi-mobile-web)
 - Consider consolidating or clearly documenting which is active
+- Based on analysis:
+  - clarafi-mobile: Contains React Native Expo app
+  - clarafi-mobile-capacitor: Contains Capacitor-based mobile app
+  - clarafi-mobile-expo: Another Expo setup
+  - clarafi-mobile-web: Web version of mobile app
+- RECOMMENDATION: Create MOBILE_APP_GUIDE.md to explain each directory's purpose
 
 ### 4. Configuration Consolidation
 Multiple configuration files in root could be grouped:
