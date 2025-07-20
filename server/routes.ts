@@ -4140,9 +4140,16 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
                         patientId: order.patientId,
                         providerId: userId,
                         pharmacyId: null, // No pharmacy record for fax
+                        transmissionType: 'new_rx',
                         transmissionMethod: 'fax',
-                        transmissionStatus: 'pending',
-                        transmissionMetadata: {
+                        status: 'pending',
+                        transmittedAt: new Date(), // Set the transmission timestamp
+                        statusHistory: [{
+                          status: 'pending',
+                          timestamp: new Date().toISOString(),
+                          note: 'Prescription queued for fax transmission'
+                        }],
+                        pharmacyResponse: {
                           faxNumber: faxNumber,
                           pharmacyName: prefs?.preferredPharmacy || 'Via Fax'
                         }

@@ -195,16 +195,16 @@ export default function PrescriptionHistorySection({ patientId }: PrescriptionHi
                       <TableCell>
                         {pharmacy?.name || 
                          (transmission.transmissionMethod === 'print' ? 'Printed' : 
-                          transmission.transmissionMethod === 'fax' && transmission.transmissionMetadata?.pharmacyName ? 
-                           `${transmission.transmissionMetadata.pharmacyName} (Fax: ${transmission.transmissionMetadata.faxNumber})` : 
+                          transmission.transmissionMethod === 'fax' && transmission.pharmacyResponse?.pharmacyName ? 
+                           `${transmission.pharmacyResponse.pharmacyName} (Fax: ${transmission.pharmacyResponse.faxNumber})` : 
                            'N/A')}
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(transmission.transmissionStatus)}
-                        {transmission.transmissionStatus === 'failed' && 
-                         transmission.transmissionMetadata?.errorMessage && (
+                        {getStatusBadge(transmission.status)}
+                        {transmission.status === 'failed' && 
+                         transmission.errorMessage && (
                           <div className="text-xs text-red-600 mt-1">
-                            {transmission.transmissionMetadata.errorMessage}
+                            {transmission.errorMessage}
                           </div>
                         )}
                       </TableCell>
@@ -218,7 +218,7 @@ export default function PrescriptionHistorySection({ patientId }: PrescriptionHi
                           >
                             <Download className="h-4 w-4" />
                           </Button>
-                          {transmission.transmissionStatus === 'failed' && (
+                          {transmission.status === 'failed' && (
                             <Button
                               variant="ghost"
                               size="sm"

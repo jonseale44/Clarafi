@@ -702,7 +702,7 @@ router.post('/api/eprescribing/transmit', requireAuth, tenantIsolation, async (r
     res.json({
       success: true,
       transmissionId: transmission.id,
-      status: transmission.transmissionStatus
+      status: transmission.status
     });
   } catch (error) {
     console.error('❌ [EPrescribing] Error transmitting prescription:', error);

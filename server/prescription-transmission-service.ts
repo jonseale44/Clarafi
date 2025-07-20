@@ -175,7 +175,8 @@ export class PrescriptionTransmissionService {
         providerId: data.providerId,
         pharmacyId: data.pharmacyId,
         transmissionMethod: data.transmissionMethod,
-        transmissionStatus: 'pending',
+        transmissionType: 'new_rx',
+        status: 'pending',
         electronicSignatureId: data.electronicSignatureId,
         retryCount: 0,
         transmittedAt: new Date()

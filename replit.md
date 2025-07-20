@@ -241,6 +241,19 @@ Preferred communication style: Simple, everyday language.
   - Detailed medication order processing logs
 - **PRODUCTION IMPACT**: Fax transmission workflow now fully functional with comprehensive debugging capabilities
 
+### Prescription Transmission Field Name Fixes (January 20, 2025)
+- **CRITICAL BUG FIXED**: Prescription transmissions were not appearing in history due to multiple field name mismatches
+- **ROOT CAUSE**: Database schema uses `status` field but code was using `transmissionStatus` throughout the system
+- **FIXES IMPLEMENTED**:
+  - Updated routes.ts fax transmission creation to use `status` instead of `transmissionStatus`
+  - Added missing `transmissionType: 'new_rx'` field to prescription records
+  - Set `transmittedAt` timestamp when creating transmission records
+  - Fixed prescription-history-section.tsx component to use `transmission.status` instead of `transmission.transmissionStatus`
+  - Fixed prescription-transmission-service.ts to use schema-compliant field names
+  - Fixed eprescribing-routes.ts response to use `transmission.status`
+  - Updated fax transmission to store pharmacy info in `pharmacyResponse` field (not transmissionMetadata)
+- **USER IMPACT**: Prescription transmissions (fax, electronic, print) now properly appear in prescription history with correct status tracking
+
 ### Print PDF Option Fix for Medication Orders (January 19, 2025)
 - **BUG FIXED**: "Print PDF" option in medication order preferences wasn't displaying correctly after selection
 - **ROOT CAUSE**: Order preferences dialog saved value as "print_pdf" but indicator component checked for "print"
