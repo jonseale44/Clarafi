@@ -1185,7 +1185,7 @@ ${patientChart.currentMedications
       const latestVitals = patientChart.vitals[0];
       sections.push(`
 RECENT VITALS (Use for condition-specific correlations):
-- Latest Reading: BP ${latestVitals.systolic || "?"}/${latestVitals.diastolic || "?"} mmHg, HR ${latestVitals.heartRate || "?"} bpm, Temp ${latestVitals.temperature || "?"}°F
+- Latest Reading: BP ${latestVitals.systolicBp || "?"}/${latestVitals.diastolicBp || "?"} mmHg, HR ${latestVitals.heartRate || "?"} bpm, Temp ${latestVitals.temperature || "?"}°F
 - For HYPERTENSION visit histories: Include relevant BP readings
 - For DIABETES visit histories: Include weight/BMI trends if available
 - For CARDIAC conditions: Include HR and BP correlations`);

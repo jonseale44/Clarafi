@@ -144,8 +144,8 @@ export class PatientChartService {
         vitals: vitalsRecords.map((v) => ({
           id: v.id,
           recordedAt: v.recordedAt,
-          systolic: v.systolicBp,
-          diastolic: v.diastolicBp,
+          systolicBp: v.systolicBp,  // Keep consistent field names
+          diastolicBp: v.diastolicBp,  // Keep consistent field names
           heartRate: v.heartRate,
           temperature: v.temperature,
           respiratoryRate: v.respiratoryRate,
