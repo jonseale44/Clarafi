@@ -185,6 +185,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### Express Body Parser Limit Fix (July 20, 2025)
+- **ISSUE FIXED**: PayloadTooLargeError when uploading patient documents to `/api/parse-patient-info`
+- **ROOT CAUSE**: Default Express body parser limit of 100kb was too small for base64-encoded images and documents
+- **SOLUTION**: Increased JSON and URL-encoded body parser limits to 50MB in server/index.ts
+- **TECHNICAL DETAILS**: 
+  - Patient documents are converted to base64 format before upload
+  - Base64 encoding increases file size by ~33%
+  - Medical documents and images can easily exceed 100kb limit
+- **USER IMPACT**: Patient document parsing now works reliably for all common medical document types and sizes
+
 ### PDF Generation Drizzle ORM Error Fix (January 20, 2025)
 - **ISSUE FIXED**: PDF generation failing with "Cannot convert undefined or null to object" error during bulk order signing
 - **ROOT CAUSE**: Drizzle ORM's internal `orderSelectedFields` function was failing when processing complex nested queries with multiple joins
