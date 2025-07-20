@@ -65,11 +65,11 @@ export function EncounterView() {
   };
 
   return (
-    <div className="h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col" data-median="encounter-view-container">
       {/* Navigation breadcrumb for hyperlink navigation */}
       <NavigationBreadcrumb />
       
-      <div className="flex-1">
+      <div className="flex-1" data-median="mobile-encounter-main">
         <RoleBasedEncounterView 
           patient={patient} 
           encounterId={encounterId} 

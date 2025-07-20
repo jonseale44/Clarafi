@@ -67,6 +67,13 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Median App Mobile Optimization (July 20, 2025)
+✓ Added comprehensive `data-median` attributes throughout React components for mobile app optimization
+✓ Implemented tagging system to enable different UI behaviors between web browser and Median mobile app
+✓ Tagged components include: headers, navigation, tables, dashboards, vital cards, and page layouts
+✓ Created MEDIAN_APP_TAGS.md documentation file with complete tag reference and usage examples
+✓ Tags enable hiding elements, adjusting layouts, and prioritizing content for mobile without affecting web experience
+
 ### Schema Alignment (July 19, 2025) - PARTIAL FIX ONLY
 ✓ Fixed critical database/schema discrepancies affecting PDF generation and orders
 ✓ Updated signatures table structure to match database (id, encounter_id, signed_by, signature_type, etc.)

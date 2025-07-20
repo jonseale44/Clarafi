@@ -362,8 +362,8 @@ export function ProviderDashboard() {
   return (
     <div className="space-y-6">
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <Card className="bg-yellow-50 border-yellow-200">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4" data-median="mobile-stats-grid">
+        <Card className="bg-yellow-50 border-yellow-200" data-median="mobile-stat-card-priority">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -375,7 +375,7 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-navy-blue-50 border-navy-blue-200 cursor-pointer hover:bg-navy-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)}>
+        <Card className="bg-navy-blue-50 border-navy-blue-200 cursor-pointer hover:bg-navy-blue-100 transition-colors" onClick={() => setIsReviewDialogOpen(true)} data-median="mobile-stat-card-priority">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -385,14 +385,14 @@ export function ProviderDashboard() {
                   <p className="text-2xl font-bold text-navy-blue-900">{stats?.labOrdersToReview || 0}</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="bg-white hover:bg-navy-blue-50">
+              <Button size="sm" variant="outline" className="bg-white hover:bg-navy-blue-50" data-median="hide-on-mobile-app">
                 Review
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-green-50 border-green-200" data-median="mobile-stat-card-secondary">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -404,7 +404,7 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-50 border-purple-200">
+        <Card className="bg-purple-50 border-purple-200" data-median="mobile-stat-card-secondary">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <FileText className="h-8 w-8 text-purple-600" />
@@ -416,7 +416,7 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-orange-50 border-orange-200">
+        <Card className="bg-orange-50 border-orange-200" data-median="hide-on-mobile-app">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <PenTool className="h-8 w-8 text-orange-600" />
@@ -428,7 +428,7 @@ export function ProviderDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-red-50 border-red-200">
+        <Card className="bg-red-50 border-red-200" data-median="hide-on-mobile-app">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <AlertTriangle className="h-8 w-8 text-red-600" />
@@ -442,11 +442,11 @@ export function ProviderDashboard() {
       </div>
 
       {/* Detailed Views */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={setActiveTab} data-median="mobile-dashboard-tabs">
+        <TabsList className="grid w-full grid-cols-3" data-median="mobile-tabs-list">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="pending-encounters">Pending Encounters</TabsTrigger>
-          <TabsTrigger value="signatures">Signatures Needed</TabsTrigger>
+          <TabsTrigger value="pending-encounters" data-median="mobile-tab-secondary">Pending Encounters</TabsTrigger>
+          <TabsTrigger value="signatures" data-median="hide-on-mobile-app">Signatures Needed</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">

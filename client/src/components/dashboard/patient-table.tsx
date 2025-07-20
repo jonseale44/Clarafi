@@ -140,9 +140,9 @@ export function PatientTable({ patients }: PatientTableProps) {
   };
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border" data-median="mobile-patient-table">
       <Table>
-        <TableHeader>
+        <TableHeader data-median="mobile-table-header">
           <TableRow>
             <TableHead>
               <Button
@@ -154,7 +154,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                 <SortIcon column="name" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead data-median="mobile-hide-column">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('mrn')}
@@ -164,7 +164,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                 <SortIcon column="mrn" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead data-median="hide-on-mobile-app">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('dob')}
@@ -174,7 +174,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                 <SortIcon column="dob" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead data-median="hide-on-mobile-app">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('address')}
@@ -184,7 +184,7 @@ export function PatientTable({ patients }: PatientTableProps) {
                 <SortIcon column="address" />
               </Button>
             </TableHead>
-            <TableHead>
+            <TableHead data-median="hide-on-mobile-app">
               <Button
                 variant="ghost"
                 onClick={() => handleSort('location')}
@@ -207,10 +207,10 @@ export function PatientTable({ patients }: PatientTableProps) {
                   </span>
                 </Link>
               </TableCell>
-              <TableCell>{patient.mrn}</TableCell>
-              <TableCell>{formatDate(patient.dateOfBirth)}</TableCell>
-              <TableCell>{formatAddress(patient)}</TableCell>
-              <TableCell>
+              <TableCell data-median="mobile-hide-column">{patient.mrn}</TableCell>
+              <TableCell data-median="hide-on-mobile-app">{formatDate(patient.dateOfBirth)}</TableCell>
+              <TableCell data-median="hide-on-mobile-app">{formatAddress(patient)}</TableCell>
+              <TableCell data-median="hide-on-mobile-app">
                 <span className={patient.preferredLocationId ? '' : 'text-gray-500 italic'}>
                   {getLocationName(patient.preferredLocationId)}
                 </span>

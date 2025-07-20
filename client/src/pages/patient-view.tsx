@@ -43,20 +43,21 @@ export function PatientView() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col" data-median="patient-view-container">
       {/* Navigation breadcrumb for hyperlink navigation */}
       <NavigationBreadcrumb />
       
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
+      <div className="bg-white border-b border-gray-200 px-6 py-3" data-median="mobile-patient-header">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setLocation("/")}
+              data-median="mobile-back-button"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
+              <span data-median="hide-on-mobile-app">Back to Dashboard</span>
             </Button>
             <h1 className="text-xl font-semibold">
               {patient.firstName} {patient.lastName}
@@ -65,7 +66,7 @@ export function PatientView() {
         </div>
       </div>
       
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto" data-median="mobile-patient-main">
         <PatientChartView patient={patient} patientId={patientId} />
       </main>
     </div>

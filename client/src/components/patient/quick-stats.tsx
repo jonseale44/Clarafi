@@ -52,8 +52,8 @@ export function QuickStats({ vitals }: QuickStatsProps) {
   const bmi = calculateBMI(Number(vitals.weight), Number(vitals.height));
 
   return (
-    <div className="grid grid-cols-6 gap-4 mb-6">
-      <Card className="p-4">
+    <div className="grid grid-cols-6 gap-4 mb-6" data-median="mobile-vitals-grid">
+      <Card className="p-4" data-median="mobile-vital-card-priority">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Blood Pressure</p>
@@ -69,7 +69,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         </div>
       </Card>
       
-      <Card className="p-4">
+      <Card className="p-4" data-median="mobile-vital-card-priority">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Heart Rate</p>
@@ -82,7 +82,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         </div>
       </Card>
       
-      <Card className="p-4">
+      <Card className="p-4" data-median="mobile-vital-card-secondary">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Temperature</p>
@@ -95,7 +95,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         </div>
       </Card>
       
-      <Card className="p-4">
+      <Card className="p-4" data-median="hide-on-mobile-app">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Weight</p>
@@ -110,7 +110,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         </div>
       </Card>
       
-      <Card className="p-4">
+      <Card className="p-4" data-median="mobile-vital-card-secondary">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">O2 Saturation</p>
@@ -123,7 +123,7 @@ export function QuickStats({ vitals }: QuickStatsProps) {
         </div>
       </Card>
       
-      <Card className="p-4">
+      <Card className="p-4" data-median="mobile-vital-card-priority">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-gray-500">Pain Scale</p>

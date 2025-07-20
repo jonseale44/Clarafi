@@ -108,6 +108,7 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
           <Button 
             variant="ghost" 
             className={`flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 ${className}`}
+            data-median="mobile-compact-profile"
           >
             <Avatar className="w-8 h-8">
               <AvatarFallback className="text-xs bg-primary text-white">
@@ -115,7 +116,7 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
               </AvatarFallback>
             </Avatar>
             
-            <div className="flex flex-col items-start">
+            <div className="flex flex-col items-start" data-median="hide-on-mobile-app">
               <span className="text-sm font-medium text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
@@ -130,7 +131,7 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
               </div>
             </div>
             
-            <ChevronDown className="w-4 h-4 text-gray-500" />
+            <ChevronDown className="w-4 h-4 text-gray-500" data-median="hide-on-mobile-app" />
           </Button>
         </DropdownMenuTrigger>
         
