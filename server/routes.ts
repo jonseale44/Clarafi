@@ -4128,7 +4128,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
                   // Get medication details
                   const [medication] = await db.select()
                     .from(medications)
-                    .where(eq(medications.orderId, orderId))
+                    .where(eq(medications.sourceOrderId, orderId))
                     .limit(1);
                     
                   if (medication) {

@@ -213,6 +213,19 @@ Preferred communication style: Simple, everyday language.
 - **ENHANCEMENT**: Updated prescription-history-section.tsx to display pharmacy name and fax number from transmission metadata for faxed prescriptions
 - **USER IMPACT**: All prescription transmissions (electronic, fax, and print) now properly display in prescription history with appropriate details
 
+### Fax Prescription Transmission Bug Fix (January 20, 2025)
+- **CRITICAL BUG FIXED**: Medication orders with fax delivery method were not creating prescription transmission records
+- **ROOT CAUSE**: Code in routes.ts (line 4132) was querying medications table with `medications.orderId` field which doesn't exist
+- **SCHEMA MISMATCH**: Medications table has `sourceOrderId` field (not `orderId`) to link medications to their source orders
+- **SOLUTION**: Changed query from `eq(medications.orderId, orderId)` to `eq(medications.sourceOrderId, orderId)`
+- **PRODUCTION IMPACT**: Fax prescription transmissions now work correctly - when medication orders are signed with fax delivery, the system:
+  - Generates PDF prescription
+  - Finds the medication record using sourceOrderId
+  - Creates prescription transmission record
+  - Sends fax via Twilio
+  - Updates transmission status
+- **USER IMPACT**: "Fax to Pharmacy" feature now fully functional for medication orders
+
 ### Database Schema Drift Resolution - Locations Table (January 20, 2025)
 - **CRITICAL ISSUE FIXED**: Fax transmissions failing due to missing 'fax' column in locations table
 - **ROOT CAUSE**: Replit rollbacks don't rollback database changes, causing schema drift between code and actual database structure
