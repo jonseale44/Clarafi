@@ -116,37 +116,18 @@ export function PharmacySelectionDialog({
     enabled: open && (mode === 'fax' || (!useAiRecommendation || !!aiRecommendationQuery.error || (!!aiRecommendationQuery.data && !aiRecommendationQuery.data?.pharmacy))),
   });
 
-  // Search pharmacies with fax numbers (uses Google Places when local DB is empty)
+  // Search pharmacies - don't need this in fax mode as we'll filter client-side
   const searchPharmaciesQuery = useQuery({
-    queryKey: mode === 'fax' 
-      ? ['/api/eprescribing/pharmacies/fax', searchQuery]
-      : ['/api/eprescribing/pharmacy/search', searchQuery],
+    queryKey: ['/api/eprescribing/pharmacy/search', searchQuery],
     queryFn: async () => {
-      if (mode === 'fax') {
-        // For fax mode, filter from the fax pharmacies list
-        const response = await apiRequest('GET', '/api/eprescribing/pharmacies/fax');
-        const pharmacies = await response.json();
-        // Filter by search query if provided
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          return pharmacies.filter((p: Pharmacy) => 
-            p.name.toLowerCase().includes(query) ||
-            p.city?.toLowerCase().includes(query) ||
-            p.address?.toLowerCase().includes(query)
-          );
-        }
-        return pharmacies;
-      } else {
-        // Regular search for e-prescribing
-        const params = new URLSearchParams({ 
-          query: searchQuery,
-          limit: '20'
-        });
-        const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
-        return response.json();
-      }
+      const params = new URLSearchParams({ 
+        query: searchQuery,
+        limit: '20'
+      });
+      const response = await apiRequest('GET', `/api/eprescribing/pharmacy/search?${params}`);
+      return response.json();
     },
-    enabled: mode === 'fax' || searchQuery.length > 2,
+    enabled: mode !== 'fax' && searchQuery.length > 2,
   });
 
   // Validate pharmacy capability
@@ -442,12 +423,32 @@ export function PharmacySelectionDialog({
 
               {(!useAiRecommendation || (useAiRecommendation && (aiRecommendationQuery.error || (aiRecommendationQuery.data && !aiRecommendationQuery.data.pharmacy)))) && (
                 <>
-                  {(searchQuery 
-                    ? (searchPharmaciesQuery.data || [])
-                    : (pharmaciesQuery.data || [])
-                  ).map((pharmacy: Pharmacy) =>
-                    renderPharmacyCard(pharmacy)
-                  )}
+                  {(() => {
+                    let pharmaciesToDisplay: Pharmacy[] = [];
+                    
+                    if (mode === 'fax') {
+                      // In fax mode, filter from the loaded fax pharmacies
+                      pharmaciesToDisplay = pharmaciesQuery.data || [];
+                      if (searchQuery) {
+                        const query = searchQuery.toLowerCase();
+                        pharmaciesToDisplay = pharmaciesToDisplay.filter((p: Pharmacy) => 
+                          p.name.toLowerCase().includes(query) ||
+                          p.city?.toLowerCase().includes(query) ||
+                          p.address?.toLowerCase().includes(query) ||
+                          p.fax?.toLowerCase().includes(query)
+                        );
+                      }
+                    } else {
+                      // In regular mode, use search results or all pharmacies
+                      pharmaciesToDisplay = searchQuery 
+                        ? (searchPharmaciesQuery.data || [])
+                        : (pharmaciesQuery.data || []);
+                    }
+                    
+                    return pharmaciesToDisplay.map((pharmacy: Pharmacy) =>
+                      renderPharmacyCard(pharmacy)
+                    );
+                  })()}
                 </>
               )}
             </div>

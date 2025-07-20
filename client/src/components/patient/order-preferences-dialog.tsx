@@ -134,18 +134,23 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
         
         const pharmacy = await response.json();
         
+        console.log('Pharmacy details fetched:', pharmacy);
+        console.log('Pharmacy fax:', pharmacy.fax);
+        
         setSelectedPharmacy(pharmacy);
         setShowPharmacyDialog(false);
         
         // Update preferences with pharmacy details
         if (preferences) {
-          setPreferences({
+          const updatedPreferences = {
             ...preferences,
             preferredPharmacyId: pharmacy.id,
             preferredPharmacy: `${pharmacy.name} - ${pharmacy.address}, ${pharmacy.city}, ${pharmacy.state} ${pharmacy.zipCode}`,
             pharmacyPhone: pharmacy.phone || '',
             pharmacyFax: pharmacy.fax || ''
-          });
+          };
+          console.log('Updated preferences with fax:', updatedPreferences.pharmacyFax);
+          setPreferences(updatedPreferences);
         }
       }
     } catch (error) {
