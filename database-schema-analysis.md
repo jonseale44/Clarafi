@@ -128,3 +128,15 @@ The analysis reveals that the database has evolved significantly beyond the sche
 ## Conclusion
 
 The database structure is comprehensive and well-designed for a production EMR system. However, significant schema drift has occurred, with the database containing many more columns than defined in the TypeScript schema. This drift appears to be from iterative development where database changes were made directly without corresponding schema updates. The system continues to function because of careful SQL query construction, but full type safety and ORM benefits are not realized for the additional columns.
+
+## Source of Truth Determination
+
+**The DATABASE is unequivocally the source of truth** for this EMR system:
+
+1. **Functional Reality**: The production EMR operates successfully with the database structure as-is
+2. **Feature Evolution**: Database columns represent real clinical workflows developed over time
+3. **Rollback Asymmetry**: Replit rollbacks affected only code, not database, causing independent evolution
+4. **Direct SQL Usage**: Many features bypass ORM and use direct SQL queries matching database structure
+5. **Working System**: The fact that the EMR functions proves code was written for the actual database
+
+**Recommendation**: The schema.ts should be updated to match the database, not vice versa. Any attempt to "fix" the database to match schema.ts would break production functionality.
