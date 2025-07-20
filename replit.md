@@ -183,6 +183,23 @@ Following a methodical 4-phase approach:
 
 Preferred communication style: Simple, everyday language.
 
+## Codebase Organization & Navigation
+
+### For AI Agents and Developers
+- **Quick Navigation**: See `AI_NAVIGATION_GUIDE.md` for fast codebase navigation tips
+- **Reorganization Plan**: See `CODEBASE_REORGANIZATION_PLAN.md` for planned structural improvements
+- **Key Entry Points**: 
+  - All API routes: `server/routes.ts`
+  - Data access layer: `server/storage.ts`
+  - Database schema: `shared/schema.ts`
+  - Main documentation: `replit.md` (this file)
+
+### Current Technical Debt
+- Schema drift between database and Drizzle ORM (see fixes below)
+- 150+ files in server directory need subfolder organization
+- 80+ documentation files in root need consolidation
+- Production-scale system requires better modularity for maintainability
+
 ## Recent Changes
 
 ### Express Body Parser Limit Fix (July 20, 2025)
