@@ -4539,8 +4539,20 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
                   console.log(
                     `📄 [RouteBulkSign] Calling generateLabPDF with ${orders.length} orders`,
                   );
+                  // Debug: Log the orders array structure
+                  console.log(
+                    `📄 [RouteBulkSign] Orders array type: ${Array.isArray(orders) ? 'array' : typeof orders}`,
+                  );
+                  console.log(
+                    `📄 [RouteBulkSign] First order:`,
+                    JSON.stringify(orders[0], null, 2),
+                  );
+                  
+                  // Ensure orders is a proper array
+                  const ordersArray = Array.isArray(orders) ? orders : [orders];
+                  
                   pdfBuffer = await pdfService.generateLabPDF(
-                    orders,
+                    ordersArray,
                     parseInt(patientId),
                     userId,
                   );
@@ -4548,8 +4560,20 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
                   console.log(
                     `📄 [RouteBulkSign] Calling generateImagingPDF with ${orders.length} orders`,
                   );
+                  // Debug: Log the orders array structure
+                  console.log(
+                    `📄 [RouteBulkSign] Orders array type: ${Array.isArray(orders) ? 'array' : typeof orders}`,
+                  );
+                  console.log(
+                    `📄 [RouteBulkSign] First order:`,
+                    JSON.stringify(orders[0], null, 2),
+                  );
+                  
+                  // Ensure orders is a proper array
+                  const ordersArray = Array.isArray(orders) ? orders : [orders];
+                  
                   pdfBuffer = await pdfService.generateImagingPDF(
-                    orders,
+                    ordersArray,
                     parseInt(patientId),
                     userId,
                   );

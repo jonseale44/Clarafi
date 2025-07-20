@@ -185,6 +185,20 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### PDF Generation Drizzle ORM Error Fix (January 20, 2025)
+- **ISSUE FIXED**: PDF generation failing with "Cannot convert undefined or null to object" error during bulk order signing
+- **ROOT CAUSE**: Drizzle ORM's internal `orderSelectedFields` function was failing when processing complex nested queries with multiple joins
+- **SOLUTION IMPLEMENTED**:
+  - Simplified `getProviderInfo` method to use sequential queries instead of complex multi-table joins
+  - Added defensive validation in PDF generation methods to filter out invalid orders
+  - Added error handling with fallback values for patient/provider info fetching
+  - Ensured orders are always passed as arrays to PDF generation methods
+- **TECHNICAL DETAILS**: 
+  - Drizzle ORM has issues with field selection in deeply nested joins
+  - Breaking queries into simpler sequential fetches avoids the internal error
+  - Added validation to check for required fields (testName, studyType) before processing
+- **USER IMPACT**: Bulk order signing with PDF generation now works reliably for lab, imaging, and medication orders
+
 ### Auth Page Infinite Render Loop Fix (January 20, 2025)
 - **ISSUE FIXED**: React infinite render loop in AuthPage component causing "Too many re-renders" error
 - **ROOT CAUSE**: State was being updated directly during the render phase when health systems data loaded

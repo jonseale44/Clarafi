@@ -356,8 +356,37 @@ export class PDFService {
   async generateLabPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
     console.log(`📄 [PDFService] Generating lab PDF for ${orders.length} orders`);
     
-    const patient = await this.getPatientInfo(patientId);
-    const provider = await this.getProviderInfo(providerId);
+    // Validate and clean orders array to avoid Drizzle ORM issues
+    const validOrders = orders.filter(order => {
+      if (!order || typeof order !== 'object') {
+        console.warn(`📄 [PDFService] Invalid order detected (null or non-object), skipping`);
+        return false;
+      }
+      // Ensure we have the required fields
+      if (!order.testName) {
+        console.warn(`📄 [PDFService] Order ${order.id} missing testName, skipping`);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`📄 [PDFService] Valid orders after filtering: ${validOrders.length}`);
+    
+    // Fetch patient and provider info with error handling
+    let patient, provider;
+    try {
+      patient = await this.getPatientInfo(patientId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching patient info:`, error);
+      patient = { name: 'Unknown Patient', dateOfBirth: '', mrn: '' };
+    }
+    
+    try {
+      provider = await this.getProviderInfo(providerId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching provider info:`, error);
+      provider = { name: 'Unknown Provider', npi: '', locationName: '', address: '' };
+    }
     
     const doc = new PDFDocument();
     const chunks: Buffer[] = [];
@@ -398,9 +427,11 @@ export class PDFService {
       doc.fontSize(14).text('Laboratory Tests Ordered:', 50, currentY);
       currentY += 30;
       
-      orders.forEach((order, index) => {
+      validOrders.forEach((order, index) => {
         doc.fontSize(12);
-        doc.text(`${index + 1}. ${order.testName}`, 70, currentY);
+        // Use optional chaining in case fields are undefined
+        const testName = order.testName || 'Unknown Test';
+        doc.text(`${index + 1}. ${testName}`, 70, currentY);
         currentY += 20;
         
         // Add new page if needed
@@ -422,8 +453,37 @@ export class PDFService {
   async generateImagingPDF(orders: Order[], patientId: number, providerId: number): Promise<Buffer> {
     console.log(`📄 [PDFService] Generating imaging PDF for ${orders.length} orders`);
     
-    const patient = await this.getPatientInfo(patientId);
-    const provider = await this.getProviderInfo(providerId);
+    // Validate and clean orders array to avoid Drizzle ORM issues
+    const validOrders = orders.filter(order => {
+      if (!order || typeof order !== 'object') {
+        console.warn(`📄 [PDFService] Invalid order detected (null or non-object), skipping`);
+        return false;
+      }
+      // Ensure we have the required fields
+      if (!order.studyType) {
+        console.warn(`📄 [PDFService] Order ${order.id} missing studyType, skipping`);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`📄 [PDFService] Valid orders after filtering: ${validOrders.length}`);
+    
+    // Fetch patient and provider info with error handling
+    let patient, provider;
+    try {
+      patient = await this.getPatientInfo(patientId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching patient info:`, error);
+      patient = { name: 'Unknown Patient', dateOfBirth: '', mrn: '' };
+    }
+    
+    try {
+      provider = await this.getProviderInfo(providerId);
+    } catch (error) {
+      console.error(`📄 [PDFService] Error fetching provider info:`, error);
+      provider = { name: 'Unknown Provider', npi: '', locationName: '', address: '' };
+    }
     
     const doc = new PDFDocument();
     const chunks: Buffer[] = [];
@@ -464,9 +524,11 @@ export class PDFService {
       doc.fontSize(14).text('Imaging Studies Ordered:', 50, currentY);
       currentY += 30;
       
-      orders.forEach((order, index) => {
+      validOrders.forEach((order, index) => {
         doc.fontSize(12);
-        doc.text(`${index + 1}. ${order.studyType}`, 70, currentY);
+        // Use optional chaining in case fields are undefined
+        const studyType = order.studyType || 'Unknown Study';
+        doc.text(`${index + 1}. ${studyType}`, 70, currentY);
         currentY += 20;
         
         // Add new page if needed
