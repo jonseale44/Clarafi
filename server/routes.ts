@@ -999,21 +999,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Convert empty strings to null for proper database handling
-      const cleanedBody = Object.fromEntries(
+      // Helper function to convert camelCase to snake_case
+      const camelToSnakeCase = (str: string): string => {
+        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      };
+
+      // Convert camelCase keys to snake_case and empty strings to null
+      const transformedBody = Object.fromEntries(
         Object.entries(req.body).map(([key, value]) => [
-          key,
+          camelToSnakeCase(key),
           value === '' ? null : value
         ])
       );
 
       const patientDataWithHealthSystem = {
-        ...cleanedBody,
-        healthSystemId,
-        createdByProviderId: userId,
-        dataOriginType: "emr_direct",
-        creationContext,
-        originalFacilityId: healthSystemId, // Current facility where patient was created
+        ...transformedBody,
+        health_system_id: healthSystemId,
+        created_by_provider_id: userId,
+        data_origin_type: "emr_direct",
+        creation_context: creationContext,
+        original_facility_id: healthSystemId, // Current facility where patient was created
       };
 
       // Parse with the complete data including healthSystemId
