@@ -999,33 +999,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log("Original request body:", req.body);
-      
-      // Helper function to convert camelCase to snake_case
-      const camelToSnakeCase = (str: string): string => {
-        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-      };
-
-      // Convert camelCase keys to snake_case and empty strings to null
-      const transformedBody = Object.fromEntries(
+      // Convert empty strings to null for proper database handling
+      const cleanedBody = Object.fromEntries(
         Object.entries(req.body).map(([key, value]) => [
-          camelToSnakeCase(key),
+          key,
           value === '' ? null : value
         ])
       );
 
-      console.log("Transformed body:", transformedBody);
-
+      // Add system fields using camelCase (as expected by the Zod schema)
       const patientDataWithHealthSystem = {
-        ...transformedBody,
-        health_system_id: healthSystemId,
-        created_by_provider_id: userId,
-        data_origin_type: "emr_direct",
-        creation_context: creationContext,
-        original_facility_id: healthSystemId, // Current facility where patient was created
+        ...cleanedBody,
+        healthSystemId,
+        createdByProviderId: userId,
+        dataOriginType: "emr_direct",
+        creationContext,
+        originalFacilityId: healthSystemId, // Current facility where patient was created
       };
-      
-      console.log("Final patient data:", patientDataWithHealthSystem);
 
       // Parse with the complete data including healthSystemId
       const validatedData = insertPatientSchema.parse(
