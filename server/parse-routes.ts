@@ -3,7 +3,7 @@ import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 import { PatientParserService } from "./patient-parser-service";
 import { db } from "./db.js";
-import { patients, insertPatientSchema } from "../shared/schema";
+import { patients, insertPatientsSchema } from "../shared/schema";
 import { tenantIsolation } from "./tenant-isolation";
 import { storage } from "./storage";
 
@@ -154,7 +154,7 @@ router.post("/parse-and-create-patient", tenantIsolation, async (req: Request, r
     };
     
     // Validate against schema
-    const schemaValidation = insertPatientSchema.safeParse(patientDataWithHealthSystem);
+    const schemaValidation = insertPatientsSchema.safeParse(patientDataWithHealthSystem);
     if (!schemaValidation.success) {
       return res.status(400).json({
         success: false,
@@ -228,7 +228,7 @@ router.post("/validate-parsed-data", async (req: Request, res: Response) => {
     
     // Format for patient creation to test schema validation
     const patientData = parserService.formatForPatientCreation(extractedData);
-    const schemaValidation = insertPatientSchema.safeParse(patientData);
+    const schemaValidation = insertPatientsSchema.safeParse(patientData);
 
     // Check for existing patient by MRN (simplified for now)
     const existingCheck = await db

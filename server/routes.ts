@@ -6,9 +6,9 @@ import { tenantIsolation } from "./tenant-isolation";
 import { APIResponseHandler } from "./api-response-handler.js";
 import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
-  insertPatientSchema,
-  insertEncounterSchema,
-  insertOrderSchema,
+  insertPatientsSchema as insertPatientSchema,
+  insertEncountersSchema as insertEncounterSchema,
+  insertOrdersSchema as insertOrderSchema,
 } from "@shared/schema";
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";

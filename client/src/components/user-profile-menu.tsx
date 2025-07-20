@@ -8,7 +8,7 @@ import {
   ChevronDown,
   Edit3
 } from "lucide-react";
-import type { User as UserType } from "@shared/schema";
+import type { SelectUsers as UserType } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,

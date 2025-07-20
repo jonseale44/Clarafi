@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema } from "@shared/schema";
+import { insertUsersSchema } from "@shared/schema";
 import { z } from "zod";
 import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -36,7 +36,7 @@ const loginSchema = z.object({
 const phoneRegex = /^\d{3}-?\d{3}-?\d{4}$/;
 const zipRegex = /^\d{5}(-\d{4})?$/;
 
-const registerSchema = insertUserSchema.omit({ healthSystemId: true }).extend({
+const registerSchema = insertUsersSchema.omit({ healthSystemId: true }).extend({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
     .max(20, "Username must be less than 20 characters")

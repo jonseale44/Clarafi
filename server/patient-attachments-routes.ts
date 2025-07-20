@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { db } from "./db.js";
-import { patientAttachments, insertPatientAttachmentSchema, attachmentExtractedContent, documentProcessingQueue, vitals, medicalProblems } from "../shared/schema.js";
+import { patientAttachments, insertPatientAttachmentsSchema as insertPatientAttachmentSchema, attachmentExtractedContent, documentProcessingQueue, vitals, medicalProblems } from "../shared/schema.js";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import sharp from "sharp";

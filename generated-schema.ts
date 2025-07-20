@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 // Auto-generated schema from database
 // Generated on: 2025-07-20T00:42:45.390Z
 // Tables: 81
@@ -31,7 +30,7 @@ export const adminPromptReviews = pgTable("admin_prompt_reviews", {
   originalPrompt: text("original_prompt").notNull(),
   reviewedPrompt: text("reviewed_prompt"),
   adminUserId: integer("admin_user_id"),
-  reviewStatus: text("review_status").default("pending"),
+  reviewStatus: text("review_status").default("'pending'::text"),
   reviewNotes: text("review_notes"),
   isActive: boolean("is_active").default(false),
   performanceMetrics: jsonb("performance_metrics"),
@@ -52,8 +51,8 @@ export const allergies = pgTable("allergies", {
   allergyType: text("allergy_type"),
   onsetDate: date("onset_date", { mode: 'date' }),
   lastReactionDate: date("last_reaction_date", { mode: 'date' }),
-  status: text("status").default("active"),
-  verificationStatus: text("verification_status").default("unconfirmed"),
+  status: text("status").default("'active'::text"),
+  verificationStatus: text("verification_status").default("'unconfirmed'::text"),
   drugClass: text("drug_class"),
   crossReactivity: text("cross_reactivity").array(),
   encounterId: integer("encounter_id"),
@@ -64,7 +63,7 @@ export const allergies = pgTable("allergies", {
   sourceTimestamp: timestamp("source_timestamp", { mode: 'date', withTimezone: true }),
   lastReaction: date("last_reaction", { mode: 'date' }),
   mergedIds: integer("merged_ids").array(),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   sourceNotes: text("source_notes"),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
@@ -73,7 +72,7 @@ export const allergies = pgTable("allergies", {
   consolidationReasoning: text("consolidation_reasoning"),
   extractionNotes: text("extraction_notes"),
   temporalConflictResolution: text("temporal_conflict_resolution"),
-  visitHistory: jsonb("visit_history").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -154,12 +153,12 @@ export const appointments = pgTable("appointments", {
   appointmentTypeId: integer("appointment_type_id"),
   chiefComplaint: text("chief_complaint"),
   visitReason: text("visit_reason"),
-  status: text("status").default("scheduled"),
-  confirmationStatus: text("confirmation_status").default("pending"),
+  status: text("status").default("'scheduled'::text"),
+  confirmationStatus: text("confirmation_status").default("'pending'::text"),
   checkedInAt: timestamp("checked_in_at", { mode: 'date', withTimezone: true }),
   checkedInBy: integer("checked_in_by"),
   roomAssignment: text("room_assignment"),
-  urgencyLevel: text("urgency_level").default("routine"),
+  urgencyLevel: text("urgency_level").default("'routine'::text"),
   schedulingNotes: text("scheduling_notes"),
   patientPreferences: jsonb("patient_preferences"),
   aiSchedulingData: jsonb("ai_scheduling_data"),
@@ -202,7 +201,7 @@ export const appointments = pgTable("appointments", {
   preAppointmentNotes: text("pre_appointment_notes"),
   problemsReviewed: boolean("problems_reviewed").default(false),
   providerReadyAt: timestamp("provider_ready_at", { mode: 'date', withTimezone: true }),
-  recurrenceExceptions: jsonb("recurrence_exceptions").default('[]'),
+  recurrenceExceptions: jsonb("recurrence_exceptions").default("'[]'::jsonb"),
   recurrenceRule: text("recurrence_rule"),
   referralReason: text("referral_reason"),
   referringProvider: text("referring_provider"),
@@ -210,10 +209,10 @@ export const appointments = pgTable("appointments", {
   reminderSentAt: timestamp("reminder_sent_at", { mode: 'date', withTimezone: true }),
   rescheduledFrom: integer("rescheduled_from"),
   rescheduledReason: text("rescheduled_reason"),
-  resourceRequirements: jsonb("resource_requirements").default('{}'),
+  resourceRequirements: jsonb("resource_requirements").default("'{}'::jsonb"),
   roomNumber: text("room_number"),
   specialInstructions: text("special_instructions"),
-  tags: jsonb("tags").default('[]'),
+  tags: jsonb("tags").default("'[]'::jsonb"),
   useAiScheduling: boolean("use_ai_scheduling").default(true),
   visitCompletedAt: timestamp("visit_completed_at", { mode: 'date', withTimezone: true }),
   vitalSignsTaken: boolean("vital_signs_taken").default(false),
@@ -252,7 +251,7 @@ export const articleGenerationQueue = pgTable("article_generation_queue", {
   competitorMentions: text("competitor_mentions").array(),
   customPrompt: text("custom_prompt"),
   researchSources: jsonb("research_sources"),
-  status: text("status").notNull().default("pending"),
+  status: text("status").notNull().default("'pending'::text"),
   generatedArticleId: integer("generated_article_id"),
   error: text("error"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -337,7 +336,7 @@ export const attachmentExtractedContent = pgTable("attachment_extracted_content"
   extractionMethod: text("extraction_method"),
   aiGeneratedTitle: text("ai_generated_title"),
   documentType: text("document_type"),
-  processingStatus: text("processing_status").default("pending"),
+  processingStatus: text("processing_status").default("'pending'::text"),
   errorMessage: text("error_message"),
   processedAt: timestamp("processed_at", { mode: 'date', withTimezone: true }),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -365,7 +364,7 @@ export const attachments = pgTable("attachments", {
   ocrText: text("ocr_text"),
   ocrCompleted: boolean("ocr_completed").default(false),
   ocrCompletedAt: timestamp("ocr_completed_at", { mode: 'date', withTimezone: true }),
-  processingStatus: text("processing_status").default("pending"),
+  processingStatus: text("processing_status").default("'pending'::text"),
   processingNotes: text("processing_notes"),
   extractedData: jsonb("extracted_data"),
   chartSectionsUpdated: text("chart_sections_updated").array(),
@@ -423,7 +422,7 @@ export const clinicAdminVerifications = pgTable("clinic_admin_verifications", {
   organizationName: text("organization_name").notNull(),
   verificationCode: text("verification_code").notNull(),
   verificationData: jsonb("verification_data").notNull(),
-  status: text("status").default("pending"),
+  status: text("status").default("'pending'::text"),
   healthSystemId: integer("health_system_id"),
   submittedAt: timestamp("submitted_at", { mode: 'date', withTimezone: true }).default("now()"),
   approvedAt: timestamp("approved_at", { mode: 'date', withTimezone: true }),
@@ -515,7 +514,7 @@ export const electronicSignatures = pgTable("electronic_signatures", {
   twoFactorMethod: text("two_factor_method"),
   twoFactorVerified: boolean("two_factor_verified").default(false),
   twoFactorTimestamp: timestamp("two_factor_timestamp", { mode: 'date', withTimezone: true }),
-  complianceChecks: jsonb("compliance_checks").default('{}'),
+  complianceChecks: jsonb("compliance_checks").default("'{}'::jsonb"),
   deaComplianceLevel: text("dea_compliance_level"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
@@ -538,7 +537,7 @@ export const emailNotifications = pgTable("email_notifications", {
   sentAt: timestamp("sent_at", { mode: 'date', withTimezone: true }).default("now()"),
   emailAddress: varchar("email_address", { length: 255 }).notNull(),
   subject: text("subject"),
-  metadata: jsonb("metadata").default('{}'),
+  metadata: jsonb("metadata").default("'{}'::jsonb"),
 });
 
 export const insertEmailNotificationsSchema = createInsertSchema(emailNotifications);
@@ -558,7 +557,7 @@ export const emergencyAccessLogs = pgTable("emergency_access_logs", {
   authorizingPhysician: text("authorizing_physician"),
   accessStartTime: timestamp("access_start_time", { mode: 'date', withTimezone: true }).notNull().default("now()"),
   accessEndTime: timestamp("access_end_time", { mode: 'date', withTimezone: true }),
-  accessedResources: jsonb("accessed_resources").default('[]'),
+  accessedResources: jsonb("accessed_resources").default("'[]'::jsonb"),
   reviewRequired: boolean("review_required").default(true),
   reviewedBy: integer("reviewed_by"),
   reviewedAt: timestamp("reviewed_at", { mode: 'date', withTimezone: true }),
@@ -579,7 +578,7 @@ export const encounters = pgTable("encounters", {
   encounterSubtype: text("encounter_subtype"),
   startTime: timestamp("start_time", { mode: 'date', withTimezone: true }).default("now()"),
   endTime: timestamp("end_time", { mode: 'date', withTimezone: true }),
-  encounterStatus: text("encounter_status").default("scheduled"),
+  encounterStatus: text("encounter_status").default("'scheduled'::text"),
   chiefComplaint: text("chief_complaint"),
   note: text("note"),
   nurseAssessment: text("nurse_assessment"),
@@ -587,10 +586,10 @@ export const encounters = pgTable("encounters", {
   nurseNotes: text("nurse_notes"),
   transcriptionRaw: text("transcription_raw"),
   transcriptionProcessed: text("transcription_processed"),
-  aiSuggestions: jsonb("ai_suggestions").default('{}'),
-  draftOrders: jsonb("draft_orders").default('[]'),
-  draftDiagnoses: jsonb("draft_diagnoses").default('[]'),
-  cptCodes: jsonb("cpt_codes").default('[]'),
+  aiSuggestions: jsonb("ai_suggestions").default("'{}'::jsonb"),
+  draftOrders: jsonb("draft_orders").default("'[]'::jsonb"),
+  draftDiagnoses: jsonb("draft_diagnoses").default("'[]'::jsonb"),
+  cptCodes: jsonb("cpt_codes").default("'[]'::jsonb"),
   location: text("location"),
   appointmentId: integer("appointment_id"),
   signatureId: varchar("signature_id"),
@@ -637,7 +636,7 @@ export const familyHistory = pgTable("family_history", {
   condition: text("condition"),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
   visitHistory: jsonb("visit_history"),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   notes: text("notes"),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
@@ -673,7 +672,7 @@ export const gptLabReviewNotes = pgTable("gpt_lab_review_notes", {
   nurseMessageSent: boolean("nurse_message_sent").default(false),
   patientMessageSentAt: timestamp("patient_message_sent_at", { mode: 'date', withTimezone: true }),
   nurseMessageSentAt: timestamp("nurse_message_sent_at", { mode: 'date', withTimezone: true }),
-  revisionHistory: jsonb("revision_history").default('[]'),
+  revisionHistory: jsonb("revision_history").default("'[]'::jsonb"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -688,7 +687,7 @@ export const healthSystems = pgTable("health_systems", {
   shortName: text("short_name"),
   systemType: text("system_type").notNull(),
   subscriptionTier: integer("subscription_tier").default(1),
-  subscriptionStatus: text("subscription_status").default("active"),
+  subscriptionStatus: text("subscription_status").default("'active'::text"),
   subscriptionStartDate: timestamp("subscription_start_date", { mode: 'date', withTimezone: true }),
   subscriptionEndDate: timestamp("subscription_end_date", { mode: 'date', withTimezone: true }),
   mergedIntoHealthSystemId: integer("merged_into_health_system_id"),
@@ -702,9 +701,9 @@ export const healthSystems = pgTable("health_systems", {
   taxId: text("tax_id"),
   logoUrl: text("logo_url"),
   brandColors: jsonb("brand_colors"),
-  subscriptionLimits: jsonb("subscription_limits").default('{"staffKeys": 0, "totalUsers": 0, "providerKeys": 0}'),
-  activeUserCount: jsonb("active_user_count").default('{"providers": 0, "adminStaff": 0, "lastUpdated": "2025-07-19T23:08:20.835Z", "clinicalStaff": 0}'),
-  billingDetails: jsonb("billing_details").default('{"monthlyTotal": 0, "providerRate": 399, "adminStaffRate": 49, "clinicalStaffRate": 99}'),
+  subscriptionLimits: jsonb("subscription_limits").default("'{"staffKeys": 0, "totalUsers": 0, "providerKeys": 0}'::jsonb"),
+  activeUserCount: jsonb("active_user_count").default("'{"providers": 0, "adminStaff": 0, "lastUpdated": "2025-07-19T23:08:20.835Z", "clinicalStaff": 0}'::jsonb"),
+  billingDetails: jsonb("billing_details").default("'{"monthlyTotal": 0, "providerRate": 399, "adminStaffRate": 49, "clinicalStaffRate": 99}'::jsonb"),
   active: boolean("active").default(true),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -723,8 +722,8 @@ export const imagingOrders = pgTable("imaging_orders", {
   laterality: text("laterality"),
   indication: text("indication").notNull(),
   clinicalHistory: text("clinical_history"),
-  priority: text("priority").default("routine"),
-  status: text("status").default("pending"),
+  priority: text("priority").default("'routine'::text"),
+  status: text("status").default("'pending'::text"),
   facilityId: integer("facility_id"),
   scheduledDate: timestamp("scheduled_date", { mode: 'date', withTimezone: true }),
   completedDate: timestamp("completed_date", { mode: 'date', withTimezone: true }),
@@ -753,7 +752,7 @@ export const imagingResults = pgTable("imaging_results", {
   reportStatus: text("report_status").default("'preliminary'::text"),
   sourceType: text("source_type").default("'pdf_extract'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(0.95),
-  visitHistory: jsonb("visit_history").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   encounterId: integer("encounter_id"),
   recommendations: text("recommendations"),
   technique: text("technique"),
@@ -776,7 +775,7 @@ export const labOrders = pgTable("lab_orders", {
   testCode: text("test_code").notNull(),
   testName: text("test_name").notNull(),
   testCategory: text("test_category"),
-  priority: text("priority").default("routine"),
+  priority: text("priority").default("'routine'::text"),
   clinicalIndication: text("clinical_indication"),
   icd10Codes: text("icd10_codes").array(),
   orderedBy: integer("ordered_by").notNull(),
@@ -868,17 +867,17 @@ export const labResults = pgTable("lab_results", {
   externalResultId: text("external_result_id"),
   hl7MessageId: text("hl7_message_id"),
   instrumentId: text("instrument_id"),
-  resultStatus: text("result_status").default("pending"),
+  resultStatus: text("result_status").default("'pending'::text"),
   verificationStatus: text("verification_status").default("'unverified'::text"),
   resultComments: text("result_comments"),
   reviewedBy: integer("reviewed_by"),
   reviewedAt: timestamp("reviewed_at", { mode: 'date', withTimezone: true }),
   providerNotes: text("provider_notes"),
   needsReview: boolean("needs_review").default(true),
-  reviewStatus: text("review_status").default("pending"),
+  reviewStatus: text("review_status").default("'pending'::text"),
   reviewNote: text("review_note"),
   reviewTemplate: text("review_template"),
-  reviewHistory: jsonb("review_history").default('[]'),
+  reviewHistory: jsonb("review_history").default("'[]'::jsonb"),
   communicationStatus: text("communication_status").default("'none'::text"),
   communicationPlan: jsonb("communication_plan"),
   portalReleaseStatus: text("portal_release_status").default("'hold'::text"),
@@ -959,7 +958,7 @@ export const medicalHistory = pgTable("medical_history", {
   conditionCategory: text("condition_category").notNull(),
   historyText: text("history_text").notNull(),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   sourceNotes: text("source_notes"),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
@@ -977,11 +976,11 @@ export const medicalProblems = pgTable("medical_problems", {
   patientId: integer("patient_id").notNull(),
   problemTitle: text("problem_title").notNull(),
   currentIcd10Code: text("current_icd10_code"),
-  problemStatus: text("problem_status").default("active"),
+  problemStatus: text("problem_status").default("'active'::text"),
   firstEncounterId: integer("first_encounter_id"),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
-  visitHistory: jsonb("visit_history").default('[]'),
-  changeLog: jsonb("change_log").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
+  changeLog: jsonb("change_log").default("'[]'::jsonb"),
   lastRankedEncounterId: integer("last_ranked_encounter_id"),
   rankingReason: text("ranking_reason"),
   rankingFactors: jsonb("ranking_factors"),
@@ -1074,27 +1073,27 @@ export const medications = pgTable("medications", {
   surescriptsId: text("surescripts_id"),
   clinicalIndication: text("clinical_indication"),
   sourceOrderId: integer("source_order_id"),
-  problemMappings: jsonb("problem_mappings").default('[]'),
+  problemMappings: jsonb("problem_mappings").default("'[]'::jsonb"),
   startDate: date("start_date", { mode: 'date' }).notNull(),
   endDate: date("end_date", { mode: 'date' }),
   discontinuedDate: date("discontinued_date", { mode: 'date' }),
-  status: text("status").default("active"),
+  status: text("status").default("'active'::text"),
   prescriber: text("prescriber"),
   prescriberId: integer("prescriber_id"),
   firstEncounterId: integer("first_encounter_id"),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
   reasonForChange: text("reason_for_change"),
-  medicationHistory: jsonb("medication_history").default('[]'),
-  changeLog: jsonb("change_log").default('[]'),
-  visitHistory: jsonb("visit_history").default('[]'),
+  medicationHistory: jsonb("medication_history").default("'[]'::jsonb"),
+  changeLog: jsonb("change_log").default("'[]'::jsonb"),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   sourceType: text("source_type"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }),
   sourceNotes: text("source_notes"),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
   enteredBy: integer("entered_by"),
   groupingStrategy: text("grouping_strategy").default("'medical_problem'::text"),
-  relatedMedications: jsonb("related_medications").default('[]'),
-  drugInteractions: jsonb("drug_interactions").default('[]'),
+  relatedMedications: jsonb("related_medications").default("'[]'::jsonb"),
+  drugInteractions: jsonb("drug_interactions").default("'[]'::jsonb"),
   pharmacyOrderId: text("pharmacy_order_id"),
   insuranceAuthStatus: text("insurance_auth_status"),
   priorAuthRequired: boolean("prior_auth_required").default(false),
@@ -1103,7 +1102,7 @@ export const medications = pgTable("medications", {
   transmissionStatus: text("transmission_status"),
   transmissionTimestamp: timestamp("transmission_timestamp", { mode: 'date', withTimezone: true }),
   transmissionMessageId: text("transmission_message_id"),
-  transmissionErrors: jsonb("transmission_errors").default('[]'),
+  transmissionErrors: jsonb("transmission_errors").default("'[]'::jsonb"),
   electronicSignatureId: integer("electronic_signature_id"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -1121,7 +1120,7 @@ export const migrationInvitations = pgTable("migration_invitations", {
   createdByUserId: integer("created_by_user_id").notNull(),
   invitationCode: text("invitation_code").notNull(),
   message: text("message"),
-  status: text("status").notNull().default("pending"),
+  status: text("status").notNull().default("'pending'::text"),
   expiresAt: timestamp("expires_at", { mode: 'date', withTimezone: true }).notNull(),
   acceptedAt: timestamp("accepted_at", { mode: 'date', withTimezone: true }),
   rejectedAt: timestamp("rejected_at", { mode: 'date', withTimezone: true }),
@@ -1156,7 +1155,7 @@ export const orders = pgTable("orders", {
   orderStatus: text("order_status").default("'draft'::text"),
   referenceId: integer("reference_id"),
   providerNotes: text("provider_notes"),
-  priority: text("priority").default("routine"),
+  priority: text("priority").default("'routine'::text"),
   clinicalIndication: text("clinical_indication"),
   medicationName: text("medication_name"),
   dosage: text("dosage"),
@@ -1189,7 +1188,7 @@ export const orders = pgTable("orders", {
   prescriber: text("prescriber"),
   prescriberId: integer("prescriber_id"),
   orderDate: timestamp("order_date", { mode: 'date', withTimezone: true }).default("now()"),
-  status: text("status").default("pending"),
+  status: text("status").default("'pending'::text"),
   medicationDosage: text("medication_dosage"),
   medicationRoute: text("medication_route"),
   medicationFrequency: text("medication_frequency"),
@@ -1283,7 +1282,7 @@ export const patientAttachments = pgTable("patient_attachments", {
   accessLevel: text("access_level").default("'standard'::text"),
   contentHash: text("content_hash"),
   processingStatus: text("processing_status").default("'completed'::text"),
-  virusScanStatus: text("virus_scan_status").default("pending"),
+  virusScanStatus: text("virus_scan_status").default("'pending'::text"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -1329,7 +1328,7 @@ export const patientPhysicalFindings = pgTable("patient_physical_findings", {
   firstNotedEncounter: integer("first_noted_encounter").notNull(),
   lastConfirmedEncounter: integer("last_confirmed_encounter"),
   lastSeenEncounter: integer("last_seen_encounter"),
-  status: text("status").default("active"),
+  status: text("status").default("'active'::text"),
   gptReasoning: text("gpt_reasoning"),
   clinicalContext: jsonb("clinical_context"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -1405,14 +1404,14 @@ export const patients = pgTable("patients", {
   assistantThreadId: text("assistant_thread_id"),
   lastChartSummary: text("last_chart_summary"),
   chartLastUpdated: timestamp("chart_last_updated", { mode: 'date', withTimezone: true }),
-  activeProblems: jsonb("active_problems").default('[]'),
-  criticalAlerts: jsonb("critical_alerts").default('[]'),
+  activeProblems: jsonb("active_problems").default("'[]'::jsonb"),
+  criticalAlerts: jsonb("critical_alerts").default("'[]'::jsonb"),
   dataOriginType: text("data_origin_type").default("'emr_direct'::text"),
   originalFacilityId: integer("original_facility_id"),
   createdByProviderId: integer("created_by_provider_id"),
   creationContext: text("creation_context"),
   derivativeWorkNote: text("derivative_work_note"),
-  migrationConsent: jsonb("migration_consent").default('{"consentGiven": false}'),
+  migrationConsent: jsonb("migration_consent").default("'{"consentGiven": false}'::jsonb"),
   profilePhotoFilename: text("profile_photo_filename"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -1442,7 +1441,7 @@ export const pharmacies = pgTable("pharmacies", {
   fax: text("fax"),
   email: text("email"),
   website: text("website"),
-  hours: jsonb("hours").default('{}'),
+  hours: jsonb("hours").default("'{}'::jsonb"),
   is_24Hour: boolean("is_24_hour").default(false),
   services: text("services").array().default("'{}'::text[]"),
   acceptsEprescribing: boolean("accepts_eprescribing").default(true),
@@ -1450,10 +1449,10 @@ export const pharmacies = pgTable("pharmacies", {
   preferredTransmissionMethod: text("preferred_transmission_method").default("'surescripts'::text"),
   surescriptsVersion: text("surescripts_version"),
   specialtyTypes: text("specialty_types").array().default("'{}'::text[]"),
-  insuranceNetworks: jsonb("insurance_networks").default('[]'),
+  insuranceNetworks: jsonb("insurance_networks").default("'[]'::jsonb"),
   preferredForConditions: text("preferred_for_conditions").array().default("'{}'::text[]"),
-  status: text("status").default("active"),
-  verificationStatus: text("verification_status").default("pending"),
+  status: text("status").default("'active'::text"),
+  verificationStatus: text("verification_status").default("'pending'::text"),
   lastVerified: timestamp("last_verified", { mode: 'date', withTimezone: true }),
   healthSystemId: integer("health_system_id"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -1509,15 +1508,15 @@ export const prescriptionTransmissions = pgTable("prescription_transmissions", {
   ncpdpTransactionId: text("ncpdp_transaction_id"),
   ncpdpVersion: text("ncpdp_version"),
   ncpdpMessageType: text("ncpdp_message_type"),
-  status: text("status").notNull().default("pending"),
-  statusHistory: jsonb("status_history").default('[]'),
-  pharmacyResponse: jsonb("pharmacy_response").default('{}'),
+  status: text("status").notNull().default("'pending'::text"),
+  statusHistory: jsonb("status_history").default("'[]'::jsonb"),
+  pharmacyResponse: jsonb("pharmacy_response").default("'{}'::jsonb"),
   pharmacyNotes: text("pharmacy_notes"),
   errorCode: text("error_code"),
   errorMessage: text("error_message"),
   retryCount: integer("retry_count").default(0),
   maxRetries: integer("max_retries").default(3),
-  gptAnalysis: jsonb("gpt_analysis").default('{}'),
+  gptAnalysis: jsonb("gpt_analysis").default("'{}'::jsonb"),
   gptRecommendations: text("gpt_recommendations").array().default("'{}'::text[]"),
   queuedAt: timestamp("queued_at", { mode: 'date', withTimezone: true }),
   transmittedAt: timestamp("transmitted_at", { mode: 'date', withTimezone: true }),
@@ -1814,7 +1813,7 @@ export const signedOrders = pgTable("signed_orders", {
   canChangeDelivery: boolean("can_change_delivery").notNull().default(true),
   deliveryLockReason: varchar("delivery_lock_reason", { length: 255 }),
   originalDeliveryMethod: varchar("original_delivery_method", { length: 50 }).notNull(),
-  deliveryChanges: jsonb("delivery_changes").default('[]'),
+  deliveryChanges: jsonb("delivery_changes").default("'[]'::jsonb"),
   signedAt: timestamp("signed_at", { mode: 'date', withTimezone: true }).notNull(),
   signedBy: integer("signed_by").notNull(),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).notNull().default("now()"),
@@ -1833,13 +1832,13 @@ export const socialHistory = pgTable("social_history", {
   currentStatus: text("current_status").notNull(),
   historyNotes: text("history_notes"),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
   enteredBy: integer("entered_by"),
   consolidationReasoning: text("consolidation_reasoning"),
   extractionNotes: text("extraction_notes"),
-  visitHistory: jsonb("visit_history").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -1857,7 +1856,7 @@ export const subscriptionHistory = pgTable("subscription_history", {
   changedAt: timestamp("changed_at", { mode: 'date', withTimezone: true }).default("now()"),
   gracePeriodEnds: timestamp("grace_period_ends", { mode: 'date', withTimezone: true }),
   dataExpiresAt: timestamp("data_expires_at", { mode: 'date', withTimezone: true }),
-  metadata: jsonb("metadata").default('{}'),
+  metadata: jsonb("metadata").default("'{}'::jsonb"),
 });
 
 export const insertSubscriptionHistorySchema = createInsertSchema(subscriptionHistory);
@@ -1870,7 +1869,7 @@ export const subscriptionKeys = pgTable("subscription_keys", {
   healthSystemId: integer("health_system_id").notNull(),
   keyType: text("key_type").notNull(),
   subscriptionTier: integer("subscription_tier").notNull(),
-  status: text("status").default("active"),
+  status: text("status").default("'active'::text"),
   monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   expiresAt: timestamp("expires_at", { mode: 'date', withTimezone: true }).notNull(),
@@ -1878,7 +1877,7 @@ export const subscriptionKeys = pgTable("subscription_keys", {
   usedAt: timestamp("used_at", { mode: 'date', withTimezone: true }),
   deactivatedBy: integer("deactivated_by"),
   deactivatedAt: timestamp("deactivated_at", { mode: 'date', withTimezone: true }),
-  metadata: jsonb("metadata").default('{}'),
+  metadata: jsonb("metadata").default("'{}'::jsonb"),
 });
 
 export const insertSubscriptionKeysSchema = createInsertSchema(subscriptionKeys);
@@ -1906,14 +1905,14 @@ export const surgicalHistory = pgTable("surgical_history", {
   implantsHardware: text("implants_hardware"),
   followUpRequired: text("follow_up_required"),
   recoveryStatus: text("recovery_status"),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
   lastUpdatedEncounterId: integer("last_updated_encounter_id"),
   enteredBy: integer("entered_by"),
   consolidationReasoning: text("consolidation_reasoning"),
   extractionNotes: text("extraction_notes"),
-  visitHistory: jsonb("visit_history").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
 });
@@ -1927,7 +1926,7 @@ export const templateShares = pgTable("template_shares", {
   templateId: integer("template_id").notNull(),
   sharedBy: integer("shared_by").notNull(),
   sharedWith: integer("shared_with").notNull(),
-  status: text("status").default("pending"),
+  status: text("status").default("'pending'::text"),
   sharedAt: timestamp("shared_at", { mode: 'date', withTimezone: true }).default("now()"),
   respondedAt: timestamp("responded_at", { mode: 'date', withTimezone: true }),
   shareMessage: text("share_message"),
@@ -2030,7 +2029,7 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   showTemplatePreview: boolean("show_template_preview").default(true),
   autoSaveChanges: boolean("auto_save_changes").default(true),
   medicalProblemsDisplayThreshold: integer("medical_problems_display_threshold").default(100),
-  rankingWeights: jsonb("ranking_weights").default('{"clinical_severity": 40, "patient_frequency": 20, "clinical_relevance": 10, "treatment_complexity": 30}'),
+  rankingWeights: jsonb("ranking_weights").default("'{"clinical_severity": 40, "patient_frequency": 20, "clinical_relevance": 10, "treatment_complexity": 30}'::jsonb"),
   chartPanelWidth: integer("chart_panel_width").default(400),
   enableDenseView: boolean("enable_dense_view").default(false),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -2122,7 +2121,7 @@ export const users = pgTable("users", {
   emailVerificationExpires: timestamp("email_verification_expires", { mode: 'date', withTimezone: true }),
   mfaEnabled: boolean("mfa_enabled").default(false),
   mfaSecret: text("mfa_secret"),
-  accountStatus: text("account_status").default("active"),
+  accountStatus: text("account_status").default("'active'::text"),
   lastLogin: timestamp("last_login", { mode: 'date', withTimezone: true }),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   accountLockedUntil: timestamp("account_locked_until", { mode: 'date', withTimezone: true }),
@@ -2145,7 +2144,7 @@ export const vitals = pgTable("vitals", {
   encounterId: integer("encounter_id"),
   recordedAt: timestamp("recorded_at", { mode: 'date', withTimezone: true }).notNull().default("now()"),
   recordedBy: text("recorded_by").notNull(),
-  entryType: text("entry_type").notNull().default("routine"),
+  entryType: text("entry_type").notNull().default("'routine'::text"),
   systolicBp: integer("systolic_bp"),
   diastolicBp: integer("diastolic_bp"),
   heartRate: integer("heart_rate"),
@@ -2166,14 +2165,14 @@ export const vitals = pgTable("vitals", {
   parsedFromText: boolean("parsed_from_text").default(false),
   originalText: text("original_text"),
   processingNotes: text("processing_notes"),
-  sourceType: text("source_type").default("manual_entry"),
+  sourceType: text("source_type").default("'manual_entry'::text"),
   sourceConfidence: decimal("source_confidence", { precision: 3, scale: 2 }).default(1.00),
   sourceNotes: text("source_notes"),
   extractedFromAttachmentId: integer("extracted_from_attachment_id"),
   extractionNotes: text("extraction_notes"),
   consolidationReasoning: text("consolidation_reasoning"),
   mergedIds: integer("merged_ids").array(),
-  visitHistory: jsonb("visit_history").default('[]'),
+  visitHistory: jsonb("visit_history").default("'[]'::jsonb"),
   enteredBy: integer("entered_by"),
   createdAt: timestamp("created_at", { mode: 'date', withTimezone: true }).default("now()"),
   updatedAt: timestamp("updated_at", { mode: 'date', withTimezone: true }).default("now()"),
@@ -2200,270 +2199,4 @@ export const webauthnCredentials = pgTable("webauthn_credentials", {
 export const insertWebauthnCredentialsSchema = createInsertSchema(webauthnCredentials);
 export type InsertWebauthnCredentials = z.infer<typeof insertWebauthnCredentialsSchema>;
 export type SelectWebauthnCredentials = typeof webauthnCredentials.$inferSelect;
-
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  patients: many(patients),
-  encounters: many(encounters),
-  appointments: many(appointments, {
-    relationName: "provider",
-  }),
-  labOrders: many(labOrders),
-  imagingOrders: many(imagingOrders),
-  orders: many(orders),
-  signatures: many(signatures),
-}));
-
-// Replaced by patientsRelationsEnhanced below
-// See patientsRelationsEnhanced below for the actual implementation
-
-export const encountersRelations = relations(encounters, ({ one, many }) => ({
-  patient: one(patients, {
-    fields: [encounters.patientId],
-    references: [patients.id],
-  }),
-  provider: one(users, {
-    fields: [encounters.providerId],
-    references: [users.id],
-  }),
-  labOrders: many(labOrders),
-  labResults: many(labResults),
-  imagingOrders: many(imagingOrders),
-  imagingResults: many(imagingResults),
-  orders: many(orders),
-  signatures: many(signatures),
-  appointment: one(appointments, {
-    fields: [encounters.appointmentId],
-    references: [appointments.id],
-  }),
-}));
-
-// Replaced by appointmentsRelationsEnhanced below
-// See appointmentsRelationsEnhanced below for the actual implementation
-
-export const signaturesRelations = relations(signatures, ({ one, many }) => ({
-  encounter: one(encounters, {
-    fields: [signatures.encounterId],
-    references: [encounters.id],
-  }),
-  signedBy: one(users, {
-    fields: [signatures.signedBy],
-    references: [users.id],
-  }),
-  signedOrders: many(signedOrders),
-}));
-
-export const labOrdersRelations = relations(labOrders, ({ one, many }) => ({
-  patient: one(patients, {
-    fields: [labOrders.patientId],
-    references: [patients.id],
-  }),
-  encounter: one(encounters, {
-    fields: [labOrders.encounterId],
-    references: [encounters.id],
-  }),
-  orderedBy: one(users, {
-    fields: [labOrders.orderedBy],
-    references: [users.id],
-  }),
-  results: many(labResults),
-}));
-
-export const labResultsRelations = relations(labResults, ({ one }) => ({
-  patient: one(patients, {
-    fields: [labResults.patientId],
-    references: [patients.id],
-  }),
-  // labOrder relation commented out because labOrderId is nullable
-  // labOrder: one(labOrders, {
-  //   fields: [labResults.labOrderId],
-  //   references: [labOrders.id],
-  // }),
-  // encounter relation commented out because encounterId is nullable
-  // encounter: one(encounters, {
-  //   fields: [labResults.encounterId],
-  //   references: [encounters.id],
-  // }),
-}));
-
-export const labReferenceRangesRelations = relations(labReferenceRanges, ({ many }) => ({
-  // Optional: add relations to lab results if needed
-}));
-
-export const imagingOrdersRelations = relations(imagingOrders, ({ one, many }) => ({
-  patient: one(patients, {
-    fields: [imagingOrders.patientId],
-    references: [patients.id],
-  }),
-  encounter: one(encounters, {
-    fields: [imagingOrders.encounterId],
-    references: [encounters.id],
-  }),
-  orderedBy: one(users, {
-    fields: [imagingOrders.providerId],
-    references: [users.id],
-  }),
-  results: many(imagingResults),
-}));
-
-export const imagingResultsRelations = relations(imagingResults, ({ one }) => ({
-  patient: one(patients, {
-    fields: [imagingResults.patientId],
-    references: [patients.id],
-  }),
-  imagingOrder: one(imagingOrders, {
-    fields: [imagingResults.imagingOrderId],
-    references: [imagingOrders.id],
-  }),
-  encounter: one(encounters, {
-    fields: [imagingResults.encounterId],
-    references: [encounters.id],
-  }),
-}));
-
-export const patientPhysicalFindingsRelations = relations(patientPhysicalFindings, ({ one }) => ({
-  patient: one(patients, {
-    fields: [patientPhysicalFindings.patientId],
-    references: [patients.id],
-  }),
-  // encounter relation commented out because encounterId is nullable
-  // encounter: one(encounters, {
-  //   fields: [patientPhysicalFindings.encounterId],
-  //   references: [encounters.id],
-  // }),
-  // examinedBy relation commented out because examinedBy is nullable
-  // examinedBy: one(users, {
-  //   fields: [patientPhysicalFindings.examinedBy],
-  //   references: [users.id],
-  // }),
-}));
-
-export const ordersRelations = relations(orders, ({ one }) => ({
-  patient: one(patients, {
-    fields: [orders.patientId],
-    references: [patients.id],
-  }),
-  encounter: one(encounters, {
-    fields: [orders.encounterId],
-    references: [encounters.id],
-  }),
-  orderedBy: one(users, {
-    fields: [orders.orderedBy],
-    references: [users.id],
-  }),
-  prescriber: one(users, {
-    fields: [orders.prescriber],
-    references: [users.id],
-  }),
-}));
-
-export const medicalProblemsRelations = relations(medicalProblems, ({ one }) => ({
-  patient: one(patients, {
-    fields: [medicalProblems.patientId],
-    references: [patients.id],
-  }),
-  // encounter relation commented out because encounterId is nullable
-  // encounter: one(encounters, {
-  //   fields: [medicalProblems.encounterId],
-  //   references: [encounters.id],
-  // }),
-  // provider relation for providerId field (nullable)
-  // provider: one(users, {
-  //   fields: [medicalProblems.providerId],
-  //   references: [users.id],
-  // }),
-  // verifiedBy relation for verifiedBy field (nullable)
-  // verifiedBy: one(users, {
-  //   fields: [medicalProblems.verifiedBy],
-  //   references: [users.id],
-  // }),
-  // reviewedBy relation for reviewedBy field (nullable)
-  // reviewedBy: one(users, {
-  //   fields: [medicalProblems.reviewedBy],
-  //   references: [users.id],
-  // }),
-}));
-
-export const medicationsRelations = relations(medications, ({ one, many }) => ({
-  patient: one(patients, {
-    fields: [medications.patientId],
-    references: [patients.id],
-  }),
-  // encounter relation commented out because encounterId is nullable
-  // encounter: one(encounters, {
-  //   fields: [medications.encounterId],
-  //   references: [encounters.id],
-  // }),
-  // orderedBy relation commented out because orderedBy is nullable
-  // orderedBy: one(users, {
-  //   fields: [medications.orderedBy],
-  //   references: [users.id],
-  // }),
-  prescriptions: many(prescriptionTransmissions),
-}));
-
-export const attachmentExtractedContentRelations = relations(attachmentExtractedContent, ({ one }) => ({
-  attachment: one(attachments, {
-    fields: [attachmentExtractedContent.attachmentId],
-    references: [attachments.id],
-  }),
-}));
-
-export const patientAttachmentsRelations = relations(patientAttachments, ({ one }) => ({
-  patient: one(patients, {
-    fields: [patientAttachments.patientId],
-    references: [patients.id],
-  }),
-  uploadedBy: one(users, {
-    fields: [patientAttachments.uploadedBy],
-    references: [users.id],
-  }),
-}));
-
-export const electronicSignaturesRelations = relations(electronicSignatures, ({ one, many }) => ({
-  user: one(users, {
-    fields: [electronicSignatures.userId],
-    references: [users.id],
-  }),
-  prescriptions: many(prescriptionTransmissions),
-}));
-
-export const pharmaciesRelations = relations(pharmacies, ({ many }) => ({
-  prescriptions: many(prescriptionTransmissions),
-}));
-
-export const prescriptionTransmissionsRelations = relations(prescriptionTransmissions, ({ one }) => ({
-  medication: one(medications, {
-    fields: [prescriptionTransmissions.medicationId],
-    references: [medications.id],
-  }),
-  pharmacy: one(pharmacies, {
-    fields: [prescriptionTransmissions.pharmacyId],
-    references: [pharmacies.id],
-  }),
-  provider: one(users, {
-    fields: [prescriptionTransmissions.providerId],
-    references: [users.id],
-  }),
-  electronicSignature: one(electronicSignatures, {
-    fields: [prescriptionTransmissions.electronicSignatureId],
-    references: [electronicSignatures.id],
-  }),
-}));
-
-export const patientOrderPreferencesRelations = relations(patientOrderPreferences, ({ one }) => ({
-  patient: one(patients, {
-    fields: [patientOrderPreferences.patientId],
-    references: [patients.id],
-  }),
-  provider: one(users, {
-    fields: [patientOrderPreferences.providerId],
-    references: [users.id],
-  }),
-  // lastUpdatedBy relation commented out because lastUpdatedBy is nullable
-  // lastUpdatedBy: one(users, {
-  //   fields: [patientOrderPreferences.lastUpdatedBy],
-  //   references: [users.id],
-  // }),
-}));
 
