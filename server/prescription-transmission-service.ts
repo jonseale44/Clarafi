@@ -493,37 +493,54 @@ export class PrescriptionTransmissionService {
       db.select().from(pharmacies).where(eq(pharmacies.id, transmission.pharmacyId))
     ]);
 
-    // Get provider's location information
-    const providerLocation = await db.select({
-      location: locations,
-      organization: organizations,
-      healthSystem: healthSystems
-    })
-    .from(userLocations)
-    .innerJoin(locations, eq(userLocations.locationId, locations.id))
-    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
-    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
-    .where(
-      and(
-        eq(userLocations.userId, transmission.providerId),
-        eq(userLocations.isPrimary, true)
-      )
-    )
-    .limit(1);
-
-    // Use the first location if no primary is marked
-    const locationData = providerLocation[0] || await db.select({
-      location: locations,
-      organization: organizations,
-      healthSystem: healthSystems
-    })
-    .from(userLocations)
-    .innerJoin(locations, eq(userLocations.locationId, locations.id))
-    .innerJoin(organizations, eq(locations.organizationId, organizations.id))
-    .innerJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
-    .where(eq(userLocations.userId, transmission.providerId))
-    .limit(1)
-    .then(results => results[0]);
+    // Get provider's location information using simpler queries to avoid Drizzle ORM issues
+    let locationData = null;
+    
+    try {
+      // First, find the user's location
+      const userLocationResults = await db.select()
+        .from(userLocations)
+        .where(
+          and(
+            eq(userLocations.userId, transmission.providerId),
+            eq(userLocations.isPrimary, true)
+          )
+        )
+        .limit(1);
+      
+      // If no primary location, get any location
+      const userLocationId = userLocationResults[0]?.locationId || 
+        await db.select()
+          .from(userLocations)
+          .where(eq(userLocations.userId, transmission.providerId))
+          .limit(1)
+          .then(results => results[0]?.locationId);
+      
+      if (userLocationId) {
+        // Get location details
+        const [location] = await db.select()
+          .from(locations)
+          .where(eq(locations.id, userLocationId));
+        
+        if (location) {
+          // Get organization details
+          const [organization] = await db.select()
+            .from(organizations)
+            .where(eq(organizations.id, location.organizationId));
+          
+          if (organization) {
+            // Get health system details
+            const [healthSystem] = await db.select()
+              .from(healthSystems)
+              .where(eq(healthSystems.id, organization.healthSystemId));
+            
+            locationData = { location, organization, healthSystem };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('⚠️ [PrescriptionTransmission] Error getting location data:', error);
+    }
 
     // Get electronic signature if available for DEA number
     let deaNumber = provider[0].deaNumber;
@@ -762,17 +779,43 @@ export class PrescriptionTransmissionService {
    * Gets transmission history for a patient
    */
   async getTransmissionHistory(patientId: number): Promise<any[]> {
-    return await db.select({
-      transmission: prescriptionTransmissions,
-      medication: medications,
-      pharmacy: pharmacies,
-      provider: users
-    })
-    .from(prescriptionTransmissions)
-    .innerJoin(medications, eq(prescriptionTransmissions.medicationId, medications.id))
-    .leftJoin(pharmacies, eq(prescriptionTransmissions.pharmacyId, pharmacies.id))
-    .innerJoin(users, eq(prescriptionTransmissions.providerId, users.id))
-    .where(eq(prescriptionTransmissions.patientId, patientId))
-    .orderBy(desc(prescriptionTransmissions.transmittedAt));
+    // Get transmissions first to avoid complex joins
+    const transmissions = await db.select()
+      .from(prescriptionTransmissions)
+      .where(eq(prescriptionTransmissions.patientId, patientId))
+      .orderBy(desc(prescriptionTransmissions.transmittedAt));
+
+    // Build complete transmission records with related data
+    const transmissionHistory = await Promise.all(
+      transmissions.map(async (transmission) => {
+        // Get medication data
+        const [medication] = await db.select()
+          .from(medications)
+          .where(eq(medications.id, transmission.medicationId));
+
+        // Get pharmacy data (may be null for print/fax)
+        let pharmacy = null;
+        if (transmission.pharmacyId) {
+          const pharmacyResults = await db.select()
+            .from(pharmacies)
+            .where(eq(pharmacies.id, transmission.pharmacyId));
+          pharmacy = pharmacyResults[0] || null;
+        }
+
+        // Get provider data
+        const [provider] = await db.select()
+          .from(users)
+          .where(eq(users.id, transmission.providerId));
+
+        return {
+          transmission,
+          medication,
+          pharmacy,
+          provider
+        };
+      })
+    );
+
+    return transmissionHistory;
   }
 }

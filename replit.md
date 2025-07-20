@@ -282,6 +282,18 @@ Preferred communication style: Simple, everyday language.
 - **HIPAA COMPLIANCE**: Full audit trail with transmission metadata, retry attempts tracking, and user actions logging
 - **FAX BADGE DISPLAY FIX**: Fixed order preferences indicator to properly show "Fax to Pharmacy" badge when fax delivery method is selected (was incorrectly showing "Print PDF" for all non-pharmacy options)
 
+### Prescription Transmission Service Drizzle ORM Fix (January 20, 2025)
+- **CRITICAL BUG FIXED**: Prescription PDF generation and transmission history failing with "Cannot convert undefined or null to object" error
+- **ROOT CAUSE**: Complex Drizzle ORM joins in prescription-transmission-service.ts causing internal `orderSelectedFields` error
+- **METHODS FIXED**:
+  - `generatePrescriptionData`: Refactored complex provider location joins into sequential queries
+  - `getTransmissionHistory`: Refactored complex multi-table joins into sequential fetches with Promise.all
+- **TECHNICAL DETAILS**: 
+  - Drizzle ORM fails when processing complex nested joins with multiple tables (users, locations, organizations, healthSystems)
+  - Solution follows same pattern as PDF service fix: break complex joins into simpler sequential queries
+  - Both methods now fetch primary data first, then enrich with related data using separate queries
+- **USER IMPACT**: Prescription transmissions (fax, print, electronic) and transmission history viewing now work correctly
+
 ### E-Prescribing Pharmacy Selection Fixes (January 19, 2025)
 - **CRITICAL BUGS FIXED**: Fixed multiple issues preventing pharmacy selection and AI recommendations from working
 - **ISSUE 1**: validatePharmacyMutation was not parsing JSON response properly
