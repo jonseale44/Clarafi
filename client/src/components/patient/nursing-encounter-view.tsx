@@ -585,11 +585,18 @@ Format each bullet point on its own line with no extra spacing between them.`,
       try {
         console.log("🌐 [NursingView] Connecting to secure WebSocket proxy...");
 
-        // Use WebSocket proxy for secure API key handling
+        // Use WebSocket proxy for secure API key handling - MATCH PROVIDER VIEW EXACTLY
+        const params = new URLSearchParams({
+          patientId: patientId.toString(),
+          encounterId: encounterId.toString(),
+        });
+
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect`;
+        const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
         
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
+        console.log("🔧 [NursingView] - Patient ID:", patientId);
+        console.log("🔧 [NursingView] - Encounter ID:", encounterId);
         
         realtimeWs = new WebSocket(wsUrl);
         // Store WebSocket reference in window to avoid undefined reference
@@ -599,38 +606,70 @@ Format each bullet point on its own line with no extra spacing between them.`,
           console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
           setWsConnected(true);
           
-          // Session configuration: Focus on transcription for nursing documentation
-          const sessionUpdateMessage = {
-            type: "session.update",
-            session: {
-              instructions: `You are a medical transcription assistant specialized in nursing documentation. 
+          // Session configuration: Match provider view structure exactly
+          const sessionConfig = {
+            model: "gpt-4o-realtime-preview-2024-10-01",
+            modalities: ["text", "audio"],
+            instructions: `You are a medical transcription assistant specialized in nursing documentation. 
               Accurately transcribe medical terminology, drug names, dosages, and clinical observations. 
-              Translate all languages into English. Only output ENGLISH.`,
-              modalities: ["text", "audio"],
-              input_audio_format: "pcm16",
-              input_audio_transcription: {
-                model: "whisper-1",
-                language: "en",
-              },
-              turn_detection: {
-                type: "server_vad",
-                threshold: 0.3,
-                prefix_padding_ms: 300,
-                silence_duration_ms: 300,
-                create_response: false,
-              },
+              Translate all languages into English. Only output ENGLISH.
+              Pay special attention to:
+              - Medication names, dosages, and administration times
+              - Vital signs and measurements
+              - Patient complaints and symptoms
+              - Nursing assessments and interventions
+              Format with bullet points for natural conversation flow.`,
+            input_audio_format: "pcm16",
+            input_audio_transcription: {
+              model: "whisper-1",
+              language: "en",
+            },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 300,
+              create_response: false,
             },
           };
 
-          realtimeWs!.send(JSON.stringify(sessionUpdateMessage));
+          // Send session creation request matching provider view format exactly
+          const sessionCreateMessage = {
+            type: "session.create",
+            data: {
+              patientId: patientId,
+              encounterId: encounterId,
+              sessionConfig: sessionConfig,
+            },
+          };
+
+          console.log("📤 [NursingView] Session creation request:");
+          console.log(JSON.stringify(sessionCreateMessage, null, 2));
+
+          realtimeWs!.send(JSON.stringify(sessionCreateMessage));
         };
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
           console.log("📨 [NursingView] WebSocket message type:", message.type);
 
+          // Handle session creation response first
+          if (message.type === "session.created") {
+            console.log("✅ [NursingView] Session created successfully");
+            console.log("🎤 [NursingView] Ready to receive transcriptions");
+          }
+          
+          // Handle errors
+          else if (message.type === "error") {
+            console.error("❌ [NursingView] WebSocket error:", message.error);
+            const errorMessage = typeof message.error === 'object' 
+              ? message.error.message || JSON.stringify(message.error)
+              : message.error;
+            console.error("❌ [NursingView] Error details:", errorMessage);
+          }
+
           // Handle transcription delta messages
-          if (message.type === "audio.transcription.delta") {
+          else if (message.type === "audio.transcription.delta") {
             const deltaText = message.delta || "";
             console.log("📝 [NursingView] Transcription delta:", deltaText);
             
