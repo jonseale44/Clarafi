@@ -2712,7 +2712,7 @@ export class DatabaseStorage implements IStorage {
         duration_minutes,
         color,
         description,
-        is_active
+        active
       FROM appointment_types
       WHERE health_system_id = ${healthSystemId}
       ORDER BY name

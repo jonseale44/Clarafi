@@ -67,6 +67,20 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Health System Data Structure Fix (July 21, 2025)
+✓ **DATA STRUCTURE CORRECTED**: Fixed incorrect health system/location relationship
+✓ **ISSUE IDENTIFIED**: "Waco Family Medicine - Hillsboro" was incorrectly stored as a health system instead of location
+✓ **FIXES IMPLEMENTED**:
+  - Updated health system ID 2 name from "Waco Family Medicine - Hillsboro" to "Waco Family Medicine"
+  - Location "Waco Family Medicine - Hillsboro" now correctly references parent health system
+  - Removed legacy duplicate database fields: `locations.zip` (duplicate of `zip_code`) and `users.is_active` (duplicate of `active`)
+  - Fixed all code references to use proper field names
+
+✓ **ARCHITECTURE CONFIRMED**: 3-tier flexible hierarchy working properly:
+  - Health Systems → Organizations (optional) → Locations
+  - Small systems can bypass organization tier (direct health system → location)
+  - Large systems can use full hierarchy for regional management
+
 ### Subscription Keys Dropdown Fix (January 21, 2025)
 ✓ **CRITICAL BUG FIXED**: "Generate subscription keys" health system dropdown was blank for system administrators
 ✓ **ROOT CAUSE**: Dropdown was filtering to only show Tier 3 health systems, but all health systems in database were Tier 1

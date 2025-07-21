@@ -132,7 +132,6 @@ export const locations = pgTable("locations", {
   city: text("city").notNull(),
   state: text("state").notNull(),
   zipCode: text("zip_code").notNull(),
-  zip: text("zip"), // Legacy duplicate of zip_code
   
   // Contact
   phone: text("phone"),
@@ -238,7 +237,6 @@ export const users = pgTable("users", {
   // Additional orphaned columns from database
   bio: text("bio"), // Professional biography
   profileImageUrl: text("profile_image_url"), // User profile picture URL
-  isActive: boolean("is_active").default(true), // Legacy duplicate of active field
   
   // Email verification
   emailVerified: boolean("email_verified").default(false),
