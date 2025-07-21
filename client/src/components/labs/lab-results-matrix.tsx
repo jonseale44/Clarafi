@@ -139,22 +139,13 @@ export function LabResultsMatrix({
       const handleDocumentClick = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent cell click
         
-        // Check if we're in encounter mode
-        if (mode === 'encounter' && encounterId) {
-          // Navigate within the encounter context
-          navigateWithContext(
-            `/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${result.extractedFromAttachmentId}`,
-            "labs",
-            "encounter"
-          );
-        } else {
-          // Regular navigation for patient chart mode
-          navigateWithContext(
-            `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`, 
-            "labs", 
-            "patient-chart"
-          );
-        }
+        // Always use navigateWithContext to ensure proper handling
+        const currentMode = mode || (window.location.pathname.includes('/encounters/') ? 'encounter' : 'patient-chart');
+        navigateWithContext(
+          `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`,
+          "labs",
+          currentMode
+        );
       };
       
       return (

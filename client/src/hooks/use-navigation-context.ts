@@ -51,6 +51,13 @@ export function useNavigationContext() {
     url.searchParams.set('from', sourceSection);
     url.searchParams.set('context', sourceContext);
     
+    // Check if we're currently in an encounter view
+    const currentPath = window.location.pathname;
+    const isInEncounterView = currentPath.includes('/encounters/');
+    
+    // Check if this is a section navigation (has section parameter)
+    const isSectionNavigation = url.searchParams.has('section');
+    
     // Construct proper return URL based on current location
     let returnUrl = window.location.pathname + window.location.search;
     
@@ -59,7 +66,9 @@ export function useNavigationContext() {
       pathname: window.location.pathname,
       search: window.location.search,
       href: window.location.href,
-      wouter_location: location
+      wouter_location: location,
+      isInEncounterView,
+      isSectionNavigation
     });
     
     // If we're at root but in patient chart context, construct proper patient chart URL
@@ -69,6 +78,22 @@ export function useNavigationContext() {
     }
     
     url.searchParams.set('returnUrl', returnUrl);
+    
+    // For section navigation from encounter view, navigate to patient chart instead
+    if (isSectionNavigation && (sourceContext === 'encounter' || isInEncounterView)) {
+      console.log(`🔗 [NavigationContext] Section navigation from encounter detected, navigating to patient chart`);
+      
+      // Extract patient ID from the URL
+      const patientIdMatch = currentPath.match(/\/patients\/(\d+)/);
+      if (patientIdMatch) {
+        const patientId = patientIdMatch[1];
+        // Navigate to patient chart with the section params
+        const chartUrl = `/patients/${patientId}/chart${url.search}`;
+        console.log(`🔗 [NavigationContext] Redirecting to patient chart: ${chartUrl}`);
+        setLocation(chartUrl);
+        return;
+      }
+    }
     
     console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext}), returnUrl: ${returnUrl}`);
     setLocation(url.pathname + url.search);

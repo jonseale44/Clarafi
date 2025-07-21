@@ -171,16 +171,13 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
         console.log("🔗 [Imaging] mode:", mode);
         
         if (result.extractedFromAttachmentId) {
-          // Check if we're in encounter mode
-          if (mode === 'encounter' && encounterId) {
-            // Navigate within the encounter context
-            const targetUrl = `/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`;
-            navigateWithContext(targetUrl, "imaging", "encounter");
-          } else {
-            // Regular navigation for patient chart mode
-            const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`;
-            navigateWithContext(targetUrl, "imaging", "patient-chart");
-          }
+          // Always use navigateWithContext to ensure proper handling
+          const currentMode = mode || (window.location.pathname.includes('/encounters/') ? 'encounter' : 'patient-chart');
+          navigateWithContext(
+            `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`,
+            "imaging",
+            currentMode
+          );
         }
       };
       
