@@ -781,6 +781,62 @@ Format each bullet point on its own line with no extra spacing between them.`,
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto emr-content-padding">
           <div className="max-w-4xl mx-auto space-y-6">
+            {/* Recording Panel */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Voice Recording</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Start recording to capture patient information
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!isRecording && (
+                      <Button
+                        onClick={startRecording}
+                        size="sm"
+                        className="bg-blue-500 hover:bg-blue-600"
+                      >
+                        <Mic className="h-4 w-4 mr-2" />
+                        Start Recording
+                      </Button>
+                    )}
+                    {isRecording && (
+                      <>
+                        <div className="flex items-center gap-2 text-red-500">
+                          <div className="animate-pulse">
+                            <RadioIcon className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-medium">Recording...</span>
+                        </div>
+                        <Button
+                          onClick={stopRecording}
+                          size="sm"
+                          variant="destructive"
+                        >
+                          <Square className="h-4 w-4 mr-2" />
+                          Stop Recording
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              {(transcription || liveTranscriptionContent) && (
+                <CardContent>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Live Transcription
+                    </h4>
+                    <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                      {liveTranscriptionContent || transcription}
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
             {/* Nursing Template Section */}
             <div className="space-y-6">
               {/* Comprehensive Nursing Template */}
