@@ -647,21 +647,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
           console.log(JSON.stringify(sessionCreateMessage, null, 2));
 
           realtimeWs!.send(JSON.stringify(sessionCreateMessage));
-          
-          // After session is created, trigger response creation for transcription
-          setTimeout(() => {
-            if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-              console.log("🎯 [NursingView] Triggering response creation for transcription");
-              const responseCreateMessage = {
-                type: "response.create",
-                response: {
-                  modalities: ["text"],
-                  instructions: "Please transcribe the audio input."
-                }
-              };
-              realtimeWs.send(JSON.stringify(responseCreateMessage));
-            }
-          }, 1000);
         };
 
         realtimeWs.onmessage = (event) => {

@@ -67,6 +67,18 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Nursing Transcription System Fix (Jan 21, 2025)
+✓ **ISSUE FIXED**: Nursing view was showing "I'm sorry, but I can't assist with transcribing audio input" instead of actual transcriptions
+✓ **ROOT CAUSE**: Nurse view had unnecessary `response.create` message that explicitly asked OpenAI to "Please transcribe the audio input"
+✓ **WHY IT FAILED**: OpenAI Realtime API automatically transcribes when configured with `input_audio_transcription` - explicitly asking it to transcribe causes it to interpret this as a user request it should respond to
+✓ **SOLUTION**: Removed the problematic setTimeout block (lines 651-664) that sent the response.create message after session creation
+✓ **TECHNICAL DETAILS**: 
+  - Both provider and nurse views use same WebSocket endpoint: `/api/realtime/connect`
+  - Both have identical session configurations with `input_audio_transcription` enabled
+  - Provider view worked because it never sent the extra response.create message
+  - OpenAI responded with error message because it thought user was asking it to perform transcription as a task
+✓ **USER IMPACT**: Nursing documentation now works identically to provider documentation with proper real-time transcription
+
 ### Enhanced Vitals Date Filtering for SOAP Notes (Jan 20, 2025)
 ✓ **ISSUE ADDRESSED**: Old vitals entered during an encounter were appearing in SOAP notes despite being from previous dates
 ✓ **ROOT CAUSE**: Code was using encounter `createdAt` (system entry time) instead of `encounterDate` (actual visit date) for filtering
