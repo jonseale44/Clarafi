@@ -275,7 +275,23 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
         const handleDocumentClick = () => {
           if (allergy.extractedFromAttachmentId) {
             console.log("Navigate to attachment:", allergy.extractedFromAttachmentId);
-            navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
+            // When in encounter mode, stay within the encounter context
+            if (mode === 'encounter' && location.includes('/encounters/')) {
+              // Extract encounter ID from current location
+              const currentPath = location.split('?')[0];
+              const encounterMatch = currentPath.match(/\/encounters\/(\d+)/);
+              if (encounterMatch) {
+                const currentEncounterId = encounterMatch[1];
+                // Navigate within the encounter context
+                setLocation(`/patients/${patientId}/encounters/${currentEncounterId}?section=attachments&highlight=${allergy.extractedFromAttachmentId}`);
+              } else {
+                // Fallback to regular navigation if we can't extract encounter ID
+                navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
+              }
+            } else {
+              // Regular navigation for patient chart mode
+              navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
+            }
           }
         };
         return (

@@ -138,11 +138,23 @@ export function LabResultsMatrix({
     if ((result.sourceType === 'attachment' || result.sourceType === 'attachment_extracted') && result.extractedFromAttachmentId) {
       const handleDocumentClick = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent cell click
-        navigateWithContext(
-          `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`, 
-          "labs", 
-          mode || "patient-chart"
-        );
+        
+        // Check if we're in encounter mode
+        if (mode === 'encounter' && encounterId) {
+          // Navigate within the encounter context
+          navigateWithContext(
+            `/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${result.extractedFromAttachmentId}`,
+            "labs",
+            "encounter"
+          );
+        } else {
+          // Regular navigation for patient chart mode
+          navigateWithContext(
+            `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId}`, 
+            "labs", 
+            "patient-chart"
+          );
+        }
       };
       
       return (
