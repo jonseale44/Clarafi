@@ -34,6 +34,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
 import { SharedChartSections } from "@/components/patient/shared-chart-sections";
 import { UnifiedChartPanel } from "@/components/patient/unified-chart-panel";
+import {
+  RealtimeSOAPIntegration,
+  RealtimeSOAPRef,
+} from "@/components/RealtimeSOAPIntegration";
 
 import {
   NursingTemplateAssessment,
@@ -128,8 +132,14 @@ export function NursingEncounterView({
   );
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
   const [useRestAPI] = useState(true); // Default to REST API for manual triggering
+  const [userEditingLock, setUserEditingLock] = useState(false);
+  const [recordingCooldown, setRecordingCooldown] = useState(false);
+  const [soapNote, setSoapNote] = useState("");
+  const [draftOrders, setDraftOrders] = useState([]);
+  const [cptCodesData, setCptCodesData] = useState(null);
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
+  const realtimeSOAPRef = useRef<RealtimeSOAPRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -555,429 +565,100 @@ Format each bullet point on its own line with no extra spacing between them.`,
     }
   };
 
-  // Start recording using same OpenAI Realtime API as provider view
+  // Simple recording function matching provider view exactly
   const startRecording = async () => {
-    console.log(
-      "🎤 [NursingView] Starting REAL-TIME voice recording for patient:",
-      patient.id,
-    );
-    console.log("🎤 [NursingView] Current state at start:", {
-      encounter: encounter?.id,
-      templateData,
-      isRecording,
-      patient: patient?.id,
-      currentUser: currentUser?.role,
-    });
+    console.log("🎤 [NursingView] === START RECORDING CALLED ===");
+    console.log("🎤 [NursingView] User editing lock status:", userEditingLock);
+    console.log("🎤 [NursingView] Current recording status:", isRecording);
+    console.log("🎤 [NursingView] Recording cooldown status:", recordingCooldown);
 
-    // Clear previous transcription and suggestions when starting new recording
-    setGptSuggestions("");
-    setLiveSuggestions(""); // Clear live suggestions for new encounter
-    setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
-    setTranscription("");
-    setTranscriptionBuffer("");
-    setLiveTranscriptionContent("");
-
-    try {
-      // Create direct WebSocket connection to OpenAI like provider view
-      let realtimeWs: WebSocket | null = null;
-      let transcriptionBuffer = "";
-
-      try {
-        console.log("🌐 [NursingView] Connecting to secure WebSocket proxy...");
-
-        // Use WebSocket proxy for secure API key handling - MATCH PROVIDER VIEW EXACTLY
-        const params = new URLSearchParams({
-          patientId: patient.id.toString(),
-          encounterId: encounterId.toString(),
-        });
-
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
-        
-        console.log("🔧 [NursingView] ============ RECORDING STARTED ============");
-        console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
-        console.log("🔧 [NursingView] - Patient ID:", patient.id);
-        console.log("🔧 [NursingView] - Encounter ID:", encounterId);
-        console.log("🔧 [NursingView] - User ID:", currentUser?.id);
-        console.log("🔧 [NursingView] - User Role:", currentUser?.role);
-        console.log("🔧 [NursingView] - Is Recording:", isRecording);
-        
-        realtimeWs = new WebSocket(wsUrl);
-        // Store WebSocket reference in window to avoid undefined reference
-        (window as any).nursingRealtimeWs = realtimeWs;
-
-        realtimeWs.onopen = () => {
-          console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
-          setWsConnected(true);
-          
-          // Session configuration: Match provider view structure exactly
-          const sessionConfig = {
-            model: "gpt-4o-realtime-preview-2024-10-01",
-            modalities: ["text", "audio"],
-            instructions: `You are a medical transcription assistant specialized in nursing documentation. 
-              Accurately transcribe medical terminology, drug names, dosages, and clinical observations. 
-              Translate all languages into English. Only output ENGLISH.
-              Pay special attention to:
-              - Medication names, dosages, and administration times
-              - Vital signs and measurements
-              - Patient complaints and symptoms
-              - Nursing assessments and interventions
-              Format with bullet points for natural conversation flow.`,
-            input_audio_format: "pcm16",
-            input_audio_transcription: {
-              model: "whisper-1",
-              language: "en",
-            },
-            turn_detection: {
-              type: "server_vad",
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 300,
-              create_response: false,
-            },
-          };
-
-          // Send session creation request matching provider view format exactly
-          const sessionCreateMessage = {
-            type: "session.create",
-            data: {
-              patientId: patient.id,
-              encounterId: encounterId,
-              sessionConfig: sessionConfig,
-            },
-          };
-
-          console.log("📤 [NursingView] Session creation request:");
-          console.log(JSON.stringify(sessionCreateMessage, null, 2));
-
-          realtimeWs!.send(JSON.stringify(sessionCreateMessage));
-        };
-
-        realtimeWs.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          console.log("📨 [NursingView] ============ WEBSOCKET MESSAGE RECEIVED ============");
-          console.log("📨 [NursingView] Message type:", message.type);
-          console.log("📨 [NursingView] Message structure:", {
-            type: message.type,
-            hasData: !!message.data,
-            hasError: !!message.error,
-            hasTranscript: !!message.transcript,
-            hasDelta: !!message.delta,
-            hasText: !!message.text,
-            hasContent: !!message.content,
-            hasResponse: !!message.response,
-            hasItem: !!message.item,
-            keys: Object.keys(message),
-            fullMessage: JSON.stringify(message, null, 2)
-          });
-
-          // Handle session creation response first
-          if (message.type === "session.created") {
-            console.log("✅ [NursingView] Session created successfully");
-            console.log("🎤 [NursingView] Session details:", message);
-            console.log("🎤 [NursingView] Ready to receive transcriptions");
-          }
-          
-          // Handle session updates
-          else if (message.type === "session.updated") {
-            console.log("🔄 [NursingView] Session updated:", message);
-          }
-          
-          // Handle errors
-          else if (message.type === "error") {
-            console.error("❌ [NursingView] WebSocket error:", message.error);
-            const errorMessage = typeof message.error === 'object' 
-              ? message.error.message || JSON.stringify(message.error)
-              : message.error;
-            console.error("❌ [NursingView] Error details:", errorMessage);
-            console.error("❌ [NursingView] Full error message:", message);
-          }
-
-          // Handle transcription delta messages - check for different possible message types
-          else if (
-            message.type === "audio.transcription.delta" ||
-            message.type === "conversation.item.input_audio_transcription.delta" ||
-            message.type === "input_audio_transcription.delta"
-          ) {
-            console.log("📝 [NursingView] TRANSCRIPTION DELTA DETECTED!");
-            console.log("📝 [NursingView] Message type matched:", message.type);
-            
-            // Try to find the transcription text in different possible fields
-            const deltaText = message.delta || message.transcript || message.text || message.content || "";
-            console.log("📝 [NursingView] Transcription delta details:", {
-              messageType: message.type,
-              delta: deltaText,
-              deltaLength: deltaText.length,
-              hasMessageDelta: !!message.delta,
-              hasMessageTranscript: !!message.transcript,
-              hasMessageText: !!message.text,
-              hasMessageContent: !!message.content,
-              currentBufferLength: transcriptionBuffer.length,
-              messageKeys: Object.keys(message),
-              fullMessage: JSON.stringify(message, null, 2)
-            });
-            
-            if (deltaText) {
-              // Accumulate transcription
-              transcriptionBuffer += deltaText;
-              console.log("📝 [NursingView] UPDATING TRANSCRIPTION STATES:");
-              console.log("📝 [NursingView] - New buffer content:", transcriptionBuffer);
-              console.log("📝 [NursingView] - New buffer length:", transcriptionBuffer.length);
-              
-              setTranscriptionBuffer(transcriptionBuffer);
-              setLiveTranscriptionContent(transcriptionBuffer);
-              setTranscription(transcriptionBuffer);
-              
-              console.log("📝 [NursingView] States updated successfully");
-              console.log("📝 [NursingView] Transcription preview:", transcriptionBuffer.substring(0, 200));
-            } else {
-              console.warn("⚠️ [NursingView] Delta message received but no text content found!");
-            }
-          }
-          
-          // Handle transcription completion - check for different possible message types
-          else if (
-            message.type === "conversation.item.input_audio_transcription.completed" ||
-            message.type === "audio.transcription.completed" ||
-            message.type === "input_audio_transcription.completed"
-          ) {
-            console.log("✅ [NursingView] TRANSCRIPTION COMPLETED EVENT!");
-            console.log("✅ [NursingView] Message type matched:", message.type);
-            
-            // Try to find the transcription text in different possible fields
-            const finalText = message.transcript || message.text || message.content || "";
-            console.log("✅ [NursingView] Transcription completion details:", {
-              messageType: message.type,
-              transcript: finalText,
-              transcriptLength: finalText.length,
-              hasMessageTranscript: !!message.transcript,
-              hasMessageText: !!message.text,
-              hasMessageContent: !!message.content,
-              messageKeys: Object.keys(message),
-              fullMessage: JSON.stringify(message, null, 2)
-            });
-            
-            // Update the transcription with the final text
-            if (finalText.trim()) {
-              console.log("✅ [NursingView] SETTING FINAL TRANSCRIPTION:");
-              console.log("✅ [NursingView] - Final text:", finalText);
-              console.log("✅ [NursingView] - Final length:", finalText.length);
-              
-              setTranscription(finalText);
-              setLiveTranscriptionContent(finalText);
-              setTranscriptionBuffer(finalText);
-              transcriptionBuffer = finalText;
-              
-              console.log("✅ [NursingView] Final transcription states updated");
-            } else {
-              console.warn("⚠️ [NursingView] Completion message received but no text content found!");
-            }
-          }
-          
-          // Handle any response creation
-          else if (message.type === "response.created") {
-            console.log("🤖 [NursingView] Response created:", message);
-          }
-          
-          // Skip AI suggestion messages - handled via REST API only
-          else if (message.type === "response.text.delta" || message.type === "response.text.done") {
-            console.log("🤖 [NursingView] AI response message (skipping):", message.type);
-            return;
-          }
-          
-          // Log any unhandled message types
-          else {
-            console.warn("⚠️ [NursingView] UNHANDLED MESSAGE TYPE RECEIVED!");
-            console.warn("⚠️ [NursingView] Message type:", message.type);
-            console.warn("⚠️ [NursingView] Full message structure:", {
-              type: message.type,
-              keys: Object.keys(message),
-              hasTranscript: !!message.transcript,
-              hasDelta: !!message.delta,
-              hasText: !!message.text,
-              hasContent: !!message.content,
-              hasAudio: !!message.audio,
-              hasItem: !!message.item,
-              fullMessage: JSON.stringify(message, null, 2)
-            });
-            
-            // Check if this might be a transcription message with unexpected type
-            if (message.transcript || message.delta || message.text) {
-              console.warn("⚠️ [NursingView] This might be a transcription message with unexpected type!");
-              console.warn("⚠️ [NursingView] Content:", message.transcript || message.delta || message.text);
-            }
-          }
-        };
-        
-        // Setup WebSocket error handling
-        realtimeWs.onerror = (error) => {
-          console.error("❌ [NursingView] WebSocket error:", error);
-        };
-        
-        realtimeWs.onclose = () => {
-          console.log("🔌 [NursingView] WebSocket connection closed");
-          setWsConnected(false);
-        };
-
-        console.log("✅ [NursingView] WebSocket setup complete");
-
-        // Set up audio recording
-        console.log("🎤 [NursingView] Requesting microphone access...");
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-            sampleRate: 16000,
-          },
-        });
-        console.log("🎤 [NursingView] ✅ Microphone access granted");
-
-        // Set up audio processing
-        const audioContext = new AudioContext({ sampleRate: 16000 });
-        const source = audioContext.createMediaStreamSource(stream);
-        const processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-        // Set up MediaRecorder
-        const mediaRecorder = new MediaRecorder(stream);
-        
-        // Audio chunk counter for debugging
-        let audioChunksSent = 0;
-        let lastLogTime = Date.now();
-        
-        // Process audio data and send to WebSocket
-        processor.onaudioprocess = (e) => {
-          if (!isRecording || !realtimeWs) {
-            if (!isRecording) console.log("🎤 [NursingView] Audio processor: Not recording");
-            if (!realtimeWs) console.log("🎤 [NursingView] Audio processor: No WebSocket");
-            return;
-          }
-
-          const inputData = e.inputBuffer.getChannelData(0);
-          const pcm16 = new Int16Array(inputData.length);
-          
-          // Check if we have actual audio data
-          let hasAudio = false;
-          for (let i = 0; i < inputData.length; i++) {
-            const sample = Math.max(-1, Math.min(1, inputData[i]));
-            pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-            if (Math.abs(sample) > 0.001) hasAudio = true;
-          }
-          
-          const audioData = pcm16.buffer;
-          if (audioData.byteLength > 0 && hasAudio) {
-            const base64Audio = btoa(
-              String.fromCharCode.apply(null, Array.from(new Uint8Array(audioData)))
-            );
-            
-            const audioMessage = {
-              type: "input_audio_buffer.append",
-              audio: base64Audio,
-            };
-            
-            try {
-              if (realtimeWs.readyState === WebSocket.OPEN) {
-                realtimeWs.send(JSON.stringify(audioMessage));
-                audioChunksSent++;
-                
-                // Log every second
-                const now = Date.now();
-                if (now - lastLogTime > 1000) {
-                  console.log("🎵 [NursingView] Audio status:", {
-                    chunksSent: audioChunksSent,
-                    wsState: realtimeWs.readyState,
-                    wsStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState],
-                    audioDataSize: audioData.byteLength,
-                    hasAudio: hasAudio
-                  });
-                  lastLogTime = now;
-                }
-              } else {
-                console.warn("⚠️ [NursingView] WebSocket not open:", {
-                  state: realtimeWs.readyState,
-                  stateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState]
-                });
-              }
-            } catch (error) {
-              console.error("❌ [NursingView] Error sending audio:", error);
-            }
-          }
-        };
-        
-        source.connect(processor);
-        processor.connect(audioContext.destination);
-        
-        // Handle MediaRecorder data
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0 && audioChunksRef.current) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
-        
-        mediaRecorder.onstop = () => {
-          console.log("🎤 [NursingView] MediaRecorder stopped");
-        };
-        
-        // Store MediaRecorder reference and start recording
-        (window as any).currentMediaRecorder = mediaRecorder;
-        mediaRecorder.start(100);
-        
-        setIsRecording(true);
-        console.log("✅ [NursingView] Recording started successfully");
-        
-      } catch (error) {
-        console.error("❌ [NursingView] Failed to start recording - INNER CATCH:");
-        console.error("❌ [NursingView] Error object:", error);
-        console.error("❌ [NursingView] Error message:", (error as any)?.message);
-        console.error("❌ [NursingView] Error stack:", (error as any)?.stack);
-        setIsRecording(false);
-      }
-    } catch (error) {
-      console.error("❌ [NursingView] Failed to setup recording - OUTER CATCH:");
-      console.error("❌ [NursingView] Error object:", error);
-      console.error("❌ [NursingView] Error message:", (error as any)?.message);
-      console.error("❌ [NursingView] Error stack:", (error as any)?.stack);
-      console.error("❌ [NursingView] Error name:", (error as any)?.name);
-      console.error("❌ [NursingView] Full error details:", {
-        message: (error as any)?.message,
-        name: (error as any)?.name,
-        stack: (error as any)?.stack,
-        code: (error as any)?.code,
-        status: (error as any)?.status,
-        toString: error?.toString()
-      });
-      setIsRecording(false);
-      
-      // Show toast with error details
+    // Check if user is currently editing - prevent conflicts
+    if (userEditingLock) {
+      console.log("🔒 [NursingView] User editing lock active - skipping recording");
       toast({
-        title: "Recording failed",
-        description: `Unable to start voice recording: ${(error as any)?.message || 'Unknown error'}`,
+        title: "Recording Unavailable",
+        description: "Cannot start recording while editing notes. Complete your edits first.",
+        variant: "default",
+      });
+      return;
+    }
+
+    // Proceed with recording using RealtimeSOAP integration
+    proceedWithRecording();
+  };
+
+  const proceedWithRecording = async () => {
+    console.log("🎤 [NursingView] === PROCEED WITH RECORDING ===");
+    console.log("🎤 [NursingView] Delegating to RealtimeSOAPIntegration component");
+    
+    if (realtimeSOAPRef.current) {
+      try {
+        await realtimeSOAPRef.current.startRecording();
+        console.log("✅ [NursingView] RealtimeSOAP recording started successfully");
+      } catch (error) {
+        console.error("❌ [NursingView] Failed to start RealtimeSOAP recording:", error);
+        toast({
+          title: "Recording failed",
+          description: "Unable to start voice recording. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      console.error("❌ [NursingView] RealtimeSOAP ref not available");
+      toast({
+        title: "Recording Error",
+        description: "Recording system not ready. Please refresh the page.",
         variant: "destructive",
       });
     }
   };
 
+  // Callback handlers for RealtimeSOAPIntegration
+  const handleSOAPNoteUpdate = (updatedContent: string) => {
+    console.log("📝 [NursingView] SOAP note updated from RealtimeSOAP:", updatedContent?.length || 0, "chars");
+    setSoapNote(updatedContent);
+  };
+
+  const handleRecordingStateChange = (recording: boolean) => {
+    console.log("🎤 [NursingView] Recording state changed:", recording);
+    setIsRecording(recording);
+  };
+
+  const handleTranscriptionUpdate = (transcription: string) => {
+    console.log("📝 [NursingView] Transcription updated:", transcription?.length || 0, "chars");
+    setTranscription(transcription);
+    setLiveTranscriptionContent(transcription);
+  };
+
+  const handleDraftOrdersUpdate = (orders: any[]) => {
+    console.log("📋 [NursingView] Draft orders updated:", orders?.length || 0, "orders");
+    setDraftOrders(orders);
+  };
+
+  const handleCptCodesUpdate = (codes: any) => {
+    console.log("🏥 [NursingView] CPT codes updated:", codes);
+    setCptCodesData(codes);
+  };
+
+  // Simple stopRecording function delegating to RealtimeSOAP integration
   const stopRecording = async () => {
     console.log("🎤 [NursingView] === STOP RECORDING CALLED ===");
     
-    // Stop the MediaRecorder
-    const mediaRecorder = (window as any).currentMediaRecorder;
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      console.log("🎤 [NursingView] Stopping MediaRecorder...");
-      mediaRecorder.stop();
+    if (realtimeSOAPRef.current) {
+      try {
+        await realtimeSOAPRef.current.stopRecording();
+        console.log("✅ [NursingView] RealtimeSOAP recording stopped successfully");
+      } catch (error) {
+        console.error("❌ [NursingView] Failed to stop RealtimeSOAP recording:", error);
+      }
     }
     
-    // Close WebSocket connection
-    const realtimeWs = (window as any).nursingRealtimeWs;
-    if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-      console.log("🔌 [NursingView] Closing WebSocket connection...");
-      realtimeWs.close();
-      (window as any).nursingRealtimeWs = null;
-    }
-    
+    // Reset recording state
     setIsRecording(false);
     console.log("✅ [NursingView] Recording stopped successfully");
   };
+
+
 
   // Component UI render
   if (!user && !authLoading) {
@@ -1061,6 +742,20 @@ Format each bullet point on its own line with no extra spacing between them.`,
               onStopRecording={stopRecording}
               onGenerateInsights={generateNursingInsights}
               isGeneratingInsights={isGeneratingInsights}
+            />
+
+            {/* Hidden RealtimeSOAP Integration - handles all recording logic */}
+            <RealtimeSOAPIntegration
+              ref={realtimeSOAPRef}
+              patientId={patient.id}
+              encounterId={encounterId}
+              isRecording={isRecording}
+              onSOAPNoteUpdate={handleSOAPNoteUpdate}
+              onRecordingStateChange={handleRecordingStateChange}
+              onTranscriptionUpdate={handleTranscriptionUpdate}
+              onDraftOrdersUpdate={handleDraftOrdersUpdate}
+              onCptCodesUpdate={handleCptCodesUpdate}
+              style={{ display: 'none' }}
             />
           </div>
         </div>
