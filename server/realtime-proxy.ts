@@ -230,6 +230,9 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
                 }
               };
               
+              console.log('🔧 [RealtimeProxy] Full session update being sent:');
+              console.log(JSON.stringify(sessionUpdate, null, 2));
+              
               console.log('📤 [RealtimeProxy] Sending session configuration:', JSON.stringify(sessionUpdate, null, 2));
               openAiWs!.send(JSON.stringify(sessionUpdate));
               
@@ -259,11 +262,18 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
                 console.log('🎤 [RealtimeProxy] Speech detected');
               } else if (message.type === 'input_audio_buffer.speech_stopped') {
                 console.log('🔇 [RealtimeProxy] Speech ended');
+              } else if (message.type === 'input_audio_buffer.committed') {
+                console.log('🎵 [RealtimeProxy] Audio buffer committed');
               } else if (message.type === 'conversation.item.created') {
                 console.log('💬 [RealtimeProxy] New conversation item:', message.item?.type);
+                console.log('💬 [RealtimeProxy] Item details:', JSON.stringify(message.item, null, 2));
                 if (message.item?.transcript) {
                   console.log('📝 [RealtimeProxy] Transcript:', message.item.transcript);
                 }
+              } else if (message.type === 'conversation.item.input_audio_transcription.completed') {
+                console.log('✅ [RealtimeProxy] Transcription completed:', JSON.stringify(message, null, 2));
+              } else if (message.type === 'conversation.item.input_audio_transcription.failed') {
+                console.log('❌ [RealtimeProxy] Transcription failed:', JSON.stringify(message, null, 2));
               } else if (message.type === 'response.text.delta') {
                 console.log('✍️ [RealtimeProxy] Text delta:', message.delta);
               } else if (message.type === 'error') {

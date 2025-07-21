@@ -702,17 +702,24 @@ Format each bullet point on its own line with no extra spacing between them.`,
             const deltaText = message.delta || "";
             console.log("📝 [NursingView] Transcription delta received:", {
               delta: deltaText,
-              currentBuffer: transcriptionBuffer,
-              messageDetails: message
+              deltaLength: deltaText.length,
+              currentBufferLength: transcriptionBuffer.length,
+              messageDetails: message,
+              fullMessageContent: JSON.stringify(message)
             });
             
             // Accumulate transcription
             transcriptionBuffer += deltaText;
+            console.log("📝 [NursingView] Setting transcription states...");
             setTranscriptionBuffer(transcriptionBuffer);
             setLiveTranscriptionContent(transcriptionBuffer);
             setTranscription(transcriptionBuffer);
             
-            console.log("📝 [NursingView] Updated transcription buffer:", transcriptionBuffer);
+            console.log("📝 [NursingView] Updated transcription buffer:", {
+              content: transcriptionBuffer,
+              length: transcriptionBuffer.length,
+              preview: transcriptionBuffer.substring(0, 100) + (transcriptionBuffer.length > 100 ? '...' : '')
+            });
           }
           
           // Handle transcription completion  
