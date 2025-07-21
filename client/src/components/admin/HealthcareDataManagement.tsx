@@ -43,32 +43,7 @@ export function HealthcareDataManagement() {
   // Fetch current import status
   const { data: importStatusData } = useQuery<{ success: boolean; status: ImportStatus }>({
     queryKey: ['/api/admin/import-status'],
-    refetchInterval: importStatus !== 'idle' && importStatus !== 'complete' && importStatus !== 'error' ? 3000 : false,
-    onSuccess: (data) => {
-      if (data?.status) {
-        const backendStatus = data.status;
-        
-        // Update local state based on backend status
-        if (backendStatus.status === 'failed') {
-          setImportStatus('error');
-          toast({
-            title: "Import Failed",
-            description: backendStatus.message,
-            variant: "destructive"
-          });
-        } else if (backendStatus.status === 'completed') {
-          setImportStatus('complete');
-          setImportProgress(100);
-          toast({
-            title: "Import Complete",
-            description: "Healthcare data import completed successfully",
-          });
-        } else if (backendStatus.status === 'downloading' || backendStatus.status === 'processing') {
-          setImportStatus('importing');
-          setImportProgress(backendStatus.progress);
-        }
-      }
-    }
+    refetchInterval: 3000, // Always poll every 3 seconds
   });
 
   // Start full US healthcare data import
@@ -294,29 +269,31 @@ export function HealthcareDataManagement() {
               </Alert>
             )}
 
-            {/* Import Progress */}
-            {importStatus !== 'idle' && (
+            {/* Import Progress - Show only if backend has active status */}
+            {importStatusData?.status && 
+             importStatusData.status.status !== 'idle' && 
+             importStatusData.status.status !== 'completed' && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Import Progress</span>
                   <Badge variant={
-                    importStatus === 'complete' ? 'default' :
-                    importStatus === 'error' ? 'destructive' :
+                    importStatusData.status.status === 'completed' ? 'default' :
+                    importStatusData.status.status === 'failed' ? 'destructive' :
                     'secondary'
                   }>
-                    {importStatus === 'downloading' && <><Download className="w-3 h-3 mr-1" /> Downloading</>}
-                    {importStatus === 'importing' && <><Activity className="w-3 h-3 mr-1" /> Processing</>}
-                    {importStatus === 'complete' && <><CheckCircle className="w-3 h-3 mr-1" /> Complete</>}
-                    {importStatus === 'error' && <><AlertCircle className="w-3 h-3 mr-1" /> Error</>}
+                    {importStatusData.status.status === 'downloading' && <><Download className="w-3 h-3 mr-1" /> Downloading</>}
+                    {importStatusData.status.status === 'processing' && <><Activity className="w-3 h-3 mr-1" /> Processing</>}
+                    {importStatusData.status.status === 'completed' && <><CheckCircle className="w-3 h-3 mr-1" /> Complete</>}
+                    {importStatusData.status.status === 'failed' && <><AlertCircle className="w-3 h-3 mr-1" /> Error</>}
                   </Badge>
                 </div>
-                <Progress value={importProgress} className="h-2" />
+                <Progress value={importStatusData.status.progress} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  {importStatus === 'downloading' && "Downloading NPPES dataset (~4GB) from CMS.gov..."}
-                  {importStatus === 'importing' && importProgress < 5 && "Validating downloaded data and beginning processing..."}
-                  {importStatus === 'importing' && importProgress >= 5 && "Processing 3M+ healthcare providers nationwide..."}
-                  {importStatus === 'complete' && "Healthcare data import completed successfully!"}
-                  {importStatus === 'error' && "Import failed: Download error or invalid NPPES data. Check server logs for URL issues or try the 'Download NPPES Only' button first to test the connection."}
+                  {importStatusData.status.status === 'downloading' && "Downloading NPPES dataset (~4GB) from CMS.gov..."}
+                  {importStatusData.status.status === 'processing' && importStatusData.status.progress < 5 && "Validating downloaded data and beginning processing..."}
+                  {importStatusData.status.status === 'processing' && importStatusData.status.progress >= 5 && "Processing 3M+ healthcare providers nationwide..."}
+                  {importStatusData.status.status === 'completed' && "Healthcare data import completed successfully!"}
+                  {importStatusData.status.status === 'failed' && "Import failed: Download error or invalid NPPES data. Check server logs for URL issues or try the 'Download NPPES Only' button first to test the connection."}
                 </p>
                   </div>
                 )}
@@ -326,11 +303,13 @@ export function HealthcareDataManagement() {
               <div className="flex gap-3">
                 <Button 
               onClick={handleStartImport}
-              disabled={importDataMutation.isPending || importStatus === 'importing'}
+              disabled={importDataMutation.isPending || 
+                       (importStatusData?.status && 
+                        importStatusData.status.status === 'processing')}
               className="flex items-center gap-2"
             >
               <Database className="w-4 h-4" />
-              {importStatus === 'importing' ? 'Import in Progress...' : 'Import Full US Dataset'}
+              {importStatusData?.status?.status === 'processing' ? 'Import in Progress...' : 'Import Full US Dataset'}
                 </Button>
 
                 <Button 
