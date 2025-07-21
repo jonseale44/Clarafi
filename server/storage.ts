@@ -25,6 +25,11 @@ import {
   type Article, type InsertArticle, type ArticleRevision, type InsertArticleRevision,
   type ArticleComment, type InsertArticleComment, type ArticleGenerationQueue, type InsertArticleGenerationQueue,
   type NewsletterSubscriber, type InsertNewsletterSubscriber,
+  // Marketing & Analytics Intelligence Modules
+  marketingMetrics, userAcquisition, conversionEvents, marketingInsights, marketingAutomations, marketingCampaigns,
+  type MarketingMetrics, type InsertMarketingMetrics, type UserAcquisition, type InsertUserAcquisition,
+  type ConversionEvent, type InsertConversionEvent, type MarketingInsight, type InsertMarketingInsight,
+  type MarketingAutomation, type InsertMarketingAutomation, type MarketingCampaign, type InsertMarketingCampaign,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db.js";
@@ -197,6 +202,49 @@ export interface IStorage {
   createNewsletterSubscriber(subscriber: InsertNewsletterSubscriber): Promise<NewsletterSubscriber>;
   updateNewsletterSubscriber(id: number, updates: Partial<NewsletterSubscriber>): Promise<NewsletterSubscriber>;
   unsubscribeNewsletter(email: string): Promise<void>;
+  
+  // Marketing & Analytics Intelligence Module Methods
+  
+  // Module 1: Marketing Metrics Dashboard
+  getMarketingMetrics(params: {
+    healthSystemId: number;
+    startDate?: Date;
+    endDate?: Date;
+    metricType?: string;
+  }): Promise<MarketingMetrics[]>;
+  createMarketingMetrics(metrics: InsertMarketingMetrics): Promise<MarketingMetrics>;
+  updateMarketingMetrics(id: number, updates: Partial<MarketingMetrics>): Promise<MarketingMetrics>;
+  
+  // Module 2: User Acquisition Tracking
+  getUserAcquisition(userId: number): Promise<UserAcquisition | undefined>;
+  getUserAcquisitionByHealthSystem(healthSystemId: number): Promise<UserAcquisition[]>;
+  createUserAcquisition(acquisition: InsertUserAcquisition): Promise<UserAcquisition>;
+  updateUserAcquisition(id: number, updates: Partial<UserAcquisition>): Promise<UserAcquisition>;
+  
+  // Module 3: Conversion Events
+  getConversionEvents(params: {
+    userId?: number;
+    healthSystemId?: number;
+    eventType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<ConversionEvent[]>;
+  createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent>;
+  
+  // Module 4: Marketing Insights (Stub)
+  getMarketingInsights(healthSystemId: number, status?: string): Promise<MarketingInsight[]>;
+  createMarketingInsight(insight: InsertMarketingInsight): Promise<MarketingInsight>;
+  updateMarketingInsight(id: number, updates: Partial<MarketingInsight>): Promise<MarketingInsight>;
+  
+  // Module 5: Marketing Automations (Stub)
+  getMarketingAutomations(healthSystemId: number, enabled?: boolean): Promise<MarketingAutomation[]>;
+  createMarketingAutomation(automation: InsertMarketingAutomation): Promise<MarketingAutomation>;
+  updateMarketingAutomation(id: number, updates: Partial<MarketingAutomation>): Promise<MarketingAutomation>;
+  
+  // Marketing Campaigns
+  getMarketingCampaigns(healthSystemId: number, status?: string): Promise<MarketingCampaign[]>;
+  createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign>;
+  updateMarketingCampaign(id: number, updates: Partial<MarketingCampaign>): Promise<MarketingCampaign>;
   
   sessionStore: any;
 }
@@ -3308,6 +3356,239 @@ export class DatabaseStorage implements IStorage {
 
   async saveBlogGenerationSettings(userId: number, settings: any): Promise<void> {
     this.blogGenerationSettings.set(userId, settings);
+  }
+
+  // ========================================
+  // Marketing & Analytics Intelligence Implementation
+  // ========================================
+
+  // Module 1: Marketing Metrics Dashboard
+  async getMarketingMetrics(params: {
+    healthSystemId: number;
+    startDate?: Date;
+    endDate?: Date;
+    metricType?: string;
+  }): Promise<MarketingMetrics[]> {
+    const conditions: any[] = [eq(marketingMetrics.healthSystemId, params.healthSystemId)];
+    
+    if (params.startDate) {
+      conditions.push(gte(marketingMetrics.metricDate, params.startDate.toISOString().split('T')[0]));
+    }
+    
+    if (params.endDate) {
+      conditions.push(lte(marketingMetrics.metricDate, params.endDate.toISOString().split('T')[0]));
+    }
+    
+    if (params.metricType) {
+      conditions.push(eq(marketingMetrics.metricType, params.metricType));
+    }
+    
+    return await db
+      .select()
+      .from(marketingMetrics)
+      .where(and(...conditions))
+      .orderBy(desc(marketingMetrics.metricDate));
+  }
+
+  async createMarketingMetrics(metrics: InsertMarketingMetrics): Promise<MarketingMetrics> {
+    const [newMetrics] = await db
+      .insert(marketingMetrics)
+      .values(metrics)
+      .returning();
+    return newMetrics;
+  }
+
+  async updateMarketingMetrics(id: number, updates: Partial<MarketingMetrics>): Promise<MarketingMetrics> {
+    const [updated] = await db
+      .update(marketingMetrics)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketingMetrics.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Module 2: User Acquisition Tracking
+  async getUserAcquisition(userId: number): Promise<UserAcquisition | undefined> {
+    const [acquisition] = await db
+      .select()
+      .from(userAcquisition)
+      .where(eq(userAcquisition.userId, userId));
+    return acquisition || undefined;
+  }
+
+  async getUserAcquisitionByHealthSystem(healthSystemId: number): Promise<UserAcquisition[]> {
+    return await db
+      .select()
+      .from(userAcquisition)
+      .where(eq(userAcquisition.healthSystemId, healthSystemId))
+      .orderBy(desc(userAcquisition.acquisitionDate));
+  }
+
+  async createUserAcquisition(acquisition: InsertUserAcquisition): Promise<UserAcquisition> {
+    const [newAcquisition] = await db
+      .insert(userAcquisition)
+      .values(acquisition)
+      .returning();
+    return newAcquisition;
+  }
+
+  async updateUserAcquisition(id: number, updates: Partial<UserAcquisition>): Promise<UserAcquisition> {
+    const [updated] = await db
+      .update(userAcquisition)
+      .set(updates)
+      .where(eq(userAcquisition.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Module 3: Conversion Events
+  async getConversionEvents(params: {
+    userId?: number;
+    healthSystemId?: number;
+    eventType?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<ConversionEvent[]> {
+    const conditions: any[] = [];
+    
+    if (params.userId) {
+      conditions.push(eq(conversionEvents.userId, params.userId));
+    }
+    
+    if (params.healthSystemId) {
+      conditions.push(eq(conversionEvents.healthSystemId, params.healthSystemId));
+    }
+    
+    if (params.eventType) {
+      conditions.push(eq(conversionEvents.eventType, params.eventType));
+    }
+    
+    if (params.startDate) {
+      conditions.push(gte(conversionEvents.eventTimestamp, params.startDate));
+    }
+    
+    if (params.endDate) {
+      conditions.push(lte(conversionEvents.eventTimestamp, params.endDate));
+    }
+    
+    return await db
+      .select()
+      .from(conversionEvents)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(conversionEvents.eventTimestamp));
+  }
+
+  async createConversionEvent(event: InsertConversionEvent): Promise<ConversionEvent> {
+    const [newEvent] = await db
+      .insert(conversionEvents)
+      .values(event)
+      .returning();
+    return newEvent;
+  }
+
+  // Module 4: Marketing Insights (Stub)
+  async getMarketingInsights(healthSystemId: number, status?: string): Promise<MarketingInsight[]> {
+    const conditions: any[] = [eq(marketingInsights.healthSystemId, healthSystemId)];
+    
+    if (status) {
+      conditions.push(eq(marketingInsights.status, status));
+    }
+    
+    return await db
+      .select()
+      .from(marketingInsights)
+      .where(and(...conditions))
+      .orderBy(desc(marketingInsights.priority), desc(marketingInsights.generatedAt));
+  }
+
+  async createMarketingInsight(insight: InsertMarketingInsight): Promise<MarketingInsight> {
+    const [newInsight] = await db
+      .insert(marketingInsights)
+      .values(insight)
+      .returning();
+    return newInsight;
+  }
+
+  async updateMarketingInsight(id: number, updates: Partial<MarketingInsight>): Promise<MarketingInsight> {
+    const [updated] = await db
+      .update(marketingInsights)
+      .set(updates)
+      .where(eq(marketingInsights.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Module 5: Marketing Automations (Stub)
+  async getMarketingAutomations(healthSystemId: number, enabled?: boolean): Promise<MarketingAutomation[]> {
+    const conditions: any[] = [eq(marketingAutomations.healthSystemId, healthSystemId)];
+    
+    if (enabled !== undefined) {
+      conditions.push(eq(marketingAutomations.enabled, enabled));
+    }
+    
+    return await db
+      .select()
+      .from(marketingAutomations)
+      .where(and(...conditions))
+      .orderBy(desc(marketingAutomations.createdAt));
+  }
+
+  async createMarketingAutomation(automation: InsertMarketingAutomation): Promise<MarketingAutomation> {
+    const [newAutomation] = await db
+      .insert(marketingAutomations)
+      .values(automation)
+      .returning();
+    return newAutomation;
+  }
+
+  async updateMarketingAutomation(id: number, updates: Partial<MarketingAutomation>): Promise<MarketingAutomation> {
+    const [updated] = await db
+      .update(marketingAutomations)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketingAutomations.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Marketing Campaigns
+  async getMarketingCampaigns(healthSystemId: number, status?: string): Promise<MarketingCampaign[]> {
+    const conditions: any[] = [eq(marketingCampaigns.healthSystemId, healthSystemId)];
+    
+    if (status) {
+      conditions.push(eq(marketingCampaigns.status, status));
+    }
+    
+    return await db
+      .select()
+      .from(marketingCampaigns)
+      .where(and(...conditions))
+      .orderBy(desc(marketingCampaigns.createdAt));
+  }
+
+  async createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign> {
+    const [newCampaign] = await db
+      .insert(marketingCampaigns)
+      .values(campaign)
+      .returning();
+    return newCampaign;
+  }
+
+  async updateMarketingCampaign(id: number, updates: Partial<MarketingCampaign>): Promise<MarketingCampaign> {
+    const [updated] = await db
+      .update(marketingCampaigns)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketingCampaigns.id, id))
+      .returning();
+    return updated;
   }
 }
 

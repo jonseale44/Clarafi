@@ -43,6 +43,7 @@ import BlogArticlePage from "@/pages/blog-article";
 import AdminBlogManagement from "@/pages/admin-blog-management";
 import Pricing from "@/pages/pricing";
 import { AdminPharmacyImport } from "@/pages/AdminPharmacyImport";
+import AdminMarketingDashboard from "@/pages/admin-marketing-dashboard";
 
 import NotFound from "@/pages/not-found";
 
@@ -78,6 +79,7 @@ function Router() {
       <ProtectedRoute path="/admin/test-patients" component={SystemAdminTestPatients} />
       <ProtectedRoute path="/admin/blog" component={AdminBlogManagement} />
       <ProtectedRoute path="/admin/pharmacy-import" component={AdminPharmacyImport} />
+      <ProtectedRoute path="/admin/marketing" component={AdminMarketingDashboard} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

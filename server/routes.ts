@@ -5951,5 +5951,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   const { registerBillingRoutes } = await import("./billing-management-routes");
   registerBillingRoutes(app);
 
+  // Import and register marketing analytics routes
+  const marketingAnalyticsRoutes = await import("./marketing-analytics-routes");
+  app.use(marketingAnalyticsRoutes.default);
+  console.log("📊 [MarketingAnalytics] Marketing analytics routes registered");
+
   return httpServer;
 }

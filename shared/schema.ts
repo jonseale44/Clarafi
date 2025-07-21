@@ -4473,4 +4473,254 @@ export type InsertArticleGenerationQueue = z.infer<typeof insertArticleGeneratio
 export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;
 export type InsertNewsletterSubscriber = z.infer<typeof insertNewsletterSubscriberSchema>;
 
+// ==========================================
+// MARKETING & ANALYTICS INTELLIGENCE MODULES
+// ==========================================
+
+// Module 1: Marketing & Analytics Dashboard Data
+export const marketingMetrics = pgTable("marketing_metrics", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Aggregate metrics
+  metricDate: date("metric_date").notNull(),
+  metricType: text("metric_type").notNull(), // 'daily', 'weekly', 'monthly'
+  
+  // Traffic metrics
+  totalVisits: integer("total_visits").default(0),
+  uniqueVisitors: integer("unique_visitors").default(0),
+  pageViews: integer("page_views").default(0),
+  bounceRate: decimal("bounce_rate", { precision: 5, scale: 2 }),
+  avgSessionDuration: integer("avg_session_duration"), // in seconds
+  
+  // Conversion metrics
+  signups: integer("signups").default(0),
+  trials: integer("trials").default(0),
+  paidConversions: integer("paid_conversions").default(0),
+  conversionRate: decimal("conversion_rate", { precision: 5, scale: 2 }),
+  
+  // User behavior
+  featureUsage: jsonb("feature_usage").$type<Record<string, number>>(),
+  userFlowData: jsonb("user_flow_data").$type<{
+    paths: Array<{ from: string; to: string; count: number }>;
+    dropoffPoints: Array<{ page: string; percentage: number }>;
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Module 2: Acquisition Source Tracking
+export const userAcquisition = pgTable("user_acquisition", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Acquisition details
+  acquisitionDate: timestamp("acquisition_date").defaultNow(),
+  source: text("source"), // 'google', 'facebook', 'direct', 'referral', etc.
+  medium: text("medium"), // 'cpc', 'organic', 'social', 'email', etc.
+  campaign: text("campaign"),
+  
+  // UTM parameters
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
+  
+  // Referrer info
+  referrerUrl: text("referrer_url"),
+  landingPage: text("landing_page"),
+  
+  // Attribution
+  firstTouchAttribution: jsonb("first_touch_attribution").$type<{
+    source: string;
+    timestamp: string;
+    details: Record<string, any>;
+  }>(),
+  lastTouchAttribution: jsonb("last_touch_attribution").$type<{
+    source: string;
+    timestamp: string;
+    details: Record<string, any>;
+  }>(),
+  
+  // Categorization
+  isPaid: boolean("is_paid").default(false),
+  channelGroup: text("channel_group"), // 'paid_search', 'organic_search', 'social', 'direct'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Module 3: Conversion Event Logging
+export const conversionEvents = pgTable("conversion_events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Event details
+  eventType: text("event_type").notNull(), // 'signup', 'trial_start', 'onboarding_complete', 'first_chart_note', 'subscription_upgrade'
+  eventTimestamp: timestamp("event_timestamp").defaultNow(),
+  
+  // Context
+  sessionId: text("session_id"),
+  deviceType: text("device_type"), // 'desktop', 'mobile', 'tablet'
+  browserInfo: jsonb("browser_info").$type<{
+    name: string;
+    version: string;
+    os: string;
+  }>(),
+  
+  // Attribution link to acquisition
+  acquisitionId: integer("acquisition_id").references(() => userAcquisition.id),
+  
+  // Event-specific data
+  eventData: jsonb("event_data").$type<Record<string, any>>(),
+  
+  // Conversion value
+  monetaryValue: decimal("monetary_value", { precision: 10, scale: 2 }),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Module 4: Automated Insights & Recommendations (Stub)
+export const marketingInsights = pgTable("marketing_insights", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Insight details
+  insightType: text("insight_type").notNull(), // 'campaign_performance', 'feature_adoption', 'user_retention', 'conversion_optimization'
+  insightCategory: text("insight_category"), // 'opportunity', 'warning', 'success', 'trend'
+  
+  // Analysis results
+  title: text("title").notNull(),
+  description: text("description"),
+  analysisData: jsonb("analysis_data").$type<{
+    metrics: Record<string, any>;
+    trends: Array<any>;
+    comparisons: Array<any>;
+  }>(),
+  
+  // Recommendations
+  recommendations: jsonb("recommendations").$type<Array<{
+    action: string;
+    impact: 'high' | 'medium' | 'low';
+    effort: 'high' | 'medium' | 'low';
+    details: string;
+  }>>(),
+  
+  // Status
+  status: text("status").default('active'), // 'active', 'acknowledged', 'implemented', 'dismissed'
+  priority: integer("priority").default(0), // Higher number = higher priority
+  
+  // Timestamps
+  generatedAt: timestamp("generated_at").defaultNow(),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  implementedAt: timestamp("implemented_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Module 5: Automated Triggers/Actions (Stub)
+export const marketingAutomations = pgTable("marketing_automations", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Automation details
+  name: text("name").notNull(),
+  description: text("description"),
+  automationType: text("automation_type").notNull(), // 'campaign_pause', 'ab_test', 'notification', 'budget_adjustment'
+  
+  // Trigger conditions
+  triggerConditions: jsonb("trigger_conditions").$type<{
+    metric: string;
+    operator: 'greater_than' | 'less_than' | 'equals' | 'changes_by';
+    threshold: number;
+    timeWindow?: string; // e.g., '24h', '7d'
+  }>(),
+  
+  // Actions to take
+  actions: jsonb("actions").$type<Array<{
+    type: string;
+    parameters: Record<string, any>;
+    status?: 'pending' | 'completed' | 'failed';
+  }>>(),
+  
+  // Configuration
+  enabled: boolean("enabled").default(false),
+  testMode: boolean("test_mode").default(true),
+  schedule: text("schedule"), // cron expression for scheduled checks
+  
+  // Execution history
+  lastTriggered: timestamp("last_triggered"),
+  lastExecuted: timestamp("last_executed"),
+  executionCount: integer("execution_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Marketing campaign tracking
+export const marketingCampaigns = pgTable("marketing_campaigns", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  name: text("name").notNull(),
+  description: text("description"),
+  status: text("status").default('draft'), // 'draft', 'active', 'paused', 'completed'
+  
+  // Campaign details
+  campaignType: text("campaign_type"), // 'ppc', 'email', 'social', 'content'
+  channel: text("channel"), // 'google_ads', 'facebook', 'email', 'linkedin'
+  budget: decimal("budget", { precision: 10, scale: 2 }),
+  spentAmount: decimal("spent_amount", { precision: 10, scale: 2 }).default('0'),
+  
+  // Targeting
+  targetAudience: jsonb("target_audience").$type<{
+    demographics?: Record<string, any>;
+    interests?: string[];
+    behaviors?: string[];
+    locations?: string[];
+  }>(),
+  
+  // Performance tracking
+  performanceMetrics: jsonb("performance_metrics").$type<{
+    impressions?: number;
+    clicks?: number;
+    conversions?: number;
+    cost_per_click?: number;
+    cost_per_acquisition?: number;
+  }>(),
+  
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Marketing Analytics Insert Schemas and Types
+export const insertMarketingMetricsSchema = createInsertSchema(marketingMetrics);
+export type MarketingMetrics = typeof marketingMetrics.$inferSelect;
+export type InsertMarketingMetrics = z.infer<typeof insertMarketingMetricsSchema>;
+
+export const insertUserAcquisitionSchema = createInsertSchema(userAcquisition);
+export type UserAcquisition = typeof userAcquisition.$inferSelect;
+export type InsertUserAcquisition = z.infer<typeof insertUserAcquisitionSchema>;
+
+export const insertConversionEventSchema = createInsertSchema(conversionEvents);
+export type ConversionEvent = typeof conversionEvents.$inferSelect;
+export type InsertConversionEvent = z.infer<typeof insertConversionEventSchema>;
+
+export const insertMarketingInsightSchema = createInsertSchema(marketingInsights);
+export type MarketingInsight = typeof marketingInsights.$inferSelect;
+export type InsertMarketingInsight = z.infer<typeof insertMarketingInsightSchema>;
+
+export const insertMarketingAutomationSchema = createInsertSchema(marketingAutomations);
+export type MarketingAutomation = typeof marketingAutomations.$inferSelect;
+export type InsertMarketingAutomation = z.infer<typeof insertMarketingAutomationSchema>;
+
+export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaigns);
+export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
+export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
+
 // Indexes will be created via SQL migration

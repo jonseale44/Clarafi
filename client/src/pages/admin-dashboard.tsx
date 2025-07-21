@@ -19,7 +19,8 @@ import {
   ChevronRight,
   LogOut,
   MapPin,
-  Building2
+  Building2,
+  TrendingUp
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -101,6 +102,21 @@ export default function AdminDashboard() {
       stats: [
         { label: 'Monthly Revenue', value: `$${stats?.monthlyRevenue || 0}` },
         { label: 'Active Subscriptions', value: stats?.activeSubscriptions || 0 }
+      ]
+    },
+    {
+      id: 'marketing-analytics',
+      title: 'Marketing & Analytics',
+      description: 'Track acquisition, conversions, and marketing performance insights',
+      icon: <TrendingUp className="h-6 w-6" />,
+      actions: [
+        { label: 'Marketing Dashboard', href: '/admin/marketing', variant: 'default' },
+        { label: 'View Analytics', href: '/admin/marketing', variant: 'secondary' }
+      ],
+      stats: [
+        { label: 'Monthly Signups', value: stats?.monthlySignups || 0 },
+        { label: 'Conversion Rate', value: `${stats?.conversionRate || 0}%` },
+        { label: 'Active Campaigns', value: stats?.activeCampaigns || 0 }
       ]
     },
     {

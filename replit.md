@@ -41,6 +41,14 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 4. **Medical Problems Parser**: Automated extraction and standardization of medical conditions
 5. **Vitals Extraction**: Automated vitals parsing from clinical documents
 
+### Marketing & Analytics Intelligence Platform
+1. **Marketing Metrics Dashboard**: Aggregate visualization of traffic, conversions, and user behaviors
+2. **Acquisition Source Tracking**: Track user signups by source including UTM parameters and referrers
+3. **Conversion Event Logging**: Monitor key events (signup, trial start, onboarding, first chart note)
+4. **Automated Insights Engine**: AI-driven analysis with actionable recommendations (stub)
+5. **Marketing Automations**: Configure automated responses for campaigns and budget management (stub)
+6. **Campaign Management**: Track and manage marketing campaigns across channels
+
 ### Advanced Workflows
 1. **Encounter-Based Processing**: Extends existing encounters vs. creating new ones for continuity
 2. **Multi-Source Lab Integration**: Patient-reported, provider-entered, and external lab results
@@ -66,6 +74,36 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 5. **Provider Review** → Clinical validation and approval workflows
 
 ## Recent Changes
+
+### Marketing & Analytics Intelligence Platform Implementation (January 23, 2025)
+✓ **PHYSICIAN-CENTRIC MARKETING PLATFORM**: Created comprehensive marketing analytics system for EMR administrators
+✓ **5 CORE MODULES IMPLEMENTED**:
+  - Marketing Metrics Dashboard: Traffic, conversions, and user behavior visualization
+  - Acquisition Source Tracking: UTM parameters, referrers, and channel performance
+  - Conversion Event Logging: Key event tracking (signup, trial, onboarding, first note)
+  - Automated Insights Engine: AI-driven recommendations (stub for future implementation)
+  - Marketing Automations: Campaign pause, A/B testing, budget reallocation (stub)
+
+✓ **BACKEND INFRASTRUCTURE**:
+  - Complete database schema for all marketing modules (11 new tables)
+  - RESTful API routes for all marketing operations
+  - Storage interfaces for metrics, acquisitions, conversions, insights, and automations
+  - Admin-only access control for marketing features
+
+✓ **FRONTEND COMPONENTS**:
+  - AdminMarketingDashboard: Main marketing analytics page with tabbed interface
+  - MarketingMetricsDashboard: Summary cards and performance visualization
+  - AcquisitionTracking: Channel performance and user acquisition sources
+  - ConversionEvents: Funnel visualization and event tracking
+  - MarketingInsights: AI-driven recommendations with action items
+  - MarketingAutomations: Rule-based automation configuration
+  - MarketingCampaigns: Campaign management and ROI tracking
+
+✓ **ARCHITECTURE DECISIONS**:
+  - Self-contained module within existing EMR system
+  - Extensible design for future detailed implementation
+  - Placeholder/stub components for complex features (AI insights, automations)
+  - Ready for integration with external marketing platforms and APIs
 
 ### Critical Application Startup Fixes (July 21, 2025)
 ✓ **STARTUP ERRORS RESOLVED**: Fixed multiple critical errors preventing application from running
