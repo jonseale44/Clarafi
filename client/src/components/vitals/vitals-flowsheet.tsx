@@ -427,7 +427,7 @@ export function VitalsFlowsheet({
     }
   });
 
-  // Save vitals entry mutation
+  // Save vitals entry mutation with optimistic updates
   const saveVitalsMutation = useMutation({
     mutationFn: async (entry: Partial<VitalsEntry>) => {
       // Ensure encounterId and patientId are always included
@@ -478,10 +478,70 @@ export function VitalsFlowsheet({
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
       }
     },
+    onMutate: async (newEntry) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['/api/vitals/encounter', encounterId] });
+      await queryClient.cancelQueries({ queryKey: ['/api/vitals/patient', patientId] });
+
+      // Snapshot the previous values
+      const previousEncounterVitals = queryClient.getQueryData(['/api/vitals/encounter', encounterId]);
+      const previousPatientVitals = queryClient.getQueryData(['/api/vitals/patient', patientId]);
+
+      // Create optimistic vital entry
+      const optimisticVital: VitalsEntry = {
+        id: newEntry.id || Date.now(),
+        encounterId: newEntry.encounterId || encounterId,
+        patientId: newEntry.patientId || patientId,
+        recordedAt: newEntry.recordedAt || new Date().toISOString(),
+        bloodPressureSystolic: newEntry.bloodPressureSystolic,
+        bloodPressureDiastolic: newEntry.bloodPressureDiastolic,
+        heartRate: newEntry.heartRate,
+        respiratoryRate: newEntry.respiratoryRate,
+        temperature: newEntry.temperature,
+        oxygenSaturation: newEntry.oxygenSaturation,
+        weight: newEntry.weight,
+        height: newEntry.height,
+        bmi: newEntry.bmi,
+        painLevel: newEntry.painLevel,
+        notes: newEntry.notes,
+        createdAt: newEntry.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update encounter vitals
+      queryClient.setQueryData(
+        ['/api/vitals/encounter', encounterId],
+        (old: VitalsEntry[] | undefined) => {
+          if (!old) return [optimisticVital];
+          
+          // If editing, replace the existing entry
+          if (newEntry.id) {
+            return old.map((v) => v.id === newEntry.id ? optimisticVital : v);
+          }
+          // If creating, add to the array
+          return [...old, optimisticVital];
+        }
+      );
+
+      // Update patient vitals (last 30 days)
+      queryClient.setQueryData(
+        ['/api/vitals/patient', patientId],
+        (old: VitalsEntry[] | undefined) => {
+          if (!old) return [optimisticVital];
+          
+          // If editing, replace the existing entry
+          if (newEntry.id) {
+            return old.map((v) => v.id === newEntry.id ? optimisticVital : v);
+          }
+          // If creating, add to the array
+          return [...old, optimisticVital];
+        }
+      );
+
+      return { previousEncounterVitals, previousPatientVitals };
+    },
     onSuccess: () => {
-      console.log("✅ [VitalsFlowsheet] Vitals saved successfully, invalidating cache");
-      queryClient.invalidateQueries({ queryKey: ['/api/vitals/encounter', encounterId] });
-      queryClient.invalidateQueries({ queryKey: ['/api/vitals/patient', patientId] });
+      console.log("✅ [VitalsFlowsheet] Vitals saved successfully");
       setEditingEntry(null);
       setShowAddDialog(false);
       setQuickParseText('');
@@ -490,12 +550,24 @@ export function VitalsFlowsheet({
         description: "Vitals entry has been saved successfully"
       });
     },
-    onError: (error) => {
+    onError: (error, newEntry, context) => {
+      // Rollback to previous state on error
+      if (context?.previousEncounterVitals !== undefined) {
+        queryClient.setQueryData(['/api/vitals/encounter', encounterId], context.previousEncounterVitals);
+      }
+      if (context?.previousPatientVitals !== undefined) {
+        queryClient.setQueryData(['/api/vitals/patient', patientId], context.previousPatientVitals);
+      }
       toast({
         title: "Save Error",
         description: error instanceof Error ? error.message : "Failed to save vitals",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: ['/api/vitals/encounter', encounterId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vitals/patient', patientId] });
     }
   });
 

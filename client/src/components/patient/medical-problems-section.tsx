@@ -67,7 +67,7 @@ export function MedicalProblemsSection({
     },
   });
 
-  // Create mutation
+  // Create mutation with optimistic updates
   const createMutation = useMutation({
     mutationFn: async (data: MedicalProblemFormData) => {
       const response = await fetch(`/api/patients/${patientId}/medical-problems`, {
@@ -78,18 +78,60 @@ export function MedicalProblemsSection({
       if (!response.ok) throw new Error("Failed to create medical problem");
       return response.json();
     },
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: [`/api/patients/${patientId}/medical-problems`],
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([
+        `/api/patients/${patientId}/medical-problems`,
+      ]);
+
+      // Optimistically update to the new value
+      const optimisticProblem = {
+        id: Date.now(), // Temporary ID
+        patientId,
+        diagnosis: newData.diagnosis,
+        icd10Code: newData.icd10Code,
+        diagnosisDate: newData.diagnosisDate,
+        status: newData.status,
+        notes: newData.notes,
+        encounterId: newData.encounterId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(
+        [`/api/patients/${patientId}/medical-problems`],
+        (old: any[]) => (old ? [...old, optimisticProblem] : [optimisticProblem]),
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem added successfully" });
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, newData, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          [`/api/patients/${patientId}/medical-problems`],
+          context.previousData,
+        );
+      }
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
     },
   });
 
-  // Update mutation
+  // Update mutation with optimistic updates
   const updateMutation = useMutation({
     mutationFn: async ({ problemId, data }: { problemId: number; data: MedicalProblemFormData }) => {
       const response = await fetch(`/api/patients/${patientId}/medical-problems/${problemId}`, {
@@ -100,18 +142,63 @@ export function MedicalProblemsSection({
       if (!response.ok) throw new Error("Failed to update medical problem");
       return response.json();
     },
+    onMutate: async ({ problemId, data }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: [`/api/patients/${patientId}/medical-problems`],
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([
+        `/api/patients/${patientId}/medical-problems`,
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/patients/${patientId}/medical-problems`],
+        (old: any[]) => {
+          if (!old) return old;
+          return old.map((problem) =>
+            problem.id === problemId
+              ? {
+                  ...problem,
+                  diagnosis: data.diagnosis,
+                  icd10Code: data.icd10Code,
+                  diagnosisDate: data.diagnosisDate,
+                  status: data.status,
+                  notes: data.notes,
+                  encounterId: data.encounterId,
+                  updatedAt: new Date().toISOString(),
+                }
+              : problem
+          );
+        }
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem updated successfully" });
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          [`/api/patients/${patientId}/medical-problems`],
+          context.previousData,
+        );
+      }
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
     },
   });
 
-  // Delete mutation
+  // Delete mutation with optimistic updates
   const deleteMutation = useMutation({
     mutationFn: async (problemId: number) => {
       const response = await fetch(`/api/patients/${patientId}/medical-problems/${problemId}`, {
@@ -120,12 +207,44 @@ export function MedicalProblemsSection({
       if (!response.ok) throw new Error("Failed to delete medical problem");
       return response.json();
     },
+    onMutate: async (problemId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: [`/api/patients/${patientId}/medical-problems`],
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([
+        `/api/patients/${patientId}/medical-problems`,
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/patients/${patientId}/medical-problems`],
+        (old: any[]) => {
+          if (!old) return old;
+          return old.filter((problem) => problem.id !== problemId);
+        }
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
       toast({ title: "Success", description: "Medical problem deleted successfully" });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, problemId, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          [`/api/patients/${patientId}/medical-problems`],
+          context.previousData,
+        );
+      }
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
     },
   });
 

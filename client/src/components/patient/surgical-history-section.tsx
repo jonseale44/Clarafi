@@ -97,11 +97,46 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
     enabled: !!patientId
   });
 
-  // Create new surgical history entry
+  // Create new surgical history entry with optimistic updates
   const createSurgeryMutation = useMutation({
     mutationFn: (surgeryData: any) => apiRequest("POST", `/api/surgical-history`, { ...surgeryData, patientId }),
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([`/api/surgical-history/${patientId}`]);
+
+      // Optimistically update to the new value
+      const optimisticSurgery: SurgicalHistoryEntry = {
+        id: Date.now(), // Temporary ID
+        patientId,
+        procedureName: newData.procedureName,
+        procedureDate: newData.procedureDate,
+        surgeonName: newData.surgeonName,
+        facilityName: newData.facilityName,
+        indication: newData.indication,
+        complications: newData.complications,
+        outcome: newData.outcome,
+        anesthesiaType: newData.anesthesiaType,
+        cptCode: newData.cptCode,
+        anatomicalSite: newData.anatomicalSite,
+        laterality: newData.laterality,
+        urgencyLevel: newData.urgencyLevel,
+        lengthOfStay: newData.lengthOfStay,
+        visitHistory: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(
+        [`/api/surgical-history/${patientId}`],
+        (old: SurgicalHistoryEntry[] | undefined) => (old ? [...old, optimisticSurgery] : [optimisticSurgery])
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
       setIsAddDialogOpen(false);
       setNewSurgery({
         procedureName: "",
@@ -123,52 +158,118 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
         description: "Surgical history entry created successfully"
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, newData, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData([`/api/surgical-history/${patientId}`], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to add surgical history",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
     }
   });
 
-  // Update surgical history entry
+  // Update surgical history entry with optimistic updates
   const updateSurgeryMutation = useMutation({
     mutationFn: ({ surgeryId, updates }: { surgeryId: number, updates: any }) => 
       apiRequest("PUT", `/api/surgical-history/${surgeryId}`, updates),
+    onMutate: async ({ surgeryId, updates }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([`/api/surgical-history/${patientId}`]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/surgical-history/${patientId}`],
+        (old: SurgicalHistoryEntry[] | undefined) => {
+          if (!old) return old;
+          return old.map((surgery) =>
+            surgery.id === surgeryId
+              ? {
+                  ...surgery,
+                  ...updates,
+                  updatedAt: new Date().toISOString(),
+                }
+              : surgery
+          );
+        }
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
       setEditingSurgery(null);
       toast({
         title: "Surgery Updated",
         description: "Surgical history entry updated successfully"
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData([`/api/surgical-history/${patientId}`], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to update surgical history",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
     }
   });
 
-  // Delete surgical history entry
+  // Delete surgical history entry with optimistic updates
   const deleteSurgeryMutation = useMutation({
     mutationFn: (surgeryId: number) => apiRequest("DELETE", `/api/surgical-history/${surgeryId}`),
+    onMutate: async (surgeryId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([`/api/surgical-history/${patientId}`]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/surgical-history/${patientId}`],
+        (old: SurgicalHistoryEntry[] | undefined) => {
+          if (!old) return old;
+          return old.filter((surgery) => surgery.id !== surgeryId);
+        }
+      );
+
+      return { previousData };
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
       toast({
         title: "Surgery Deleted",
         description: "Surgical history entry removed successfully"
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, surgeryId, context) => {
+      // Rollback to previous state on error
+      if (context?.previousData) {
+        queryClient.setQueryData([`/api/surgical-history/${patientId}`], context.previousData);
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to delete surgical history",
         variant: "destructive"
       });
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
+      queryClient.invalidateQueries({ queryKey: [`/api/surgical-history/${patientId}`] });
     }
   });
 
