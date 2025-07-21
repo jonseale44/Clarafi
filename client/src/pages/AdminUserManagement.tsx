@@ -42,6 +42,8 @@ interface Location {
   state: string;
   zipCode: string;
   phone?: string;
+  healthSystemId?: number;
+  organizationId?: number;
   healthSystemName?: string;
   organizationName?: string;
 }
@@ -100,7 +102,7 @@ export function AdminUserManagement() {
   });
 
   // Fetch all health systems
-  const { data: healthSystems = [], isError: healthSystemsError } = useQuery({
+  const { data: healthSystems = [], isError: healthSystemsError } = useQuery<any[]>({
     queryKey: ["/api/health-systems"],
   });
 
@@ -122,7 +124,16 @@ export function AdminUserManagement() {
 
   // Filter locations to only show ones from the selected user's health system
   const availableLocations = selectedUser 
-    ? locations
+    ? locations.filter(location => {
+        // Check if location belongs to the same health system as the user
+        // Location can be linked via direct health_system_id or through organization->health_system
+        const locationHealthSystemId = location.healthSystemId || 
+          (location.organizationId && healthSystems.find((hs: any) => 
+            hs.organizations?.some((org: any) => org.id === location.organizationId)
+          )?.id);
+        
+        return locationHealthSystemId === selectedUser.healthSystemId;
+      })
     : [];
 
   // Check username availability

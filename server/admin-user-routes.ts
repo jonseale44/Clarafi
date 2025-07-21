@@ -1,7 +1,7 @@
 import { Express } from "express";
 import { db } from "./db.js";
 import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs } from "@shared/schema";
-import { eq, sql, and, isNull, desc } from "drizzle-orm";
+import { eq, sql, and, isNull, desc, or } from "drizzle-orm";
 import { z } from "zod";
 
 export function registerAdminUserRoutes(app: Express) {
@@ -229,9 +229,11 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
-  // Get all locations with hierarchy
+  // Get all locations with hierarchy - filtered by user's health system
   app.get("/api/admin/locations", requireAdmin, async (req, res) => {
     try {
+      const userHealthSystemId = req.user.healthSystemId;
+      
       const locationsWithHierarchy = await db
         .select({
           id: locations.id,
@@ -243,12 +245,20 @@ export function registerAdminUserRoutes(app: Express) {
           state: locations.state,
           zipCode: locations.zipCode,
           phone: locations.phone,
+          healthSystemId: locations.healthSystemId,
           healthSystemName: healthSystems.name,
           organizationName: organizations.name,
         })
         .from(locations)
         .leftJoin(organizations, eq(locations.organizationId, organizations.id))
-        .leftJoin(healthSystems, eq(organizations.healthSystemId, healthSystems.id))
+        .leftJoin(healthSystems, or(
+          eq(organizations.healthSystemId, healthSystems.id),
+          eq(locations.healthSystemId, healthSystems.id)
+        ))
+        .where(or(
+          eq(organizations.healthSystemId, userHealthSystemId),
+          eq(locations.healthSystemId, userHealthSystemId)
+        ))
         .orderBy(healthSystems.name, organizations.name, locations.name);
 
       console.log("🔍 [AdminUserRoutes] Fetched", locationsWithHierarchy.length, "locations");

@@ -77,6 +77,16 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
   - Better user messaging with warnings about tier requirements
 ✓ **USER IMPACT**: System administrators can now see all health systems and understand upgrade requirements for subscription key generation
 
+### Location Assignment Bug Fix (January 21, 2025)
+✓ **CRITICAL BUG FIXED**: Location assignment dropdown was showing locations from wrong health systems for users
+✓ **ROOT CAUSE**: jamienurse (Parkland Family Medicine Clinic) was seeing "Waco Family Medicine - Hillsboro" from different health system
+✓ **SOLUTION IMPLEMENTED**:
+  - Fixed frontend filtering logic to properly filter locations by selectedUser.healthSystemId  
+  - Enhanced backend `/api/admin/locations` API to only return locations from user's health system
+  - Updated database so locations are properly associated with correct health systems
+  - Added TypeScript interfaces for healthSystemId and organizationId fields
+✓ **USER IMPACT**: Administrators can now only assign users to locations within their own health system, maintaining proper organizational boundaries
+
 ### Nursing UI/UX Redesign - Dynamic Layout Implementation (January 21, 2025)
 ✓ **NURSING TRANSCRIPTION UI REDESIGNED**: Completely redesigned NursingRecordingPanel to match provider view's superior dynamic layout
 ✓ **PROBLEM IDENTIFIED**: Original nursing view used single Card with static flex layout - AI insights didn't move when transcription expanded/collapsed
