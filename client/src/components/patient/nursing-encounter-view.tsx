@@ -594,9 +594,13 @@ Format each bullet point on its own line with no extra spacing between them.`,
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
         
+        console.log("🔧 [NursingView] ============ RECORDING STARTED ============");
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
         console.log("🔧 [NursingView] - Patient ID:", patient.id);
         console.log("🔧 [NursingView] - Encounter ID:", encounterId);
+        console.log("🔧 [NursingView] - User ID:", userId);
+        console.log("🔧 [NursingView] - User Role:", currentUser?.role);
+        console.log("🔧 [NursingView] - Is Recording:", isRecording);
         
         realtimeWs = new WebSocket(wsUrl);
         // Store WebSocket reference in window to avoid undefined reference
@@ -651,13 +655,20 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log("📨 [NursingView] WebSocket message received:", {
+          console.log("📨 [NursingView] ============ WEBSOCKET MESSAGE RECEIVED ============");
+          console.log("📨 [NursingView] Message type:", message.type);
+          console.log("📨 [NursingView] Message structure:", {
             type: message.type,
             hasData: !!message.data,
             hasError: !!message.error,
             hasTranscript: !!message.transcript,
             hasDelta: !!message.delta,
-            fullMessage: message
+            hasText: !!message.text,
+            hasContent: !!message.content,
+            hasResponse: !!message.response,
+            hasItem: !!message.item,
+            keys: Object.keys(message),
+            fullMessage: JSON.stringify(message, null, 2)
           });
 
           // Handle session creation response first
@@ -682,46 +693,84 @@ Format each bullet point on its own line with no extra spacing between them.`,
             console.error("❌ [NursingView] Full error message:", message);
           }
 
-          // Handle transcription delta messages
-          else if (message.type === "audio.transcription.delta") {
-            const deltaText = message.delta || "";
-            console.log("📝 [NursingView] Transcription delta received:", {
+          // Handle transcription delta messages - check for different possible message types
+          else if (
+            message.type === "audio.transcription.delta" ||
+            message.type === "conversation.item.input_audio_transcription.delta" ||
+            message.type === "input_audio_transcription.delta"
+          ) {
+            console.log("📝 [NursingView] TRANSCRIPTION DELTA DETECTED!");
+            console.log("📝 [NursingView] Message type matched:", message.type);
+            
+            // Try to find the transcription text in different possible fields
+            const deltaText = message.delta || message.transcript || message.text || message.content || "";
+            console.log("📝 [NursingView] Transcription delta details:", {
+              messageType: message.type,
               delta: deltaText,
               deltaLength: deltaText.length,
+              hasMessageDelta: !!message.delta,
+              hasMessageTranscript: !!message.transcript,
+              hasMessageText: !!message.text,
+              hasMessageContent: !!message.content,
               currentBufferLength: transcriptionBuffer.length,
-              messageDetails: message,
-              fullMessageContent: JSON.stringify(message)
+              messageKeys: Object.keys(message),
+              fullMessage: JSON.stringify(message, null, 2)
             });
             
-            // Accumulate transcription
-            transcriptionBuffer += deltaText;
-            console.log("📝 [NursingView] Setting transcription states...");
-            setTranscriptionBuffer(transcriptionBuffer);
-            setLiveTranscriptionContent(transcriptionBuffer);
-            setTranscription(transcriptionBuffer);
-            
-            console.log("📝 [NursingView] Updated transcription buffer:", {
-              content: transcriptionBuffer,
-              length: transcriptionBuffer.length,
-              preview: transcriptionBuffer.substring(0, 100) + (transcriptionBuffer.length > 100 ? '...' : '')
-            });
+            if (deltaText) {
+              // Accumulate transcription
+              transcriptionBuffer += deltaText;
+              console.log("📝 [NursingView] UPDATING TRANSCRIPTION STATES:");
+              console.log("📝 [NursingView] - New buffer content:", transcriptionBuffer);
+              console.log("📝 [NursingView] - New buffer length:", transcriptionBuffer.length);
+              
+              setTranscriptionBuffer(transcriptionBuffer);
+              setLiveTranscriptionContent(transcriptionBuffer);
+              setTranscription(transcriptionBuffer);
+              
+              console.log("📝 [NursingView] States updated successfully");
+              console.log("📝 [NursingView] Transcription preview:", transcriptionBuffer.substring(0, 200));
+            } else {
+              console.warn("⚠️ [NursingView] Delta message received but no text content found!");
+            }
           }
           
-          // Handle transcription completion  
-          else if (message.type === "conversation.item.input_audio_transcription.completed") {
-            const finalText = message.transcript || "";
-            console.log("✅ [NursingView] Transcription completed:", {
+          // Handle transcription completion - check for different possible message types
+          else if (
+            message.type === "conversation.item.input_audio_transcription.completed" ||
+            message.type === "audio.transcription.completed" ||
+            message.type === "input_audio_transcription.completed"
+          ) {
+            console.log("✅ [NursingView] TRANSCRIPTION COMPLETED EVENT!");
+            console.log("✅ [NursingView] Message type matched:", message.type);
+            
+            // Try to find the transcription text in different possible fields
+            const finalText = message.transcript || message.text || message.content || "";
+            console.log("✅ [NursingView] Transcription completion details:", {
+              messageType: message.type,
               transcript: finalText,
-              messageDetails: message
+              transcriptLength: finalText.length,
+              hasMessageTranscript: !!message.transcript,
+              hasMessageText: !!message.text,
+              hasMessageContent: !!message.content,
+              messageKeys: Object.keys(message),
+              fullMessage: JSON.stringify(message, null, 2)
             });
             
             // Update the transcription with the final text
             if (finalText.trim()) {
+              console.log("✅ [NursingView] SETTING FINAL TRANSCRIPTION:");
+              console.log("✅ [NursingView] - Final text:", finalText);
+              console.log("✅ [NursingView] - Final length:", finalText.length);
+              
               setTranscription(finalText);
               setLiveTranscriptionContent(finalText);
               setTranscriptionBuffer(finalText);
               transcriptionBuffer = finalText;
-              console.log("✅ [NursingView] Final transcription set:", finalText);
+              
+              console.log("✅ [NursingView] Final transcription states updated");
+            } else {
+              console.warn("⚠️ [NursingView] Completion message received but no text content found!");
             }
           }
           
@@ -738,10 +787,25 @@ Format each bullet point on its own line with no extra spacing between them.`,
           
           // Log any unhandled message types
           else {
-            console.warn("⚠️ [NursingView] Unhandled message type:", {
+            console.warn("⚠️ [NursingView] UNHANDLED MESSAGE TYPE RECEIVED!");
+            console.warn("⚠️ [NursingView] Message type:", message.type);
+            console.warn("⚠️ [NursingView] Full message structure:", {
               type: message.type,
-              message: message
+              keys: Object.keys(message),
+              hasTranscript: !!message.transcript,
+              hasDelta: !!message.delta,
+              hasText: !!message.text,
+              hasContent: !!message.content,
+              hasAudio: !!message.audio,
+              hasItem: !!message.item,
+              fullMessage: JSON.stringify(message, null, 2)
             });
+            
+            // Check if this might be a transcription message with unexpected type
+            if (message.transcript || message.delta || message.text) {
+              console.warn("⚠️ [NursingView] This might be a transcription message with unexpected type!");
+              console.warn("⚠️ [NursingView] Content:", message.transcript || message.delta || message.text);
+            }
           }
         };
         
