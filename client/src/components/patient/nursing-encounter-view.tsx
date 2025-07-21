@@ -30,6 +30,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { useSharedRealtimeService } from "@/utils/shared-realtime-service";
 import { SharedChartSections } from "@/components/patient/shared-chart-sections";
 import { UnifiedChartPanel } from "@/components/patient/unified-chart-panel";
@@ -85,6 +86,7 @@ export function NursingEncounterView({
 }: NursingEncounterViewProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading } = useAuth();
 
   // State management - matching provider view exactly including AI suggestions
   const [isRecording, setIsRecording] = useState(false);
@@ -693,9 +695,18 @@ Format each bullet point on its own line with no extra spacing between them.`,
   };
 
   // Component UI render
-  if (isAuthenticated === false) {
-    return (<div className="flex items-center justify-center h-screen">
+  if (!user && !authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
         <p className="text-red-500">Not authenticated. Please log in.</p>
+      </div>
+    );
+  }
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
