@@ -130,6 +130,7 @@ export function NursingEncounterView({
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const realtimeWsRef = useRef<WebSocket | null>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery({
@@ -553,6 +554,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
         
         realtimeWs = new WebSocket(wsUrl);
+        realtimeWsRef.current = realtimeWs;
 
         realtimeWs.onopen = () => {
           console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
