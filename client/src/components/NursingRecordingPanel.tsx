@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,14 @@ export function NursingRecordingPanel({
 }: NursingRecordingPanelProps) {
   const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(true);
   const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(true);
+  const transcriptionRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when transcription updates
+  useEffect(() => {
+    if (transcription && transcriptionRef.current) {
+      transcriptionRef.current.scrollTop = transcriptionRef.current.scrollHeight;
+    }
+  }, [transcription]);
 
   return (
     <div className="space-y-4">
@@ -86,7 +94,10 @@ export function NursingRecordingPanel({
           
           <CollapsibleContent>
             <div className="space-y-2">
-              <div className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-gray-50 max-h-[400px] overflow-y-auto">
+              <div 
+                ref={transcriptionRef}
+                className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-gray-50 max-h-[400px] overflow-y-auto scroll-smooth"
+              >
                 <div className="whitespace-pre-line text-sm leading-relaxed">
                   {transcription ? (
                     transcription

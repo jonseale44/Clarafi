@@ -82,6 +82,7 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
   - Status badges for recording state and AI activity
   - Consistent styling matching provider view's design patterns
 ✓ **USER EXPERIENCE**: Nursing documentation now has same dynamic accordion behavior as provider view for better usability
+✓ **AUTO-SCROLL FEATURE**: Added automatic scrolling to keep latest transcription visible during recording - transcription area automatically scrolls to bottom when new text appears, with smooth CSS animations
 
 ### Nursing Transcription System Complete Fix (Jan 21, 2025)
 ✓ **MAJOR FIX COMPLETED**: Nursing transcription system now fully functional with proper real-time audio transcription
