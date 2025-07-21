@@ -147,14 +147,7 @@ export function NursingRecordingPanel({
               )}
               <ScrollArea className="h-48 border rounded-md p-3 bg-blue-50">
                 {aiSuggestions ? (
-                  <div className="space-y-2">
-                    {aiSuggestions.split('\n').filter(Boolean).map((suggestion, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <span className="text-blue-600 mt-0.5">•</span>
-                        <p className="text-sm">{suggestion}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{aiSuggestions}</p>
                 ) : (
                   <p className="text-sm text-gray-500 italic">
                     {transcription ? "Click button above to generate nursing insights" : "Start recording first to generate insights"}
