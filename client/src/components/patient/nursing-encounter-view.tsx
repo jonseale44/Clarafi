@@ -84,9 +84,21 @@ export function NursingEncounterView({
   encounterId,
   onBackToChart,
 }: NursingEncounterViewProps) {
+  console.log("🩺 [NursingEncounterView] Component initialized with:", {
+    patientId: patient?.id,
+    encounterId,
+    patientName: patient?.firstName + " " + patient?.lastName,
+  });
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
+  
+  console.log("🩺 [NursingEncounterView] Auth state:", {
+    user: user?.username,
+    role: user?.role,
+    authLoading,
+  });
 
   // State management - matching provider view exactly including AI suggestions
   const [isRecording, setIsRecording] = useState(false);
@@ -97,9 +109,18 @@ export function NursingEncounterView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
-  const [templateData, setTemplateData] = useState<NursingTemplateData | null>(
-    null,
-  );
+  const [templateData, setTemplateData] = useState<NursingTemplateData>({
+    cc: "",
+    hpi: "",
+    pmh: "",
+    meds: "",
+    allergies: "",
+    famHx: "",
+    soHx: "",
+    psh: "",
+    ros: "",
+    vitals: "",
+  });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
@@ -116,6 +137,13 @@ export function NursingEncounterView({
   const { data: encounter, isLoading } = useQuery({
     queryKey: [`/api/encounters/${encounterId}`],
     enabled: !!encounterId,
+  });
+  
+  console.log("🩺 [NursingEncounterView] Encounter state:", {
+    encounter: encounter?.id,
+    isLoading,
+    encounterId,
+    status: encounter?.encounterStatus,
   });
 
   // Deduplication tracking for WebSocket messages
@@ -491,6 +519,13 @@ Format each bullet point on its own line with no extra spacing between them.`,
       "🎤 [NursingView] Starting REAL-TIME voice recording for patient:",
       patient.id,
     );
+    console.log("🎤 [NursingView] Current state at start:", {
+      encounter: encounter?.id,
+      templateData,
+      isRecording,
+      patient: patient?.id,
+      currentUser: currentUser?.role,
+    });
 
     // Clear previous transcription and suggestions when starting new recording
     setGptSuggestions("");
