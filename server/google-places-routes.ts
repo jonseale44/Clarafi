@@ -18,152 +18,71 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * c;
 }
 
-// Mock Google Places API response for development
-const mockSearchPlaces = async (query: string, location?: { lat: number; lng: number }) => {
-  // In production, this would call the actual Google Places API
-  // For now, return mock data based on the query
-  const mockPlaces = [
-    {
-      place_id: "ChIJN1t_tDeuEmsRUsoyG83frY4",
-      name: "Dallas Medical City Hospital",
-      formatted_address: "7777 Forest Ln, Dallas, TX 75230",
-      geometry: {
-        location: { lat: 32.9099, lng: -96.7637 }
-      },
-      types: ["hospital", "health", "point_of_interest"],
-      formatted_phone_number: "(972) 566-7000",
-      website: "https://medicalcityhospital.com",
-      place_details: {
-        npi: "1234567890", // In production, fetch from NPPES
-        hours: "24/7 Emergency Services"
-      }
-    },
-    {
-      place_id: "ChIJgUbEo8cfqokR5lP9_Wh_DaM",
-      name: "UT Southwestern Medical Center",
-      formatted_address: "5323 Harry Hines Blvd, Dallas, TX 75390",
-      geometry: {
-        location: { lat: 32.8127, lng: -96.8408 }
-      },
-      types: ["hospital", "university", "health"],
-      formatted_phone_number: "(214) 648-3111",
-      website: "https://www.utsouthwestern.edu",
-      place_details: {
-        npi: "1987654321",
-        hours: "Mon-Fri 8:00 AM - 5:00 PM"
-      }
-    },
-    {
-      place_id: "ChIJP3Sa8ziYEmsRKErVGEaa11w",
-      name: "Family Practice Associates",
-      formatted_address: "123 Main St, Dallas, TX 75201",
-      geometry: {
-        location: { lat: 32.7767, lng: -96.7970 }
-      },
-      types: ["doctor", "health", "establishment"],
-      formatted_phone_number: "(214) 555-0123",
-      website: "https://familypracticeassoc.com",
-      place_details: {
-        npi: "1122334455",
-        hours: "Mon-Fri 9:00 AM - 5:00 PM"
-      }
-    },
-    // Hillsboro, TX clinics
-    {
-      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxI",
-      name: "Mission Hillsboro Medical Clinic",
-      formatted_address: "101 Mission Dr, Hillsboro, TX 76645",
-      geometry: {
-        location: { lat: 32.0148, lng: -97.1300 }
-      },
-      types: ["doctor", "health", "establishment"],
-      formatted_phone_number: "(254) 582-8416",
-      website: "https://missionhillsboro.com",
-      place_details: {
-        npi: "1558301234",
-        hours: "Mon-Fri 8:00 AM - 5:00 PM"
-      }
-    },
-    {
-      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxJ",
-      name: "Hill Regional Hospital",
-      formatted_address: "101 Circle Dr, Hillsboro, TX 76645",
-      geometry: {
-        location: { lat: 32.0085, lng: -97.1136 }
-      },
-      types: ["hospital", "health", "point_of_interest"],
-      formatted_phone_number: "(254) 580-8500",
-      website: "https://hillregional.com",
-      place_details: {
-        npi: "1588604321",
-        hours: "24/7 Emergency Services"
-      }
-    },
-    {
-      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxK",
-      name: "Hillsboro Family Medicine",
-      formatted_address: "1323 E Franklin St, Hillsboro, TX 76645",
-      geometry: {
-        location: { lat: 32.0107, lng: -97.1129 }
-      },
-      types: ["doctor", "health", "establishment"],
-      formatted_phone_number: "(254) 582-2555",
-      website: "https://hillsborofamilymed.com",
-      place_details: {
-        npi: "1659387654",
-        hours: "Mon-Fri 8:00 AM - 5:00 PM, Sat 9:00 AM - 12:00 PM"
-      }
-    },
-    // Waco clinics
-    {
-      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxL",
-      name: "Waco Family Medicine",
-      formatted_address: "4800 W Waco Dr, Waco, TX 76710",
-      geometry: {
-        location: { lat: 31.5161, lng: -97.1886 }
-      },
-      types: ["doctor", "health", "establishment"],
-      formatted_phone_number: "(254) 776-5600",
-      website: "https://wacofamilymedicine.com",
-      place_details: {
-        npi: "1760412345",
-        hours: "Mon-Fri 8:00 AM - 5:00 PM"
-      }
-    },
-    {
-      place_id: "ChIJh4k_3Hx0T4YRxGxBVSZ1QxM",
-      name: "Baylor Scott & White Medical Center - Hillcrest",
-      formatted_address: "100 Hillcrest Medical Blvd, Waco, TX 76712",
-      geometry: {
-        location: { lat: 31.5055, lng: -97.1935 }
-      },
-      types: ["hospital", "health", "point_of_interest"],
-      formatted_phone_number: "(254) 202-2000",
-      website: "https://bswhealth.com/locations/waco-hillcrest",
-      place_details: {
-        npi: "1861498765",
-        hours: "24/7 Emergency Services"
-      }
+// Real Google Places API integration for healthcare facilities
+const searchPlaces = async (query: string, location?: { lat: number; lng: number }) => {
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('Google Places API key not configured');
+  }
+
+  try {
+    // Use Places API Text Search with healthcare-specific types
+    const baseUrl = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
+    const params = new URLSearchParams({
+      query: `${query} clinic hospital medical center doctor`,
+      type: 'health',
+      key: apiKey,
+      fields: 'place_id,name,formatted_address,geometry,types,formatted_phone_number,website,opening_hours'
+    });
+
+    // Add location bias if provided (prioritize nearby results)
+    if (location) {
+      params.append('location', `${location.lat},${location.lng}`);
+      params.append('radius', '50000'); // 50km radius
     }
-  ];
 
-  // Filter based on query
-  if (query) {
-    return mockPlaces.filter(place => 
-      place.name.toLowerCase().includes(query.toLowerCase()) ||
-      place.formatted_address.toLowerCase().includes(query.toLowerCase())
-    );
+    // Focus on Texas for initial deployment
+    params.append('region', 'us');
+
+    const response = await fetch(`${baseUrl}?${params}`);
+    const data = await response.json();
+
+    if (data.status !== 'OK') {
+      console.error('Google Places API error:', data.status, data.error_message);
+      return [];
+    }
+
+    // Filter and format results for healthcare facilities
+    return data.results
+      .filter((place: any) => {
+        const types = place.types || [];
+        return types.some((type: string) => 
+          ['hospital', 'doctor', 'health', 'physiotherapist', 'dentist'].includes(type)
+        );
+      })
+      .map((place: any) => ({
+        place_id: place.place_id,
+        name: place.name,
+        formatted_address: place.formatted_address,
+        geometry: place.geometry,
+        types: place.types,
+        formatted_phone_number: place.formatted_phone_number,
+        website: place.website,
+        opening_hours: place.opening_hours,
+        // Additional fields for our system
+        place_details: {
+          hours: place.opening_hours?.weekday_text?.join('; ') || 'Hours not available',
+          rating: place.rating,
+          user_ratings_total: place.user_ratings_total
+        }
+      }))
+      .slice(0, 20); // Limit results
+
+  } catch (error) {
+    console.error('Error calling Google Places API:', error);
+    return [];
   }
-
-  // If location provided, sort by distance (mock calculation)
-  if (location) {
-    return mockPlaces.map(place => ({
-      ...place,
-      distance: Math.random() * 10 // Mock distance in miles
-    })).sort((a, b) => a.distance - b.distance);
-  }
-
-  return mockPlaces;
 };
 
 // Search for pharmacies using Google Places API

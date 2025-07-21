@@ -17,7 +17,9 @@ import {
   ArrowLeft,
   Home,
   ChevronRight,
-  LogOut
+  LogOut,
+  MapPin,
+  Building2
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
@@ -112,18 +114,32 @@ export default function AdminDashboard() {
       ]
     },
     {
-      id: 'data-management',
-      title: 'Data Management',
-      description: 'Import clinics, manage migrations, and handle data transfers',
-      icon: <Database className="h-6 w-6" />,
+      id: 'healthcare-data',
+      title: 'Healthcare Data Management',
+      description: 'Import nationwide clinic data from NPPES and manage healthcare facilities',
+      icon: <MapPin className="h-6 w-6" />,
       actions: [
-        { label: 'Clinic Import', href: '/admin/clinic-import', variant: 'default' },
-        { label: 'Test Patients', href: '/admin/test-patients', variant: 'default' },
-        { label: 'Practice Migration', href: '/practice-migration', variant: 'secondary' },
+        { label: 'US Healthcare Data', href: '/admin/healthcare-data', variant: 'default' },
+        { label: 'Clinic Import', href: '/admin/clinic-import', variant: 'secondary' },
         { label: 'Import Pharmacies', href: '/admin/pharmacy-import', variant: 'secondary' }
       ],
       stats: [
-        { label: 'Total Clinics', value: stats?.totalClinics || 0 },
+        { label: 'Health Systems', value: stats?.totalHealthSystems || 0 },
+        { label: 'Clinical Locations', value: stats?.totalLocations || 0 },
+        { label: 'Coverage', value: 'Nationwide' }
+      ]
+    },
+    {
+      id: 'data-management',
+      title: 'System Data Management',
+      description: 'Manage patient data, migrations, and system transfers',
+      icon: <Database className="h-6 w-6" />,
+      actions: [
+        { label: 'Test Patients', href: '/admin/test-patients', variant: 'default' },
+        { label: 'Practice Migration', href: '/practice-migration', variant: 'secondary' }
+      ],
+      stats: [
+        { label: 'Test Patients', value: stats?.testPatients || 0 },
         { label: 'Pending Migrations', value: stats?.pendingMigrations || 0 }
       ]
     },
