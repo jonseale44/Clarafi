@@ -352,10 +352,38 @@ Format each bullet point on its own line with no extra spacing between them.`,
       
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ [NursingView] Nursing insights generated:", data.suggestions);
-        // Accumulate new insights
-        setLiveSuggestions(prev => prev + "\n" + data.suggestions);
-        setGptSuggestions(prev => prev + "\n" + data.suggestions);
+        console.log("✅ [NursingView] Full API response:", data);
+        
+        // Access the correct response structure: data.aiSuggestions.realTimePrompts
+        const insights = data.aiSuggestions?.realTimePrompts;
+        
+        if (insights && Array.isArray(insights) && insights.length > 0) {
+          const insightsText = insights.join("\n");
+          console.log("✅ [NursingView] Nursing insights generated:", insightsText);
+          
+          // Accumulate new insights
+          setLiveSuggestions(prev => {
+            const newInsights = prev ? prev + "\n" + insightsText : insightsText;
+            return newInsights;
+          });
+          setGptSuggestions(prev => {
+            const newInsights = prev ? prev + "\n" + insightsText : insightsText;
+            return newInsights;
+          });
+          
+          toast({
+            title: "AI Insights Generated",
+            description: `Generated ${insights.length} nursing insight${insights.length > 1 ? 's' : ''}`,
+          });
+        } else {
+          console.warn("⚠️ [NursingView] No insights returned from API");
+          toast({
+            title: "No New Insights",
+            description: "No additional nursing insights available for this transcription",
+          });
+        }
+      } else {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error("❌ [NursingView] Error generating insights:", error);
