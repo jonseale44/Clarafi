@@ -73,7 +73,7 @@ export function NursingRecordingPanel({
         <Collapsible 
           open={isTranscriptionExpanded} 
           onOpenChange={setIsTranscriptionExpanded}
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-[2] flex flex-col overflow-hidden"
         >
           <CollapsibleTrigger asChild>
             <Button
@@ -96,7 +96,7 @@ export function NursingRecordingPanel({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex-1 overflow-hidden">
-            <ScrollArea className="h-48 border rounded-md p-3 bg-gray-50">
+            <ScrollArea className="h-full min-h-[300px] border rounded-md p-3 bg-gray-50">
               {transcription ? (
                 <p className="text-sm whitespace-pre-wrap">{transcription}</p>
               ) : (
@@ -112,7 +112,7 @@ export function NursingRecordingPanel({
         <Collapsible 
           open={isAISuggestionsExpanded} 
           onOpenChange={setIsAISuggestionsExpanded}
-          className="flex-1 flex flex-col overflow-hidden"
+          className="flex-none"
         >
           <CollapsibleTrigger asChild>
             <Button
