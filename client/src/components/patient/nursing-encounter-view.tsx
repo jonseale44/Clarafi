@@ -40,6 +40,7 @@ import {
   NursingTemplateRef,
 } from "@/components/NursingTemplateAssessment";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
+import { EnhancedRealtimeSuggestions } from "@/components/EnhancedRealtimeSuggestions";
 
 interface NursingTemplateData {
   cc: string;
@@ -778,38 +779,43 @@ Format each bullet point on its own line with no extra spacing between them.`,
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto emr-content-padding">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="space-y-6">
-              {/* Comprehensive Nursing Template */}
-              <NursingTemplateAssessment
-                ref={nursingTemplateRef}
-                patientId={patient.id.toString()}
-                encounterId={encounterId.toString()}
-                isRecording={isRecording}
-                transcription={liveTranscriptionContent || transcription}
-                onTemplateUpdate={(data) => {
-                  setTemplateData(data);
-                  console.log("🩺 [NursingView] Template updated:", data);
-                }}
-                autoStart={false}
-              />
-
-              {/* AI Suggestions Display */}
-              {liveSuggestions && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="text-sm font-medium text-blue-700 mb-2">
-                      AI Suggestions
-                    </h4>
-                    <div className="text-sm text-blue-600 whitespace-pre-wrap">
-                      {liveSuggestions}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+        {/* Content Area - Two Panel Layout */}
+        <div className="flex-1 flex gap-4 overflow-hidden p-4">
+          {/* Left Panel - Nursing Template */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="space-y-6">
+                {/* Comprehensive Nursing Template */}
+                <NursingTemplateAssessment
+                  ref={nursingTemplateRef}
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
+                  isRecording={isRecording}
+                  transcription={liveTranscriptionContent || transcription}
+                  onTemplateUpdate={(data) => {
+                    setTemplateData(data);
+                    console.log("🩺 [NursingView] Template updated:", data);
+                  }}
+                  autoStart={false}
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Right Panel - Recording and Suggestions */}
+          <div className="w-96 overflow-y-auto">
+            <EnhancedRealtimeSuggestions
+              patientId={patient.id.toString()}
+              userRole="nurse"
+              onSuggestionsReceived={(suggestions) => {
+                setLiveSuggestions(suggestions);
+                setGptSuggestions(suggestions);
+              }}
+              onTranscriptionReceived={(transcription) => {
+                setTranscription(transcription);
+                setLiveTranscriptionContent(transcription);
+              }}
+            />
           </div>
         </div>
       </div>
