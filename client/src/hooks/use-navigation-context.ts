@@ -46,56 +46,25 @@ export function useNavigationContext() {
   }, [location]);
 
   const navigateWithContext = (targetUrl: string, sourceSection: string, sourceContext: string) => {
-    // Add navigation context to target URL
+    // For MR badge navigation, simplify by directly navigating without complex returnUrl
     const url = new URL(targetUrl, window.location.origin);
-    url.searchParams.set('from', sourceSection);
-    url.searchParams.set('context', sourceContext);
-    
-    // Check if we're currently in an encounter view
-    const currentPath = window.location.pathname;
-    const isInEncounterView = currentPath.includes('/encounters/');
     
     // Check if this is a section navigation (has section parameter)
     const isSectionNavigation = url.searchParams.has('section');
+    const isAttachmentsNavigation = url.searchParams.get('section') === 'attachments';
     
-    // Construct proper return URL based on current location
-    let returnUrl = window.location.pathname + window.location.search;
-    
-    // Debug current location
-    console.log(`🔗 [NavigationContext] Current window.location:`, {
-      pathname: window.location.pathname,
-      search: window.location.search,
-      href: window.location.href,
-      wouter_location: location,
-      isInEncounterView,
-      isSectionNavigation
-    });
-    
-    // If we're at root but in patient chart context, construct proper patient chart URL
-    if (window.location.pathname === '/' && location.includes('/patients/')) {
-      returnUrl = location;
-      console.log(`🔗 [NavigationContext] Using wouter location as returnUrl: ${returnUrl}`);
+    // For MR badge clicks (navigating to attachments), just go directly without extra params
+    if (isAttachmentsNavigation && isSectionNavigation) {
+      console.log(`🔗 [NavigationContext] MR badge navigation - direct to attachments`);
+      setLocation(url.pathname + url.search);
+      return;
     }
     
-    url.searchParams.set('returnUrl', returnUrl);
+    // For other navigation, keep the original behavior
+    url.searchParams.set('from', sourceSection);
+    url.searchParams.set('context', sourceContext);
     
-    // For section navigation from encounter view, navigate to patient chart instead
-    if (isSectionNavigation && (sourceContext === 'encounter' || isInEncounterView)) {
-      console.log(`🔗 [NavigationContext] Section navigation from encounter detected, navigating to patient chart`);
-      
-      // Extract patient ID from the URL
-      const patientIdMatch = currentPath.match(/\/patients\/(\d+)/);
-      if (patientIdMatch) {
-        const patientId = patientIdMatch[1];
-        // Navigate to patient chart with the section params
-        const chartUrl = `/patients/${patientId}/chart${url.search}`;
-        console.log(`🔗 [NavigationContext] Redirecting to patient chart: ${chartUrl}`);
-        setLocation(chartUrl);
-        return;
-      }
-    }
-    
-    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext}), returnUrl: ${returnUrl}`);
+    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext})`);
     setLocation(url.pathname + url.search);
   };
 

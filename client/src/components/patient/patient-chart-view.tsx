@@ -184,18 +184,9 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       availableSections: chartSections.map(s => s.id)
     });
     
-    // If navigating via badge (has returnUrl and fromSection), temporarily show target section
-    if (section && returnUrl && fromSection) {
-      console.log('🔄 [StateRestore] Badge navigation - temporarily showing section:', section);
-      console.log('🔄 [StateRestore] Original section from badge:', fromSection);
-      
-      // Don't save the current attachments state - we want to return to the original section
-      // Just temporarily show the target section
-      setActiveSection(section);
-      setExpandedSections(prev => new Set([...prev, section]));
-    } else if (section && !returnUrl) {
-      // Direct navigation to section (no badge navigation)
-      console.log('🔄 [StateRestore] Direct navigation to section:', section);
+    // If there's a section parameter, navigate to that section
+    if (section) {
+      console.log('🔗 [PatientChart] Direct navigation to section:', section);
       setActiveSection(section);
       setExpandedSections(prev => new Set([...prev, section]));
     }
