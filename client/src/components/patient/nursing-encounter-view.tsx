@@ -126,11 +126,12 @@ export function NursingEncounterView({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["encounters"]),
   );
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
+  const [useRestAPI] = useState(true); // Default to REST API for manual triggering
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const realtimeWsRef = useRef<WebSocket | null>(null);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery({
@@ -358,6 +359,43 @@ Format each bullet point on its own line with no extra spacing between them.`,
     });
   };
 
+  // Manual AI insights generation function for nursing
+  const generateNursingInsights = async () => {
+    if (!transcription || isGeneratingInsights) return;
+    
+    console.log("🧠 [NursingView] Generating nursing insights manually");
+    setIsGeneratingInsights(true);
+    try {
+      const response = await fetch("/api/voice/live-suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          patientId: patient.id.toString(),
+          userRole: "nurse",
+          transcription: transcription,
+          isLiveChunk: "false" // Full transcription for manual trigger
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("✅ [NursingView] Nursing insights generated:", data.suggestions);
+        // Accumulate new insights
+        setLiveSuggestions(prev => prev + "\n" + data.suggestions);
+        setGptSuggestions(prev => prev + "\n" + data.suggestions);
+      }
+    } catch (error) {
+      console.error("❌ [NursingView] Error generating insights:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate nursing insights",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
+
   // Function to get real-time suggestions during recording - EXACT COPY from provider view
   const getLiveAISuggestions = async (transcription: string) => {
     if (transcription.length < 15) return; // Process smaller chunks for faster response
@@ -554,7 +592,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
         
         realtimeWs = new WebSocket(wsUrl);
-        realtimeWsRef.current = realtimeWs;
+        // Store WebSocket reference in window to avoid undefined reference
+        (window as any).nursingRealtimeWs = realtimeWs;
 
         realtimeWs.onopen = () => {
           console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
@@ -725,11 +764,11 @@ Format each bullet point on its own line with no extra spacing between them.`,
     }
     
     // Close WebSocket connection
-    const realtimeWs = realtimeWsRef.current;
+    const realtimeWs = (window as any).nursingRealtimeWs;
     if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
       console.log("🔌 [NursingView] Closing WebSocket connection...");
       realtimeWs.close();
-      realtimeWsRef.current = null;
+      (window as any).nursingRealtimeWs = null;
     }
     
     setIsRecording(false);
@@ -816,6 +855,8 @@ Format each bullet point on its own line with no extra spacing between them.`,
               wsConnected={wsConnected}
               onStartRecording={startRecording}
               onStopRecording={stopRecording}
+              onGenerateInsights={generateNursingInsights}
+              isGeneratingInsights={isGeneratingInsights}
             />
           </div>
         </div>

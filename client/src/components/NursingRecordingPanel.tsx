@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Mic, MicOff, Square, Activity } from "lucide-react";
+import { Mic, MicOff, Square, Activity, Brain } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -14,6 +14,8 @@ interface NursingRecordingPanelProps {
   wsConnected: boolean;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  onGenerateInsights?: () => void;
+  isGeneratingInsights?: boolean;
 }
 
 export function NursingRecordingPanel({
@@ -23,6 +25,8 @@ export function NursingRecordingPanel({
   wsConnected,
   onStartRecording,
   onStopRecording,
+  onGenerateInsights,
+  isGeneratingInsights = false,
 }: NursingRecordingPanelProps) {
   const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(true);
   const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(true);
@@ -129,22 +133,35 @@ export function NursingRecordingPanel({
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex-1 overflow-hidden">
-            <ScrollArea className="h-48 border rounded-md p-3 bg-blue-50">
-              {aiSuggestions ? (
-                <div className="space-y-2">
-                  {aiSuggestions.split('\n').filter(Boolean).map((suggestion, idx) => (
-                    <div key={idx} className="flex items-start gap-2">
-                      <span className="text-blue-600 mt-0.5">•</span>
-                      <p className="text-sm">{suggestion}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 italic">
-                  AI suggestions will appear here during recording
-                </p>
+            <div className="space-y-3">
+              {onGenerateInsights && transcription && (
+                <Button 
+                  onClick={onGenerateInsights} 
+                  disabled={isGeneratingInsights || !transcription}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Brain className="mr-2 h-4 w-4" />
+                  {isGeneratingInsights ? "Generating..." : "Generate AI Clinical Insights"}
+                </Button>
               )}
-            </ScrollArea>
+              <ScrollArea className="h-48 border rounded-md p-3 bg-blue-50">
+                {aiSuggestions ? (
+                  <div className="space-y-2">
+                    {aiSuggestions.split('\n').filter(Boolean).map((suggestion, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <p className="text-sm">{suggestion}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">
+                    {transcription ? "Click button above to generate nursing insights" : "Start recording first to generate insights"}
+                  </p>
+                )}
+              </ScrollArea>
+            </div>
           </CollapsibleContent>
         </Collapsible>
       </CardContent>
