@@ -11,8 +11,8 @@ interface NPPESRecord {
   'Entity Type Code': string;
   'Provider Organization Name (Legal Business Name)': string;
   'Provider First Line Business Practice Location Address': string;
-  'Provider Business Practice Location City Name': string;
-  'Provider Business Practice Location State Name': string;
+  'Provider Business Practice Location Address City Name': string;
+  'Provider Business Practice Location Address State Name': string;
   'Provider Business Practice Location Postal Code': string;
   'Provider Business Practice Location Phone Number': string;
   'Healthcare Provider Taxonomy Code_1': string;
@@ -37,12 +37,37 @@ interface TexasHealthcareOrganization {
 function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrganization | null {
   const name = record['Provider Organization Name (Legal Business Name)'];
   const taxonomyDesc = record['Healthcare Provider Taxonomy Description_1'] || '';
-  const nameLower = name.toLowerCase();
   
   // Skip individual practitioners (Entity Type Code 1)
   if (record['Entity Type Code'] !== '2') {
     return null;
   }
+
+  // Debug logging for first few Entity Type 2 records
+  if (name) {
+    console.log(`🔍 Processing Entity Type 2: "${name}" - Taxonomy: "${taxonomyDesc}"`);
+    
+    // Show available fields for debugging (first few records only)
+    const availableFields = Object.keys(record);
+    if (availableFields.length > 0) {
+      console.log(`📋 Available fields (${availableFields.length}):`, availableFields.slice(0, 10));
+      console.log(`📍 Address fields:`, {
+        address: record['Provider First Line Business Practice Location Address'],
+        city_name: record['Provider Business Practice Location City Name'],
+        city_address_name: record['Provider Business Practice Location Address City Name'],
+        state_name: record['Provider Business Practice Location State Name'], 
+        state_address_name: record['Provider Business Practice Location Address State Name']
+      });
+    }
+  }
+
+  // Skip if no organization name
+  if (!name || name.trim() === '' || name === '<UNAVAIL>') {
+    console.log(`⚠️ Skipping record with no valid name: "${name}"`);
+    return null;
+  }
+  
+  const nameLower = name.toLowerCase();
 
   // Determine organization and location type
   let organizationType: TexasHealthcareOrganization['organizationType'];
@@ -102,22 +127,26 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
   }
 
   // Safely handle postal code - some records may have missing data
-  const postalCode = record['Provider Business Practice Location Postal Code'];
+  const postalCode = record['Provider Business Practice Location Postal Code'] || (record as any)[33];
   const zipCode = postalCode && typeof postalCode === 'string' ? postalCode.substring(0, 5) : '';
 
   // Validate required fields - skip records with missing critical data
-  const address = record['Provider First Line Business Practice Location Address'];
-  const city = record['Provider Business Practice Location City Name'];
-  const state = record['Provider Business Practice Location State Name'];
+  // Use both field names and column positions as fallback
+  const address = record['Provider First Line Business Practice Location Address'] || (record as any)[29];
+  const city = record['Provider Business Practice Location Address City Name'] || (record as any)[31];
+  const state = record['Provider Business Practice Location Address State Name'] || (record as any)[32];
   
   // Skip records missing critical address components (be more lenient)
   if (!address || !city || !state) {
+    console.log(`⚠️ Skipping "${name}" - missing address data: address="${address}", city="${city}", state="${state}"`);
     return null;
   }
   
   // Use default zipCode if missing
   const finalZipCode = zipCode || '00000';
 
+  console.log(`✅ Created organization: "${name}" (${organizationType}) in ${city}, ${state}`);
+  
   return {
     npi: record.NPI,
     name: name,
@@ -125,8 +154,8 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
     city: city,
     state: state,
     zipCode: finalZipCode,
-    phone: record['Provider Business Practice Location Phone Number'],
-    taxonomyCode: record['Healthcare Provider Taxonomy Code_1'],
+    phone: record['Provider Business Practice Location Phone Number'] || (record as any)[35],
+    taxonomyCode: record['Healthcare Provider Taxonomy Code_1'] || (record as any)[48],
     taxonomyDescription: taxonomyDesc,
     organizationType,
     locationType
@@ -149,8 +178,8 @@ export async function importUSHealthcareData(): Promise<void> {
     // Stream process the large CSV file
     await new Promise<void>((resolve, reject) => {
       fs.createReadStream(csvPath)
-        .pipe(csv())
-        .on('data', (row: NPPESRecord) => {
+        .pipe(csv({ headers: false })) // Parse as array instead of object
+        .on('data', (row: string[]) => {
           processedCount++;
           
           // Progress indicator
@@ -158,8 +187,25 @@ export async function importUSHealthcareData(): Promise<void> {
             console.log(`📊 Processed ${processedCount} records, found ${orgCount} healthcare organizations`);
           }
           
+          // Skip header row
+          if (processedCount === 1) return;
+          
+          // Convert array to record object for processing
+          const record: NPPESRecord = {
+            NPI: row[0] || '',
+            'Entity Type Code': row[1] || '',
+            'Provider Organization Name (Legal Business Name)': row[4] || '',
+            'Provider First Line Business Practice Location Address': row[28] || '',
+            'Provider Business Practice Location Address City Name': row[30] || '',
+            'Provider Business Practice Location Address State Name': row[31] || '',
+            'Provider Business Practice Location Postal Code': row[32] || '',
+            'Provider Business Practice Location Phone Number': row[34] || '',
+            'Healthcare Provider Taxonomy Code_1': row[47] || '',
+            'Healthcare Provider Taxonomy Description_1': row[48] || ''
+          };
+          
           // Process ALL states (remove Texas filter)
-          const org = classifyHealthcareOrganization(row);
+          const org = classifyHealthcareOrganization(record);
           if (org) {
             orgCount++;
             healthcareOrganizations.push(org);
