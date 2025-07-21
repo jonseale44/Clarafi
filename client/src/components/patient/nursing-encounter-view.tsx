@@ -40,7 +40,7 @@ import {
   NursingTemplateRef,
 } from "@/components/NursingTemplateAssessment";
 import { VitalsFlowsheet } from "@/components/vitals/vitals-flowsheet";
-import { EnhancedRealtimeSuggestions } from "@/components/EnhancedRealtimeSuggestions";
+import { NursingRecordingPanel } from "@/components/NursingRecordingPanel";
 
 interface NursingTemplateData {
   cc: string;
@@ -110,6 +110,7 @@ export function NursingEncounterView({
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
   const [suggestionsBuffer, setSuggestionsBuffer] = useState("");
+  const [wsConnected, setWsConnected] = useState(false);
   const [templateData, setTemplateData] = useState<NursingTemplateData>({
     cc: "",
     hpi: "",
@@ -555,6 +556,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         realtimeWs.onopen = () => {
           console.log("🌐 [NursingView] ✅ Connected to secure WebSocket proxy");
+          setWsConnected(true);
           
           // Session configuration: Focus on transcription for nursing documentation
           const sessionUpdateMessage = {
@@ -627,6 +629,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
         
         realtimeWs.onclose = () => {
           console.log("🔌 [NursingView] WebSocket connection closed");
+          setWsConnected(false);
         };
 
         console.log("✅ [NursingView] WebSocket setup complete");
@@ -804,17 +807,13 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
           {/* Right Panel - Recording and Suggestions */}
           <div className="w-96 overflow-y-auto">
-            <EnhancedRealtimeSuggestions
-              patientId={patient.id.toString()}
-              userRole="nurse"
-              onSuggestionsReceived={(suggestions) => {
-                setLiveSuggestions(suggestions);
-                setGptSuggestions(suggestions);
-              }}
-              onTranscriptionReceived={(transcription) => {
-                setTranscription(transcription);
-                setLiveTranscriptionContent(transcription);
-              }}
+            <NursingRecordingPanel
+              isRecording={isRecording}
+              transcription={liveTranscriptionContent || transcription}
+              aiSuggestions={liveSuggestions || gptSuggestions}
+              wsConnected={wsConnected}
+              onStartRecording={startRecording}
+              onStopRecording={stopRecording}
             />
           </div>
         </div>
