@@ -127,6 +127,7 @@ export function NursingEncounterView({
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
   const suggestionDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Get current user for role-based functionality
   const { data: currentUser } = useQuery({
@@ -781,89 +782,35 @@ Format each bullet point on its own line with no extra spacing between them.`,
         <div className="flex-1 overflow-y-auto emr-content-padding">
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Nursing Template Section */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Clinical Documentation</CardTitle>
-                  <div className="flex items-center gap-2">
-                    {!isRecording && (
-                      <Button
-                        onClick={startRecording}
-                        size="sm"
-                        className="bg-blue-500 hover:bg-blue-600"
-                      >
-                        <Mic className="h-4 w-4 mr-2" />
-                        Start Recording
-                      </Button>
-                    )}
-                    {isRecording && (
-                      <Button
-                        onClick={stopRecording}
-                        size="sm"
-                        variant="destructive"
-                      >
-                        <Square className="h-4 w-4 mr-2" />
-                        Stop Recording
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {/* Nursing Template Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Chief Complaint
-                    </label>
-                    <Textarea
-                      value={templateData.cc}
-                      onChange={(e) => setTemplateData({ ...templateData, cc: e.target.value })}
-                      placeholder="Patient's primary concern..."
-                      className="mt-1"
-                      rows={2}
-                    />
-                  </div>
+            <div className="space-y-6">
+              {/* Comprehensive Nursing Template */}
+              <NursingTemplateAssessment
+                ref={nursingTemplateRef}
+                patientId={patient.id.toString()}
+                encounterId={encounterId.toString()}
+                isRecording={isRecording}
+                transcription={liveTranscriptionContent || transcription}
+                onTemplateUpdate={(data) => {
+                  setTemplateData(data);
+                  console.log("🩺 [NursingView] Template updated:", data);
+                }}
+                autoStart={false}
+              />
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      History of Present Illness
-                    </label>
-                    <Textarea
-                      value={templateData.hpi}
-                      onChange={(e) => setTemplateData({ ...templateData, hpi: e.target.value })}
-                      placeholder="Detailed history..."
-                      className="mt-1"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Live Transcription Display */}
-                  {(transcription || liveTranscriptionContent) && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Live Transcription
-                      </h4>
-                      <div className="text-sm text-gray-600 whitespace-pre-wrap">
-                        {liveTranscriptionContent || transcription}
-                      </div>
+              {/* AI Suggestions Display */}
+              {liveSuggestions && (
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="text-sm font-medium text-blue-700 mb-2">
+                      AI Suggestions
+                    </h4>
+                    <div className="text-sm text-blue-600 whitespace-pre-wrap">
+                      {liveSuggestions}
                     </div>
-                  )}
-
-                  {/* AI Suggestions Display */}
-                  {liveSuggestions && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-blue-700 mb-2">
-                        AI Suggestions
-                      </h4>
-                      <div className="text-sm text-blue-600 whitespace-pre-wrap">
-                        {liveSuggestions}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         </div>
       </div>
