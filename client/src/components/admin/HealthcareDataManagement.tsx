@@ -15,6 +15,19 @@ interface HealthcareStats {
   locations: number;
 }
 
+interface ImportStatus {
+  status: 'idle' | 'downloading' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  errors: string[];
+  startTime?: string;
+  endTime?: string;
+  totalRecords?: number;
+  processedRecords?: number;
+  successfulRecords?: number;
+  failedRecords?: number;
+}
+
 export function HealthcareDataManagement() {
   const [importStatus, setImportStatus] = useState<'idle' | 'downloading' | 'importing' | 'complete' | 'error'>('idle');
   const [importProgress, setImportProgress] = useState(0);
@@ -25,6 +38,37 @@ export function HealthcareDataManagement() {
   const { data: stats, isLoading: statsLoading } = useQuery<{ success: boolean; stats: HealthcareStats }>({
     queryKey: ['/api/admin/healthcare-data-stats'],
     refetchInterval: 5000 // Refresh every 5 seconds during import
+  });
+
+  // Fetch current import status
+  const { data: importStatusData } = useQuery<{ success: boolean; status: ImportStatus }>({
+    queryKey: ['/api/admin/import-status'],
+    refetchInterval: importStatus !== 'idle' && importStatus !== 'complete' && importStatus !== 'error' ? 3000 : false,
+    onSuccess: (data) => {
+      if (data?.status) {
+        const backendStatus = data.status;
+        
+        // Update local state based on backend status
+        if (backendStatus.status === 'failed') {
+          setImportStatus('error');
+          toast({
+            title: "Import Failed",
+            description: backendStatus.message,
+            variant: "destructive"
+          });
+        } else if (backendStatus.status === 'completed') {
+          setImportStatus('complete');
+          setImportProgress(100);
+          toast({
+            title: "Import Complete",
+            description: "Healthcare data import completed successfully",
+          });
+        } else if (backendStatus.status === 'downloading' || backendStatus.status === 'processing') {
+          setImportStatus('importing');
+          setImportProgress(backendStatus.progress);
+        }
+      }
+    }
   });
 
   // Start full US healthcare data import
@@ -167,6 +211,64 @@ export function HealthcareDataManagement() {
               </CardContent>
             </Card>
               </div>
+
+              {/* Import Status and Errors */}
+              {importStatusData?.status && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Import Status</h3>
+                  
+                  {/* Current Status */}
+                  <Alert className={
+                    importStatusData.status.status === 'failed' ? 'border-red-200 bg-red-50' :
+                    importStatusData.status.status === 'completed' ? 'border-green-200 bg-green-50' :
+                    'border-blue-200 bg-blue-50'
+                  }>
+                    {importStatusData.status.status === 'failed' ? (
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                    ) : importStatusData.status.status === 'completed' ? (
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-blue-600" />
+                    )}
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">{importStatusData.status.message}</p>
+                        {importStatusData.status.progress > 0 && (
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span>Progress</span>
+                              <span>{importStatusData.status.progress}%</span>
+                            </div>
+                            <Progress value={importStatusData.status.progress} className="h-2" />
+                          </div>
+                        )}
+                        {importStatusData.status.startTime && (
+                          <p className="text-sm text-muted-foreground">
+                            Started: {new Date(importStatusData.status.startTime).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Display Errors */}
+                  {importStatusData.status.errors && importStatusData.status.errors.length > 0 && (
+                    <Alert className="border-red-200 bg-red-50">
+                      <AlertCircle className="w-4 h-4 text-red-600" />
+                      <AlertDescription>
+                        <div className="space-y-2">
+                          <p className="font-medium text-red-800">Import Errors Detected:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                            {importStatusData.status.errors.map((error, index) => (
+                              <li key={index}>{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
 
               {/* Status Section */}
               <div className="space-y-4">
