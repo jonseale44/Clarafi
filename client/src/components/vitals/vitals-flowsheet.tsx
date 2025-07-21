@@ -151,13 +151,30 @@ export function VitalsFlowsheet({
     // Check if we're in encounter context by looking at the current location
     const isInEncounterView = location.includes('/encounters/');
     
-    // Always use navigateWithContext to ensure proper handling
-    const context = isInEncounterView ? 'encounter' : 'patient-chart';
-    navigateWithContext(
-      `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
-      'vitals',
-      context
-    );
+    if (isInEncounterView) {
+      // Extract encounter ID from current location
+      const currentPath = location.split('?')[0];
+      const encounterMatch = currentPath.match(/\/encounters\/(\d+)/);
+      if (encounterMatch) {
+        const currentEncounterId = encounterMatch[1];
+        // Navigate within the encounter context
+        setLocation(`/patients/${patientId}/encounters/${currentEncounterId}?section=attachments&highlight=${attachmentId}`);
+      } else {
+        // Fallback to regular navigation if we can't extract encounter ID
+        navigateWithContext(
+          `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
+          'vitals',
+          'patient-chart'
+        );
+      }
+    } else {
+      // Regular navigation for patient chart mode
+      navigateWithContext(
+        `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
+        'vitals',
+        'patient-chart'
+      );
+    }
   };
 
   // Calculate patient age from dateOfBirth if not provided

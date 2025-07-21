@@ -308,13 +308,14 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
         const confidencePercent = sourceConfidence ? Math.round(parseFloat(sourceConfidence) * 100) : 0;
         const handleAttachmentClick = () => {
           if (attachmentId) {
-            // Always use navigateWithContext to ensure proper handling
-            const currentMode = location.includes('/encounters/') ? 'encounter' : mode;
-            navigateWithContext(
-              `/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`,
-              "medications",
-              currentMode
-            );
+            // Check if we're in encounter mode
+            if (mode === 'encounter' && encounterId) {
+              // Navigate within the encounter context
+              navigateWithContext(`/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${attachmentId}`, "medications", "encounter");
+            } else {
+              // Regular navigation for patient chart mode
+              navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "medications", "patient-chart");
+            }
           }
         };
         return (

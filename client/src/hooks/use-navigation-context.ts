@@ -46,25 +46,31 @@ export function useNavigationContext() {
   }, [location]);
 
   const navigateWithContext = (targetUrl: string, sourceSection: string, sourceContext: string) => {
-    // For MR badge navigation, simplify by directly navigating without complex returnUrl
+    // Add navigation context to target URL
     const url = new URL(targetUrl, window.location.origin);
-    
-    // Check if this is a section navigation (has section parameter)
-    const isSectionNavigation = url.searchParams.has('section');
-    const isAttachmentsNavigation = url.searchParams.get('section') === 'attachments';
-    
-    // For MR badge clicks (navigating to attachments), just go directly without extra params
-    if (isAttachmentsNavigation && isSectionNavigation) {
-      console.log(`🔗 [NavigationContext] MR badge navigation - direct to attachments`);
-      setLocation(url.pathname + url.search);
-      return;
-    }
-    
-    // For other navigation, keep the original behavior
     url.searchParams.set('from', sourceSection);
     url.searchParams.set('context', sourceContext);
     
-    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext})`);
+    // Construct proper return URL based on current location
+    let returnUrl = window.location.pathname + window.location.search;
+    
+    // Debug current location
+    console.log(`🔗 [NavigationContext] Current window.location:`, {
+      pathname: window.location.pathname,
+      search: window.location.search,
+      href: window.location.href,
+      wouter_location: location
+    });
+    
+    // If we're at root but in patient chart context, construct proper patient chart URL
+    if (window.location.pathname === '/' && location.includes('/patients/')) {
+      returnUrl = location;
+      console.log(`🔗 [NavigationContext] Using wouter location as returnUrl: ${returnUrl}`);
+    }
+    
+    url.searchParams.set('returnUrl', returnUrl);
+    
+    console.log(`🔗 [NavigationContext] Navigating with context: ${sourceSection} (${sourceContext}), returnUrl: ${returnUrl}`);
     setLocation(url.pathname + url.search);
   };
 
