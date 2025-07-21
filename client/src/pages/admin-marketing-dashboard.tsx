@@ -21,6 +21,7 @@ import ConversionEvents from "@/components/marketing/conversion-events";
 import MarketingInsights from "@/components/marketing/marketing-insights";
 import MarketingAutomations from "@/components/marketing/marketing-automations";
 import MarketingCampaigns from "@/components/marketing/marketing-campaigns";
+import MarketingStatusTracker from "@/components/marketing/marketing-status-tracker";
 
 export default function AdminMarketingDashboard() {
   const [activeTab, setActiveTab] = useState("metrics");
@@ -48,6 +49,11 @@ export default function AdminMarketingDashboard() {
         <p className="text-muted-foreground">
           Physician-centric marketing analytics and insights platform
         </p>
+      </div>
+
+      {/* Status Tracker */}
+      <div className="mb-8">
+        <MarketingStatusTracker />
       </div>
 
       {/* Main Tabs */}
