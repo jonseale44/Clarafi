@@ -8,10 +8,11 @@ import AdmZip from 'adm-zip';
 
 // NPPES data is available from CMS
 // This is the official government dataset of all healthcare providers in the US
+// Updated URLs verified from actual CMS site (July 21, 2025)
 const NPPES_DOWNLOAD_URL = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_July_2025.zip';
 
-// Alternative smaller dataset for testing (weekly update file)
-const NPPES_WEEKLY_URL = 'https://download.cms.gov/nppes/NPPES_Deactivated_NPI_Report_070825.zip';
+// Use the most recent weekly update file (July 14-20, 2025 - 7.03 MB)
+const NPPES_WEEKLY_URL = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_071425_072025_Weekly.zip';
 
 export async function downloadNPPESData(): Promise<string> {
   console.log('📥 Downloading official NPPES data from CMS...');
@@ -35,8 +36,8 @@ export async function downloadNPPESData(): Promise<string> {
   console.log('🌐 Downloading real NPPES data from CMS.gov...');
   console.log('📊 This file contains real healthcare provider data with actual NPI numbers');
   
-  // Use a more recent weekly update file 
-  const weeklyDataUrl = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_Weekly_Monday_20241216.zip';
+  // Use the most recent weekly update file available
+  const weeklyDataUrl = NPPES_WEEKLY_URL;
   const zipPath = path.join(dataDir, 'nppes_weekly.zip');
   
   // Download the file

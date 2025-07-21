@@ -9,20 +9,26 @@ router.post('/api/admin/import-us-healthcare-data', async (req, res) => {
   try {
     console.log('🏥 [Admin] Starting US healthcare data import...');
     
-    // This is a long-running operation
+    // This is a long-running operation - respond immediately
     res.json({
       success: true,
       message: 'Healthcare data import started. This will take several hours to complete.',
       status: 'started'
     });
 
-    // Start import process asynchronously
+    // Start import process asynchronously with better error handling
     importUSHealthcareData()
       .then(() => {
         console.log('✅ [Admin] US healthcare data import completed successfully');
       })
       .catch(error => {
         console.error('❌ [Admin] US healthcare data import failed:', error);
+        
+        // Log specific error details for troubleshooting
+        if (error.message.includes('too small') || error.message.includes('bytes')) {
+          console.error('💡 [Admin] This suggests the NPPES download URL may be incorrect or the file is not available');
+          console.error('💡 [Admin] Check https://download.cms.gov/nppes/NPI_Files.html for current URLs');
+        }
       });
 
   } catch (error: any) {

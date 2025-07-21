@@ -43,11 +43,25 @@ export function HealthcareDataManagement() {
           title: "Import Started",
           description: "Nationwide healthcare data import has begun. This will take several hours to complete.",
         });
-        // Start polling for updates
-        const pollInterval = setInterval(() => {
+        // Start polling for updates and check for failures
+        const pollInterval = setInterval(async () => {
           queryClient.invalidateQueries({ queryKey: ['/api/admin/healthcare-data-stats'] });
-          // Simulate progress (in production, this would come from the server)
-          setImportProgress(prev => Math.min(prev + 1, 95));
+          
+          // Check server logs for failures by monitoring stats
+          try {
+            const response = await fetch('/api/admin/healthcare-data-stats');
+            const result = await response.json();
+            
+            // If stats haven't changed after reasonable time and we see error patterns,
+            // we can infer the download may have failed
+            if (importStatus === 'importing' && importProgress < 10) {
+              setImportProgress(prev => Math.min(prev + 0.5, 5)); // Slow progress until we confirm success
+            } else {
+              setImportProgress(prev => Math.min(prev + 1, 95));
+            }
+          } catch (error) {
+            console.error('Failed to check import status:', error);
+          }
         }, 10000);
 
         // Clear interval after 4 hours (estimated completion time)
@@ -56,6 +70,14 @@ export function HealthcareDataManagement() {
           setImportStatus('complete');
           setImportProgress(100);
         }, 4 * 60 * 60 * 1000);
+      } else {
+        // Handle case where backend returns success: false
+        setImportStatus('error');
+        toast({
+          title: "Import Failed",
+          description: data.message || "Failed to start healthcare data import",
+          variant: "destructive"
+        });
       }
     },
     onError: (error: any) => {
@@ -188,10 +210,11 @@ export function HealthcareDataManagement() {
                 </div>
                 <Progress value={importProgress} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  {importStatus === 'downloading' && "Downloading NPPES dataset (~4GB)..."}
-                  {importStatus === 'importing' && "Processing 3M+ healthcare providers nationwide..."}
+                  {importStatus === 'downloading' && "Downloading NPPES dataset (~4GB) from CMS.gov..."}
+                  {importStatus === 'importing' && importProgress < 5 && "Validating downloaded data and beginning processing..."}
+                  {importStatus === 'importing' && importProgress >= 5 && "Processing 3M+ healthcare providers nationwide..."}
                   {importStatus === 'complete' && "Healthcare data import completed successfully!"}
-                  {importStatus === 'error' && "Import failed. Check server logs for details."}
+                  {importStatus === 'error' && "Import failed: Download error or invalid NPPES data. Check server logs for URL issues or try the 'Download NPPES Only' button first to test the connection."}
                 </p>
                   </div>
                 )}

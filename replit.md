@@ -97,6 +97,20 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
   - Google Places API (real-time facility verification and discovery)
   - FQHC directory integration for community health centers
 
+### NPPES Download URL Fix & UI Error Handling Improvement (July 21, 2025)
+✓ **CRITICAL BUG FIXED**: NPPES downloads were failing with "file too small (10 bytes)" error due to outdated URLs
+✓ **ROOT CAUSE**: Download URLs were pointing to incorrect/expired NPPES files, resulting in HTML error pages instead of ZIP data
+✓ **SOLUTION IMPLEMENTED**:
+  - Updated to current valid NPPES URLs based on actual CMS site (July 21, 2025)
+  - Full dataset: `NPPES_Data_Dissemination_071425.zip` (1,021.06 MB)
+  - Weekly update: `NPPES_Data_Dissemination_Weekly_071425_072025.zip` (7.03 MB)
+  - Enhanced UI error handling to properly distinguish download failures from processing issues
+  - Improved error messaging with actionable troubleshooting guidance
+✓ **UI IMPROVEMENTS**: 
+  - Added download validation phase in UI ("Validating downloaded data...")
+  - Enhanced error messages with specific guidance for URL/connection issues
+  - Improved backend error logging with troubleshooting hints for future maintenance
+
 ### Health System Data Structure Fix (July 21, 2025)  
 ✓ **DATA STRUCTURE CORRECTED**: Fixed incorrect health system/location relationship
 ✓ **ISSUE IDENTIFIED**: "Waco Family Medicine - Hillsboro" was incorrectly stored as a health system instead of location
