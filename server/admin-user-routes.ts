@@ -198,7 +198,7 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
-  // Get all users with location count
+  // Get all users with location count and health system info
   app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const usersWithLocationCount = await db
@@ -214,11 +214,14 @@ export function registerAdminUserRoutes(app: Express) {
           active: users.active,
           lastLogin: users.lastLogin,
           createdAt: users.createdAt,
+          healthSystemId: users.healthSystemId,
+          healthSystemName: healthSystems.name,
           locationCount: sql<number>`COUNT(DISTINCT ${userLocations.locationId})`.as("locationCount"),
         })
         .from(users)
         .leftJoin(userLocations, eq(users.id, userLocations.userId))
-        .groupBy(users.id)
+        .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
+        .groupBy(users.id, healthSystems.name)
         .orderBy(users.lastName, users.firstName);
 
       console.log("🔍 [AdminUserRoutes] Fetched", usersWithLocationCount.length, "users");

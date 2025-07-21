@@ -30,6 +30,7 @@ interface User {
   createdAt: string;
   locationCount?: number;
   healthSystemId?: number;
+  healthSystemName?: string;
 }
 
 interface Location {
@@ -559,6 +560,7 @@ export function AdminUserManagement() {
                 <TableHead>Username</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Health System</TableHead>
                 <TableHead>Locations</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Login</TableHead>
@@ -586,6 +588,11 @@ export function AdminUserManagement() {
                     <Badge className={getRoleBadgeColor(user.role)} variant="secondary">
                       {user.role.replace('_', ' ')}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {user.healthSystemName || "No Health System"}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
