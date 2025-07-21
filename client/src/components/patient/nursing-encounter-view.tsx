@@ -647,16 +647,44 @@ Format each bullet point on its own line with no extra spacing between them.`,
           console.log(JSON.stringify(sessionCreateMessage, null, 2));
 
           realtimeWs!.send(JSON.stringify(sessionCreateMessage));
+          
+          // After session is created, trigger response creation for transcription
+          setTimeout(() => {
+            if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
+              console.log("🎯 [NursingView] Triggering response creation for transcription");
+              const responseCreateMessage = {
+                type: "response.create",
+                response: {
+                  modalities: ["text"],
+                  instructions: "Please transcribe the audio input."
+                }
+              };
+              realtimeWs.send(JSON.stringify(responseCreateMessage));
+            }
+          }, 1000);
         };
 
         realtimeWs.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log("📨 [NursingView] WebSocket message type:", message.type);
+          console.log("📨 [NursingView] WebSocket message received:", {
+            type: message.type,
+            hasData: !!message.data,
+            hasError: !!message.error,
+            hasTranscript: !!message.transcript,
+            hasDelta: !!message.delta,
+            fullMessage: message
+          });
 
           // Handle session creation response first
           if (message.type === "session.created") {
             console.log("✅ [NursingView] Session created successfully");
+            console.log("🎤 [NursingView] Session details:", message);
             console.log("🎤 [NursingView] Ready to receive transcriptions");
+          }
+          
+          // Handle session updates
+          else if (message.type === "session.updated") {
+            console.log("🔄 [NursingView] Session updated:", message);
           }
           
           // Handle errors
@@ -666,12 +694,17 @@ Format each bullet point on its own line with no extra spacing between them.`,
               ? message.error.message || JSON.stringify(message.error)
               : message.error;
             console.error("❌ [NursingView] Error details:", errorMessage);
+            console.error("❌ [NursingView] Full error message:", message);
           }
 
           // Handle transcription delta messages
           else if (message.type === "audio.transcription.delta") {
             const deltaText = message.delta || "";
-            console.log("📝 [NursingView] Transcription delta:", deltaText);
+            console.log("📝 [NursingView] Transcription delta received:", {
+              delta: deltaText,
+              currentBuffer: transcriptionBuffer,
+              messageDetails: message
+            });
             
             // Accumulate transcription
             transcriptionBuffer += deltaText;
@@ -685,7 +718,10 @@ Format each bullet point on its own line with no extra spacing between them.`,
           // Handle transcription completion  
           else if (message.type === "conversation.item.input_audio_transcription.completed") {
             const finalText = message.transcript || "";
-            console.log("✅ [NursingView] Transcription completed:", finalText);
+            console.log("✅ [NursingView] Transcription completed:", {
+              transcript: finalText,
+              messageDetails: message
+            });
             
             // Update the transcription with the final text
             if (finalText.trim()) {
@@ -693,12 +729,27 @@ Format each bullet point on its own line with no extra spacing between them.`,
               setLiveTranscriptionContent(finalText);
               setTranscriptionBuffer(finalText);
               transcriptionBuffer = finalText;
+              console.log("✅ [NursingView] Final transcription set:", finalText);
             }
+          }
+          
+          // Handle any response creation
+          else if (message.type === "response.created") {
+            console.log("🤖 [NursingView] Response created:", message);
           }
           
           // Skip AI suggestion messages - handled via REST API only
           else if (message.type === "response.text.delta" || message.type === "response.text.done") {
+            console.log("🤖 [NursingView] AI response message (skipping):", message.type);
             return;
+          }
+          
+          // Log any unhandled message types
+          else {
+            console.warn("⚠️ [NursingView] Unhandled message type:", {
+              type: message.type,
+              message: message
+            });
           }
         };
         
@@ -734,20 +785,31 @@ Format each bullet point on its own line with no extra spacing between them.`,
         // Set up MediaRecorder
         const mediaRecorder = new MediaRecorder(stream);
         
+        // Audio chunk counter for debugging
+        let audioChunksSent = 0;
+        let lastLogTime = Date.now();
+        
         // Process audio data and send to WebSocket
         processor.onaudioprocess = (e) => {
-          if (!isRecording || !realtimeWs) return;
+          if (!isRecording || !realtimeWs) {
+            if (!isRecording) console.log("🎤 [NursingView] Audio processor: Not recording");
+            if (!realtimeWs) console.log("🎤 [NursingView] Audio processor: No WebSocket");
+            return;
+          }
 
           const inputData = e.inputBuffer.getChannelData(0);
           const pcm16 = new Int16Array(inputData.length);
           
+          // Check if we have actual audio data
+          let hasAudio = false;
           for (let i = 0; i < inputData.length; i++) {
             const sample = Math.max(-1, Math.min(1, inputData[i]));
             pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+            if (Math.abs(sample) > 0.001) hasAudio = true;
           }
           
           const audioData = pcm16.buffer;
-          if (audioData.byteLength > 0) {
+          if (audioData.byteLength > 0 && hasAudio) {
             const base64Audio = btoa(
               String.fromCharCode.apply(null, Array.from(new Uint8Array(audioData)))
             );
@@ -757,7 +819,32 @@ Format each bullet point on its own line with no extra spacing between them.`,
               audio: base64Audio,
             };
             
-            realtimeWs.send(JSON.stringify(audioMessage));
+            try {
+              if (realtimeWs.readyState === WebSocket.OPEN) {
+                realtimeWs.send(JSON.stringify(audioMessage));
+                audioChunksSent++;
+                
+                // Log every second
+                const now = Date.now();
+                if (now - lastLogTime > 1000) {
+                  console.log("🎵 [NursingView] Audio status:", {
+                    chunksSent: audioChunksSent,
+                    wsState: realtimeWs.readyState,
+                    wsStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState],
+                    audioDataSize: audioData.byteLength,
+                    hasAudio: hasAudio
+                  });
+                  lastLogTime = now;
+                }
+              } else {
+                console.warn("⚠️ [NursingView] WebSocket not open:", {
+                  state: realtimeWs.readyState,
+                  stateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState]
+                });
+              }
+            } catch (error) {
+              console.error("❌ [NursingView] Error sending audio:", error);
+            }
           }
         };
         

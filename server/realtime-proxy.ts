@@ -330,8 +330,35 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             }));
           }
         } 
+        // Handle audio buffer append messages
+        else if (message.type === 'input_audio_buffer.append') {
+          console.log('🎵 [RealtimeProxy] Audio chunk from client:', {
+            hasAudio: !!message.audio,
+            audioLength: message.audio?.length || 0,
+            sessionActive: sessionActive,
+            openAiWsState: openAiWs?.readyState,
+            openAiWsStateText: openAiWs ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs.readyState] : 'null'
+          });
+          
+          if (openAiWs && sessionActive) {
+            openAiWs.send(data.toString());
+            console.log('✅ [RealtimeProxy] Audio forwarded to OpenAI');
+          } else {
+            console.log('⏳ [RealtimeProxy] Buffering audio until session ready');
+            messageBuffer.push(message);
+          }
+        }
+        // Handle response.create messages
+        else if (message.type === 'response.create') {
+          console.log('🤖 [RealtimeProxy] Response creation request from client');
+          if (openAiWs && sessionActive) {
+            openAiWs.send(data.toString());
+            console.log('✅ [RealtimeProxy] Response request forwarded to OpenAI');
+          }
+        }
         // Relay other messages to OpenAI
         else if (openAiWs && sessionActive) {
+          console.log('🔄 [RealtimeProxy] Forwarding message type:', message.type);
           openAiWs.send(data.toString());
         } 
         // Buffer messages if session not ready
