@@ -35,6 +35,7 @@ const NOTE_TYPES = [
   { value: 'soap', label: 'SOAP Note' },
   { value: 'soapNarrative', label: 'SOAP (Narrative)' },
   { value: 'soapPsychiatric', label: 'SOAP (Psychiatric)' },
+  { value: 'soapObGyn', label: 'SOAP (OB/GYN)' },
   { value: 'soapPediatric', label: 'SOAP (Peds)' },
   { value: 'progress', label: 'Progress Note' },
   { value: 'hAndP', label: 'History & Physical' },

@@ -244,6 +244,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### OB/GYN Specialty SOAP Template (January 21, 2025)
+- **NEW SPECIALTY TEMPLATE**: Created comprehensive OB/GYN SOAP note template following established pattern from psychiatric template
+- **IMPLEMENTATION DETAILS**:
+  - Added `buildSOAPObGynPrompt` function in enhanced-note-generation-service.ts
+  - Integrated into `getPromptForNoteType` switch statement with case 'soapObGyn'
+  - Updated UI dropdowns in NoteTypeSelector.tsx and TwoPhaseTemplateEditor.tsx
+- **TEMPLATE FEATURES**:
+  - Specialized SUBJECTIVE section: menstrual history (LMP, cycle), obstetric history (G_P_), contraception, sexual history
+  - Enhanced OBJECTIVE physical exam: breast exam, pelvic exam, external genitalia, vaginal, cervix, uterus, adnexa
+  - OB/GYN-specific orders: contraceptives, pregnancy medications, procedures (IUD insertion, colposcopy, endometrial biopsy)
+  - Appropriate lab orders: Pap smear with HPV co-testing, GC/CT NAAT, pregnancy tests
+- **USER IMPACT**: OB/GYN physicians now have a specialty-specific template that captures all relevant clinical information for women's health encounters
+
 ### SMART on FHIR Implementation Planning (January 20, 2025)
 - **Created comprehensive TODO document**: Added `docs/SMART_ON_FHIR_IMPLEMENTATION_TODO.md` outlining complete implementation plan
 - **Documented interoperability research**: Captured findings on EMR integration approaches (FHIR, HL7, SMART on FHIR)
