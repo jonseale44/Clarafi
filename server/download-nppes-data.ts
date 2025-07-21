@@ -35,13 +35,21 @@ export async function downloadNPPESData(): Promise<string> {
   console.log('🌐 Downloading real NPPES data from CMS.gov...');
   console.log('📊 This file contains real healthcare provider data with actual NPI numbers');
   
-  // Use the weekly update file which is smaller but contains real data
-  const weeklyDataUrl = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_Weekly_Monday_20250113.zip';
+  // Use a more recent weekly update file 
+  const weeklyDataUrl = 'https://download.cms.gov/nppes/NPPES_Data_Dissemination_Weekly_Monday_20241216.zip';
   const zipPath = path.join(dataDir, 'nppes_weekly.zip');
   
   // Download the file
   await downloadFile(weeklyDataUrl, zipPath);
   
+  // Check downloaded file size and extract
+  const stats = fs.statSync(zipPath);
+  console.log(`📊 Downloaded ZIP size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+  
+  if (stats.size < 1000000) { // Less than 1MB indicates incomplete download or HTML error page
+    throw new Error(`Downloaded file too small (${stats.size} bytes). This may be an HTML error page instead of ZIP data.`);
+  }
+
   // Extract the CSV from the zip
   const zip = new AdmZip(zipPath);
   zip.extractAllTo(dataDir, true);

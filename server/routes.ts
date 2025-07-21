@@ -54,6 +54,7 @@ import { setupRealtimeProxy } from "./realtime-proxy";
 import migrationRoutes from "./migration-routes";
 import { adminClinicImportRoutes } from "./admin-clinic-import-routes";
 import healthcareDataRoutes from "./healthcare-data-routes.js";
+import { healthcareUpdateSettingsRoutes } from "./healthcare-update-settings-routes.js";
 import schedulingRoutes from "./scheduling-routes";
 import { testPatientRoutes } from "./test-patient-routes";
 
@@ -758,6 +759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin clinic import routes
   app.use("/api/admin/clinic-import", adminClinicImportRoutes);
   app.use(healthcareDataRoutes);
+  app.use(healthcareUpdateSettingsRoutes);
   app.use("/api/admin", adminStatsRoutes);
   
   // Admin verification routes (PUBLIC - for creating new admin accounts)

@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Database, Download, Building2, MapPin, AlertCircle, CheckCircle, Clock, Activity } from "lucide-react";
+import { Database, Download, Building2, MapPin, AlertCircle, CheckCircle, Clock, Activity, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HealthcareUpdateSettings } from "./HealthcareUpdateSettings";
 
 interface HealthcareStats {
   healthSystems: number;
@@ -96,16 +98,29 @@ export function HealthcareDataManagement() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            US Healthcare Data Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Current Statistics */}
-          <div className="grid grid-cols-2 gap-4">
+      <Tabs defaultValue="import" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="import" className="flex items-center gap-2">
+            <Database className="w-4 h-4" />
+            Data Import
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Update Settings
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="import" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                US Healthcare Data Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Current Statistics */}
+              <div className="grid grid-cols-2 gap-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
@@ -129,23 +144,23 @@ export function HealthcareDataManagement() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+              </div>
 
-          {/* Status Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Data Source Status</h3>
-            
-            {!hasData && (
+              {/* Status Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Data Source Status</h3>
+                
+                {!hasData && (
               <Alert>
                 <AlertCircle className="w-4 h-4" />
                 <AlertDescription>
                   <strong>No healthcare data found.</strong> The system currently has minimal test data. 
                   Import the full NPPES dataset to enable nationwide clinic coverage.
                 </AlertDescription>
-              </Alert>
-            )}
+                  </Alert>
+                )}
 
-            {hasData && (
+                {hasData && (
               <Alert>
                 <CheckCircle className="w-4 h-4" />
                 <AlertDescription>
@@ -178,48 +193,54 @@ export function HealthcareDataManagement() {
                   {importStatus === 'complete' && "Healthcare data import completed successfully!"}
                   {importStatus === 'error' && "Import failed. Check server logs for details."}
                 </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button 
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button 
               onClick={handleStartImport}
               disabled={importDataMutation.isPending || importStatus === 'importing'}
               className="flex items-center gap-2"
             >
               <Database className="w-4 h-4" />
               {importStatus === 'importing' ? 'Import in Progress...' : 'Import Full US Dataset'}
-            </Button>
+                </Button>
 
-            <Button 
-              variant="outline"
-              onClick={() => downloadDataMutation.mutate()}
-              disabled={downloadDataMutation.isPending}
-              className="flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Download NPPES Only
-            </Button>
-          </div>
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadDataMutation.mutate()}
+                  disabled={downloadDataMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download NPPES Only
+                </Button>
+              </div>
 
-          {/* Information Card */}
-          <Card className="bg-blue-50 dark:bg-blue-950/20">
-            <CardContent className="pt-6">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Full Dataset Import Details</h4>
-              <ul className="text-sm space-y-1 text-blue-800 dark:text-blue-200">
-                <li>• <strong>Coverage:</strong> All 50 US states + territories</li>
-                <li>• <strong>Providers:</strong> ~3 million healthcare organizations</li>
-                <li>• <strong>Data Source:</strong> Official CMS NPPES Registry</li>
-                <li>• <strong>Update Frequency:</strong> Weekly (manual trigger)</li>
-                <li>• <strong>Processing Time:</strong> 2-4 hours for complete import</li>
-                <li>• <strong>Storage Required:</strong> ~2-3GB database space</li>
-              </ul>
+              {/* Information Card */}
+              <Card className="bg-blue-50 dark:bg-blue-950/20">
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Full Dataset Import Details</h4>
+                  <ul className="text-sm space-y-1 text-blue-800 dark:text-blue-200">
+                    <li>• <strong>Coverage:</strong> All 50 US states + territories</li>
+                    <li>• <strong>Providers:</strong> ~3 million healthcare organizations</li>
+                    <li>• <strong>Data Source:</strong> Official CMS NPPES Registry</li>
+                    <li>• <strong>Update Frequency:</strong> Configurable automatic scheduling</li>
+                    <li>• <strong>Processing Time:</strong> 2-4 hours for complete import</li>
+                    <li>• <strong>Storage Required:</strong> ~2-3GB database space</li>
+                  </ul>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <HealthcareUpdateSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
