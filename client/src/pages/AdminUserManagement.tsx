@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, Users, Building2, MapPin, Shield, UserPlus, Edit, Trash2, AlertCircle, ArrowLeft, LogOut } from "lucide-react";
+import { Search, Users, Building2, MapPin, Shield, UserPlus, Edit, Trash2, AlertCircle, ArrowLeft, LogOut, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -88,6 +88,24 @@ export function AdminUserManagement() {
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const [checkingTimer, setCheckingTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<keyof User | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  
+  // Column widths state for resizing
+  const [columnWidths, setColumnWidths] = useState({
+    name: 200,
+    username: 150,
+    email: 200,
+    role: 120,
+    healthSystem: 180,
+    locations: 120,
+    status: 100,
+    lastLogin: 120,
+    actions: 150
+  });
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { logoutMutation } = useAuth();
@@ -322,11 +340,67 @@ export function AdminUserManagement() {
     },
   });
 
+  // Filter users based on search term
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Sorting logic
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    let aValue: any = a[sortField];
+    let bValue: any = b[sortField];
+    
+    // Handle special cases
+    if (sortField === 'lastLogin') {
+      aValue = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
+      bValue = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
+    } else if (sortField === 'locationCount') {
+      aValue = a.locationCount || 0;
+      bValue = b.locationCount || 0;
+    } else if (sortField === 'healthSystemName') {
+      aValue = a.healthSystemName || '';
+      bValue = b.healthSystemName || '';
+    } else if (typeof aValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue?.toLowerCase() || '';
+    }
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Handle column sorting
+  const handleSort = (field: keyof User) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // Get sort icon for column
+  const getSortIcon = (field: keyof User) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
+    }
+    return sortDirection === 'asc' 
+      ? <ChevronUp className="h-4 w-4 text-blue-600" />
+      : <ChevronDown className="h-4 w-4 text-blue-600" />;
+  };
+
+  // Handle column resize
+  const handleColumnResize = (column: keyof typeof columnWidths, delta: number) => {
+    setColumnWidths(prev => ({
+      ...prev,
+      [column]: Math.max(80, prev[column] + delta)
+    }));
+  };
 
   const getRoleBadgeColor = (role: string) => {
     const colors: Record<string, string> = {
@@ -553,22 +627,268 @@ export function AdminUserManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="text-sm text-gray-500 mb-4 flex items-center gap-4">
+            <span>Click column headers to sort • Drag column edges to resize</span>
+            {sortField && (
+              <span className="text-blue-600">
+                Sorted by {sortField} ({sortDirection === 'asc' ? 'A-Z' : 'Z-A'})
+              </span>
+            )}
+          </div>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Username</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Health System</TableHead>
-                <TableHead>Locations</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.name }}
+                  onClick={() => handleSort('firstName')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Name</span>
+                    {getSortIcon('firstName')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      const startWidth = columnWidths.name;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('name', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.username }}
+                  onClick={() => handleSort('username')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Username</span>
+                    {getSortIcon('username')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('username', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.email }}
+                  onClick={() => handleSort('email')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Email</span>
+                    {getSortIcon('email')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('email', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.role }}
+                  onClick={() => handleSort('role')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Role</span>
+                    {getSortIcon('role')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('role', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.healthSystem }}
+                  onClick={() => handleSort('healthSystemName')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Health System</span>
+                    {getSortIcon('healthSystemName')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('healthSystem', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.locations }}
+                  onClick={() => handleSort('locationCount')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Locations</span>
+                    {getSortIcon('locationCount')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('locations', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.status }}
+                  onClick={() => handleSort('active')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Status</span>
+                    {getSortIcon('active')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('status', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50 select-none relative group"
+                  style={{ width: columnWidths.lastLogin }}
+                  onClick={() => handleSort('lastLogin')}
+                >
+                  <div className="flex items-center justify-between">
+                    <span>Last Login</span>
+                    {getSortIcon('lastLogin')}
+                  </div>
+                  <div 
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-blue-300 group-hover:bg-blue-200"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      
+                      const handleMouseMove = (e: MouseEvent) => {
+                        const delta = e.clientX - startX;
+                        handleColumnResize('lastLogin', delta);
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  />
+                </TableHead>
+                <TableHead 
+                  className="text-right relative group"
+                  style={{ width: columnWidths.actions }}
+                >
+                  <span>Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
+              {sortedUsers.map((user) => (
                 <TableRow 
                   key={user.id} 
                   className="cursor-pointer hover:bg-gray-50"

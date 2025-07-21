@@ -101,6 +101,23 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
   - System correctly shows empty location dropdowns when no authentic locations exist for a health system
 ✓ **PRODUCTION PATH FORWARD**: System ready to be populated with real clinic data via NPPES import, Google Places API, or NPI Registry real-time lookup
 
+### Excel-like Admin User Table Enhancement (January 21, 2025)
+✓ **MAJOR TABLE ENHANCEMENT**: Transformed admin user management table into Excel-like interface with advanced functionality
+✓ **SORTABLE COLUMNS**: Added click-to-sort functionality for all table columns:
+  - Name, Username, Email: Alphabetical sorting
+  - Role, Health System, Status: Text-based sorting  
+  - Location Count: Numerical sorting
+  - Last Login: Date-based sorting
+✓ **VISUAL SORT INDICATORS**: Added chevron icons showing current sort field and direction (ascending/descending)
+✓ **COLUMN RESIZING**: Implemented drag-to-resize handles on column headers:
+  - Mouse cursor changes to resize icon when hovering over column edges
+  - Real-time width adjustment while dragging
+  - Minimum column width enforced (80px)
+  - Visual feedback with blue hover states
+✓ **USER GUIDANCE**: Added instructional text explaining sort and resize functionality
+✓ **STATE MANAGEMENT**: Proper React state management for sort field, direction, and column widths
+✓ **PRODUCTION-READY**: Comprehensive table controls matching enterprise admin interfaces like Active Directory Users and Computers
+
 ### Nursing UI/UX Redesign - Dynamic Layout Implementation (January 21, 2025)
 ✓ **NURSING TRANSCRIPTION UI REDESIGNED**: Completely redesigned NursingRecordingPanel to match provider view's superior dynamic layout
 ✓ **PROBLEM IDENTIFIED**: Original nursing view used single Card with static flex layout - AI insights didn't move when transcription expanded/collapsed
