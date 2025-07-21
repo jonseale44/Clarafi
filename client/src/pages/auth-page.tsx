@@ -224,6 +224,17 @@ export default function AuthPage() {
   const [passwordStrength, setPasswordStrength] = useState<{valid?: boolean; strength?: string; message?: string}>({});
   const { toast } = useToast();
 
+  // UTM and referrer tracking state
+  const [acquisitionData, setAcquisitionData] = useState<{
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+    utmTerm?: string;
+    utmContent?: string;
+    referrerUrl?: string;
+    landingPage?: string;
+  }>({});
+
   // Check for email verification success
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -240,6 +251,26 @@ export default function AuthPage() {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [toast]);
+
+  // Capture UTM parameters and referrer on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const acquisitionData = {
+      utmSource: urlParams.get('utm_source') || undefined,
+      utmMedium: urlParams.get('utm_medium') || undefined,
+      utmCampaign: urlParams.get('utm_campaign') || undefined,
+      utmTerm: urlParams.get('utm_term') || undefined,
+      utmContent: urlParams.get('utm_content') || undefined,
+      referrerUrl: document.referrer || undefined,
+      landingPage: window.location.href,
+    };
+    
+    // Only set if we have at least one tracking parameter
+    if (acquisitionData.utmSource || acquisitionData.utmMedium || acquisitionData.referrerUrl) {
+      setAcquisitionData(acquisitionData);
+      console.log('📊 Captured acquisition data:', acquisitionData);
+    }
+  }, []);
 
   // Fetch available health systems for registration
   const { data: healthSystemsData } = useQuery({
@@ -483,6 +514,14 @@ export default function AuthPage() {
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
       subscriptionKey: data.subscriptionKey,
+      // Include acquisition tracking data
+      utmSource: acquisitionData.utmSource,
+      utmMedium: acquisitionData.utmMedium,
+      utmCampaign: acquisitionData.utmCampaign,
+      utmTerm: acquisitionData.utmTerm,
+      utmContent: acquisitionData.utmContent,
+      referrerUrl: acquisitionData.referrerUrl,
+      landingPage: acquisitionData.landingPage,
     });
   };
 

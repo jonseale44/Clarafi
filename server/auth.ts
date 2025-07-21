@@ -341,6 +341,14 @@ export function setupAuth(app: Express) {
         password: await hashPassword(req.body.password),
         npi: req.body.npi && req.body.npi.trim() ? req.body.npi.trim() : null,
         selectedLocationId: req.body.selectedLocationId,
+        // Include acquisition tracking data
+        utmSource: req.body.utmSource,
+        utmMedium: req.body.utmMedium,
+        utmCampaign: req.body.utmCampaign,
+        utmTerm: req.body.utmTerm,
+        utmContent: req.body.utmContent,
+        referrerUrl: req.body.referrerUrl,
+        landingPage: req.body.landingPage,
       };
 
       console.log("✅ [Registration] Creating new user:", registrationData.username);

@@ -57,6 +57,7 @@ import healthcareDataRoutes from "./healthcare-data-routes.js";
 import { healthcareUpdateSettingsRoutes } from "./healthcare-update-settings-routes.js";
 import schedulingRoutes from "./scheduling-routes";
 import { testPatientRoutes } from "./test-patient-routes";
+import acquisitionRoutes from "./acquisition-routes";
 
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
@@ -771,6 +772,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Test patient generation routes (system admins only)
   app.use(testPatientRoutes);
+
+  // Acquisition tracking routes
+  app.use(acquisitionRoutes);
 
   // Intelligent diagnosis routes (GPT-powered autocompletion)
   app.use("/api/intelligent-diagnosis", intelligentDiagnosisRoutes);

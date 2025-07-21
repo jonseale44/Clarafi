@@ -1,9 +1,46 @@
 import { db } from "./db.js";
-import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients } from "@shared/schema";
+import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients, userAcquisition } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
 import { StripeService } from "./stripe-service";
 import { SubscriptionKeyService } from "./subscription-key-service";
+
+// Helper function to determine channel group based on UTM parameters
+function determineChannelGroup(utmSource?: string, utmMedium?: string, referrer?: string): string {
+  if (!utmSource && !utmMedium && !referrer) return 'direct';
+  
+  const source = (utmSource || '').toLowerCase();
+  const medium = (utmMedium || '').toLowerCase();
+  
+  // Paid channels
+  if (medium === 'cpc' || medium === 'ppc' || medium === 'cpm' || medium === 'paid') {
+    return 'paid_search';
+  }
+  
+  // Social channels
+  if (medium === 'social' || 
+      ['facebook', 'twitter', 'linkedin', 'instagram', 'youtube'].includes(source)) {
+    return 'social';
+  }
+  
+  // Email
+  if (medium === 'email') {
+    return 'email';
+  }
+  
+  // Organic search
+  if (medium === 'organic' || 
+      ['google', 'bing', 'yahoo', 'duckduckgo'].includes(source)) {
+    return 'organic_search';
+  }
+  
+  // Referral
+  if (medium === 'referral' || referrer) {
+    return 'referral';
+  }
+  
+  return 'other';
+}
 
 export interface RegistrationData {
   username: string;
@@ -24,6 +61,15 @@ export interface RegistrationData {
   practiceZipCode?: string;
   practicePhone?: string;
   subscriptionKey?: string; // For tier 3 registration
+  
+  // Acquisition tracking
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  referrerUrl?: string;
+  landingPage?: string;
 }
 
 export class RegistrationService {
@@ -285,6 +331,50 @@ export class RegistrationService {
       const newUser = newUserResult[0];
 
       console.log(`✅ [RegistrationService] Created user ID: ${newUser.id} in health system: ${healthSystemId}`);
+
+      // Track acquisition data if provided
+      if (data.utmSource || data.utmMedium || data.referrerUrl || data.landingPage) {
+        await tx
+          .insert(userAcquisition)
+          .values({
+            userId: newUser.id,
+            healthSystemId: healthSystemId,
+            source: data.utmSource || (data.referrerUrl ? 'referral' : 'direct'),
+            medium: data.utmMedium || (data.referrerUrl ? 'referral' : 'none'),
+            campaign: data.utmCampaign || null,
+            utmSource: data.utmSource || null,
+            utmMedium: data.utmMedium || null,
+            utmCampaign: data.utmCampaign || null,
+            utmTerm: data.utmTerm || null,
+            utmContent: data.utmContent || null,
+            referrerUrl: data.referrerUrl || null,
+            landingPage: data.landingPage || null,
+            isPaid: data.utmMedium === 'cpc' || data.utmMedium === 'ppc' || data.utmMedium === 'cpm',
+            channelGroup: determineChannelGroup(data.utmSource, data.utmMedium, data.referrerUrl),
+            firstTouchAttribution: {
+              source: data.utmSource || data.referrerUrl || 'direct',
+              timestamp: new Date().toISOString(),
+              details: {
+                utmSource: data.utmSource,
+                utmMedium: data.utmMedium,
+                utmCampaign: data.utmCampaign,
+                referrer: data.referrerUrl
+              }
+            },
+            lastTouchAttribution: {
+              source: data.utmSource || data.referrerUrl || 'direct',
+              timestamp: new Date().toISOString(),
+              details: {
+                utmSource: data.utmSource,
+                utmMedium: data.utmMedium,
+                utmCampaign: data.utmCampaign,
+                referrer: data.referrerUrl
+              }
+            }
+          });
+        
+        console.log(`📊 [RegistrationService] Tracked acquisition data for user ${newUser.id}`);
+      }
 
       // Generate verification token and update user within the transaction
       const verificationToken = EmailVerificationService.generateVerificationToken();

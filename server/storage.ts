@@ -3444,6 +3444,103 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getAcquisitionStats(healthSystemId?: number, days: number = 30): Promise<{
+    totalSignups: number;
+    signupsBySource: Record<string, number>;
+    signupsByMedium: Record<string, number>;
+    signupsByCampaign: Record<string, number>;
+    signupsByChannel: Record<string, number>;
+    recentSignups: Array<{
+      id: number;
+      userId: number;
+      acquisitionDate: Date;
+      source: string | null;
+      medium: string | null;
+      campaign: string | null;
+      channelGroup: string | null;
+      referrerUrl: string | null;
+      user?: {
+        username: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+      };
+    }>;
+  }> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const conditions = [
+      gte(userAcquisition.acquisitionDate, cutoffDate)
+    ];
+
+    if (healthSystemId) {
+      conditions.push(eq(userAcquisition.healthSystemId, healthSystemId));
+    }
+
+    // Get all acquisitions with user data
+    const acquisitions = await db
+      .select({
+        id: userAcquisition.id,
+        userId: userAcquisition.userId,
+        acquisitionDate: userAcquisition.acquisitionDate,
+        source: userAcquisition.source,
+        medium: userAcquisition.medium,
+        campaign: userAcquisition.campaign,
+        channelGroup: userAcquisition.channelGroup,
+        referrerUrl: userAcquisition.referrerUrl,
+        utmSource: userAcquisition.utmSource,
+        utmMedium: userAcquisition.utmMedium,
+        utmCampaign: userAcquisition.utmCampaign,
+        user: {
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        }
+      })
+      .from(userAcquisition)
+      .leftJoin(users, eq(userAcquisition.userId, users.id))
+      .where(and(...conditions))
+      .orderBy(desc(userAcquisition.acquisitionDate))
+      .limit(100);
+
+    // Calculate stats
+    const totalSignups = acquisitions.length;
+    const signupsBySource: Record<string, number> = {};
+    const signupsByMedium: Record<string, number> = {};
+    const signupsByCampaign: Record<string, number> = {};
+    const signupsByChannel: Record<string, number> = {};
+
+    acquisitions.forEach(acq => {
+      // Count by source
+      const source = acq.source || 'direct';
+      signupsBySource[source] = (signupsBySource[source] || 0) + 1;
+
+      // Count by medium
+      const medium = acq.medium || 'none';
+      signupsByMedium[medium] = (signupsByMedium[medium] || 0) + 1;
+
+      // Count by campaign
+      if (acq.campaign) {
+        signupsByCampaign[acq.campaign] = (signupsByCampaign[acq.campaign] || 0) + 1;
+      }
+
+      // Count by channel
+      const channel = acq.channelGroup || 'other';
+      signupsByChannel[channel] = (signupsByChannel[channel] || 0) + 1;
+    });
+
+    return {
+      totalSignups,
+      signupsBySource,
+      signupsByMedium,
+      signupsByCampaign,
+      signupsByChannel,
+      recentSignups: acquisitions.slice(0, 20), // Return last 20 signups
+    };
+  }
+
   // Module 3: Conversion Events
   async getConversionEvents(params: {
     userId?: number;
