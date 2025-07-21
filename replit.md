@@ -67,6 +67,16 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 
 ## Recent Changes
 
+### Subscription Keys Dropdown Fix (January 21, 2025)
+✓ **CRITICAL BUG FIXED**: "Generate subscription keys" health system dropdown was blank for system administrators
+✓ **ROOT CAUSE**: Dropdown was filtering to only show Tier 3 health systems, but all health systems in database were Tier 1
+✓ **SOLUTION IMPLEMENTED**:
+  - Removed restrictive tier filter - now shows all health systems regardless of tier
+  - Added visual indicators showing "- Upgrade Required" for non-Tier 3 systems
+  - Enhanced validation - Generate button disabled for systems below Tier 3
+  - Better user messaging with warnings about tier requirements
+✓ **USER IMPACT**: System administrators can now see all health systems and understand upgrade requirements for subscription key generation
+
 ### Nursing UI/UX Redesign - Dynamic Layout Implementation (January 21, 2025)
 ✓ **NURSING TRANSCRIPTION UI REDESIGNED**: Completely redesigned NursingRecordingPanel to match provider view's superior dynamic layout
 ✓ **PROBLEM IDENTIFIED**: Original nursing view used single Card with static flex layout - AI insights didn't move when transcription expanded/collapsed

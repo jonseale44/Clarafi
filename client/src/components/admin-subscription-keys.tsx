@@ -392,15 +392,23 @@ export function AdminSubscriptionKeys() {
                     <SelectValue placeholder="Select a health system" />
                   </SelectTrigger>
                   <SelectContent>
-                    {healthSystemsData?.filter((hs: any) => hs.subscriptionTier === 3).map((hs: any) => (
+                    {healthSystemsData?.map((hs: any) => (
                       <SelectItem key={hs.id} value={hs.id.toString()}>
-                        {hs.name} (Tier {hs.subscriptionTier})
+                        {hs.name} (Tier {hs.subscriptionTier || 1})
+                        {(hs.subscriptionTier || 1) < 3 && <span className="text-amber-600"> - Upgrade Required</span>}
                       </SelectItem>
                     ))}
+                    {healthSystemsData?.length === 0 && (
+                      <SelectItem value="none" disabled>No health systems available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Only Tier 3 health systems can generate subscription keys
+                  {generateForm.healthSystemId && healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier < 3 ? (
+                    <span className="text-amber-600">⚠️ This health system needs to upgrade to Tier 3 to generate subscription keys</span>
+                  ) : (
+                    "Only Tier 3 health systems can generate subscription keys"
+                  )}
                 </p>
               </div>
             )}
@@ -430,7 +438,7 @@ export function AdminSubscriptionKeys() {
               </Button>
               <Button
                 onClick={() => generateKeysMutation.mutate(generateForm)}
-                disabled={generateKeysMutation.isPending}
+                disabled={generateKeysMutation.isPending || (isSystemAdmin && (!generateForm.healthSystemId || (healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier || 1) < 3))}
               >
                 {generateKeysMutation.isPending ? (
                   <>
