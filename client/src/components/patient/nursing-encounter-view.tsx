@@ -598,7 +598,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
         console.log("🔧 [NursingView] - Patient ID:", patient.id);
         console.log("🔧 [NursingView] - Encounter ID:", encounterId);
-        console.log("🔧 [NursingView] - User ID:", userId);
+        console.log("🔧 [NursingView] - User ID:", currentUser?.id);
         console.log("🔧 [NursingView] - User Role:", currentUser?.role);
         console.log("🔧 [NursingView] - Is Recording:", isRecording);
         
@@ -926,12 +926,34 @@ Format each bullet point on its own line with no extra spacing between them.`,
         console.log("✅ [NursingView] Recording started successfully");
         
       } catch (error) {
-        console.error("❌ [NursingView] Failed to start recording:", error);
+        console.error("❌ [NursingView] Failed to start recording - INNER CATCH:");
+        console.error("❌ [NursingView] Error object:", error);
+        console.error("❌ [NursingView] Error message:", (error as any)?.message);
+        console.error("❌ [NursingView] Error stack:", (error as any)?.stack);
         setIsRecording(false);
       }
     } catch (error) {
-      console.error("❌ [NursingView] Failed to setup recording:", error);
+      console.error("❌ [NursingView] Failed to setup recording - OUTER CATCH:");
+      console.error("❌ [NursingView] Error object:", error);
+      console.error("❌ [NursingView] Error message:", (error as any)?.message);
+      console.error("❌ [NursingView] Error stack:", (error as any)?.stack);
+      console.error("❌ [NursingView] Error name:", (error as any)?.name);
+      console.error("❌ [NursingView] Full error details:", {
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        stack: (error as any)?.stack,
+        code: (error as any)?.code,
+        status: (error as any)?.status,
+        toString: error?.toString()
+      });
       setIsRecording(false);
+      
+      // Show toast with error details
+      toast({
+        title: "Recording failed",
+        description: `Unable to start voice recording: ${(error as any)?.message || 'Unknown error'}`,
+        variant: "destructive",
+      });
     }
   };
 
