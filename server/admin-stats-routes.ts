@@ -38,7 +38,7 @@ router.get("/stats", requireAuth, async (req, res) => {
     // Get pending invites count
     const pendingInvitesResult = await pool.query(
       `SELECT COUNT(*) as count FROM migration_invitations 
-       WHERE to_health_system_id = $1 
+       WHERE target_health_system_id = $1 
        AND status = 'pending' 
        AND expires_at > NOW()`,
       [user.healthSystemId]
