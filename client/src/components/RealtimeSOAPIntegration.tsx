@@ -18,10 +18,14 @@ interface RealtimeSOAPIntegrationProps {
   selectedTemplate?: any; // New prop for custom template selection
   userEditingLock?: boolean; // New prop to prevent AI overwrites during user editing
   recordingCooldown?: boolean; // New prop to prevent AI overwrites during transcription completion
+  onTranscriptionUpdate?: (transcription: string) => void; // New prop for transcription updates
+  onRecordingStateChange?: (isRecording: boolean) => void; // New prop for recording state changes
 }
 
 export interface RealtimeSOAPRef {
   generateSOAPNote: (forceGeneration?: boolean) => void;
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<void>;
 }
 
 export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPIntegrationProps>(({
@@ -39,17 +43,27 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   noteType = 'soap', // Default to SOAP note
   selectedTemplate,
   userEditingLock = false,
-  recordingCooldown = false
+  recordingCooldown = false,
+  onTranscriptionUpdate,
+  onRecordingStateChange
 }, ref) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [soapBuffer, setSoapBuffer] = useState("");
   const [lastSOAPContent, setLastSOAPContent] = useState("");
   const [lastTranscriptionHash, setLastTranscriptionHash] = useState("");
   const [lastGenerationTime, setLastGenerationTime] = useState(0);
+  
+  // Recording state
+  const [internalIsRecording, setInternalIsRecording] = useState(false);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [liveTranscription, setLiveTranscription] = useState("");
+  
   const { toast } = useToast();
   
   const streamingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pauseDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Frontend change detection utilities
   const generateSimpleHash = (content: string): string => {
@@ -264,9 +278,233 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     }
   };
 
+  // Recording implementation methods
+  const startRecording = async (): Promise<void> => {
+    console.log("🎤 [RealtimeSOAPIntegration] === START RECORDING CALLED ===");
+    console.log("🎤 [RealtimeSOAPIntegration] Patient ID:", patientId, "Encounter ID:", encounterId);
+    
+    try {
+      setInternalIsRecording(true);
+      onRecordingStateChange?.(true);
+      
+      // WebSocket connection for transcription
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?patientId=${patientId}&encounterId=${encounterId}&userId=${patientId}`;
+      
+      console.log("🌐 [RealtimeSOAPIntegration] Connecting to WebSocket:", wsUrl);
+      
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      
+      ws.onopen = () => {
+        console.log("🌐 [RealtimeSOAPIntegration] ✅ Connected to WebSocket proxy");
+        setWsConnected(true);
+        
+        // Send session creation request
+        const sessionConfig = {
+          model: "gpt-4o-realtime-preview-2024-10-01",
+          modalities: ["text", "audio"],
+          instructions: `You are a medical transcription assistant specialized in clinical conversations. 
+            Accurately transcribe medical terminology, drug names, dosages, and clinical observations. Translate all languages into English. Only output ENGLISH.
+            Pay special attention to:
+            - Medication names and dosages (e.g., "Metformin 500mg twice daily")
+            - Medical abbreviations (e.g., "BP", "HR", "HEENT")
+            - Anatomical terms and symptoms
+            - Numbers and measurements (vital signs, lab values)
+            Format with bullet points for natural conversation flow.`,
+          input_audio_format: "pcm16",
+          input_audio_transcription: {
+            model: "whisper-1",
+            language: "en",
+          },
+          turn_detection: {
+            type: "server_vad",
+            threshold: 0.5,
+            prefix_padding_ms: 300,
+            silence_duration_ms: 300,
+            create_response: false,
+          },
+        };
+
+        const sessionCreateMessage = {
+          type: "session.create",
+          data: {
+            patientId: patientId,
+            encounterId: encounterId,
+            sessionConfig: sessionConfig,
+          },
+        };
+
+        ws.send(JSON.stringify(sessionCreateMessage));
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        console.log("📨 [RealtimeSOAPIntegration] WebSocket message type:", message.type);
+
+        if (message.type === "session.created") {
+          console.log("✅ [RealtimeSOAPIntegration] Session created successfully");
+        } else if (message.type === "conversation.item.input_audio_transcription.delta") {
+          const delta = message.delta || "";
+          console.log("📝 [RealtimeSOAPIntegration] Transcription delta:", delta);
+          setLiveTranscription(prev => {
+            const updated = prev + delta;
+            onTranscriptionUpdate?.(updated);
+            return updated;
+          });
+        } else if (message.type === "conversation.item.input_audio_transcription.completed") {
+          const transcript = message.transcript || "";
+          console.log("✅ [RealtimeSOAPIntegration] Transcription completed:", transcript.substring(0, 100) + "...");
+          setLiveTranscription(transcript);
+          onTranscriptionUpdate?.(transcript);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("❌ [RealtimeSOAPIntegration] WebSocket error:", error);
+        setWsConnected(false);
+      };
+
+      ws.onclose = () => {
+        console.log("🔌 [RealtimeSOAPIntegration] WebSocket connection closed");
+        setWsConnected(false);
+      };
+
+      // Microphone access with audio processing like provider view
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 16000,
+        },
+      });
+
+      // Set up audio processing like provider view
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      processor.onaudioprocess = (e) => {
+        if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+
+        const inputData = e.inputBuffer.getChannelData(0);
+
+        // Convert to PCM16 exactly like provider view
+        const pcm16Data = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const sample = Math.max(-1, Math.min(1, inputData[i]));
+          pcm16Data[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        }
+
+        // Create audio blob and convert to base64 exactly like provider view
+        const audioBlob = new Blob([pcm16Data], { type: "audio/pcm" });
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const arrayBuffer = reader.result as ArrayBuffer;
+            const uint8Array = new Uint8Array(arrayBuffer);
+            let binary = "";
+            for (let i = 0; i < uint8Array.length; i++) {
+              binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64Audio = btoa(binary);
+
+            // Send audio buffer with proper format like provider view
+            wsRef.current?.send(JSON.stringify({
+              event_id: `event_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+              type: "input_audio_buffer.append",
+              audio: base64Audio,
+            }));
+
+          } catch (error) {
+            console.error("❌ [RealtimeSOAPIntegration] Error processing audio:", error);
+          }
+        };
+        reader.readAsArrayBuffer(audioBlob);
+      };
+
+      // Store references for cleanup
+      (mediaRecorderRef.current as any) = { processor, audioContext, source, stream };
+      
+      toast({
+        title: "Recording Started",
+        description: "Voice recording and transcription active",
+      });
+
+    } catch (error) {
+      console.error("❌ [RealtimeSOAPIntegration] Recording error:", error);
+      setInternalIsRecording(false);
+      onRecordingStateChange?.(false);
+      
+      toast({
+        title: "Recording Failed", 
+        description: "Could not start recording. Please check microphone permissions.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const stopRecording = async (): Promise<void> => {
+    console.log("🎤 [RealtimeSOAPIntegration] === STOP RECORDING CALLED ===");
+    
+    try {
+      setInternalIsRecording(false);
+      onRecordingStateChange?.(false);
+
+      // Cleanup audio processing components
+      if (mediaRecorderRef.current) {
+        const { processor, audioContext, source, stream } = mediaRecorderRef.current as any;
+        
+        // Disconnect and cleanup audio processing nodes
+        if (processor) {
+          processor.disconnect();
+          source?.disconnect();
+          console.log("🛑 [RealtimeSOAPIntegration] Audio processor disconnected");
+        }
+        
+        // Close audio context
+        if (audioContext && audioContext.state !== 'closed') {
+          audioContext.close();
+          console.log("🛑 [RealtimeSOAPIntegration] Audio context closed");
+        }
+        
+        // Stop media stream tracks
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          console.log("🛑 [RealtimeSOAPIntegration] Media stream stopped");
+        }
+      }
+
+      // Close WebSocket
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.close();
+        console.log("🔌 [RealtimeSOAPIntegration] WebSocket closed");
+      }
+
+      setWsConnected(false);
+
+      toast({
+        title: "Recording Stopped",
+        description: "Voice recording completed",
+      });
+
+    } catch (error) {
+      console.error("❌ [RealtimeSOAPIntegration] Stop recording error:", error);
+      throw error;
+    }
+  };
+
   // Expose generateSOAPNote method via ref
   useImperativeHandle(ref, () => ({
-    generateSOAPNote
+    generateSOAPNote,
+    startRecording,
+    stopRecording
   }));
 
   // Intelligent streaming with conversation pause detection
