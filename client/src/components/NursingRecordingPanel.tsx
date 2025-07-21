@@ -31,6 +31,7 @@ export function NursingRecordingPanel({
   const [isTranscriptionExpanded, setIsTranscriptionExpanded] = useState(true);
   const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(true);
   const transcriptionRef = useRef<HTMLDivElement>(null);
+  const aiInsightsRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when transcription updates
   useEffect(() => {
@@ -38,6 +39,13 @@ export function NursingRecordingPanel({
       transcriptionRef.current.scrollTop = transcriptionRef.current.scrollHeight;
     }
   }, [transcription]);
+
+  // Auto-scroll to bottom when AI insights update
+  useEffect(() => {
+    if (aiSuggestions && aiInsightsRef.current) {
+      aiInsightsRef.current.scrollTop = aiInsightsRef.current.scrollHeight;
+    }
+  }, [aiSuggestions]);
 
   return (
     <div className="space-y-4">
@@ -142,7 +150,10 @@ export function NursingRecordingPanel({
                   {isGeneratingInsights ? "Generating..." : "Generate AI Clinical Insights"}
                 </Button>
               )}
-              <div className="border border-gray-200 rounded-lg p-4 min-h-[150px] bg-blue-50 max-h-[300px] overflow-y-auto">
+              <div 
+                ref={aiInsightsRef}
+                className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-blue-50 max-h-[400px] overflow-y-auto scroll-smooth"
+              >
                 <div className="text-sm whitespace-pre-line">
                   {aiSuggestions ? (
                     aiSuggestions
