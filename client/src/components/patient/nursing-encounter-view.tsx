@@ -54,7 +54,7 @@ interface NursingTemplateData {
   ros: string;
   vitals: string;
 }
-import type { Patient, User as UserType } from "@shared/schema";
+import type { Patient, User as UserType, Encounter } from "@shared/schema";
 
 interface NursingEncounterViewProps {
   patient: Patient;
@@ -139,7 +139,7 @@ export function NursingEncounterView({
   }) as { data?: { role?: string } };
 
   // Get encounter data
-  const { data: encounter, isLoading } = useQuery({
+  const { data: encounter, isLoading } = useQuery<Encounter>({
     queryKey: [`/api/encounters/${encounterId}`],
     enabled: !!encounterId,
   });
@@ -587,7 +587,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
 
         // Use WebSocket proxy for secure API key handling - MATCH PROVIDER VIEW EXACTLY
         const params = new URLSearchParams({
-          patientId: patientId.toString(),
+          patientId: patient.id.toString(),
           encounterId: encounterId.toString(),
         });
 
@@ -595,7 +595,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
         const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
         
         console.log("🔧 [NursingView] Creating secure WebSocket connection through proxy:", wsUrl);
-        console.log("🔧 [NursingView] - Patient ID:", patientId);
+        console.log("🔧 [NursingView] - Patient ID:", patient.id);
         console.log("🔧 [NursingView] - Encounter ID:", encounterId);
         
         realtimeWs = new WebSocket(wsUrl);
@@ -637,7 +637,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
           const sessionCreateMessage = {
             type: "session.create",
             data: {
-              patientId: patientId,
+              patientId: patient.id,
               encounterId: encounterId,
               sessionConfig: sessionConfig,
             },
@@ -749,7 +749,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
           const audioData = pcm16.buffer;
           if (audioData.byteLength > 0) {
             const base64Audio = btoa(
-              String.fromCharCode(...new Uint8Array(audioData))
+              String.fromCharCode.apply(null, Array.from(new Uint8Array(audioData)))
             );
             
             const audioMessage = {
