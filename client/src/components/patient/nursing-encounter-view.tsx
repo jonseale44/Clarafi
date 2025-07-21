@@ -105,11 +105,9 @@ export function NursingEncounterView({
     authLoading,
   });
 
-  // State management - matching provider view exactly including AI suggestions
+  // State management - simplified with single transcription source
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState("");
-  const [transcriptionBuffer, setTranscriptionBuffer] = useState("");
-  const [liveTranscriptionContent, setLiveTranscriptionContent] = useState("");
   const [gptSuggestions, setGptSuggestions] = useState("");
   const [liveSuggestions, setLiveSuggestions] = useState("");
   const [lastSuggestionTime, setLastSuggestionTime] = useState(0);
@@ -135,7 +133,7 @@ export function NursingEncounterView({
   const [userEditingLock, setUserEditingLock] = useState(false);
   const [recordingCooldown, setRecordingCooldown] = useState(false);
   const [soapNote, setSoapNote] = useState("");
-  const [draftOrders, setDraftOrders] = useState([]);
+  const [draftOrders, setDraftOrders] = useState<any[]>([]);
   const [cptCodesData, setCptCodesData] = useState(null);
 
   const nursingTemplateRef = useRef<NursingTemplateRef>(null);
@@ -161,36 +159,7 @@ export function NursingEncounterView({
     status: encounter?.encounterStatus,
   });
 
-  // Deduplication tracking for WebSocket messages
-  const processedEvents = useRef(new Set<string>());
-  const processedContent = useRef(new Set<string>());
-  const activeResponseId = useRef<string | null>(null);
-  const lastResponseTime = useRef(0);
-
-  const isEventProcessed = (eventId: string) =>
-    processedEvents.current.has(eventId);
-  const markEventAsProcessed = (eventId: string) =>
-    processedEvents.current.add(eventId);
-  const isContentProcessed = (content: string) =>
-    processedContent.current.has(content);
-  const markContentAsProcessed = (content: string) =>
-    processedContent.current.add(content);
-
-  // Response management helpers
-  const canCreateNewResponse = () => {
-    const now = Date.now();
-    const timeSinceLastResponse = now - lastResponseTime.current;
-    return !activeResponseId.current && timeSinceLastResponse > 3000; // 3 second cooldown
-  };
-  
-  const markResponseActive = (responseId: string) => {
-    activeResponseId.current = responseId;
-    lastResponseTime.current = Date.now();
-  };
-  
-  const markResponseComplete = () => {
-    activeResponseId.current = null;
-  };
+  // Removed legacy deduplication code - no longer needed with proper event handling
 
   // MISSING: Add the startSuggestionsConversation function from provider view
   const startSuggestionsConversation = async (
@@ -281,8 +250,7 @@ ${patientChart.surgicalHistory?.length > 0
 }`;
 
     // 3. Send patient context to OpenAI for AI suggestions
-    const currentTranscription =
-      liveTranscriptionContent || transcriptionBuffer || "";
+    const currentTranscription = transcription || "";
 
     const contextWithTranscription = `${patientContext}
 
@@ -319,13 +287,12 @@ Please provide nursing insights based on the current conversation.`;
     );
     ws.send(JSON.stringify(contextMessage));
 
-    // 4. Create response for AI suggestions with metadata like external system
-    if (canCreateNewResponse()) {
-      const suggestionsMessage = {
-        type: "response.create",
-        response: {
-          modalities: ["text"],
-          instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
+    // 4. Create response for AI suggestions with metadata 
+    const suggestionsMessage = {
+      type: "response.create",
+      response: {
+        modalities: ["text"],
+        instructions: `You are a medical AI assistant for nursing staff. ALWAYS RESPOND IN ENGLISH ONLY, regardless of what language is used for input. NEVER respond in any language other than English under any circumstances. Provide concise, single-line medical insights for nurses.
 
 CRITICAL PRIORITY: When nurses ask direct questions about patient information, provide SPECIFIC factual answers using the chart data provided in the conversation context. Do NOT give generic advice when asked direct questions.
 
@@ -344,18 +311,14 @@ DO NOT WRITE IN FULL SENTENCES, JUST BRIEF PHRASES.
 IMPORTANT: Return only 1-2 insights maximum per response. Use a bullet (•), dash (-), or number to prefix each insight. Keep responses short and focused.
 
 Format each bullet point on its own line with no extra spacing between them.`,
-          metadata: {
-            type: "suggestions",
-          },
+        metadata: {
+          type: "suggestions",
         },
-      };
+      },
+    };
 
-      console.log("🧠 [NursingView] Creating AI suggestions conversation");
-      markResponseActive("suggestions_initial");
-      ws.send(JSON.stringify(suggestionsMessage));
-    } else {
-      console.log("🧠 [NursingView] Skipping response creation - active response exists");
-    }
+    console.log("🧠 [NursingView] Creating AI suggestions conversation");
+    ws.send(JSON.stringify(suggestionsMessage));
   };
 
   // Generate smart suggestions function - EXACT COPY from provider view
@@ -627,7 +590,6 @@ Format each bullet point on its own line with no extra spacing between them.`,
   const handleTranscriptionUpdate = (transcription: string) => {
     console.log("📝 [NursingView] Transcription updated:", transcription?.length || 0, "chars");
     setTranscription(transcription);
-    setLiveTranscriptionContent(transcription);
   };
 
   const handleDraftOrdersUpdate = (orders: any[]) => {
@@ -720,7 +682,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
                   patientId={patient.id.toString()}
                   encounterId={encounterId.toString()}
                   isRecording={isRecording}
-                  transcription={liveTranscriptionContent || transcription}
+                  transcription={transcription}
                   onTemplateUpdate={(data) => {
                     setTemplateData(data);
                     console.log("🩺 [NursingView] Template updated:", data);
@@ -735,7 +697,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
           <div className="w-96 overflow-y-auto">
             <NursingRecordingPanel
               isRecording={isRecording}
-              transcription={liveTranscriptionContent || transcription}
+              transcription={transcription}
               aiSuggestions={liveSuggestions || gptSuggestions}
               wsConnected={wsConnected}
               onStartRecording={startRecording}
@@ -745,18 +707,19 @@ Format each bullet point on its own line with no extra spacing between them.`,
             />
 
             {/* Hidden RealtimeSOAP Integration - handles all recording logic */}
-            <RealtimeSOAPIntegration
-              ref={realtimeSOAPRef}
-              patientId={patient.id}
-              encounterId={encounterId}
-              isRecording={isRecording}
-              onSOAPNoteUpdate={handleSOAPNoteUpdate}
-              onRecordingStateChange={handleRecordingStateChange}
-              onTranscriptionUpdate={handleTranscriptionUpdate}
-              onDraftOrdersUpdate={handleDraftOrdersUpdate}
-              onCptCodesUpdate={handleCptCodesUpdate}
-              style={{ display: 'none' }}
-            />
+            <div style={{ display: 'none' }}>
+              <RealtimeSOAPIntegration
+                ref={realtimeSOAPRef}
+                patientId={patient.id.toString()}
+                encounterId={encounterId.toString()}
+                isRecording={isRecording}
+                onSOAPNoteUpdate={handleSOAPNoteUpdate}
+                onRecordingStateChange={handleRecordingStateChange}
+                onTranscriptionUpdate={handleTranscriptionUpdate}
+                onDraftOrdersReceived={handleDraftOrdersUpdate}
+                onCPTCodesReceived={handleCptCodesUpdate}
+              />
+            </div>
           </div>
         </div>
       </div>
