@@ -32,19 +32,18 @@ export function NursingRecordingPanel({
   const [isAISuggestionsExpanded, setIsAISuggestionsExpanded] = useState(true);
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Voice Recording</CardTitle>
+    <div className="space-y-4">
+      {/* Recording Controls Card */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-xl font-semibold">Voice Recording</CardTitle>
           {wsConnected && (
-            <Badge variant="outline" className="text-green-600 border-green-600">
-              <Activity className="w-3 h-3 mr-1" />
-              Connected
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-green-600">● Connected</span>
+            </div>
           )}
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col space-y-4 overflow-hidden">
+
         {/* Recording Controls */}
         <div className="flex justify-center">
           {!isRecording ? (
@@ -69,70 +68,57 @@ export function NursingRecordingPanel({
           )}
         </div>
 
-        {/* Transcription Section */}
+        {/* Transcription Section - Inside Recording Card */}
         <Collapsible 
           open={isTranscriptionExpanded} 
           onOpenChange={setIsTranscriptionExpanded}
-          className="flex-[2] flex flex-col overflow-hidden"
+          className="mt-4"
         >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full justify-between p-2 h-auto"
-            >
-              <div className="flex items-center gap-2">
-                {isTranscriptionExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                <span className="font-medium">Live Transcription</span>
-              </div>
-              {isRecording && (
-                <Badge variant="destructive" className="animate-pulse">
-                  Recording
-                </Badge>
-              )}
-            </Button>
+          <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group mb-2">
+            <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isTranscriptionExpanded ? 'rotate-90' : ''}`} />
+            <span className="text-sm font-medium text-gray-700">Live Transcription</span>
+            {isRecording && (
+              <Badge variant="destructive" className="animate-pulse ml-2">
+                Recording
+              </Badge>
+            )}
           </CollapsibleTrigger>
-          <CollapsibleContent className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full min-h-[300px] border rounded-md p-3 bg-gray-50">
-              {transcription ? (
-                <p className="text-sm whitespace-pre-wrap">{transcription}</p>
-              ) : (
-                <p className="text-sm text-gray-500 italic">
-                  {isRecording ? "Listening..." : "Start recording to see transcription"}
-                </p>
-              )}
-            </ScrollArea>
+          
+          <CollapsibleContent>
+            <div className="space-y-2">
+              <div className="border border-gray-200 rounded-lg p-4 min-h-[200px] bg-gray-50 max-h-[400px] overflow-y-auto">
+                <div className="whitespace-pre-line text-sm leading-relaxed">
+                  {transcription ? (
+                    transcription
+                  ) : (
+                    <span className="text-gray-500 italic">
+                      {isRecording ? "Listening..." : "Start recording to see transcription"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </CollapsibleContent>
         </Collapsible>
+      </Card>
 
-        {/* AI Suggestions Section */}
+      {/* AI Clinical Insights - Separate Card */}
+      <Card className="p-6">
         <Collapsible 
           open={isAISuggestionsExpanded} 
           onOpenChange={setIsAISuggestionsExpanded}
-          className="flex-none"
         >
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full justify-between p-2 h-auto"
-            >
-              <div className="flex items-center gap-2">
-                {isAISuggestionsExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                <span className="font-medium">AI Clinical Insights</span>
-              </div>
-              {aiSuggestions && (
-                <Badge variant="secondary">Active</Badge>
-              )}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="flex-1 overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <CollapsibleTrigger className="flex items-center space-x-2 hover:text-gray-700 cursor-pointer group">
+              <ChevronRight className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${isAISuggestionsExpanded ? 'rotate-90' : ''}`} />
+              <h2 className="text-xl font-semibold">AI Clinical Insights</h2>
+            </CollapsibleTrigger>
+            {aiSuggestions && (
+              <Badge variant="secondary">Active</Badge>
+            )}
+          </div>
+          
+          <CollapsibleContent>
             <div className="space-y-3">
               {onGenerateInsights && transcription && (
                 <Button 
@@ -145,19 +131,21 @@ export function NursingRecordingPanel({
                   {isGeneratingInsights ? "Generating..." : "Generate AI Clinical Insights"}
                 </Button>
               )}
-              <ScrollArea className="h-48 border rounded-md p-3 bg-blue-50">
-                {aiSuggestions ? (
-                  <p className="text-sm whitespace-pre-wrap">{aiSuggestions}</p>
-                ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    {transcription ? "Click button above to generate nursing insights" : "Start recording first to generate insights"}
-                  </p>
-                )}
-              </ScrollArea>
+              <div className="border border-gray-200 rounded-lg p-4 min-h-[150px] bg-blue-50 max-h-[300px] overflow-y-auto">
+                <div className="text-sm whitespace-pre-line">
+                  {aiSuggestions ? (
+                    aiSuggestions
+                  ) : (
+                    <span className="text-gray-500 italic">
+                      {transcription ? "Click button above to generate nursing insights" : "Start recording first to generate insights"}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </CollapsibleContent>
         </Collapsible>
-      </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
