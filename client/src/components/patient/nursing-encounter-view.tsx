@@ -698,11 +698,11 @@ Format each bullet point on its own line with no extra spacing between them.`,
           </div>
         </div>
 
-        {/* Content Area - Two Panel Layout */}
-        <div className="flex-1 flex gap-4 overflow-hidden p-4">
-          {/* Left Panel - Nursing Template */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-4xl mx-auto space-y-6">
+        {/* Content Area - Optimized Space Utilization */}
+        <div className="flex-1 flex gap-1 overflow-hidden p-2">
+          {/* Left Panel - Nursing Template - Auto-expanding */}
+          <div className="flex-[2] min-w-0 overflow-y-auto">
+            <div className="w-full space-y-6 px-2">
               <div className="space-y-6">
                 {/* Comprehensive Nursing Template */}
                 <NursingTemplateAssessment
@@ -721,32 +721,34 @@ Format each bullet point on its own line with no extra spacing between them.`,
             </div>
           </div>
 
-          {/* Right Panel - Recording and Suggestions */}
-          <div className="w-96 overflow-y-auto">
-            <NursingRecordingPanel
-              isRecording={isRecording}
-              transcription={transcription}
-              aiSuggestions={liveSuggestions || gptSuggestions}
-              wsConnected={wsConnected}
-              onStartRecording={startRecording}
-              onStopRecording={stopRecording}
-              onGenerateInsights={generateNursingInsights}
-              isGeneratingInsights={isGeneratingInsights}
-            />
-
-            {/* Hidden RealtimeSOAP Integration - handles all recording logic */}
-            <div style={{ display: 'none' }}>
-              <RealtimeSOAPIntegration
-                ref={realtimeSOAPRef}
-                patientId={patient.id.toString()}
-                encounterId={encounterId.toString()}
+          {/* Right Panel - Recording and Suggestions - Flexible width */}
+          <div className="flex-1 min-w-80 max-w-md overflow-y-auto">
+            <div className="w-full px-2">
+              <NursingRecordingPanel
                 isRecording={isRecording}
-                onSOAPNoteUpdate={handleSOAPNoteUpdate}
-                onRecordingStateChange={handleRecordingStateChange}
-                onTranscriptionUpdate={handleTranscriptionUpdate}
-                onDraftOrdersReceived={handleDraftOrdersUpdate}
-                onCPTCodesReceived={handleCptCodesUpdate}
+                transcription={transcription}
+                aiSuggestions={liveSuggestions || gptSuggestions}
+                wsConnected={wsConnected}
+                onStartRecording={startRecording}
+                onStopRecording={stopRecording}
+                onGenerateInsights={generateNursingInsights}
+                isGeneratingInsights={isGeneratingInsights}
               />
+
+              {/* Hidden RealtimeSOAP Integration - handles all recording logic */}
+              <div style={{ display: 'none' }}>
+                <RealtimeSOAPIntegration
+                  ref={realtimeSOAPRef}
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
+                  isRecording={isRecording}
+                  onSOAPNoteUpdate={handleSOAPNoteUpdate}
+                  onRecordingStateChange={handleRecordingStateChange}
+                  onTranscriptionUpdate={handleTranscriptionUpdate}
+                  onDraftOrdersReceived={handleDraftOrdersUpdate}
+                  onCPTCodesReceived={handleCptCodesUpdate}
+                />
+              </div>
             </div>
           </div>
         </div>
