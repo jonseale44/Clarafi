@@ -345,18 +345,49 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         if (message.type === "session.created") {
           console.log("✅ [RealtimeSOAPIntegration] Session created successfully");
         } else if (message.type === "conversation.item.input_audio_transcription.delta") {
-          const delta = message.delta || "";
-          console.log("📝 [RealtimeSOAPIntegration] Transcription delta:", delta);
-          setLiveTranscription(prev => {
-            const updated = prev + delta;
-            onTranscriptionUpdate?.(updated);
-            return updated;
+          const deltaText = message.delta || "";
+          console.log("📝 [RealtimeSOAPIntegration] Transcription delta:", deltaText);
+          
+          // For delta updates, append the delta text to existing transcription (exactly like provider view)
+          setLiveTranscription((prev) => {
+            const newTranscription = prev + deltaText;
+            console.log("📝 [RealtimeSOAPIntegration] Real-time transcription update:", {
+              previousLength: prev.length,
+              deltaLength: deltaText.length, 
+              newLength: newTranscription.length,
+              preview: newTranscription.substring(0, 100)
+            });
+            
+            // Update parent component with accumulated transcription
+            onTranscriptionUpdate?.(newTranscription);
+            return newTranscription;
           });
+          
         } else if (message.type === "conversation.item.input_audio_transcription.completed") {
-          const transcript = message.transcript || "";
-          console.log("✅ [RealtimeSOAPIntegration] Transcription completed:", transcript.substring(0, 100) + "...");
-          setLiveTranscription(transcript);
-          onTranscriptionUpdate?.(transcript);
+          const completedTranscript = message.transcript || "";
+          console.log("✅ [RealtimeSOAPIntegration] Transcription completed:", completedTranscript.substring(0, 100) + "...");
+          
+          // Process conversation segments like provider view - format with bullet points
+          if (completedTranscript) {
+            const conversationSegments = completedTranscript.split(/[.!?]+/).filter(segment => segment.trim().length > 0);
+            
+            if (conversationSegments.length > 0) {
+              // Add each segment as a separate bullet point
+              const newBullets = conversationSegments
+                .map((segment: string) => `• ${segment.trim()}`)
+                .join("\n");
+              
+              // Append to existing transcription (don't replace)
+              setLiveTranscription((prev) => {
+                const newTranscription = prev ? prev + "\n" + newBullets : newBullets;
+                console.log("✅ [RealtimeSOAPIntegration] Added conversation segments:", conversationSegments.length);
+                
+                // Update parent component with final transcription
+                onTranscriptionUpdate?.(newTranscription);
+                return newTranscription;
+              });
+            }
+          }
         }
       };
 
