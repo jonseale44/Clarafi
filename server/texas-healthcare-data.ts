@@ -97,12 +97,22 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
   const postalCode = record['Provider Business Practice Location Postal Code'];
   const zipCode = postalCode && typeof postalCode === 'string' ? postalCode.substring(0, 5) : '';
 
+  // Validate required fields - skip records with missing critical data
+  const address = record['Provider First Line Business Practice Location Address'];
+  const city = record['Provider Business Practice Location City Name'];
+  const state = record['Provider Business Practice Location State Name'];
+  
+  // Skip records missing required address components
+  if (!address || !city || !state || !zipCode) {
+    return null;
+  }
+
   return {
     npi: record.NPI,
     name: name,
-    address: record['Provider First Line Business Practice Location Address'],
-    city: record['Provider Business Practice Location City Name'],
-    state: record['Provider Business Practice Location State Name'],
+    address: address,
+    city: city,
+    state: state,
     zipCode: zipCode,
     phone: record['Provider Business Practice Location Phone Number'],
     taxonomyCode: record['Healthcare Provider Taxonomy Code_1'],

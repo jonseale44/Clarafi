@@ -1,0 +1,78 @@
+ndefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'locations',
+  column: 'city',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+❌ Error importing STEADFAST FAMILY MEDICINE, LLC: error: null value in column "city" of relation "locations" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async importUSHealthcareData (/home/runner/workspace/server/texas-healthcare-data.ts:235:11) {
+  length: 401,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (57, null, 57, STEADFAST FAMILY MEDICINE, LLC, null, clinic, 4790 WATERS AVE STE 400, null, null, , null, null, null, 1073404414, null, null, f, f, f, t, 2025-07-21 20:39:03.263574, 2025-07-21 20:39:03.263574).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'locations',
+  column: 'city',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+❌ Error importing LIFE CLINIC OF CO PC: error: null value in column "city" of relation "locations" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async importUSHealthcareData (/home/runner/workspace/server/texas-healthcare-data.ts:235:11) {
+  length: 387,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (58, null, 58, LIFE CLINIC OF CO PC, null, clinic, 5000 E DRY CREEK RD, null, null, , null, null, null, 1417446261, null, null, f, f, f, t, 2025-07-21 20:39:03.483794, 2025-07-21 20:39:03.483794).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'locations',
+  column: 'city',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
+❌ Error importing WELLNESS FAMILY CLINIC PLLC: error: null value in column "city" of relation "locations" violates not-null constraint
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async importUSHealthcareData (/home/runner/workspace/server/texas-healthcare-data.ts:235:11) {
+  length: 392,
+  severity: 'ERROR',
+  code: '23502',
+  detail: 'Failing row contains (59, null, 59, WELLNESS FAMILY CLINIC PLLC, null, clinic, 3516 W ALBERTA RD, null, null, , null, null, null, 1598410045, null, null, f, f, f, t, 2025-07-21 20:39:03.719782, 2025-07-21 20:39:03.719782).',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'locations',
+  column: 'city',
+  dataType: undefined,
+  constraint: undefined,
+  file: 'execMain.c',
+  line: '2006',
+  routine: 'ExecConstraints'
+}
