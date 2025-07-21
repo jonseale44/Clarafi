@@ -84,13 +84,21 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
            nameLower.includes('primary care') ||
            nameLower.includes('medical group') ||
            nameLower.includes('associates') ||
-           taxonomyDesc.toLowerCase().includes('clinic')) {
+           nameLower.includes('physicians') ||
+           nameLower.includes('medical') ||
+           nameLower.includes('healthcare') ||
+           nameLower.includes('health') ||
+           taxonomyDesc.toLowerCase().includes('clinic') ||
+           taxonomyDesc.toLowerCase().includes('family practice') ||
+           taxonomyDesc.toLowerCase().includes('internal medicine') ||
+           taxonomyDesc.toLowerCase().includes('pediatrics')) {
     organizationType = 'clinic_group';
     locationType = 'clinic';
   }
-  // Skip if we can't classify
+  // Accept any remaining Entity Type 2 organizations as clinic groups
   else {
-    return null;
+    organizationType = 'clinic_group';
+    locationType = 'clinic';
   }
 
   // Safely handle postal code - some records may have missing data
@@ -102,10 +110,13 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
   const city = record['Provider Business Practice Location City Name'];
   const state = record['Provider Business Practice Location State Name'];
   
-  // Skip records missing required address components
-  if (!address || !city || !state || !zipCode) {
+  // Skip records missing critical address components (be more lenient)
+  if (!address || !city || !state) {
     return null;
   }
+  
+  // Use default zipCode if missing
+  const finalZipCode = zipCode || '00000';
 
   return {
     npi: record.NPI,
@@ -113,7 +124,7 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
     address: address,
     city: city,
     state: state,
-    zipCode: zipCode,
+    zipCode: finalZipCode,
     phone: record['Provider Business Practice Location Phone Number'],
     taxonomyCode: record['Healthcare Provider Taxonomy Code_1'],
     taxonomyDescription: taxonomyDesc,
