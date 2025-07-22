@@ -141,6 +141,8 @@ export default function AdminVerificationReview() {
         return <Badge className="bg-blue-500">Auto-Approved</Badge>;
       case 'manual-review':
         return <Badge className="bg-yellow-500">Requires Manual Review</Badge>;
+      case 'admin_approved_awaiting_verification':
+        return <Badge className="bg-orange-500">Awaiting Email Verification</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -153,7 +155,7 @@ export default function AdminVerificationReview() {
   };
 
   const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'manual-review');
-  const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected' || r.status === 'auto-approved');
+  const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected' || r.status === 'auto-approved' || r.status === 'admin_approved_awaiting_verification');
 
   // Handle logout
   const handleLogout = () => {
