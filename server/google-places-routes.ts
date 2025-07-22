@@ -528,31 +528,32 @@ router.post("/api/places/create-health-system", async (req, res) => {
     let healthSystemName;
     
     if (!isHealthSystem) {
-      // This is a single clinic - find or create appropriate parent health system
-      const state = placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "Unknown";
-      const parentSystemName = `Independent Clinics - ${state}`;
+      // This is a single clinic - create its own health system for data isolation
+      // Each clinic gets its own system to ensure HIPAA compliance and data privacy
+      const clinicSystemName = `${baseName} System`;
       
-      // Check if parent system exists
-      const parentSystem = await db
+      // Check if this clinic already has its own system
+      const existingClinicSystem = await db
         .select()
         .from(healthSystems)
-        .where(eq(healthSystems.name, parentSystemName))
+        .where(eq(healthSystems.name, clinicSystemName))
         .limit(1);
       
-      if (parentSystem.length > 0) {
-        healthSystemId = parentSystem[0].id;
-        healthSystemName = parentSystem[0].name;
+      if (existingClinicSystem.length > 0) {
+        healthSystemId = existingClinicSystem[0].id;
+        healthSystemName = existingClinicSystem[0].name;
       } else {
-        // Create parent system for independent clinics in this state
-        const newParentSystem = await db.insert(healthSystems).values({
-          name: parentSystemName,
-          systemType: "independent_clinics",
+        // Create new health system for this individual clinic
+        const newClinicSystem = await db.insert(healthSystems).values({
+          name: clinicSystemName,
+          systemType: "clinic",
           subscriptionTier: 1,
           subscriptionStatus: "pending"
         }).returning();
         
-        healthSystemId = newParentSystem[0].id;
-        healthSystemName = newParentSystem[0].name;
+        healthSystemId = newClinicSystem[0].id;
+        healthSystemName = newClinicSystem[0].name;
+        console.log(`✅ Created individual clinic system: ${clinicSystemName}`);
       }
     } else {
       // This is explicitly a health system - create it as such
@@ -590,7 +591,7 @@ router.post("/api/places/create-health-system", async (req, res) => {
       healthSystemId: healthSystemId,
       locationId: newLocation[0].id,
       message: !isHealthSystem ? 
-        `Clinic added to "${healthSystemName}". Proceed with registration.` :
+        `Individual clinic system "${healthSystemName}" created. Proceed with registration.` :
         "Health system and location created successfully. Proceed with registration."
     });
 
