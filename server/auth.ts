@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { db } from "./db.js";
 import { eq } from "drizzle-orm";
 import { User as SelectUser, users } from "@shared/schema";
+import { StripeService } from "./stripe-service.js";
 
 declare global {
   namespace Express {
