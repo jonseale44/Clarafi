@@ -944,6 +944,12 @@ Preferred communication style: Simple, everyday language.
 - **PRODUCTION STANDARDS**: Architecture designed to match or exceed Epic, Cerner, and Athena EMR e-prescribing capabilities
 - **EXISTING INFRASTRUCTURE LEVERAGED**: Building on existing pharmacy validation service, patient order preferences, and signed orders tracking
 
+### Login Error Message Display Fix (January 22, 2025)
+- **ISSUE FIXED**: Login errors were displaying raw JSON with status codes (e.g., "401: {"message":"..."}")
+- **ROOT CAUSE**: apiRequest function in queryClient.ts was throwing errors with format `${res.status}: ${text}`
+- **SOLUTION**: Modified login mutation to use fetch directly and parse JSON response for clean error messages
+- **USER IMPACT**: Login errors now display user-friendly messages without technical JSON formatting
+
 ### Critical Move-to-Orders Bug Fix (January 19, 2025)
 - **CRITICAL BUGS FIXED**: "Move medication to orders" feature was failing due to TWO missing required fields
 - **BUG 1 - MISSING quantity_unit**: Database requires quantity_unit field but moveToOrders method wasn't providing it
