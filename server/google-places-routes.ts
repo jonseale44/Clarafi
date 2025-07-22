@@ -443,11 +443,21 @@ router.post("/api/places/create-health-system", async (req, res) => {
     console.log("🔍 [Google Places] Place types:", placeData.types);
     console.log("📍 [Google Places] Place name:", placeData.name);
     console.log("📍 [Google Places] Formatted address:", placeData.formatted_address);
+    
+    // Helper function to determine location type from Google Places data
+    const determineLocationType = (placeData: any): string => {
+      const types = placeData.types || [];
+      if (types.includes('hospital')) return 'hospital';
+      if (types.includes('urgent_care') || placeData.name.toLowerCase().includes('urgent care')) return 'urgent_care';
+      if (placeData.name.toLowerCase().includes('specialty') || placeData.name.toLowerCase().includes('specialist')) return 'specialty_center';
+      if (types.includes('doctor') || types.includes('health') || types.includes('clinic')) return 'clinic';
+      return 'clinic'; // Default to clinic
+    };
 
     // Check if this place already exists in our database
     const { db } = await import("./db.js");
     const { healthSystems, locations } = await import("@shared/schema");
-    const { eq, like, sql } = await import("drizzle-orm");
+    const { eq, like, sql, and } = await import("drizzle-orm");
     
     // First check if this is a location of an existing health system
     // Look for exact name match or partial match (e.g., "Waco Family Medicine - Central" matches "Waco Family Medicine")
@@ -464,8 +474,10 @@ router.post("/api/places/create-health-system", async (req, res) => {
       const existingLocation = await db
         .select()
         .from(locations)
-        .where(eq(locations.healthSystemId, existingSystem[0].id))
-        .where(like(locations.address, placeData.formatted_address.split(",")[0] + '%'))
+        .where(and(
+          eq(locations.healthSystemId, existingSystem[0].id),
+          like(locations.address, placeData.formatted_address.split(",")[0] + '%')
+        ))
         .limit(1);
       
       if (existingLocation.length > 0) {
@@ -481,7 +493,7 @@ router.post("/api/places/create-health-system", async (req, res) => {
       const newLocation = await db.insert(locations).values({
         healthSystemId: existingSystem[0].id,
         name: placeData.name,
-        locationType: "clinic",
+        locationType: determineLocationType(placeData),
         address: placeData.formatted_address.split(",")[0],
         city: placeData.formatted_address.split(",")[1]?.trim() || "",
         state: placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "TX",
@@ -554,15 +566,19 @@ router.post("/api/places/create-health-system", async (req, res) => {
     }
 
     // Create the location with full name
+    const addressParts = placeData.formatted_address.split(",").map(part => part.trim());
+    const stateCode = addressParts[2]?.split(" ")[0] || "TX";
+    
     const newLocation = await db.insert(locations).values({
       healthSystemId: healthSystemId,
       name: placeData.name,
-      locationType: "clinic",
-      address: placeData.formatted_address.split(",")[0],
-      city: placeData.formatted_address.split(",")[1]?.trim() || "",
-      state: placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "TX",
-      zipCode: placeData.formatted_address.match(/\d{5}/)?.[0] || "00000",
-      phone: placeData.formatted_phone_number,
+      shortName: baseName,
+      locationType: determineLocationType(placeData),
+      address: addressParts[0],
+      city: addressParts[1] || "",
+      state: stateCode,
+      zipCode: addressParts[3]?.split(' ')[1] || placeData.formatted_address.match(/\d{5}/)?.[0] || "00000",
+      phone: placeData.phone_number || placeData.formatted_phone_number,
       npi: placeData.healthcare_details?.npi,
       active: true
     }).returning();
