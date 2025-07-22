@@ -53,10 +53,8 @@ function classifyHealthcareOrganization(record: NPPESRecord): TexasHealthcareOrg
       console.log(`📋 Available fields (${availableFields.length}):`, availableFields.slice(0, 10));
       console.log(`📍 Address fields:`, {
         address: record['Provider First Line Business Practice Location Address'],
-        city_name: record['Provider Business Practice Location City Name'],
-        city_address_name: record['Provider Business Practice Location Address City Name'],
-        state_name: record['Provider Business Practice Location State Name'], 
-        state_address_name: record['Provider Business Practice Location Address State Name']
+        city_name: record['Provider Business Practice Location Address City Name'],
+        state_name: record['Provider Business Practice Location Address State Name']
       });
     }
   }
@@ -219,29 +217,69 @@ export async function importUSHealthcareData(): Promise<void> {
         .on('error', reject);
     });
 
-    // Group organizations by health system vs standalone
-    const healthSystemsMap = new Map<string, TexasHealthcareOrganization[]>();
-    const standaloneLocations: TexasHealthcareOrganization[] = [];
+    // Group organizations intelligently
+    const trueHealthSystemsMap = new Map<string, TexasHealthcareOrganization[]>();
+    const stateIndependentClinicsMap = new Map<string, TexasHealthcareOrganization[]>();
+    const majorHospitalSystemsMap = new Map<string, TexasHealthcareOrganization[]>();
+
+    console.log('🔍 Analyzing and grouping healthcare organizations...');
 
     for (const org of healthcareOrganizations) {
-      if (org.organizationType === 'health_system') {
-        if (!healthSystemsMap.has(org.name)) {
-          healthSystemsMap.set(org.name, []);
+      const nameLower = org.name.toLowerCase();
+      
+      // Check if this is a TRUE health system (very strict criteria)
+      if (org.organizationType === 'health_system' || 
+          nameLower.endsWith('health system') ||
+          nameLower.endsWith('healthcare system') ||
+          nameLower.endsWith('medical system') ||
+          nameLower.endsWith('hospital system')) {
+        
+        // Extract base system name for grouping
+        const baseSystemName = extractBaseSystemName(org.name);
+        if (!trueHealthSystemsMap.has(baseSystemName)) {
+          trueHealthSystemsMap.set(baseSystemName, []);
         }
-        healthSystemsMap.get(org.name)!.push(org);
-      } else {
-        standaloneLocations.push(org);
+        trueHealthSystemsMap.get(baseSystemName)!.push(org);
+      }
+      // Check for major hospital networks (e.g., "Mayo Clinic", "Cleveland Clinic")
+      else if ((nameLower.includes('mayo clinic') || 
+                nameLower.includes('cleveland clinic') ||
+                nameLower.includes('kaiser permanente') ||
+                nameLower.includes('providence') ||
+                nameLower.includes('ascension') ||
+                nameLower.includes('hca healthcare') ||
+                nameLower.includes('commonspirit') ||
+                nameLower.includes('trinity health') ||
+                nameLower.includes('adventhealth')) &&
+               !nameLower.includes('independent')) {
+        
+        const baseSystemName = extractMajorSystemName(org.name);
+        if (!majorHospitalSystemsMap.has(baseSystemName)) {
+          majorHospitalSystemsMap.set(baseSystemName, []);
+        }
+        majorHospitalSystemsMap.get(baseSystemName)!.push(org);
+      }
+      // Everything else goes under state-based independent clinics
+      else {
+        const stateName = org.state || 'Unknown';
+        const stateKey = `Independent Clinics - ${stateName}`;
+        
+        if (!stateIndependentClinicsMap.has(stateKey)) {
+          stateIndependentClinicsMap.set(stateKey, []);
+        }
+        stateIndependentClinicsMap.get(stateKey)!.push(org);
       }
     }
 
-    console.log(`🏢 Creating ${healthSystemsMap.size} health systems...`);
-    console.log(`🏥 Creating ${standaloneLocations.length} standalone locations...`);
+    console.log(`📊 Grouping results:`);
+    console.log(`   - True health systems: ${trueHealthSystemsMap.size}`);
+    console.log(`   - Major hospital networks: ${majorHospitalSystemsMap.size}`);
+    console.log(`   - State-based independent groups: ${stateIndependentClinicsMap.size}`);
 
-    // Import health systems first
-    for (const [systemName, systemOrgs] of healthSystemsMap) {
+    // Create true health systems
+    for (const [systemName, systemOrgs] of Array.from(trueHealthSystemsMap)) {
       try {
-        // Create health system
-        const [healthSystemRecord] = await db
+        const result = await db
           .insert(healthSystems)
           .values({
             name: systemName,
@@ -252,9 +290,11 @@ export async function importUSHealthcareData(): Promise<void> {
           })
           .onConflictDoNothing()
           .returning();
+        
+        const healthSystemRecord = result[0];
 
         if (healthSystemRecord) {
-          console.log(`✅ Created health system: ${systemName}`);
+          console.log(`✅ Created true health system: ${systemName}`);
           
           // Create locations for this health system
           for (const org of systemOrgs) {
@@ -280,57 +320,105 @@ export async function importUSHealthcareData(): Promise<void> {
       }
     }
 
-    // Import standalone locations
-    let importedCount = 0;
-    for (const org of standaloneLocations) {
+    // Create major hospital systems
+    for (const [systemName, systemOrgs] of Array.from(majorHospitalSystemsMap)) {
       try {
-        // Create individual health system for standalone clinic
-        const [healthSystemRecord] = await db
+        const result = await db
           .insert(healthSystems)
           .values({
-            name: org.name,
-            systemType: determineSystemType(org.organizationType),
+            name: systemName,
+            systemType: 'hospital',
             subscriptionTier: 1,
             subscriptionStatus: 'pending' as const,
             active: true
           })
           .onConflictDoNothing()
           .returning();
+        
+        const healthSystemRecord = result[0];
 
         if (healthSystemRecord) {
-          // Create location
-          await db
-            .insert(locations)
-            .values({
-              healthSystemId: healthSystemRecord.id,
-              name: org.name,
-              locationType: org.locationType,
-              address: org.address,
-              city: org.city,
-              state: org.state,
-              zipCode: org.zipCode,
-              phone: org.phone,
-              npi: org.npi,
-              active: true
-            })
-            .onConflictDoNothing();
-
-          importedCount++;
+          console.log(`✅ Created major hospital network: ${systemName}`);
           
-          if (importedCount % 100 === 0) {
-            console.log(`📊 Imported ${importedCount} standalone healthcare organizations`);
+          // Create locations for this system
+          for (const org of systemOrgs) {
+            await db
+              .insert(locations)
+              .values({
+                healthSystemId: healthSystemRecord.id,
+                name: org.name,
+                locationType: org.locationType,
+                address: org.address,
+                city: org.city,
+                state: org.state,
+                zipCode: org.zipCode,
+                phone: org.phone,
+                npi: org.npi,
+                active: true
+              })
+              .onConflictDoNothing();
           }
         }
       } catch (error) {
-        console.error(`❌ Error importing ${org.name}:`, error);
+        console.error(`❌ Error creating hospital system ${systemName}:`, error);
       }
     }
 
+    // Create state-based independent clinic groups
+    for (const [stateGroupName, clinics] of Array.from(stateIndependentClinicsMap)) {
+      try {
+        const result = await db
+          .insert(healthSystems)
+          .values({
+            name: stateGroupName,
+            systemType: 'clinic_group',
+            subscriptionTier: 1,
+            subscriptionStatus: 'pending' as const,
+            active: true
+          })
+          .onConflictDoNothing()
+          .returning();
+        
+        const healthSystemRecord = result[0];
+
+        if (healthSystemRecord) {
+          console.log(`✅ Created state group: ${stateGroupName} with ${clinics.length} clinics`);
+          
+          // Create locations for this state group
+          for (const clinic of clinics) {
+            await db
+              .insert(locations)
+              .values({
+                healthSystemId: healthSystemRecord.id,
+                name: clinic.name,
+                locationType: clinic.locationType,
+                address: clinic.address,
+                city: clinic.city,
+                state: clinic.state,
+                zipCode: clinic.zipCode,
+                phone: clinic.phone,
+                npi: clinic.npi,
+                active: true
+              })
+              .onConflictDoNothing();
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error creating state group ${stateGroupName}:`, error);
+      }
+    }
+
+    // Calculate totals
+    const totalHealthSystems = trueHealthSystemsMap.size + majorHospitalSystemsMap.size + stateIndependentClinicsMap.size;
+    const totalLocations = healthcareOrganizations.length;
+
     console.log('🎉 Nationwide healthcare data import completed successfully!');
     console.log(`📊 Final totals:`);
-    console.log(`   - Health systems: ${healthSystemsMap.size}`);
-    console.log(`   - Standalone organizations: ${importedCount}`);
-    console.log(`   - Total locations created: ${healthcareOrganizations.length}`);
+    console.log(`   - True health systems created: ${trueHealthSystemsMap.size}`);
+    console.log(`   - Major hospital networks created: ${majorHospitalSystemsMap.size}`);
+    console.log(`   - State-based independent groups created: ${stateIndependentClinicsMap.size}`);
+    console.log(`   - Total parent systems created: ${totalHealthSystems}`);
+    console.log(`   - Total clinic locations created: ${totalLocations}`);
 
   } catch (error) {
     console.error('❌ Error importing US healthcare data:', error);
@@ -347,6 +435,37 @@ function determineSystemType(orgType: TexasHealthcareOrganization['organizationT
     case 'specialty_center': return 'specialty_center';
     default: return 'clinic_group';
   }
+}
+
+// Helper function to extract base health system name
+function extractBaseSystemName(fullName: string): string {
+  // Remove common suffixes and variations
+  const cleaned = fullName
+    .replace(/\s*-\s*.*$/, '') // Remove everything after dash
+    .replace(/\s+(Health System|Healthcare System|Medical System|Hospital System)$/i, '')
+    .replace(/\s+(of|at|in)\s+.*$/i, '') // Remove location suffixes
+    .trim();
+  
+  return cleaned || fullName;
+}
+
+// Helper function to extract major hospital system name
+function extractMajorSystemName(fullName: string): string {
+  const nameLower = fullName.toLowerCase();
+  
+  // Map variations to canonical names
+  if (nameLower.includes('mayo clinic')) return 'Mayo Clinic';
+  if (nameLower.includes('cleveland clinic')) return 'Cleveland Clinic';
+  if (nameLower.includes('kaiser permanente')) return 'Kaiser Permanente';
+  if (nameLower.includes('providence')) return 'Providence';
+  if (nameLower.includes('ascension')) return 'Ascension';
+  if (nameLower.includes('hca healthcare')) return 'HCA Healthcare';
+  if (nameLower.includes('commonspirit')) return 'CommonSpirit Health';
+  if (nameLower.includes('trinity health')) return 'Trinity Health';
+  if (nameLower.includes('adventhealth')) return 'AdventHealth';
+  
+  // Default: clean up the name
+  return fullName.replace(/\s*-\s*.*$/, '').trim();
 }
 
 // Quick stats function
