@@ -349,6 +349,10 @@ export function setupAuth(app: Express) {
         utmContent: req.body.utmContent,
         referrerUrl: req.body.referrerUrl,
         landingPage: req.body.landingPage,
+        // Include BAA acceptance for Tier 1 providers
+        baaAccepted: req.body.baaAccepted || false,
+        baaAcceptedAt: req.body.baaAccepted ? new Date().toISOString() : null,
+        baaVersion: req.body.baaAccepted ? "v1.0-2025" : null,
       };
 
       console.log("✅ [Registration] Creating new user:", registrationData.username);

@@ -252,6 +252,11 @@ export const users = pgTable("users", {
   accountLockedUntil: timestamp("account_locked_until"),
   requirePasswordChange: boolean("require_password_change").default(false),
   
+  // HIPAA BAA Acceptance (for Tier 1 providers)
+  baaAccepted: boolean("baa_accepted").default(false),
+  baaAcceptedAt: timestamp("baa_accepted_at"),
+  baaVersion: text("baa_version"), // Track which version they accepted
+  
   // Subscription Key Verification
   verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'tier3_verified'
   verifiedWithKeyId: integer("verified_with_key_id"), // Will add reference after table creation

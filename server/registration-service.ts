@@ -70,6 +70,11 @@ export interface RegistrationData {
   utmContent?: string;
   referrerUrl?: string;
   landingPage?: string;
+  
+  // BAA acceptance for Tier 1 providers
+  baaAccepted?: boolean;
+  baaAcceptedAt?: string | null;
+  baaVersion?: string | null;
 }
 
 export class RegistrationService {
@@ -325,6 +330,10 @@ export class RegistrationService {
           healthSystemId: healthSystemId,
           active: true,
           createdAt: new Date(),
+          // BAA acceptance for Tier 1 providers creating new practices
+          baaAccepted: registrationType === 'create_new' && data.baaAccepted ? data.baaAccepted : false,
+          baaAcceptedAt: registrationType === 'create_new' && data.baaAccepted && data.baaAcceptedAt ? new Date(data.baaAcceptedAt) : null,
+          baaVersion: registrationType === 'create_new' && data.baaVersion ? data.baaVersion : null,
         })
         .returning();
         

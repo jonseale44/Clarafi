@@ -27,6 +27,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Mail } from "lucide-react";
 import { PasskeyLoginForm } from "@/components/passkey-login-form";
+import { SimplifiedBAA } from "@/components/simplified-baa";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -74,9 +75,19 @@ const registerSchema = insertUserSchema.omit({ healthSystemId: true }).extend({
   subscriptionKey: z.string().optional(),
   selectedFacility: z.any().optional(), // Google Places facility data
   termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms of service"),
+  baaAccepted: z.boolean().optional(), // Only required for providers
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine((data) => {
+  // BAA is required for providers in create_new registration (Tier 1)
+  if (data.role === 'provider' && data.registrationType === 'create_new' && !data.baaAccepted) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Providers must accept the HIPAA compliance agreement",
+  path: ["baaAccepted"],
 });
 
 type LoginData = z.infer<typeof loginSchema>;
@@ -216,6 +227,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [baaAccepted, setBaaAccepted] = useState(false);
+  const [showBaaDialog, setShowBaaDialog] = useState(false);
   
   // Validation states
   const [usernameValidation, setUsernameValidation] = useState<{available?: boolean; message?: string}>({});
@@ -1196,10 +1209,60 @@ export default function AuthPage() {
                       </p>
                     )}
                     
+                    {/* BAA Acceptance for Providers */}
+                    {registerForm.watch("role") === "provider" && registrationType === "create_new" && (
+                      <>
+                        <div className="flex items-start space-x-2 pt-2">
+                          <Checkbox
+                            id="baa"
+                            checked={baaAccepted}
+                            onCheckedChange={(checked) => {
+                              if (checked && !baaAccepted) {
+                                // Show dialog when checking
+                                setShowBaaDialog(true);
+                              } else {
+                                setBaaAccepted(checked as boolean);
+                                registerForm.setValue("baaAccepted", checked as boolean);
+                              }
+                            }}
+                          />
+                          <div className="grid gap-1.5 leading-none">
+                            <label
+                              htmlFor="baa"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                            >
+                              <Shield className="h-4 w-4 text-blue-600" />
+                              Accept HIPAA Compliance Requirements
+                              <span className="text-xs text-muted-foreground font-normal">(Required for providers)</span>
+                            </label>
+                            <p className="text-sm text-muted-foreground">
+                              I understand and accept my HIPAA obligations when using Clarafi for patient care.{' '}
+                              <button
+                                type="button"
+                                className="underline hover:text-primary"
+                                onClick={() => setShowBaaDialog(true)}
+                              >
+                                View requirements
+                              </button>
+                            </p>
+                          </div>
+                        </div>
+                        {registerForm.formState.errors.baaAccepted && (
+                          <p className="text-sm text-red-600 -mt-2">
+                            {registerForm.formState.errors.baaAccepted.message}
+                          </p>
+                        )}
+                      </>
+                    )}
+                    
                     <Button 
                       type="submit" 
                       className="w-full" 
-                      disabled={registerMutation.isPending || !termsAccepted}
+                      disabled={
+                        registerMutation.isPending || 
+                        !termsAccepted ||
+                        (registerForm.watch("role") === "provider" && registrationType === "create_new" && !baaAccepted)
+                      }
                     >
                       {registerMutation.isPending ? (
                         <>
@@ -1446,6 +1509,17 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
+      
+      {/* Simplified BAA Dialog */}
+      <SimplifiedBAA
+        open={showBaaDialog}
+        onClose={() => setShowBaaDialog(false)}
+        onAccept={() => {
+          setBaaAccepted(true);
+          registerForm.setValue("baaAccepted", true);
+          setShowBaaDialog(false);
+        }}
+      />
     </div>
     </TooltipProvider>
   );
