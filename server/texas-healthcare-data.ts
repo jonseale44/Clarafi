@@ -409,13 +409,30 @@ export async function importUSHealthcareData(): Promise<void> {
     const totalHealthSystems = trueHealthSystemsMap.size + majorHospitalSystemsMap.size + independentClinics.length;
     const totalLocations = healthcareOrganizations.length;
 
+    // Calculate location counts for multi-location systems
+    let trueSystemLocationCount = 0;
+    for (const systemOrgs of trueHealthSystemsMap.values()) {
+      trueSystemLocationCount += systemOrgs.length;
+    }
+    
+    let majorSystemLocationCount = 0;
+    for (const systemOrgs of majorHospitalSystemsMap.values()) {
+      majorSystemLocationCount += systemOrgs.length;
+    }
+    
+    const multiLocationSystemCount = trueHealthSystemsMap.size + majorHospitalSystemsMap.size;
+    const totalLocationsUnderMultiSystems = trueSystemLocationCount + majorSystemLocationCount;
+    const exactDifference = totalLocations - totalHealthSystems;
+    
     console.log('🎉 Nationwide healthcare data import completed successfully!');
     console.log(`📊 Final totals:`);
-    console.log(`   - True health systems created: ${trueHealthSystemsMap.size}`);
-    console.log(`   - Major hospital networks created: ${majorHospitalSystemsMap.size}`);
-    console.log(`   - Independent clinic systems created: ${independentClinics.length}`);
+    console.log(`   - True health systems created: ${trueHealthSystemsMap.size} (with ${trueSystemLocationCount} locations)`);
+    console.log(`   - Major hospital networks created: ${majorHospitalSystemsMap.size} (with ${majorSystemLocationCount} locations)`);
+    console.log(`   - Independent clinic systems created: ${independentClinics.length} (1:1 ratio)`);
     console.log(`   - Total parent systems created: ${totalHealthSystems}`);
     console.log(`   - Total clinic locations created: ${totalLocations}`);
+    console.log(`   - EXACT DIFFERENCE: ${exactDifference} more locations than health systems`);
+    console.log(`   - This comes from ${multiLocationSystemCount} multi-location systems having ${totalLocationsUnderMultiSystems} total locations`);
 
   } catch (error) {
     console.error('❌ Error importing US healthcare data:', error);
