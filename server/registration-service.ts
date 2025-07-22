@@ -397,13 +397,18 @@ export class RegistrationService {
         })
         .where(eq(users.id, newUser.id));
 
-      // Send email verification (outside of transaction to avoid blocking)
-      try {
-        await EmailVerificationService.sendVerificationEmail(newUser.email, verificationToken);
-        console.log(`📧 [RegistrationService] Verification email sent to ${newUser.email}`);
-      } catch (emailError) {
-        console.error(`❌ [RegistrationService] Failed to send verification email:`, emailError);
-        // Don't fail registration if email sending fails
+      // Send email verification only if payment is NOT required
+      // For individual providers (requiresPayment=true), email will be sent after Stripe payment
+      if (!requiresPayment) {
+        try {
+          await EmailVerificationService.sendVerificationEmail(newUser.email, verificationToken);
+          console.log(`📧 [RegistrationService] Verification email sent to ${newUser.email}`);
+        } catch (emailError) {
+          console.error(`❌ [RegistrationService] Failed to send verification email:`, emailError);
+          // Don't fail registration if email sending fails
+        }
+      } else {
+        console.log(`💳 [RegistrationService] Skipping verification email for ${newUser.email} - will send after payment`);
       }
       
       // Mark subscription key as used if this was an enterprise registration

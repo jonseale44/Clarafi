@@ -5060,6 +5060,54 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Send verification email after successful Stripe payment
+  app.post("/api/send-verification-after-payment", async (req, res) => {
+    try {
+      const { email, sessionId } = req.body;
+
+      if (!email || !sessionId) {
+        return res.status(400).json({ message: "Email and session ID required" });
+      }
+
+      console.log(`💳 [Payment Verification] Processing post-payment verification for ${email}`);
+
+      // Get user by email to fetch their verification token
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.emailVerificationToken) {
+        console.error(`❌ [Payment Verification] No verification token found for ${email}`);
+        return res.status(400).json({ message: "No verification token found for user" });
+      }
+
+      // Send the verification email
+      const { EmailVerificationService } = await import(
+        "./email-verification-service"
+      );
+      
+      try {
+        await EmailVerificationService.sendVerificationEmail(user.email, user.emailVerificationToken);
+        console.log(`✅ [Payment Verification] Verification email sent to ${user.email} after payment`);
+        
+        res.json({ 
+          success: true, 
+          message: "Verification email sent successfully" 
+        });
+      } catch (emailError) {
+        console.error(`❌ [Payment Verification] Failed to send verification email:`, emailError);
+        res.status(500).json({ 
+          success: false,
+          message: "Failed to send verification email" 
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in post-payment verification:", error);
+      res.status(500).json({ message: "Error processing post-payment verification" });
+    }
+  });
+
   // Manual reprocess endpoint for attachments
   app.post("/api/attachments/:attachmentId/reprocess", async (req, res) => {
     try {

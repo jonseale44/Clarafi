@@ -252,16 +252,61 @@ export default function AuthPage() {
     landingPage?: string;
   }>({});
 
-  // Check for email verification success
+  // Check for email verification success and payment status
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const verified = urlParams.get('verified');
     const email = urlParams.get('email');
+    const paymentStatus = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
     
     if (verified === 'true' && email) {
       toast({
         title: "Email Verified!",
         description: `Your email ${decodeURIComponent(email)} has been successfully verified. You can now log in.`,
+        duration: 5000,
+      });
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Handle Stripe payment success
+    if (paymentStatus === 'success' && sessionId) {
+      const pendingRegistration = sessionStorage.getItem('pendingRegistration');
+      if (pendingRegistration) {
+        const { email } = JSON.parse(pendingRegistration);
+        
+        // Trigger verification email sending
+        fetch('/api/send-verification-after-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, sessionId })
+        }).then(res => res.json()).then(data => {
+          if (data.success) {
+            toast({
+              title: "Payment Successful!",
+              description: "Thank you for subscribing! Please check your email to verify your account.",
+              duration: 7000,
+            });
+          }
+        }).catch(err => {
+          console.error('Failed to send verification email:', err);
+        });
+        
+        // Clear the pending registration
+        sessionStorage.removeItem('pendingRegistration');
+      }
+      
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Handle payment cancellation
+    if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Payment Cancelled",
+        description: "Your registration was saved. You can complete payment anytime to activate your account.",
+        variant: "default",
         duration: 5000,
       });
       // Clear the URL parameters

@@ -134,6 +134,12 @@ The system was designed with a three-tier hierarchy:
   - Added returnTo URL parameter handling in both pages
   - Auth page restores tab state from URL parameters on load
   - Footer links dynamically update based on current tab
+✓ **PAYMENT-GATED EMAIL VERIFICATION** (January 24, 2025):
+  - Verification emails are now sent ONLY after successful Stripe payment for individual providers
+  - Registration flow: Register → Stripe payment → Then receive verification email
+  - Prevents users from accessing system without payment by delaying email verification
+  - Added `/api/send-verification-after-payment` endpoint triggered on payment success
+  - Session storage tracks pending registration for post-payment processing
 
 ### Database Restructure Implementation for Proper Healthcare Hierarchy (January 23, 2025)
 ✓ **CRITICAL ARCHITECTURAL FIX**: Implemented complete database restructure functionality to fix improper data hierarchy
