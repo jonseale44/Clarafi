@@ -1,18 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ArrowLeft } from "lucide-react";
 
 export default function PrivacyPolicy() {
+  const [location] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
+  const returnTo = searchParams.get('returnTo') || '/auth';
+  const isFromRegistration = returnTo === '/auth?tab=register';
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="container mx-auto max-w-4xl px-4">
         <div className="mb-6">
-          <Link href="/auth">
+          <Link href={returnTo}>
             <Button variant="ghost" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
-              Back to Login
+              {isFromRegistration ? 'Back to Registration' : 'Back to Login'}
             </Button>
           </Link>
         </div>

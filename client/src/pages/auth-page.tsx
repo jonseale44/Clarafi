@@ -218,7 +218,11 @@ function MagicLinkForm() {
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
-  const [activeTab, setActiveTab] = useState("login");
+  
+  // Check URL params to restore tab state
+  const searchParams = new URLSearchParams(window.location.search);
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl === 'register' ? 'register' : 'login');
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [locationSelected, setLocationSelected] = useState(false);
   const [registrationType, setRegistrationType] = useState<'create_new' | 'join_existing'>('create_new'); // Default to individual practice creation
@@ -1197,7 +1201,7 @@ export default function AuthPage() {
                           Accept terms and conditions
                         </label>
                         <p className="text-sm text-muted-foreground">
-                          I agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>
+                          I agree to the <Link href="/terms?returnTo=/auth?tab=register" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy?returnTo=/auth?tab=register" className="underline hover:text-primary">Privacy Policy</Link>
                         </p>
                       </div>
                     </div>
@@ -1497,9 +1501,9 @@ export default function AuthPage() {
               <span className="text-white/20">•</span>
               <a href="#contact" className="hover:text-white transition-colors">Contact</a>
               <span className="text-white/20">•</span>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href={`/privacy?returnTo=/auth?tab=${activeTab}`} className="hover:text-white transition-colors">Privacy Policy</Link>
               <span className="text-white/20">•</span>
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href={`/terms?returnTo=/auth?tab=${activeTab}`} className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
             <p className="text-xs text-navy-blue-300 text-center mt-3">
               © 2025 Clarafi Medical. HIPAA Compliant • SOC2 Type II Certified

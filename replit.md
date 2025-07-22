@@ -130,6 +130,10 @@ The system was designed with a three-tier hierarchy:
   - HIPAA compliance (BAA) acceptance integrated for providers
 ✓ **LEGACY CODE PRESERVATION**: Previous multi-tier functionality commented out with clear documentation for future developers
 ✓ **USER EXPERIENCE**: Streamlined registration removes confusion about clinic selection vs individual practice setup
+✓ **NAVIGATION FIX**: Terms of Service and Privacy Policy pages now properly return users to registration tab with preserved form data
+  - Added returnTo URL parameter handling in both pages
+  - Auth page restores tab state from URL parameters on load
+  - Footer links dynamically update based on current tab
 
 ### Database Restructure Implementation for Proper Healthcare Hierarchy (January 23, 2025)
 ✓ **CRITICAL ARCHITECTURAL FIX**: Implemented complete database restructure functionality to fix improper data hierarchy
