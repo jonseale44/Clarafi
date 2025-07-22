@@ -639,6 +639,14 @@ export function registerAdminUserRoutes(app: Express) {
         .where(eq(patients.primaryProviderId, userId));
       
       console.log(`📊 [AdminUserRoutes] User ${userId} is primary provider for ${patientCount[0].count} patients`);
+      
+      // Check if user owns any health systems (individual provider registration)
+      const ownedHealthSystemsCount = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(healthSystems)
+        .where(eq(healthSystems.originalProviderId, userId));
+      
+      console.log(`📊 [AdminUserRoutes] User ${userId} owns ${ownedHealthSystemsCount[0].count} health system(s)`);
 
       // If there are dependencies, provide detailed error
       const dependencies = [];
@@ -647,6 +655,9 @@ export function registerAdminUserRoutes(app: Express) {
       }
       if (patientCount[0].count > 0) {
         dependencies.push(`primary provider for ${patientCount[0].count} patient(s)`);
+      }
+      if (ownedHealthSystemsCount[0].count > 0) {
+        dependencies.push(`owns ${ownedHealthSystemsCount[0].count} health system(s)`);
       }
 
       if (dependencies.length > 0) {
@@ -683,6 +694,15 @@ export function registerAdminUserRoutes(app: Express) {
       // Delete authentication logs before deleting user
       console.log(`🗑️ [AdminUserRoutes] Deleting authentication logs for user ${userId}`);
       await db.delete(authenticationLogs).where(eq(authenticationLogs.userId, userId));
+      
+      // Clear original_provider_id from any health systems owned by this user
+      if (ownedHealthSystemsCount[0].count > 0) {
+        console.log(`🔓 [AdminUserRoutes] Clearing original_provider_id for ${ownedHealthSystemsCount[0].count} health system(s) owned by user ${userId}`);
+        await db
+          .update(healthSystems)
+          .set({ originalProviderId: null })
+          .where(eq(healthSystems.originalProviderId, userId));
+      }
 
       // Now delete the user
       console.log(`🗑️ [AdminUserRoutes] Deleting user ${userId} (${user.username})`);
@@ -701,7 +721,8 @@ export function registerAdminUserRoutes(app: Express) {
           'user_locations_user_id_users_id_fk': 'User has location assignments',
           'phi_access_logs_user_id_fkey': 'User has PHI access logs (HIPAA audit trail)',
           'authentication_logs_user_id_fkey': 'User has authentication logs (login history)',
-          'user_acquisition_user_id_users_id_fk': 'User has acquisition tracking data'
+          'user_acquisition_user_id_users_id_fk': 'User has acquisition tracking data',
+          'health_systems_original_provider_id_users_id_fk': 'User owns one or more health systems (individual provider registration)'
         };
         
         const message = constraintMessages[error.constraint] || `Database constraint violation: ${error.constraint}`;
