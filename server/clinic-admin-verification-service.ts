@@ -647,7 +647,9 @@ Keep recommendations concise and specific.
     }
     
     // Allow processing for auto-approved and admin-approved statuses
-    if (verification.status !== 'auto-approved' && verification.status !== 'admin_approved_awaiting_verification') {
+    if (verification.status !== 'auto-approved' && 
+        verification.status !== 'admin_approved_awaiting_verification' && 
+        verification.status !== 'approved') {
       throw new Error('Verification not approved or already processed');
     }
     
@@ -669,22 +671,39 @@ Keep recommendations concise and specific.
     
     const verificationData = verification.verificationData as ClinicAdminVerificationRequest;
     
-    // Create health system
-    const healthSystemResult = await db.insert(healthSystems).values({
-      name: verificationData.organizationName,
-      shortName: verificationData.organizationName.substring(0, 10),
-      systemType: verificationData.organizationType,
-      taxId: verificationData.taxId,
-      npi: verificationData.npiNumber,
-      subscriptionTier: 2, // Start as enterprise
-      subscriptionStatus: 'trial', // 14-day trial period
-      subscriptionStartDate: new Date(),
-      subscriptionEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
-      primaryContact: `${verificationData.firstName} ${verificationData.lastName}`,
-      email: verificationData.email,
-      phone: verificationData.phone
-    }).returning();
-    const healthSystem = healthSystemResult[0];
+    // Check if health system already exists
+    let healthSystem;
+    if (verification.healthSystemId) {
+      // Health system already created (e.g., from a previous failed attempt)
+      const existingHealthSystem = await db.select()
+        .from(healthSystems)
+        .where(eq(healthSystems.id, verification.healthSystemId))
+        .limit(1);
+      
+      if (existingHealthSystem.length > 0) {
+        healthSystem = existingHealthSystem[0];
+        console.log(`✅ [AdminVerification] Using existing health system: ${healthSystem.name} (ID: ${healthSystem.id})`);
+      }
+    }
+    
+    // Create health system if it doesn't exist
+    if (!healthSystem) {
+      const healthSystemResult = await db.insert(healthSystems).values({
+        name: verificationData.organizationName,
+        shortName: verificationData.organizationName.substring(0, 10),
+        systemType: verificationData.organizationType,
+        taxId: verificationData.taxId,
+        npi: verificationData.npiNumber,
+        subscriptionTier: 2, // Start as enterprise
+        subscriptionStatus: 'trial', // 14-day trial period
+        subscriptionStartDate: new Date(),
+        subscriptionEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
+        primaryContact: `${verificationData.firstName} ${verificationData.lastName}`,
+        email: verificationData.email,
+        phone: verificationData.phone
+      }).returning();
+      healthSystem = healthSystemResult[0];
+    }
     
     // Store verification documents
     await db.insert(organizationDocuments).values({
