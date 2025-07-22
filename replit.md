@@ -44,6 +44,9 @@ The system was designed with a three-tier hierarchy:
   1. Health system selection → Shows all locations in system at login
   2. Specific clinic selection → Skips location selection, goes to dashboard
 - Backend API now returns all health system locations when user has no assignments
+- **CRITICAL FIX (January 23, 2025)**: Logic now ONLY creates health systems if name ENDS WITH specific keywords ("health system", "healthcare system", etc.), not just contains them
+  - This prevents clinics like "Ascension Medical Group Via Christi" from being incorrectly classified as health systems
+  - All single clinics now properly grouped under "Independent Clinics - [State]" parent systems
 
 ## Key Components
 

@@ -513,12 +513,14 @@ router.post("/api/places/create-health-system", async (req, res) => {
 
     // No existing system found - determine if this is a single clinic or health system
     // ASSUME EVERYTHING IS A SINGLE CLINIC unless it explicitly indicates it's a health system
-    const isHealthSystem = placeData.name.includes("Health System") || 
-                          placeData.name.includes("Medical Group") ||
-                          placeData.name.includes("Healthcare Network") ||
-                          placeData.name.includes("Hospital Network") ||
-                          placeData.name.includes("Hospital System") ||
-                          placeData.name.includes("Medical Center") && placeData.name.includes("System");
+    // Only treat as health system if name ENDS with these keywords (not just contains them)
+    const lowerName = placeData.name.toLowerCase();
+    const isHealthSystem = lowerName.endsWith("health system") || 
+                          lowerName.endsWith("healthcare system") ||
+                          lowerName.endsWith("hospital system") ||
+                          lowerName.endsWith("medical system") ||
+                          lowerName.endsWith("healthcare network") ||
+                          lowerName.endsWith("hospital network");
     
     console.log("🏥 [Google Places] Is health system?", isHealthSystem, "for", placeData.name);
     
