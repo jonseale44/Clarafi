@@ -419,8 +419,35 @@ export default function AuthPage() {
               setLocationSelected(true);
               setShowLocationSelector(false);
             } else {
-              // No remembered location, show selector
-              setShowLocationSelector(true);
+              // Check if user has a primary location assigned during registration
+              const response = await fetch('/api/user/locations');
+              const userLocations = await response.json();
+              
+              // Look for a primary location
+              const primaryLocation = userLocations.find((loc: any) => loc.isPrimary);
+              
+              if (primaryLocation) {
+                // User has a primary location from registration - auto-select it
+                console.log('🎯 Auto-selecting primary location:', primaryLocation.locationName);
+                await apiRequest("POST", "/api/user/session-location", {
+                  locationId: primaryLocation.locationId,
+                  rememberSelection: true
+                });
+                setLocationSelected(true);
+                setShowLocationSelector(false);
+              } else if (userLocations.length === 1) {
+                // User has only one location available - auto-select it
+                console.log('🎯 Auto-selecting single location:', userLocations[0].locationName);
+                await apiRequest("POST", "/api/user/session-location", {
+                  locationId: userLocations[0].locationId,
+                  rememberSelection: true
+                });
+                setLocationSelected(true);
+                setShowLocationSelector(false);
+              } else {
+                // Multiple locations available and no primary - show selector
+                setShowLocationSelector(true);
+              }
             }
           }, 100);
         }

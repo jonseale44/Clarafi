@@ -27,8 +27,43 @@ export function setupLocationRoutes(app: Express) {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const locations = await storage.getUserLocations(req.user.id);
-      res.json(locations);
+      // First try to get user's assigned locations
+      const assignedLocations = await storage.getUserLocations(req.user.id);
+      
+      // If user has no assigned locations, return ALL locations from their health system
+      if (assignedLocations.length === 0) {
+        const healthSystemId = req.user.healthSystemId || req.userHealthSystemId;
+        console.log(`📍 User ${req.user.username} has no assigned locations. Returning all locations for health system ${healthSystemId}`);
+        
+        if (healthSystemId) {
+          const allLocations = await storage.getHealthSystemLocations(healthSystemId);
+          // Transform to match the expected format from getUserLocations
+          const transformedLocations = allLocations.map(loc => ({
+            ...loc,
+            userId: req.user!.id,
+            locationId: loc.id,
+            roleAtLocation: 'provider', // Default role for unassigned users
+            isPrimary: false,
+            canSchedule: true,
+            canViewAllPatients: true,
+            canCreateOrders: true,
+            locationName: loc.name,
+            locationShortName: loc.shortName,
+            locationType: loc.locationType,
+            address: loc.address,
+            city: loc.city,
+            state: loc.state,
+            zipCode: loc.zipCode,
+            phone: loc.phone,
+            services: loc.services,
+            organizationName: null,
+            healthSystemName: null
+          }));
+          return res.json(transformedLocations);
+        }
+      }
+      
+      res.json(assignedLocations);
     } catch (error) {
       console.error("Error fetching user locations:", error);
       res.status(500).json({ error: "Failed to fetch locations" });

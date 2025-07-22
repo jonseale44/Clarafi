@@ -39,29 +39,18 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const [rememberSelection, setRememberSelection] = useState(false);
   const queryClient = useQueryClient();
 
-  // First try to get user's assigned locations
-  const { data: userLocations, isLoading: userLocationsLoading } = useQuery<UserLocation[]>({
+  // Get user's locations (backend now returns all health system locations if user has no assignments)
+  const { data: availableLocations, isLoading } = useQuery<UserLocation[]>({
     queryKey: ["/api/user/locations"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
-
-  // If user has no assigned locations, get all locations from their health system
-  const { data: allLocations, isLoading: allLocationsLoading } = useQuery<UserLocation[]>({
-    queryKey: ["/api/locations"],
-    enabled: userLocations?.length === 0, // Only fetch if user has no assigned locations
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Use assigned locations if available, otherwise use all health system locations
-  const availableLocations = (userLocations && userLocations.length > 0) ? userLocations : allLocations;
-  const isLoading = userLocationsLoading || (userLocations?.length === 0 && allLocationsLoading);
 
   const setSessionLocationMutation = useMutation({
     mutationFn: async (data: { locationId: number; rememberSelection: boolean }) => {
       return apiRequest("POST", "/api/user/session-location", data);
     },
     onSuccess: (data) => {
-      const selectedLocation = userLocations?.find(loc => loc.locationId === selectedLocationId);
+      const selectedLocation = availableLocations?.find(loc => loc.locationId === selectedLocationId);
       if (selectedLocation) {
         onLocationSelected(selectedLocation);
       }
@@ -121,8 +110,12 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
     );
   }
 
+  // Check if these are assigned locations or all health system locations
+  const isShowingAllLocations = availableLocations && availableLocations.length > 0 && 
+    !availableLocations.some(loc => loc.isPrimary);
+
   // Group locations by health system and organization
-  const groupedLocations = userLocations?.reduce((groups, location) => {
+  const groupedLocations = availableLocations?.reduce((groups, location) => {
     const systemKey = location.healthSystemName || "Independent";
     const orgKey = location.organizationName || "Direct";
     
@@ -145,8 +138,17 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
             Select Your Working Location
           </CardTitle>
           <CardDescription>
-            Choose which location you'll be working at today. This determines your patient schedules, 
-            available resources, and clinical workflows.
+            {isShowingAllLocations ? (
+              <>
+                Since you're not assigned to any specific locations, you can choose from any location 
+                in your health system. Select where you'll be working today.
+              </>
+            ) : (
+              <>
+                Choose which location you'll be working at today. This determines your patient schedules, 
+                available resources, and clinical workflows.
+              </>
+            )}
           </CardDescription>
         </CardHeader>
 

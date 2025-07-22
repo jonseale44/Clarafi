@@ -25,18 +25,25 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 - **Schema**: Comprehensive medical data models including patients, encounters, orders, lab results, medications, and clinical documentation
 - **Recent Fix**: Critical schema/database alignment completed (July 19, 2025) - resolved structural mismatches in signatures, orders, and session tables
 
-### Organizational Hierarchy (Technical Debt Identified - July 22, 2025)
+### Organizational Hierarchy (Technical Debt RESOLVED - January 23, 2025)
 The system was designed with a three-tier hierarchy:
 1. **Health Systems** (top level) - Large healthcare organizations (e.g., "Ascension", "Mayo Clinic")
 2. **Organizations** (regional) - Area-specific entities (e.g., "Ascension Waco")
 3. **Locations** (physical) - Individual clinic locations (e.g., "Hillsboro Family Medicine")
 
-**Current Issues:**
-- Individual clinics are being created as health systems instead of locations
-- Google Places integration (`/api/places/create-health-system`) creates duplicate records
-- Examples: "Parkland Family Medicine Clinic" and "Waco Family Medicine" are health systems with no/duplicate locations
-- Empty location dropdowns when assigning users because no locations exist under these "clinic health systems"
-- Users spread across redundant health systems instead of shared parent organizations
+**Previous Issues (Now Fixed):**
+- Individual clinics were being created as health systems instead of locations
+- Google Places integration created duplicate records
+- Empty location dropdowns when users had no assigned locations
+- Users spread across redundant health systems
+
+**Resolution Implemented:**
+- Cleaned up 5,453 incorrectly created health systems
+- Added prevention system with base name extraction to group clinic variations
+- Fixed login flow to handle two registration scenarios properly:
+  1. Health system selection → Shows all locations in system at login
+  2. Specific clinic selection → Skips location selection, goes to dashboard
+- Backend API now returns all health system locations when user has no assignments
 
 ## Key Components
 
@@ -126,6 +133,19 @@ The system was designed with a three-tier hierarchy:
   - Recent signups table with timestamps and full UTM parameter display
   - Auto-refresh every 30 seconds for real-time monitoring
   - Channel grouping with paid/organic indicators
+
+### Location Selection Login Flow Fix (January 23, 2025)
+✓ **RESOLVED ARCHITECTURAL ISSUES**: Fixed incorrect health system/location creation and optimized login flow
+✓ **TWO REGISTRATION SCENARIOS NOW HANDLED CORRECTLY**:
+  - Health system selection → User sees ALL locations in system at login
+  - Specific clinic selection → User skips location selection, goes straight to dashboard
+✓ **BACKEND API ENHANCEMENT**: `/api/user/locations` now returns all health system locations when user has no assignments
+✓ **LOGIN FLOW IMPROVEMENTS**:
+  - Auto-selects primary location if user has one (from registration)
+  - Auto-selects single location if only one available
+  - Shows location selector only when multiple locations and no primary
+✓ **UX ENHANCEMENTS**: Location selector shows clear messaging when displaying all health system locations vs assigned locations
+✓ **PREVENTION SYSTEM**: Google Places integration now extracts base names to prevent duplicate health systems
 
 ### Critical Application Startup Fixes (July 21, 2025)
 ✓ **STARTUP ERRORS RESOLVED**: Fixed multiple critical errors preventing application from running
