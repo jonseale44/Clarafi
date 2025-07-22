@@ -358,14 +358,17 @@ export async function importUSHealthcareData(): Promise<void> {
       }
     }
 
-    // Create state-based independent clinic groups
-    for (const [stateGroupName, clinics] of Array.from(stateIndependentClinicsMap)) {
+    // Create independent clinics - each as its own health system
+    for (const clinic of independentClinics) {
       try {
+        // Create a health system for this truly independent clinic
+        const healthSystemName = `${clinic.name} System`;
+        
         const result = await db
           .insert(healthSystems)
           .values({
-            name: stateGroupName,
-            systemType: 'clinic_group',
+            name: healthSystemName,
+            systemType: 'clinic',
             subscriptionTier: 1,
             subscriptionStatus: 'pending' as const,
             active: true
@@ -376,41 +379,41 @@ export async function importUSHealthcareData(): Promise<void> {
         const healthSystemRecord = result[0];
 
         if (healthSystemRecord) {
-          console.log(`✅ Created state group: ${stateGroupName} with ${clinics.length} clinics`);
+          console.log(`✅ Created independent clinic system: ${healthSystemName}`);
           
-          // Create locations for this state group
-          for (const clinic of clinics) {
-            await db
-              .insert(locations)
-              .values({
-                healthSystemId: healthSystemRecord.id,
-                name: clinic.name,
-                locationType: clinic.locationType,
-                address: clinic.address,
-                city: clinic.city,
-                state: clinic.state,
-                zipCode: clinic.zipCode,
-                phone: clinic.phone,
-                npi: clinic.npi,
-                active: true
-              })
-              .onConflictDoNothing();
-          }
+          // CRITICAL: Create the actual location for this clinic
+          await db
+            .insert(locations)
+            .values({
+              healthSystemId: healthSystemRecord.id,
+              name: clinic.name,  // The location keeps the original clinic name
+              locationType: clinic.locationType,
+              address: clinic.address,
+              city: clinic.city,
+              state: clinic.state,
+              zipCode: clinic.zipCode,
+              phone: clinic.phone,
+              npi: clinic.npi,
+              active: true
+            })
+            .onConflictDoNothing();
+          
+          console.log(`   - Added location: ${clinic.name}`);
         }
       } catch (error) {
-        console.error(`❌ Error creating state group ${stateGroupName}:`, error);
+        console.error(`❌ Error creating independent clinic ${clinic.name}:`, error);
       }
     }
 
     // Calculate totals
-    const totalHealthSystems = trueHealthSystemsMap.size + majorHospitalSystemsMap.size + stateIndependentClinicsMap.size;
+    const totalHealthSystems = trueHealthSystemsMap.size + majorHospitalSystemsMap.size + independentClinics.length;
     const totalLocations = healthcareOrganizations.length;
 
     console.log('🎉 Nationwide healthcare data import completed successfully!');
     console.log(`📊 Final totals:`);
     console.log(`   - True health systems created: ${trueHealthSystemsMap.size}`);
     console.log(`   - Major hospital networks created: ${majorHospitalSystemsMap.size}`);
-    console.log(`   - State-based independent groups created: ${stateIndependentClinicsMap.size}`);
+    console.log(`   - Independent clinic systems created: ${independentClinics.length}`);
     console.log(`   - Total parent systems created: ${totalHealthSystems}`);
     console.log(`   - Total clinic locations created: ${totalLocations}`);
 
