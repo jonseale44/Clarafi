@@ -19,80 +19,94 @@ export async function executeDataRestructure() {
     // This respects foreign key constraints without needing superuser privileges
     console.log('📦 Deleting all data from tables...');
     
+    // Helper function to safely delete from a table
+    const safeDelete = async (tableName: string) => {
+      try {
+        await db.execute(sql.raw(`DELETE FROM ${tableName}`));
+        console.log(`✓ Cleared table: ${tableName}`);
+      } catch (error: any) {
+        if (error.code === '42P01') { // Table doesn't exist
+          console.log(`⚠️  Table ${tableName} doesn't exist, skipping...`);
+        } else {
+          console.log(`❌ Error clearing ${tableName}:`, error.message);
+        }
+      }
+    };
+
     // Session and logging tables
-    await db.execute(sql`DELETE FROM user_session_locations`);
-    await db.execute(sql`DELETE FROM authentication_logs`);
-    await db.execute(sql`DELETE FROM emergency_access_logs`);
-    await db.execute(sql`DELETE FROM phi_access_logs`);
-    await db.execute(sql`DELETE FROM data_modification_logs`);
+    await safeDelete('user_session_locations');
+    await safeDelete('authentication_logs');
+    await safeDelete('emergency_access_logs');
+    await safeDelete('phi_access_logs');
+    await safeDelete('data_modification_logs');
     
     // Clinical data tables (most dependent first)
-    await db.execute(sql`DELETE FROM prescription_transmissions`);
-    await db.execute(sql`DELETE FROM electronic_signatures`);
-    await db.execute(sql`DELETE FROM lab_communications`);
-    await db.execute(sql`DELETE FROM lab_results`);
-    await db.execute(sql`DELETE FROM lab_orders`);
-    await db.execute(sql`DELETE FROM imaging_results`);
-    await db.execute(sql`DELETE FROM imaging_orders`);
-    await db.execute(sql`DELETE FROM medications`);
-    await db.execute(sql`DELETE FROM orders`);
-    await db.execute(sql`DELETE FROM signatures`);
-    await db.execute(sql`DELETE FROM vitals`);
-    await db.execute(sql`DELETE FROM family_history`);
-    await db.execute(sql`DELETE FROM allergies`);
-    await db.execute(sql`DELETE FROM surgical_history`);
-    await db.execute(sql`DELETE FROM social_history`);
-    await db.execute(sql`DELETE FROM medical_history`);
-    await db.execute(sql`DELETE FROM medical_problems`);
-    await db.execute(sql`DELETE FROM encounters`);
-    await db.execute(sql`DELETE FROM appointments`);
-    await db.execute(sql`DELETE FROM patient_scheduling_patterns`);
-    await db.execute(sql`DELETE FROM provider_scheduling_patterns`);
-    await db.execute(sql`DELETE FROM patient_attachments`);
-    await db.execute(sql`DELETE FROM patients`);
+    await safeDelete('prescription_transmissions');
+    await safeDelete('electronic_signatures');
+    await safeDelete('lab_communications');
+    await safeDelete('lab_results');
+    await safeDelete('lab_orders');
+    await safeDelete('imaging_results');
+    await safeDelete('imaging_orders');
+    await safeDelete('medications');
+    await safeDelete('orders');
+    await safeDelete('signatures');
+    await safeDelete('vitals');
+    await safeDelete('family_history');
+    await safeDelete('allergies');
+    await safeDelete('surgical_history');
+    await safeDelete('social_history');
+    await safeDelete('medical_history');
+    await safeDelete('medical_problems');
+    await safeDelete('encounters');
+    await safeDelete('appointments');
+    await safeDelete('patient_scheduling_patterns');
+    await safeDelete('provider_scheduling_patterns');
+    await safeDelete('patient_attachments');
+    await safeDelete('patients');
     
     // Marketing/analytics tables
-    await db.execute(sql`DELETE FROM marketing_campaigns`);
-    await db.execute(sql`DELETE FROM marketing_automations`);
-    await db.execute(sql`DELETE FROM marketing_insights`);
-    await db.execute(sql`DELETE FROM conversion_events`);
-    await db.execute(sql`DELETE FROM acquisition_sources`);
-    await db.execute(sql`DELETE FROM marketing_metrics`);
-    await db.execute(sql`DELETE FROM user_acquisition`);
+    await safeDelete('marketing_campaigns');
+    await safeDelete('marketing_automations');
+    await safeDelete('marketing_insights');
+    await safeDelete('conversion_events');
+    await safeDelete('acquisition_sources');
+    await safeDelete('marketing_metrics');
+    await safeDelete('user_acquisition');
     
     // Blog and content tables
-    await db.execute(sql`DELETE FROM article_revisions`);
-    await db.execute(sql`DELETE FROM blog_articles`);
-    await db.execute(sql`DELETE FROM article_generation_queue`);
+    await safeDelete('article_revisions');
+    await safeDelete('blog_articles');
+    await safeDelete('article_generation_queue');
     
     // Template and document tables
-    await db.execute(sql`DELETE FROM templates`);
-    await db.execute(sql`DELETE FROM prompt_templates`);
-    await db.execute(sql`DELETE FROM document_processing_queue`);
+    await safeDelete('templates');
+    await safeDelete('prompt_templates');
+    await safeDelete('document_processing_queue');
     
     // User relationship tables
-    await db.execute(sql`DELETE FROM passkeys`);
-    await db.execute(sql`DELETE FROM user_locations`);
-    await db.execute(sql`DELETE FROM user_health_systems`);
-    await db.execute(sql`DELETE FROM user_preferences`);
-    await db.execute(sql`DELETE FROM migration_invitations`);
+    await safeDelete('passkeys');
+    await safeDelete('user_locations');
+    await safeDelete('user_health_systems');
+    await safeDelete('user_preferences');
+    await safeDelete('migration_invitations');
     
     // Billing and subscription tables
-    await db.execute(sql`DELETE FROM subscription_keys`);
-    await db.execute(sql`DELETE FROM subscription_history`);
-    await db.execute(sql`DELETE FROM billing_accounts`);
+    await safeDelete('subscription_keys');
+    await safeDelete('subscription_history');
+    await safeDelete('billing_accounts');
     
     // Organization structure tables
-    await db.execute(sql`DELETE FROM locations`);
-    await db.execute(sql`DELETE FROM organizations`);
+    await safeDelete('locations');
+    await safeDelete('organizations');
     
     // Supporting tables
-    await db.execute(sql`DELETE FROM pharmacies`);
-    await db.execute(sql`DELETE FROM appointment_types`);
+    await safeDelete('pharmacies');
+    await safeDelete('appointment_types');
     
     // Finally, users and health systems
-    await db.execute(sql`DELETE FROM users`);
-    await db.execute(sql`DELETE FROM health_systems`);
+    await safeDelete('users');
+    await safeDelete('health_systems');
     
     // Reset sequences - wrap in try-catch as some may not exist
     console.log('🔄 Resetting ID sequences...');
