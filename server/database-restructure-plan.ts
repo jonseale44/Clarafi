@@ -15,56 +15,102 @@ export async function executeDataRestructure() {
   console.log('🚨 STARTING COMPLETE DATABASE RESTRUCTURE');
   
   try {
-    // Step 1: Disable foreign key constraints temporarily
-    await db.execute(sql`SET session_replication_role = 'replica'`);
+    // Delete all data from tables in correct order (child tables first)
+    // This respects foreign key constraints without needing superuser privileges
+    console.log('📦 Deleting all data from tables...');
     
-    // Step 2: Truncate all tables in correct order (child tables first)
-    console.log('📦 Truncating all data tables...');
+    // Session and logging tables
+    await db.execute(sql`DELETE FROM user_session_locations`);
+    await db.execute(sql`DELETE FROM authentication_logs`);
+    await db.execute(sql`DELETE FROM emergency_access_logs`);
+    await db.execute(sql`DELETE FROM phi_access_logs`);
+    await db.execute(sql`DELETE FROM data_modification_logs`);
     
-    // User-related tables
-    await db.execute(sql`TRUNCATE TABLE user_session_locations CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE user_locations CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE user_preferences CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE authentication_logs CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE emergency_access_logs CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE phi_access_logs CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE data_modification_logs CASCADE`);
-    
-    // Clinical data tables
-    await db.execute(sql`TRUNCATE TABLE encounters CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE appointments CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE patients CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE orders CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE medications CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE lab_orders CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE lab_results CASCADE`);
+    // Clinical data tables (most dependent first)
+    await db.execute(sql`DELETE FROM prescription_transmissions`);
+    await db.execute(sql`DELETE FROM electronic_signatures`);
+    await db.execute(sql`DELETE FROM lab_communications`);
+    await db.execute(sql`DELETE FROM lab_results`);
+    await db.execute(sql`DELETE FROM lab_orders`);
+    await db.execute(sql`DELETE FROM imaging_results`);
+    await db.execute(sql`DELETE FROM imaging_orders`);
+    await db.execute(sql`DELETE FROM medications`);
+    await db.execute(sql`DELETE FROM orders`);
+    await db.execute(sql`DELETE FROM signatures`);
+    await db.execute(sql`DELETE FROM vitals`);
+    await db.execute(sql`DELETE FROM family_history`);
+    await db.execute(sql`DELETE FROM allergies`);
+    await db.execute(sql`DELETE FROM surgical_history`);
+    await db.execute(sql`DELETE FROM social_history`);
+    await db.execute(sql`DELETE FROM medical_history`);
+    await db.execute(sql`DELETE FROM medical_problems`);
+    await db.execute(sql`DELETE FROM encounters`);
+    await db.execute(sql`DELETE FROM appointments`);
+    await db.execute(sql`DELETE FROM patient_scheduling_patterns`);
+    await db.execute(sql`DELETE FROM provider_scheduling_patterns`);
+    await db.execute(sql`DELETE FROM patient_attachments`);
+    await db.execute(sql`DELETE FROM patients`);
     
     // Marketing/analytics tables
-    await db.execute(sql`TRUNCATE TABLE marketing_metrics CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE acquisition_sources CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE conversion_events CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE user_acquisition CASCADE`);
+    await db.execute(sql`DELETE FROM marketing_campaigns`);
+    await db.execute(sql`DELETE FROM marketing_automations`);
+    await db.execute(sql`DELETE FROM marketing_insights`);
+    await db.execute(sql`DELETE FROM conversion_events`);
+    await db.execute(sql`DELETE FROM acquisition_sources`);
+    await db.execute(sql`DELETE FROM marketing_metrics`);
+    await db.execute(sql`DELETE FROM user_acquisition`);
+    
+    // Blog and content tables
+    await db.execute(sql`DELETE FROM article_revisions`);
+    await db.execute(sql`DELETE FROM blog_articles`);
+    await db.execute(sql`DELETE FROM article_generation_queue`);
+    
+    // Template and document tables
+    await db.execute(sql`DELETE FROM templates`);
+    await db.execute(sql`DELETE FROM prompt_templates`);
+    await db.execute(sql`DELETE FROM document_processing_queue`);
+    
+    // User relationship tables
+    await db.execute(sql`DELETE FROM passkeys`);
+    await db.execute(sql`DELETE FROM user_locations`);
+    await db.execute(sql`DELETE FROM user_health_systems`);
+    await db.execute(sql`DELETE FROM user_preferences`);
+    await db.execute(sql`DELETE FROM migration_invitations`);
+    
+    // Billing and subscription tables
+    await db.execute(sql`DELETE FROM subscription_keys`);
+    await db.execute(sql`DELETE FROM subscription_history`);
+    await db.execute(sql`DELETE FROM billing_accounts`);
     
     // Organization structure tables
-    await db.execute(sql`TRUNCATE TABLE locations CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE organizations CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE subscription_keys CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE subscription_history CASCADE`);
+    await db.execute(sql`DELETE FROM locations`);
+    await db.execute(sql`DELETE FROM organizations`);
+    
+    // Supporting tables
+    await db.execute(sql`DELETE FROM pharmacies`);
+    await db.execute(sql`DELETE FROM appointment_types`);
     
     // Finally, users and health systems
-    await db.execute(sql`TRUNCATE TABLE users CASCADE`);
-    await db.execute(sql`TRUNCATE TABLE health_systems CASCADE`);
+    await db.execute(sql`DELETE FROM users`);
+    await db.execute(sql`DELETE FROM health_systems`);
     
-    // Step 3: Re-enable foreign key constraints
-    await db.execute(sql`SET session_replication_role = 'origin'`);
-    
-    // Step 4: Reset sequences
+    // Reset sequences - wrap in try-catch as some may not exist
     console.log('🔄 Resetting ID sequences...');
-    await db.execute(sql`ALTER SEQUENCE health_systems_id_seq RESTART WITH 1`);
-    await db.execute(sql`ALTER SEQUENCE organizations_id_seq RESTART WITH 1`);
-    await db.execute(sql`ALTER SEQUENCE locations_id_seq RESTART WITH 1`);
-    await db.execute(sql`ALTER SEQUENCE users_id_seq RESTART WITH 1`);
-    await db.execute(sql`ALTER SEQUENCE patients_id_seq RESTART WITH 1`);
+    const sequences = [
+      'health_systems_id_seq',
+      'organizations_id_seq',
+      'locations_id_seq',
+      'users_id_seq',
+      'patients_id_seq'
+    ];
+    
+    for (const seq of sequences) {
+      try {
+        await db.execute(sql.raw(`ALTER SEQUENCE ${seq} RESTART WITH 1`));
+      } catch (error) {
+        console.log(`⚠️  Could not reset sequence ${seq}`);
+      }
+    }
     
     console.log('✅ Database wiped successfully');
     
