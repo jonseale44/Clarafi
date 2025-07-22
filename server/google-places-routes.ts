@@ -439,57 +439,90 @@ router.post("/api/places/create-health-system", async (req, res) => {
     
     const { placeData, joinAsAdmin } = req.body;
     
-    console.log("🏥 [Google Places] Creating health system from place data:", placeData);
+    console.log("🏥 [Google Places] Processing clinic data:", placeData);
 
     // Check if this place already exists in our database
     const { db } = await import("./db.js");
     const { healthSystems, locations } = await import("@shared/schema");
-    const { eq } = await import("drizzle-orm");
+    const { eq, like, sql } = await import("drizzle-orm");
     
-    // Try to find by name and address
+    // First check if this is a location of an existing health system
+    // Look for exact name match or partial match (e.g., "Waco Family Medicine - Central" matches "Waco Family Medicine")
+    const baseName = placeData.name.split(' - ')[0].trim();
+    
     const existingSystem = await db
       .select()
       .from(healthSystems)
-      .where(eq(healthSystems.name, placeData.name))
+      .where(sql`${healthSystems.name} ILIKE ${baseName + '%'}`)
       .limit(1);
 
     if (existingSystem.length > 0) {
-      // System exists - user can join it
+      // Check if this specific location already exists
+      const existingLocation = await db
+        .select()
+        .from(locations)
+        .where(eq(locations.healthSystemId, existingSystem[0].id))
+        .where(like(locations.address, placeData.formatted_address.split(",")[0] + '%'))
+        .limit(1);
+      
+      if (existingLocation.length > 0) {
+        return res.json({
+          exists: true,
+          healthSystemId: existingSystem[0].id,
+          locationId: existingLocation[0].id,
+          message: "This clinic location already exists. You can join it with the appropriate credentials."
+        });
+      }
+      
+      // System exists but location doesn't - create the location
+      const newLocation = await db.insert(locations).values({
+        healthSystemId: existingSystem[0].id,
+        name: placeData.name,
+        locationType: "clinic",
+        address: placeData.formatted_address.split(",")[0],
+        city: placeData.formatted_address.split(",")[1]?.trim() || "",
+        state: placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "TX",
+        zipCode: placeData.formatted_address.match(/\d{5}/)?.[0] || "00000",
+        phone: placeData.formatted_phone_number,
+        npi: placeData.healthcare_details?.npi,
+        active: true
+      }).returning();
+      
       return res.json({
         exists: true,
         healthSystemId: existingSystem[0].id,
-        message: "This health system already exists. You can join it with the appropriate credentials."
+        locationId: newLocation[0].id,
+        message: "Added as a new location to existing health system."
       });
     }
 
-    // Create new health system
+    // No existing system found - create new health system and location
     const newHealthSystem = await db.insert(healthSystems).values({
-      name: placeData.name,
-      systemType: placeData.healthcare_details?.taxonomy || "Medical Practice",
-      subscriptionTier: 1, // Start with individual tier
-      subscriptionStatus: "pending",
-      patientCount: 0,
-      activeUserCount: 1
+      name: baseName, // Use base name for health system
+      systemType: "clinic_group", // More appropriate than "Medical Practice"
+      subscriptionTier: 1,
+      subscriptionStatus: "pending"
     }).returning();
 
-    // Create the main location
-    await db.insert(locations).values({
+    // Create the location with full name
+    const newLocation = await db.insert(locations).values({
       healthSystemId: newHealthSystem[0].id,
       name: placeData.name,
+      locationType: "clinic",
       address: placeData.formatted_address.split(",")[0],
       city: placeData.formatted_address.split(",")[1]?.trim() || "",
       state: placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "TX",
       zipCode: placeData.formatted_address.match(/\d{5}/)?.[0] || "00000",
       phone: placeData.formatted_phone_number,
       npi: placeData.healthcare_details?.npi,
-      locationType: "main",
-      isActive: true
-    });
+      active: true
+    }).returning();
 
     res.json({
       success: true,
       healthSystemId: newHealthSystem[0].id,
-      message: "Health system created successfully. Proceed with registration."
+      locationId: newLocation[0].id,
+      message: "Health system and location created successfully. Proceed with registration."
     });
 
   } catch (error) {
