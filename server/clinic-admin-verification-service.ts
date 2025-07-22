@@ -547,7 +547,7 @@ Keep recommendations concise and specific.
               </div>
               
               <div style="text-align: center; margin: 20px 0;">
-                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete" 
+                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete?email=${encodeURIComponent(request.email)}&code=${encodeURIComponent(code)}" 
                    style="background-color: #FFD700; color: #003366; padding: 15px 30px; text-decoration: none; 
                           border-radius: 5px; font-weight: bold; display: inline-block;">
                   Complete Verification
@@ -558,10 +558,10 @@ Keep recommendations concise and specific.
             <h3 style="color: #003366;">Next Steps:</h3>
             <ol>
               <li>
-                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete" 
+                <a href="${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/admin-verification-complete?email=${encodeURIComponent(request.email)}&code=${encodeURIComponent(code)}" 
                    style="color: #003366; font-weight: bold;">
                   Click here to complete identity verification
-                </a> using the code above
+                </a>
               </li>
               <li>Upload required documentation:
                 <ul>

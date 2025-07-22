@@ -153,7 +153,7 @@ export default function AdminVerificationReview() {
   };
 
   const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'manual-review');
-  const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected');
+  const processedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected' || r.status === 'auto-approved');
 
   // Handle logout
   const handleLogout = () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2, Loader2, Mail, Shield } from 'lucide-react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 
 const verificationSchema = z.object({
@@ -22,14 +22,27 @@ export default function AdminVerificationComplete() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completionResult, setCompletionResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [location] = useLocation();
+  
+  // Extract URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const emailFromUrl = urlParams.get('email') || '';
+  const codeFromUrl = urlParams.get('code') || '';
 
   const form = useForm<VerificationFormData>({
     resolver: zodResolver(verificationSchema),
     defaultValues: {
-      email: '',
-      verificationCode: '',
+      email: emailFromUrl,
+      verificationCode: codeFromUrl,
     }
   });
+  
+  // Auto-submit if both email and code are provided via URL
+  useEffect(() => {
+    if (emailFromUrl && codeFromUrl) {
+      form.handleSubmit(onSubmit)();
+    }
+  }, []);
 
   const onSubmit = async (data: VerificationFormData) => {
     setIsSubmitting(true);
