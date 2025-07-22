@@ -911,8 +911,17 @@ export default function AdminVerification() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          I accept the Business Associate Agreement (BAA)
+                        <FormLabel className="flex items-center gap-1">
+                          I accept the{" "}
+                          <a
+                            href="/legal/baa"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Business Associate Agreement (BAA)
+                          </a>
                         </FormLabel>
                         <FormDescription>
                           Required for handling protected health information
@@ -934,8 +943,17 @@ export default function AdminVerification() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>
-                          I accept the Terms of Service
+                        <FormLabel className="flex items-center gap-1">
+                          I accept the{" "}
+                          <a
+                            href="/legal/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Terms of Service
+                          </a>
                         </FormLabel>
                         <FormDescription>
                           Including data processing and privacy policies

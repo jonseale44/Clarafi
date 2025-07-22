@@ -46,6 +46,8 @@ import { AdminPharmacyImport } from "@/pages/AdminPharmacyImport";
 import AdminMarketingDashboard from "@/pages/admin-marketing-dashboard";
 import TermsOfService from "@/pages/terms-of-service";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import BusinessAssociateAgreement from "@/pages/legal/business-associate-agreement";
+import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
 
 import NotFound from "@/pages/not-found";
 
@@ -104,6 +106,8 @@ function Router() {
       {/* Legal Pages */}
       <Route path="/terms" component={TermsOfService} />
       <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/legal/baa" component={BusinessAssociateAgreement} />
+      <Route path="/legal/terms" component={TermsOfServiceLegal} />
       
       <Route component={NotFound} />
     </Switch>
