@@ -217,12 +217,12 @@ export async function importUSHealthcareData(): Promise<void> {
         .on('error', reject);
     });
 
-    // Group organizations intelligently
+    // Group organizations based on REAL ownership relationships only
     const trueHealthSystemsMap = new Map<string, TexasHealthcareOrganization[]>();
-    const stateIndependentClinicsMap = new Map<string, TexasHealthcareOrganization[]>();
     const majorHospitalSystemsMap = new Map<string, TexasHealthcareOrganization[]>();
+    const independentClinics: TexasHealthcareOrganization[] = [];
 
-    console.log('🔍 Analyzing and grouping healthcare organizations...');
+    console.log('🔍 Analyzing healthcare organizations for real ownership relationships...');
 
     for (const org of healthcareOrganizations) {
       const nameLower = org.name.toLowerCase();
@@ -234,14 +234,14 @@ export async function importUSHealthcareData(): Promise<void> {
           nameLower.endsWith('medical system') ||
           nameLower.endsWith('hospital system')) {
         
-        // Extract base system name for grouping
+        // Extract base system name for grouping related locations
         const baseSystemName = extractBaseSystemName(org.name);
         if (!trueHealthSystemsMap.has(baseSystemName)) {
           trueHealthSystemsMap.set(baseSystemName, []);
         }
         trueHealthSystemsMap.get(baseSystemName)!.push(org);
       }
-      // Check for major hospital networks (e.g., "Mayo Clinic", "Cleveland Clinic")
+      // Check for major hospital networks with REAL ownership relationships
       else if ((nameLower.includes('mayo clinic') || 
                 nameLower.includes('cleveland clinic') ||
                 nameLower.includes('kaiser permanente') ||
@@ -259,15 +259,9 @@ export async function importUSHealthcareData(): Promise<void> {
         }
         majorHospitalSystemsMap.get(baseSystemName)!.push(org);
       }
-      // Everything else goes under state-based independent clinics
+      // Independent clinics - each one becomes its own isolated health system
       else {
-        const stateName = org.state || 'Unknown';
-        const stateKey = `Independent Clinics - ${stateName}`;
-        
-        if (!stateIndependentClinicsMap.has(stateKey)) {
-          stateIndependentClinicsMap.set(stateKey, []);
-        }
-        stateIndependentClinicsMap.get(stateKey)!.push(org);
+        independentClinics.push(org);
       }
     }
 
