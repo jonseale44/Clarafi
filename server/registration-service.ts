@@ -175,6 +175,10 @@ export class RegistrationService {
 
         primaryLocationId = newLocation.id;
         console.log(`✅ [RegistrationService] Created location ID: ${primaryLocationId}`);
+        
+        // Individual providers (create_new) always require payment
+        requiresPayment = true;
+        console.log(`💳 [RegistrationService] Individual provider registration - payment required`);
 
       } else {
         // Join existing health system (default behavior)

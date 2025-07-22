@@ -383,6 +383,7 @@ export function setupAuth(app: Express) {
         if (checkoutResult.success && checkoutResult.sessionUrl) {
           // Store pending registration info
           console.log("✅ [Registration] Stripe checkout created, redirecting to payment");
+          console.log("⚠️  [Registration] Skipping verification email - will be sent after payment");
           
           return res.status(201).json({
             success: true,
@@ -408,6 +409,9 @@ export function setupAuth(app: Express) {
             error: checkoutResult.error
           });
         }
+      } else {
+        // Only send verification email for users who don't require payment
+        console.log("📧 [Registration] User doesn't require payment, sending verification email");
       }
 
       // For users joining existing systems, send verification email
