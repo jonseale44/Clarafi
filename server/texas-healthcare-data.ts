@@ -268,7 +268,7 @@ export async function importUSHealthcareData(): Promise<void> {
     console.log(`📊 Grouping results:`);
     console.log(`   - True health systems: ${trueHealthSystemsMap.size}`);
     console.log(`   - Major hospital networks: ${majorHospitalSystemsMap.size}`);
-    console.log(`   - State-based independent groups: ${stateIndependentClinicsMap.size}`);
+    console.log(`   - Independent clinics: ${independentClinics.length}`);
 
     // Create true health systems
     for (const [systemName, systemOrgs] of Array.from(trueHealthSystemsMap)) {
