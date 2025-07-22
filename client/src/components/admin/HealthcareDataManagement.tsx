@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Database, Download, Building2, MapPin, AlertCircle, CheckCircle, Clock, Activity, Settings } from "lucide-react";
@@ -127,6 +127,56 @@ export function HealthcareDataManagement() {
       }
     }
   });
+
+  // Database restructure mutation
+  const restructureMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/restructure-database', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ confirm: 'WIPE_ALL_DATA' })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to restructure database');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Database Restructured",
+          description: "System has been completely reset. Please reload the page.",
+        });
+        // Force reload after a short delay to ensure cleanup is complete
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast({
+          title: "Restructure Failed",
+          description: data.message || "Failed to restructure database",
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Restructure Failed",
+        description: error.message || "Failed to restructure database",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const restructureDatabase = () => {
+    restructureMutation.mutate();
+  };
 
   const handleStartImport = () => {
     setImportStatus('downloading');
@@ -345,6 +395,65 @@ export function HealthcareDataManagement() {
           <HealthcareUpdateSettings />
         </TabsContent>
       </Tabs>
+
+      {/* Database Restructure Section */}
+      <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 mt-6">
+        <CardHeader>
+          <CardTitle className="text-red-900 dark:text-red-100 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5" />
+            Database Restructure - Complete System Reset
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Extremely Dangerous Operation</AlertTitle>
+            <AlertDescription>
+              This will permanently delete ALL data including:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All health systems and organizations</li>
+                <li>All locations and providers</li>
+                <li>All users (including admin accounts)</li>
+                <li>All patient data</li>
+                <li>All clinical documentation</li>
+              </ul>
+              <strong className="block mt-2">This action cannot be undone!</strong>
+            </AlertDescription>
+          </Alert>
+
+          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+            <p>Use this when:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Individual clinics are incorrectly stored as health systems</li>
+              <li>You need to switch from NPPES to CMS PECOS data</li>
+              <li>Starting fresh with proper organizational hierarchy</li>
+            </ul>
+          </div>
+
+          <Button
+            onClick={() => {
+              if (window.confirm('Are you absolutely sure you want to wipe ALL data from the system? This cannot be undone!')) {
+                if (window.confirm('FINAL WARNING: This will delete EVERYTHING including all users. Type "yes" to confirm.')) {
+                  const userInput = window.prompt('Type "WIPE_ALL_DATA" to confirm:');
+                  if (userInput === 'WIPE_ALL_DATA') {
+                    restructureDatabase();
+                  } else {
+                    toast({
+                      title: 'Cancelled',
+                      description: 'Database restructure cancelled.',
+                    });
+                  }
+                }
+              }
+            }}
+            variant="destructive"
+            disabled={restructureMutation.isPending}
+          >
+            <AlertCircle className="mr-2 h-4 w-4" />
+            Restructure Database (Delete Everything)
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

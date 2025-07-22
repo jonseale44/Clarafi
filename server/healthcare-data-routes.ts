@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { importUSHealthcareData, getUSHealthcareStats } from './texas-healthcare-data.js';
 import { downloadNPPESData } from './download-nppes-data.js';
+import { executeDataRestructure } from './database-restructure-plan.js';
 
 const router = Router();
 
@@ -142,6 +143,34 @@ router.post('/api/admin/download-nppes-data', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to download NPPES data',
+      error: error.message
+    });
+  }
+});
+
+// Database restructure endpoint - wipes all data and creates proper hierarchy
+router.post('/api/admin/restructure-database', async (req, res) => {
+  try {
+    console.log('🚨 [Admin] Starting complete database restructure...');
+    
+    // Confirm this is a dangerous operation
+    if (!req.body.confirm || req.body.confirm !== 'WIPE_ALL_DATA') {
+      return res.status(400).json({
+        success: false,
+        message: 'Must confirm with "WIPE_ALL_DATA" in request body'
+      });
+    }
+    
+    // Execute the restructure
+    const result = await executeDataRestructure();
+    
+    res.json(result);
+    
+  } catch (error: any) {
+    console.error('❌ [Admin] Database restructure failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database restructure failed',
       error: error.message
     });
   }
