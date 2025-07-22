@@ -1436,9 +1436,9 @@ export default function AuthPage() {
               <span className="text-white/20">•</span>
               <a href="#contact" className="hover:text-white transition-colors">Contact</a>
               <span className="text-white/20">•</span>
-              <a href="#privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <span className="text-white/20">•</span>
-              <a href="#terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
             <p className="text-xs text-navy-blue-300 text-center mt-3">
               © 2025 Clarafi Medical. HIPAA Compliant • SOC2 Type II Certified
