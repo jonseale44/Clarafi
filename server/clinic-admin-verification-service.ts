@@ -743,9 +743,24 @@ Keep recommendations concise and specific.
    * Generate secure temporary password
    */
   static generateTemporaryPassword(): string {
-    // Import secure password generation from our new module
-    const { generateSecurePassword } = require('./password-validation');
-    return generateSecurePassword(16);
+    // Generate a secure password with uppercase, lowercase, numbers, and special characters
+    const length = 16;
+    const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';
+    let password = '';
+    
+    // Ensure at least one of each required character type
+    password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // uppercase
+    password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // lowercase
+    password += '0123456789'[Math.floor(Math.random() * 10)]; // number
+    password += '!@#$%^&*()_+-='[Math.floor(Math.random() * 14)]; // special
+    
+    // Fill the rest randomly
+    for (let i = password.length; i < length; i++) {
+      password += charset[Math.floor(Math.random() * charset.length)];
+    }
+    
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
   }
   
   /**
