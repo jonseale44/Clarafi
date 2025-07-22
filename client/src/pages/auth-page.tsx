@@ -1186,7 +1186,7 @@ export default function AuthPage() {
                           Accept terms and conditions
                         </label>
                         <p className="text-sm text-muted-foreground">
-                          I agree to the <a href="#" className="underline hover:text-primary">Terms of Service</a> and <a href="#" className="underline hover:text-primary">Privacy Policy</a>
+                          I agree to the <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link> and <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>
                         </p>
                       </div>
                     </div>

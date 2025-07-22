@@ -44,6 +44,8 @@ import AdminBlogManagement from "@/pages/admin-blog-management";
 import Pricing from "@/pages/pricing";
 import { AdminPharmacyImport } from "@/pages/AdminPharmacyImport";
 import AdminMarketingDashboard from "@/pages/admin-marketing-dashboard";
+import TermsOfService from "@/pages/terms-of-service";
+import PrivacyPolicy from "@/pages/privacy-policy";
 
 import NotFound from "@/pages/not-found";
 
@@ -98,6 +100,10 @@ function Router() {
       
       {/* Public Pricing Page */}
       <Route path="/pricing" component={Pricing} />
+      
+      {/* Legal Pages */}
+      <Route path="/terms" component={TermsOfService} />
+      <Route path="/privacy" component={PrivacyPolicy} />
       
       <Route component={NotFound} />
     </Switch>

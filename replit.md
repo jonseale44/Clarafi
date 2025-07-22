@@ -48,6 +48,24 @@ The system was designed with a three-tier hierarchy:
   - This prevents clinics like "Ascension Medical Group Via Christi" from being incorrectly classified as health systems
   - All single clinics now properly grouped under "Independent Clinics - [State]" parent systems
 
+## Legal Framework (Updated: January 22, 2025)
+
+### Terms of Service & Privacy Policy
+- Comprehensive legal documents created at `/terms` and `/privacy`
+- Iron-clad terms that put responsibility on users for having authority
+- Specific provisions for providers working at multiple locations
+- Strong indemnification clauses protecting Clarafi
+- Supports Tier 1 (individual provider) to Tier 2 (enterprise) migration
+- No BAA required for Tier 1 users - following the Freed model
+- Clear data custody and migration rights when clinics adopt enterprise tier
+
+### Key Legal Provisions:
+1. **User Authority**: Users must certify they have authority at EACH location where they see patients
+2. **Multiple Locations**: Explicit coverage for providers working at different clinics/hospitals
+3. **Tier Migration**: Data created by individual providers can migrate to clinic when they adopt enterprise
+4. **Indemnification**: Comprehensive protection against unauthorized use claims
+5. **No BAA for Tier 1**: Individual providers use at their own responsibility
+
 ## Key Components
 
 ### Core Medical Modules
