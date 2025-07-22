@@ -39,10 +39,22 @@ export function LocationSelector({ onLocationSelected }: LocationSelectorProps) 
   const [rememberSelection, setRememberSelection] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: userLocations, isLoading } = useQuery<UserLocation[]>({
+  // First try to get user's assigned locations
+  const { data: userLocations, isLoading: userLocationsLoading } = useQuery<UserLocation[]>({
     queryKey: ["/api/user/locations"],
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // If user has no assigned locations, get all locations from their health system
+  const { data: allLocations, isLoading: allLocationsLoading } = useQuery<UserLocation[]>({
+    queryKey: ["/api/locations"],
+    enabled: userLocations?.length === 0, // Only fetch if user has no assigned locations
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Use assigned locations if available, otherwise use all health system locations
+  const availableLocations = (userLocations && userLocations.length > 0) ? userLocations : allLocations;
+  const isLoading = userLocationsLoading || (userLocations?.length === 0 && allLocationsLoading);
 
   const setSessionLocationMutation = useMutation({
     mutationFn: async (data: { locationId: number; rememberSelection: boolean }) => {
