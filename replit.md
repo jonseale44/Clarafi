@@ -25,6 +25,19 @@ This is a full-stack Electronic Medical Record (EMR) system built with Express.j
 - **Schema**: Comprehensive medical data models including patients, encounters, orders, lab results, medications, and clinical documentation
 - **Recent Fix**: Critical schema/database alignment completed (July 19, 2025) - resolved structural mismatches in signatures, orders, and session tables
 
+### Organizational Hierarchy (Technical Debt Identified - July 22, 2025)
+The system was designed with a three-tier hierarchy:
+1. **Health Systems** (top level) - Large healthcare organizations (e.g., "Ascension", "Mayo Clinic")
+2. **Organizations** (regional) - Area-specific entities (e.g., "Ascension Waco")
+3. **Locations** (physical) - Individual clinic locations (e.g., "Hillsboro Family Medicine")
+
+**Current Issues:**
+- Individual clinics are being created as health systems instead of locations
+- Google Places integration (`/api/places/create-health-system`) creates duplicate records
+- Examples: "Parkland Family Medicine Clinic" and "Waco Family Medicine" are health systems with no/duplicate locations
+- Empty location dropdowns when assigning users because no locations exist under these "clinic health systems"
+- Users spread across redundant health systems instead of shared parent organizations
+
 ## Key Components
 
 ### Core Medical Modules
