@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db.js";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs, userAcquisition } from "@shared/schema";
 import { eq, sql, and, isNull, desc, or } from "drizzle-orm";
 import { z } from "zod";
 
@@ -668,6 +668,14 @@ export function registerAdminUserRoutes(app: Express) {
         await db.delete(userLocations).where(eq(userLocations.userId, userId));
       }
 
+      // Delete user acquisition data first (if exists)
+      console.log(`🗑️ [AdminUserRoutes] Deleting user acquisition data for user ${userId}`);
+      try {
+        await db.delete(userAcquisition).where(eq(userAcquisition.userId, userId));
+      } catch (e) {
+        console.log(`⚠️ [AdminUserRoutes] No user acquisition data to delete or table doesn't exist`);
+      }
+
       // Delete PHI access logs (HIPAA audit logs) before deleting user
       console.log(`🗑️ [AdminUserRoutes] Deleting PHI access logs for user ${userId}`);
       await db.delete(phiAccessLogs).where(eq(phiAccessLogs.userId, userId));
@@ -692,7 +700,8 @@ export function registerAdminUserRoutes(app: Express) {
           'patients_primary_provider_id_users_id_fk': 'User is a primary provider for patients',
           'user_locations_user_id_users_id_fk': 'User has location assignments',
           'phi_access_logs_user_id_fkey': 'User has PHI access logs (HIPAA audit trail)',
-          'authentication_logs_user_id_fkey': 'User has authentication logs (login history)'
+          'authentication_logs_user_id_fkey': 'User has authentication logs (login history)',
+          'user_acquisition_user_id_users_id_fk': 'User has acquisition tracking data'
         };
         
         const message = constraintMessages[error.constraint] || `Database constraint violation: ${error.constraint}`;
