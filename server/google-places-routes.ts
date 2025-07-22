@@ -496,17 +496,61 @@ router.post("/api/places/create-health-system", async (req, res) => {
       });
     }
 
-    // No existing system found - create new health system and location
-    const newHealthSystem = await db.insert(healthSystems).values({
-      name: baseName, // Use base name for health system
-      systemType: "clinic_group", // More appropriate than "Medical Practice"
-      subscriptionTier: 1,
-      subscriptionStatus: "pending"
-    }).returning();
+    // No existing system found - determine if this is a single clinic or health system
+    // Single clinics should NOT be created as health systems
+    const isSingleClinic = !placeData.name.includes("Health System") && 
+                          !placeData.name.includes("Medical Group") &&
+                          !placeData.name.includes("Healthcare") &&
+                          !placeData.name.includes("Hospital Network") &&
+                          !placeData.name.includes("Medical Center") &&
+                          placeData.types?.some(type => ['doctor', 'clinic', 'medical_center'].includes(type));
+    
+    let healthSystemId;
+    let healthSystemName;
+    
+    if (isSingleClinic) {
+      // This is a single clinic - find or create appropriate parent health system
+      const state = placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "Unknown";
+      const parentSystemName = `Independent Clinics - ${state}`;
+      
+      // Check if parent system exists
+      const parentSystem = await db
+        .select()
+        .from(healthSystems)
+        .where(eq(healthSystems.name, parentSystemName))
+        .limit(1);
+      
+      if (parentSystem.length > 0) {
+        healthSystemId = parentSystem[0].id;
+        healthSystemName = parentSystem[0].name;
+      } else {
+        // Create parent system for independent clinics in this state
+        const newParentSystem = await db.insert(healthSystems).values({
+          name: parentSystemName,
+          systemType: "independent_clinics",
+          subscriptionTier: 1,
+          subscriptionStatus: "pending"
+        }).returning();
+        
+        healthSystemId = newParentSystem[0].id;
+        healthSystemName = newParentSystem[0].name;
+      }
+    } else {
+      // This appears to be a health system - create it
+      const newHealthSystem = await db.insert(healthSystems).values({
+        name: baseName,
+        systemType: "clinic_group",
+        subscriptionTier: 1,
+        subscriptionStatus: "pending"
+      }).returning();
+      
+      healthSystemId = newHealthSystem[0].id;
+      healthSystemName = newHealthSystem[0].name;
+    }
 
     // Create the location with full name
     const newLocation = await db.insert(locations).values({
-      healthSystemId: newHealthSystem[0].id,
+      healthSystemId: healthSystemId,
       name: placeData.name,
       locationType: "clinic",
       address: placeData.formatted_address.split(",")[0],
@@ -520,9 +564,11 @@ router.post("/api/places/create-health-system", async (req, res) => {
 
     res.json({
       success: true,
-      healthSystemId: newHealthSystem[0].id,
+      healthSystemId: healthSystemId,
       locationId: newLocation[0].id,
-      message: "Health system and location created successfully. Proceed with registration."
+      message: isSingleClinic ? 
+        `Clinic added to "${healthSystemName}". Proceed with registration.` :
+        "Health system and location created successfully. Proceed with registration."
     });
 
   } catch (error) {

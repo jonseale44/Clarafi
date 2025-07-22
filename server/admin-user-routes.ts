@@ -235,7 +235,7 @@ export function registerAdminUserRoutes(app: Express) {
   // Get all locations with hierarchy - filtered by user's health system
   app.get("/api/admin/locations", requireAdmin, async (req, res) => {
     try {
-      const userHealthSystemId = req.user.healthSystemId;
+      const userHealthSystemId = req.user!.healthSystemId;
       
       const locationsWithHierarchy = await db
         .select({
