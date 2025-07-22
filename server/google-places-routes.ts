@@ -440,6 +440,9 @@ router.post("/api/places/create-health-system", async (req, res) => {
     const { placeData, joinAsAdmin } = req.body;
     
     console.log("🏥 [Google Places] Processing clinic data:", placeData);
+    console.log("🔍 [Google Places] Place types:", placeData.types);
+    console.log("📍 [Google Places] Place name:", placeData.name);
+    console.log("📍 [Google Places] Formatted address:", placeData.formatted_address);
 
     // Check if this place already exists in our database
     const { db } = await import("./db.js");
@@ -497,18 +500,20 @@ router.post("/api/places/create-health-system", async (req, res) => {
     }
 
     // No existing system found - determine if this is a single clinic or health system
-    // Single clinics should NOT be created as health systems
-    const isSingleClinic = !placeData.name.includes("Health System") && 
-                          !placeData.name.includes("Medical Group") &&
-                          !placeData.name.includes("Healthcare") &&
-                          !placeData.name.includes("Hospital Network") &&
-                          !placeData.name.includes("Medical Center") &&
-                          placeData.types?.some(type => ['doctor', 'clinic', 'medical_center'].includes(type));
+    // ASSUME EVERYTHING IS A SINGLE CLINIC unless it explicitly indicates it's a health system
+    const isHealthSystem = placeData.name.includes("Health System") || 
+                          placeData.name.includes("Medical Group") ||
+                          placeData.name.includes("Healthcare Network") ||
+                          placeData.name.includes("Hospital Network") ||
+                          placeData.name.includes("Hospital System") ||
+                          placeData.name.includes("Medical Center") && placeData.name.includes("System");
+    
+    console.log("🏥 [Google Places] Is health system?", isHealthSystem, "for", placeData.name);
     
     let healthSystemId;
     let healthSystemName;
     
-    if (isSingleClinic) {
+    if (!isHealthSystem) {
       // This is a single clinic - find or create appropriate parent health system
       const state = placeData.formatted_address.split(",")[2]?.trim()?.split(" ")[0] || "Unknown";
       const parentSystemName = `Independent Clinics - ${state}`;
@@ -536,7 +541,7 @@ router.post("/api/places/create-health-system", async (req, res) => {
         healthSystemName = newParentSystem[0].name;
       }
     } else {
-      // This appears to be a health system - create it
+      // This is explicitly a health system - create it as such
       const newHealthSystem = await db.insert(healthSystems).values({
         name: baseName,
         systemType: "clinic_group",
@@ -566,7 +571,7 @@ router.post("/api/places/create-health-system", async (req, res) => {
       success: true,
       healthSystemId: healthSystemId,
       locationId: newLocation[0].id,
-      message: isSingleClinic ? 
+      message: !isHealthSystem ? 
         `Clinic added to "${healthSystemName}". Proceed with registration.` :
         "Health system and location created successfully. Proceed with registration."
     });

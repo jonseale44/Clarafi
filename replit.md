@@ -145,11 +145,12 @@ The system was designed with a three-tier hierarchy:
   - Auto-selects single location if only one available
   - Shows location selector only when multiple locations and no primary
 ✓ **UX ENHANCEMENTS**: Location selector shows clear messaging when displaying all health system locations vs assigned locations
-✓ **GOOGLE PLACES FIX IMPLEMENTED**: Individual clinics no longer created as health systems
-  - Detection logic identifies single clinics vs actual health systems
-  - Single clinics are automatically grouped under "Independent Clinics - [State]" parent systems
-  - Only true health systems (with keywords like "Health System", "Medical Group") become top-level entities
-  - Example: "New York Primary Care Medicine" now properly becomes a location under "Independent Clinics - NY"
+✓ **GOOGLE PLACES FIX IMPLEMENTED (UPDATED January 22, 2025)**: Individual clinics no longer created as health systems
+  - REVERSED LOGIC: Now assumes EVERYTHING is a single clinic unless explicitly indicated otherwise
+  - Only creates health systems if name contains specific keywords: "Health System", "Medical Group", "Healthcare Network", "Hospital Network", "Hospital System", or "Medical Center System"
+  - All other clinics (99% of cases) are automatically grouped under "Independent Clinics - [State]" parent systems
+  - Previous fix failed because it relied on Google Places types data which was often missing
+  - Example: "Ascension Illinois" will now properly become a location under "Independent Clinics - IL" instead of a health system
 
 ### Critical Application Startup Fixes (July 21, 2025)
 ✓ **STARTUP ERRORS RESOLVED**: Fixed multiple critical errors preventing application from running
