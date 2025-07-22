@@ -255,7 +255,6 @@ export class ClinicAdminVerificationService {
         riskScore,
         verificationDetails,
         recommendations: applicantRecommendations, // Only applicant-facing recommendations
-        reviewerRecommendations: gptAssessment.reviewerRecommendations, // Stored for internal use
         requiresManualReview: riskScore > 30 || apiResults.riskFactors.length > 2,
         automatedDecisionReason: this.generateDecisionReason(apiResults, approved, riskScore),
         apiVerificationData: apiResults
@@ -615,11 +614,10 @@ Keep recommendations concise and specific.
     };
     
     // Use existing email service
-    const { MailService } = await import('@sendgrid/mail');
-    const mailService = new MailService();
-    mailService.setApiKey(process.env.SENDGRID_API_KEY!);
+    const sgMail = (await import('@sendgrid/mail')).default;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
     
-    await mailService.send({
+    await sgMail.send({
       ...emailContent,
       from: process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com'
     });
@@ -672,7 +670,7 @@ Keep recommendations concise and specific.
     const verificationData = verification.verificationData as ClinicAdminVerificationRequest;
     
     // Create health system
-    const [healthSystem] = await db.insert(healthSystems).values({
+    const healthSystemResult = await db.insert(healthSystems).values({
       name: verificationData.organizationName,
       shortName: verificationData.organizationName.substring(0, 10),
       systemType: verificationData.organizationType,
@@ -686,6 +684,7 @@ Keep recommendations concise and specific.
       email: verificationData.email,
       phone: verificationData.phone
     }).returning();
+    const healthSystem = healthSystemResult[0];
     
     // Store verification documents
     await db.insert(organizationDocuments).values({
@@ -709,7 +708,7 @@ Keep recommendations concise and specific.
     const tempPassword = this.generateTemporaryPassword();
     const { hashPassword } = await import('./auth');
     
-    const [adminUser] = await db.insert(users).values({
+    const adminUserResult = await db.insert(users).values({
       username: verificationData.email.split('@')[0],
       email: verificationData.email,
       password: await hashPassword(tempPassword),
@@ -718,10 +717,11 @@ Keep recommendations concise and specific.
       role: 'admin',
       healthSystemId: healthSystem.id,
       emailVerified: true, // Pre-verified through this process
-      verificationStatus: 'admin_verified',
-      twoFactorRequired: true, // Enforce 2FA for admins
-      mustChangePassword: true // Force password change on first login
+      verificationStatus: 'tier3_verified',
+      mfaEnabled: true, // Enforce 2FA for admins
+      requirePasswordChange: true // Force password change on first login
     }).returning();
+    const adminUser = adminUserResult[0];
     
     // Send welcome email with credentials
     await this.sendAdminWelcomeEmail(verificationData, tempPassword);
