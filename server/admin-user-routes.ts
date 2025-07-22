@@ -656,9 +656,7 @@ export function registerAdminUserRoutes(app: Express) {
       if (patientCount[0].count > 0) {
         dependencies.push(`primary provider for ${patientCount[0].count} patient(s)`);
       }
-      if (ownedHealthSystemsCount[0].count > 0) {
-        dependencies.push(`owns ${ownedHealthSystemsCount[0].count} health system(s)`);
-      }
+      // Note: Owning health systems is NOT a blocking dependency - we'll clear that ownership
 
       if (dependencies.length > 0) {
         const message = `Cannot delete user ${user.username}. They have: ${dependencies.join(', ')}. Please reassign these records before deletion.`;
