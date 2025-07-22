@@ -19,7 +19,9 @@ PECOS (Provider Enrollment, Chain, and Ownership System) contains the authoritat
 ### 2. Request PECOS Data Access (2-3 weeks)
 Once registered:
 - Log into CMS Enterprise Portal
-- Navigate to "CMS Data" → "Request Data"
+- Navigate to "Applications" → "Application Library"
+- Look for "CMS Data Request" or "Research Data Assistance Center (ResDAC)"
+- If those aren't available, try "IDR" (Integrated Data Repository)
 - Select "PECOS Provider Enrollment Data"
 - Complete the Data Use Agreement (DUA) form:
   - Purpose: "Healthcare provider directory management"
