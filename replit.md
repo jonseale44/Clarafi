@@ -1,7 +1,7 @@
 # EMR System - replit.md
 
 ## Overview
-This is a full-stack Electronic Medical Record (EMR) system built with Express.js backend and React frontend, featuring AI-powered clinical decision support, comprehensive laboratory management, document processing with OCR, and advanced patient care workflows.
+This is a full-stack Electronic Medical Record (EMR) system built with Express.js backend and React frontend, featuring AI-powered clinical decision support, comprehensive laboratory management, document processing with OCR, and advanced patient care workflows. The system is focused on individual healthcare providers and small practices with simplified HIPAA compliance.
 
 ## System Architecture
 
@@ -115,6 +115,21 @@ The system was designed with a three-tier hierarchy:
 5. **Provider Review** → Clinical validation and approval workflows
 
 ## Recent Changes
+
+### Registration Flow Simplified to Individual Practice Only (January 23, 2025)
+✓ **ARCHITECTURAL SIMPLIFICATION**: Removed multi-tier signup complexity, focusing exclusively on individual practice creation
+✓ **REMOVED FEATURES**:
+  - "Where do you primarily practice?" section completely removed
+  - DynamicClinicSearch component disabled and marked as legacy
+  - Subscription key field removed (was only for enterprise tier)
+  - Admin role option removed from role selector (was only for enterprise users)
+✓ **SIMPLIFIED USER FLOW**:
+  - Registration now defaults to 'create_new' (individual practice) automatically
+  - Practice Information form always shown (no conditional display)
+  - Clear messaging that account is for solo practitioners and small clinics
+  - HIPAA compliance (BAA) acceptance integrated for providers
+✓ **LEGACY CODE PRESERVATION**: Previous multi-tier functionality commented out with clear documentation for future developers
+✓ **USER EXPERIENCE**: Streamlined registration removes confusion about clinic selection vs individual practice setup
 
 ### Database Restructure Implementation for Proper Healthcare Hierarchy (January 23, 2025)
 ✓ **CRITICAL ARCHITECTURAL FIX**: Implemented complete database restructure functionality to fix improper data hierarchy

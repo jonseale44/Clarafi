@@ -221,7 +221,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [locationSelected, setLocationSelected] = useState(false);
-  const [registrationType, setRegistrationType] = useState<'create_new' | 'join_existing'>('join_existing');
+  const [registrationType, setRegistrationType] = useState<'create_new' | 'join_existing'>('create_new'); // Default to individual practice creation
   const [selectedHealthSystemId, setSelectedHealthSystemId] = useState<string>('');
   const [availableHealthSystems, setAvailableHealthSystems] = useState<Array<{id: number, name: string}>>([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -326,7 +326,7 @@ export default function AuthPage() {
       credentials: "",
       specialties: [],
       licenseNumber: "",
-      registrationType: "join_existing",
+      registrationType: "create_new", // Default to individual practice creation
       practiceName: "",
       practiceAddress: "",
       practiceCity: "",
@@ -674,7 +674,12 @@ export default function AuthPage() {
                     console.log("Form values:", registerForm.getValues());
                     registerForm.handleSubmit(onRegister)(e);
                   }} className="space-y-4">
-                    {/* Health System Selection - Primary UI */}
+                    {/* LEGACY FEATURE: Health System/Clinic Selection
+                        Previously supported joining existing clinics/health systems.
+                        Now registration is limited to individual practice creation only.
+                        Keeping code commented for future reference if multi-tier signup is re-enabled.
+                    */}
+                    {/* 
                     <div className="space-y-3">
                       <Label className="text-base font-semibold">Where do you primarily practice?</Label>
                       <p className="text-sm text-muted-foreground">
@@ -700,7 +705,6 @@ export default function AuthPage() {
                         showCreateNew={false}
                       />
                       
-                      {/* Alternative option - create individual practice */}
                       <div className="relative mt-6">
                         <div className="absolute inset-0 flex items-center">
                           <span className="w-full border-t" />
@@ -723,20 +727,8 @@ export default function AuthPage() {
                         <Building2 className="mr-2 h-4 w-4" />
                         I want to create my own individual practice
                       </Button>
-                      
-                      {registrationType === 'create_new' && (
-                        <Alert>
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Individual Practice Setup</AlertTitle>
-                          <AlertDescription>
-                            You'll be creating a new practice account. This is best for solo practitioners who don't work at an existing clinic.
-                            You'll need to provide payment information after registration.
-                          </AlertDescription>
-                        </Alert>
-                      )}
                     </div>
-                        
-                    {/* Subscription Key for Enterprise Health Systems */}
+                    
                     {selectedHealthSystemId && (
                       <div className="space-y-2">
                         <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
@@ -762,6 +754,17 @@ export default function AuthPage() {
                         </p>
                       </div>
                     )}
+                    */}
+                    
+                    {/* Individual Practice Setup Notice */}
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Individual Practice Setup</AlertTitle>
+                      <AlertDescription>
+                        You'll be creating a new practice account. This is designed for solo practitioners and small clinics.
+                        You'll need to provide payment information after registration.
+                      </AlertDescription>
+                    </Alert>
 
 
 
@@ -898,10 +901,7 @@ export default function AuthPage() {
                           <SelectItem value="provider">Provider</SelectItem>
                           <SelectItem value="nurse">Nurse</SelectItem>
                           <SelectItem value="ma">Medical Assistant (MA)</SelectItem>
-                          {/* Only show admin role for enterprise tier (when joining existing system with subscription key) */}
-                          {registrationType === 'join_existing' && selectedHealthSystemId && (
-                            <SelectItem value="admin">Administrator</SelectItem>
-                          )}
+                          {/* LEGACY: Admin role removed - was only for enterprise tier */}
                           <SelectItem value="staff">Staff</SelectItem>
                           <SelectItem value="front_desk">Front Desk</SelectItem>
                           <SelectItem value="billing">Billing</SelectItem>
@@ -915,10 +915,9 @@ export default function AuthPage() {
 
 
 
-                    {/* Show practice details for individual practice registration */}
-                    {registrationType === "create_new" && (
-                      <div className="space-y-4 border-t pt-4">
-                        <h3 className="font-medium">Practice Information</h3>
+                    {/* Practice Information - Always shown since individual practice is the only option */}
+                    <div className="space-y-4 border-t pt-4">
+                      <h3 className="font-medium">Practice Information</h3>
                         
                         <div className="space-y-2">
                           <Label htmlFor="practiceName">Practice Name</Label>
@@ -988,7 +987,6 @@ export default function AuthPage() {
                           </div>
                         </div>
                       </div>
-                    )}
                     
                     <div className="space-y-2">
                       <Label htmlFor="password" className="flex items-center gap-2">
