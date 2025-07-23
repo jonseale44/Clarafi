@@ -268,6 +268,8 @@ ${patientContext}
 CLINICAL CONTENT TO ANALYZE:
 ${combinedContent}
 
+${attachmentId ? `IMPORTANT: This content is from attachment ID ${attachmentId}. You MUST include "attachmentId": ${attachmentId} in ALL visitEntry objects in your response.` : ''}
+
 CORE ALLERGY PROCESSING INSTRUCTIONS:
 
 1. ALLERGY EXTRACTION:

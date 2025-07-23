@@ -16,6 +16,14 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 23, 2025)
 
+### Fixed Allergy Source Badge Linking Issue  
+Resolved issue where allergy badges from attachments weren't linking to source documents:
+
+1. **Root Cause Identified** - `extractedFromAttachmentId` field was null in database for attachment-extracted allergies
+2. **Updated GPT Prompt** - Added explicit instruction for GPT to include attachmentId in visitEntry when processing attachments
+3. **Frontend Fallback** - Added logic to check visitHistory for attachmentId if extractedFromAttachmentId is null
+4. **Conditional Clickability** - Badge is only clickable when attachment ID exists, with appropriate visual feedback
+
 ### Fixed Medication Intelligent Grouping Infinite Loop
 Resolved critical issue where medications were flashing and disappearing due to infinite API calls:
 
