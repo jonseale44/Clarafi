@@ -113,6 +113,11 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
 
     clientWs.on('message', async (data: WebSocket.Data) => {
       try {
+        // Add safety check for undefined data
+        if (!data) {
+          console.error('❌ [RealtimeProxy] Received undefined message data');
+          return;
+        }
         const message = JSON.parse(data.toString());
         console.log('📥 [RealtimeProxy] Message from client:', message.type);
 
