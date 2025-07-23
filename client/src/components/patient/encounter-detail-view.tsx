@@ -3811,7 +3811,7 @@ Please provide medical suggestions based on this complete conversation context.`
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-median="encounter-detail-main" data-median-app="true">
       {/* Left Chart Panel - Unified Expandable */}
       {/* MEDIAN: Mobile overlay backdrop when sidebar is open */}
       {isMedianMobile && mobileSidebarOpen && (

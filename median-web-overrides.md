@@ -41,6 +41,16 @@ Copy and paste this CSS into the Median Web Override CSS field:
   left: 0;
 }
 
+/* Ensure encounter view sidebar starts closed on mobile */
+[data-median-app="true"] [data-median="encounter-detail-main"] [data-median="unified-chart-panel"] {
+  left: -100% !important;
+}
+
+/* Override to show when explicitly opened */
+[data-median-app="true"] [data-median="encounter-detail-main"] [data-median="unified-chart-panel"].mobile-sidebar-open {
+  left: 0 !important;
+}
+
 /* Hide resize handle on mobile */
 [data-median-app="true"] [data-median="panel-resize-handle"] {
   display: none;
@@ -153,10 +163,13 @@ Copy and paste this JavaScript into the Median Web Override JS field:
 ```javascript
 // MEDIAN MOBILE OPTIMIZATIONS - Patient Chart View JavaScript
 
+// Set flag immediately before any other code runs
+window.isMedianMobile = true;
+
 (function() {
   'use strict';
   
-  // Set flag to indicate we're running in Median mobile app
+  // Ensure flag persists
   window.isMedianMobile = true;
   
   // Wait for DOM to be ready
