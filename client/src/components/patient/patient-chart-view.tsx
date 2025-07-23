@@ -86,7 +86,9 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   // MEDIAN: Check if running in Median mobile app
   // Also fallback to screen size detection if window.isMedianMobile is not set
   const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
-  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen);
+  // Additional check for Median app using user agent
+  const isMedianApp = typeof window !== 'undefined' && navigator.userAgent.toLowerCase().includes('median');
+  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMedianApp || isMobileScreen);
   
   // Debug logging for Median mobile detection
   useEffect(() => {
