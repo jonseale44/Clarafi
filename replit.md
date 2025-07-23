@@ -91,6 +91,13 @@ Resolved Stripe initialization error that was causing "Please call Stripe() with
 3. **UI Fallback** - Added user-friendly message when Stripe is not configured instead of crashing
 4. **Impact** - Prevents runtime error overlay from blocking the app when Stripe keys are not set
 
+### Fixed Encounters Tab toString() Error in Mobile App
+Resolved "undefined is not an object (evaluating 'item.toString')" error when clicking on encounters:
+
+1. **Root Cause** - encounters-tab.tsx was calling `.toString()` on `encounter.startTime` which might be null or undefined
+2. **Fixed Logic** - Replaced `encounter.startTime.toString()` with safer `String(encounter.startTime)` conversion
+3. **Impact** - Prevents mobile app crash when clicking on encounters with missing or invalid date values
+
 ### Photo Capture Flow
 - Photos are uploaded via `/api/photo-capture/sessions/:sessionId/upload`
 - Stored in `/uploads/photo-capture/` directory
