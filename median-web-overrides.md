@@ -128,6 +128,11 @@ Copy and paste this CSS into the Median Web Override CSS field:
   display: none;
 }
 
+/* Hide gradient background element */
+.flex-1.bg-gradient-to-br.from-primary {
+  display: none !important;
+}
+
 /* Improve scrolling performance */
 [data-median-app="true"] [data-median="unified-chart-panel"],
 [data-median-app="true"] [data-median="patient-chart-content"] {
