@@ -27,10 +27,13 @@ const parserService = new PatientParserService();
 router.post("/parse-patient-info", async (req: Request, res: Response) => {
   try {
     console.log("🔍 [PatientParser] Parsing patient information...");
+    console.log("📥 [PatientParser] Request body keys:", Object.keys(req.body));
+    console.log("📥 [PatientParser] Request body size:", JSON.stringify(req.body).length, "bytes");
     
     // Validate request body
     const validationResult = parseRequestSchema.safeParse(req.body);
     if (!validationResult.success) {
+      console.error("❌ [PatientParser] Request validation failed:", validationResult.error.errors);
       return res.status(400).json({
         success: false,
         error: "Invalid request format",
@@ -39,9 +42,21 @@ router.post("/parse-patient-info", async (req: Request, res: Response) => {
     }
 
     const { imageData, textContent, isTextContent, mimeType } = validationResult.data;
+    
+    // Log request details
+    console.log("📊 [PatientParser] Request details:", {
+      hasImageData: !!imageData,
+      imageDataLength: imageData?.length || 0,
+      hasTextContent: !!textContent,
+      textContentLength: textContent?.length || 0,
+      isTextContent,
+      mimeType,
+      imageDataPrefix: imageData?.substring(0, 50) || 'none'
+    });
 
     // Ensure we have either image or text content
     if (!imageData && !textContent) {
+      console.error("❌ [PatientParser] No content provided");
       return res.status(400).json({
         success: false,
         error: "Either imageData or textContent must be provided"

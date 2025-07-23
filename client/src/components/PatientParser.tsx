@@ -191,9 +191,22 @@ export function PatientParser() {
 
   const processPhotoAsFile = async (photo: { url: string; filename: string }) => {
     try {
+      console.log("📸 [PatientParser] Processing photo from URL:", photo.url);
+      console.log("📸 [PatientParser] Photo filename:", photo.filename);
+      
       // Fetch the photo from the URL
       const response = await fetch(photo.url);
+      console.log("📸 [PatientParser] Fetch response:", {
+        ok: response.ok,
+        status: response.status,
+        contentType: response.headers.get('content-type')
+      });
+      
       const blob = await response.blob();
+      console.log("📸 [PatientParser] Blob details:", {
+        size: blob.size,
+        type: blob.type
+      });
       
       // Determine MIME type from filename if blob.type is empty
       let mimeType = blob.type;
@@ -208,10 +221,19 @@ export function PatientParser() {
           'webp': 'image/webp'
         };
         mimeType = mimeTypes[ext || ''] || 'image/jpeg'; // Default to JPEG if unknown
+        console.log("📸 [PatientParser] Determined MIME type from extension:", {
+          extension: ext,
+          mimeType: mimeType
+        });
       }
       
       // Create file with proper MIME type
       const file = new File([blob], photo.filename, { type: mimeType });
+      console.log("📸 [PatientParser] Created file:", {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
       
       // Set it as the selected file and process
       setSelectedFile(file);
@@ -222,7 +244,7 @@ export function PatientParser() {
       // Automatically parse the file using the same function as regular uploads
       await parsePatientInfoFromFile(file);
     } catch (error) {
-      console.error('Error processing photo:', error);
+      console.error('❌ [PatientParser] Error processing photo:', error);
       toast({
         title: "Error",
         description: "Failed to process captured photo",
@@ -438,11 +460,24 @@ export function PatientParser() {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
+        console.log("📸 [PatientParser] File converted to data URL:");
+        console.log("  - File name:", file.name);
+        console.log("  - File type:", file.type);
+        console.log("  - File size:", file.size, "bytes");
+        console.log("  - Data URL length:", result.length);
+        console.log("  - Data URL prefix:", result.substring(0, 50));
+        
         // Remove the data URL prefix to get just the base64 data
         const base64Data = result.split(',')[1];
+        console.log("  - Base64 data length:", base64Data?.length || 0);
+        console.log("  - Base64 data prefix:", base64Data?.substring(0, 50) || 'none');
+        
         resolve(base64Data);
       };
-      reader.onerror = reject;
+      reader.onerror = (error) => {
+        console.error("❌ [PatientParser] File read error:", error);
+        reject(error);
+      };
       reader.readAsDataURL(file);
     });
   };
@@ -456,6 +491,13 @@ export function PatientParser() {
         isTextContent: false,
         mimeType: file.type
       };
+      
+      console.log("📤 [PatientParser] Sending parse request:");
+      console.log("  - Request body size:", JSON.stringify(requestBody).length, "bytes");
+      console.log("  - Image data present:", !!requestBody.imageData);
+      console.log("  - Image data length:", requestBody.imageData?.length || 0);
+      console.log("  - MIME type:", requestBody.mimeType);
+      console.log("  - Is text content:", requestBody.isTextContent);
 
       const response = await fetch('/api/parse-patient-info', {
         method: 'POST',

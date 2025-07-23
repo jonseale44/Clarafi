@@ -49,6 +49,15 @@ export class PatientParserService {
     mimeType: string = 'image/jpeg',
   ): Promise<PatientParseResult> {
     try {
+      console.log("🔄 [PatientParser] Starting parsePatientInfo with:", {
+        hasImageData: !!imageData,
+        imageDataLength: imageData?.length || 0,
+        hasTextContent: !!textContent,
+        textContentLength: textContent?.length || 0,
+        isTextContent,
+        mimeType
+      });
+
       const systemPrompt = `You are a medical AI assistant specialized in extracting patient demographic information from medical documents, insurance cards, EHR screenshots, and intake forms.
 
 CRITICAL INSTRUCTIONS:
@@ -83,6 +92,7 @@ Return a JSON object with these exact fields:
 
       if (isTextContent && textContent) {
         // Process text content
+        console.log("📝 [PatientParser] Processing text content");
         messages = [
           { role: "system", content: systemPrompt },
           {
@@ -92,6 +102,62 @@ Return a JSON object with these exact fields:
         ];
       } else if (imageData) {
         // Process image data
+        console.log("🖼️ [PatientParser] Processing image data");
+        
+        // Validate base64 format
+        const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Pattern.test(imageData)) {
+          console.error("❌ [PatientParser] Invalid base64 format detected");
+          console.log("🔍 [PatientParser] First 100 chars of imageData:", imageData.substring(0, 100));
+        }
+        
+        // Check if imageData already includes data URL prefix
+        const hasDataPrefix = imageData.startsWith('data:');
+        console.log("🔍 [PatientParser] Image data has data: prefix:", hasDataPrefix);
+        
+        // Validate and normalize MIME type for OpenAI
+        const supportedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        let normalizedMimeType = mimeType.toLowerCase();
+        
+        // Handle HEIF/HEIC by converting to JPEG (OpenAI doesn't support these)
+        if (normalizedMimeType === 'image/heif' || normalizedMimeType === 'image/heic') {
+          console.warn("⚠️ [PatientParser] HEIF/HEIC format detected - OpenAI doesn't support this format");
+          return {
+            success: false,
+            error: "HEIF/HEIC image format is not supported. Please convert to JPEG or PNG.",
+          };
+        }
+        
+        // Ensure MIME type is supported
+        if (!supportedMimeTypes.includes(normalizedMimeType)) {
+          console.error("❌ [PatientParser] Unsupported MIME type:", normalizedMimeType);
+          console.log("🔍 [PatientParser] Supported types:", supportedMimeTypes);
+          return {
+            success: false,
+            error: `Unsupported image format: ${normalizedMimeType}. Supported formats: JPEG, PNG, GIF, WebP`,
+          };
+        }
+        
+        const imageUrl = hasDataPrefix ? imageData : `data:${normalizedMimeType};base64,${imageData}`;
+        console.log("🔍 [PatientParser] Image URL prefix:", imageUrl.substring(0, 100));
+        console.log("🔍 [PatientParser] Normalized MIME type:", normalizedMimeType);
+        
+        // Validate base64 data if not already a data URL
+        if (!hasDataPrefix) {
+          // Check if base64 data looks valid
+          const base64Sample = imageData.substring(0, 100);
+          console.log("🔍 [PatientParser] Base64 sample:", base64Sample);
+          
+          // Basic validation - should only contain base64 characters
+          if (!/^[A-Za-z0-9+/]*={0,2}$/.test(imageData.replace(/\s/g, ''))) {
+            console.error("❌ [PatientParser] Invalid base64 data detected");
+            return {
+              success: false,
+              error: "Invalid image data format. Please ensure the image is properly encoded.",
+            };
+          }
+        }
+        
         messages = [
           { role: "system", content: systemPrompt },
           {
@@ -104,7 +170,7 @@ Return a JSON object with these exact fields:
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${mimeType};base64,${imageData}`,
+                  url: imageUrl,
                   detail: "high",
                 },
               },
@@ -112,11 +178,20 @@ Return a JSON object with these exact fields:
           },
         ];
       } else {
+        console.error("❌ [PatientParser] No content provided");
         return {
           success: false,
           error: "Either imageData or textContent must be provided",
         };
       }
+
+      console.log("🚀 [PatientParser] Sending request to OpenAI API");
+      console.log("📊 [PatientParser] Message structure:", {
+        messageCount: messages.length,
+        hasSystemMessage: messages[0]?.role === "system",
+        userMessageType: isTextContent ? "text" : "image",
+        userMessageContentType: typeof messages[1]?.content
+      });
 
       const response = await this.openai.chat.completions.create({
         model: "gpt-4.1-mini",
@@ -126,18 +201,24 @@ Return a JSON object with these exact fields:
         max_tokens: 1000,
       });
 
+      console.log("✅ [PatientParser] Received response from OpenAI");
+      
       const content = response.choices[0].message.content;
       if (!content) {
+        console.error("❌ [PatientParser] No content in OpenAI response");
         return {
           success: false,
           error: "No response from AI service",
         };
       }
 
+      console.log("📝 [PatientParser] Response content length:", content.length);
       const rawData = JSON.parse(content);
+      console.log("📊 [PatientParser] Parsed response data:", rawData);
 
       // Validate and transform the extracted data
       const validatedData = extractedPatientSchema.parse(rawData);
+      console.log("✅ [PatientParser] Data validation successful");
 
       // Calculate confidence based on completeness of required fields
       const requiredFields = [
@@ -159,10 +240,22 @@ Return a JSON object with these exact fields:
         data: validatedData,
         confidence: Math.round(confidence),
       };
-    } catch (error) {
-      console.error("Patient parsing error:", error);
+    } catch (error: any) {
+      console.error("❌ [PatientParser] Error occurred:", error);
+      console.error("❌ [PatientParser] Error type:", error?.constructor?.name);
+      console.error("❌ [PatientParser] Error message:", error?.message);
+      
+      if (error?.response) {
+        console.error("❌ [PatientParser] API Response status:", error.response.status);
+        console.error("❌ [PatientParser] API Response data:", error.response.data);
+      }
+      
+      if (error?.code) {
+        console.error("❌ [PatientParser] Error code:", error.code);
+      }
 
       if (error instanceof z.ZodError) {
+        console.error("❌ [PatientParser] Zod validation errors:", error.errors);
         return {
           success: false,
           error: `Data validation failed: ${error.errors.map((e) => e.message).join(", ")}`,
