@@ -11,7 +11,8 @@ import {
   Maximize2, 
   Minimize2,
   GripVertical,
-  X
+  X,
+  Plus
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
@@ -44,6 +45,8 @@ interface UnifiedChartPanelProps {
   isMedianMobile?: boolean; // MEDIAN: Flag to indicate if running in Median mobile app
   isOpen?: boolean; // MEDIAN: Controlled open state for mobile
   onOpenChange?: (open: boolean) => void; // MEDIAN: Callback for open state changes
+  onNewEncounter?: () => void; // MEDIAN: Function to create new encounter (mobile only)
+  isPatientChartView?: boolean; // MEDIAN: Whether we're in patient chart view (vs encounter view)
 }
 
 
@@ -63,7 +66,9 @@ export function UnifiedChartPanel({
   onCloseMobileSidebar,
   isMedianMobile = false,
   isOpen,
-  onOpenChange
+  onOpenChange,
+  onNewEncounter,
+  isPatientChartView = false
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
   
@@ -279,6 +284,37 @@ export function UnifiedChartPanel({
           title="Patient Documents"
           showAllPDFs={false}
         />
+      );
+    }
+
+    // Special handling for encounters section on mobile
+    if (section.id === "encounters" && isMedianMobile && onNewEncounter) {
+      return (
+        <div className="space-y-4">
+          {/* MEDIAN: Add New Encounter button for mobile */}
+          <div className="flex justify-end px-2">
+            <Button 
+              onClick={onNewEncounter} 
+              className="bg-slate-700 hover:bg-slate-800 text-white"
+              data-median="mobile-new-encounter-button"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Encounter
+            </Button>
+          </div>
+          <SharedChartSections
+            patientId={patient.id}
+            mode={config.context === 'patient-chart' ? 'patient-chart' : 'encounter'}
+            encounterId={encounterId}
+            isReadOnly={false}
+            sectionId={section.id}
+            highlightAttachmentId={highlightAttachmentId}
+            isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
+            medicalProblemsProgress={medicalProblemsProgress}
+            compactMode={false}
+            isExpanded={panelState.isExpanded}
+          />
+        </div>
       );
     }
 

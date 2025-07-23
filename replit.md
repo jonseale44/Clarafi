@@ -22,21 +22,26 @@ Implemented comprehensive mobile optimizations for the PatientChartView componen
 1. **Added Data-Median Attributes** - Tagged all key UI elements with `data-median` attributes for CSS/JS targeting
 2. **Enhanced React-Based Solution** - Uses `window.isMedianMobile` flag set by Median JS override for native React state management
 3. **Controlled Sidebar State** - UnifiedChartPanel accepts `isOpen`/`onOpenChange` props for proper state control
-4. **Slide-Over Sidebar** - UnifiedChartPanel transforms into slide-over panel on mobile (85vw width, max 350px)
-5. **Conditional Mobile UI** - Menu toggle button only renders when `isMedianMobile` is true
-6. **Touch Optimizations** - Minimum 44px touch targets, swipe-to-close gesture support
-7. **Responsive Layout** - Header elements stack on mobile, full-width buttons on small screens
-8. **Web Overrides Created** - Comprehensive CSS and JS overrides documented in `median-web-overrides.md`
+4. **View-Specific Defaults** - Patient chart view defaults to open and full-width (100vw), encounter view defaults to closed (85vw max 350px)
+5. **Mobile New Encounter Button** - Relocated New Encounter button to encounters section in sidebar on mobile
+6. **Hidden Right-Side Content** - Right-side content hidden on mobile except New Encounter button
+7. **Conditional Mobile UI** - Menu toggle button only renders when `isMedianMobile` is true
+8. **Touch Optimizations** - Minimum 44px touch targets, swipe-to-close gesture support
+9. **Responsive Layout** - Header elements stack on mobile, full-width buttons on small screens
+10. **Web Overrides Created** - Comprehensive CSS and JS overrides documented in `median-web-overrides.md`
 
 Key implementation details:
 - React-based detection using `window.isMedianMobile` flag
-- Sidebar controlled via React props (`isOpen`, `onOpenChange`)
+- Sidebar controlled via React props (`isOpen`, `onOpenChange`, `isPatientChartView`)
+- Patient chart view opens by default on mobile with full screen width
+- Encounter view starts closed on mobile with slide-over behavior
+- New Encounter button renders in encounters section when on mobile
 - Mobile menu toggle conditionally rendered only in Median app
 - Close button in sidebar header visible only on mobile
-- Selecting a chart section auto-closes sidebar on mobile
+- Selecting a chart section auto-closes sidebar on mobile (encounter view only)
 - Body scroll locked when sidebar is open (handled in React)
 - Swipe left gesture closes sidebar (via JS override)
-- CSS classes applied conditionally based on mobile state
+- CSS classes applied conditionally based on mobile state and view type
 
 ### Fixed Allergy Source Badge Linking Issue  
 Resolved issue where allergy badges from attachments weren't linking to source documents:

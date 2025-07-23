@@ -30,6 +30,12 @@ Copy and paste this CSS into the Median Web Override CSS field:
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
 }
 
+/* Full-width sidebar for patient chart view on mobile */
+[data-median-app="true"] [data-median="patient-chart-main"] [data-median="unified-chart-panel"] {
+  width: 100vw !important;
+  max-width: 100vw !important;
+}
+
 /* Show sidebar when mobile menu is open */
 [data-median-app="true"] [data-median="unified-chart-panel"].mobile-sidebar-open {
   left: 0;

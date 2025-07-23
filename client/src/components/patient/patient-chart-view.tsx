@@ -83,12 +83,15 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(getInitialExpandedSections());
   const [currentEncounterId, setCurrentEncounterId] = useState<number | null>(null);
   const [showEncounterDetail, setShowEncounterDetail] = useState(false);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // MEDIAN: State for mobile sidebar visibility
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
   // MEDIAN: Check if running in Median mobile app
   const isMedianMobile = typeof window !== 'undefined' && (window as any).isMedianMobile === true;
+  
+  // MEDIAN: Different default states for patient chart vs encounter view
+  const isPatientChartView = location.pathname.includes('/chart');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(isMedianMobile && isPatientChartView);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Handle URL parameters for navigation from vitals to attachments
   const [highlightAttachmentId, setHighlightAttachmentId] = useState<number | undefined>(undefined);
@@ -439,21 +442,26 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         onSectionChange={(sectionId) => {
           console.log('🔗 [PatientChartView] Received section change:', sectionId);
           setActiveSection(sectionId);
-          // MEDIAN: Close sidebar on mobile after selecting section
-          setMobileSidebarOpen(false);
+          // MEDIAN: Close sidebar on mobile after selecting section if not in patient chart view
+          if (!isPatientChartView) {
+            setMobileSidebarOpen(false);
+          }
         }}
         mobileSidebarOpen={mobileSidebarOpen}
         onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
         isMedianMobile={isMedianMobile}
         isOpen={isMedianMobile ? mobileSidebarOpen : undefined}
         onOpenChange={isMedianMobile ? setMobileSidebarOpen : undefined}
+        onNewEncounter={isMedianMobile ? handleStartNewEncounter : undefined}
+        isPatientChartView={isPatientChartView}
         data-median="patient-chart-sidebar"
         data-median-app="true"
       />
 
-      {/* Main Content */}
-      <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content" data-median-app="true">
-        <div className="max-w-full">
+      {/* Main Content - Hidden on mobile */}
+      {!isMedianMobile && (
+        <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content" data-median-app="true">
+          <div className="max-w-full">
           {/* MEDIAN TAG: Header section needs mobile-friendly styling (stacked layout, smaller buttons) */}
           <div className="flex items-center justify-between mb-4" data-median="patient-chart-header" data-median-app="true">
             <div className="flex items-center gap-3" data-median="patient-info-block">
@@ -491,6 +499,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
