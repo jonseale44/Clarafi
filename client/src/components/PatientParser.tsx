@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar, RefreshCw } from 'lucide-react';
+import { Upload, FileText, User, AlertCircle, CheckCircle, Camera, ExternalLink, Calendar, RefreshCw, QrCode, Smartphone, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
 import { queryClient } from '@/lib/queryClient';
@@ -17,6 +17,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import QRCode from 'qrcode';
 
 // Validation schema for patient form
 const patientFormSchema = z.object({
@@ -80,10 +82,183 @@ export function PatientParser() {
   const [extractedData, setExtractedData] = useState<ExtractedPatient | null>(null);
   const [createdPatient, setCreatedPatient] = useState<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showQrCode, setShowQrCode] = useState(false);
+  const [photoCaptureSession, setPhotoCaptureSession] = useState<{ sessionId: string; captureUrl: string } | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; filename: string }>>([]);
   const { toast } = useToast();
   const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const quickParseDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionPollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [, setLocation] = useLocation();
+
+  // Cleanup function for polling interval
+  useEffect(() => {
+    return () => {
+      if (sessionPollIntervalRef.current) {
+        clearInterval(sessionPollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Photo capture functions
+  const startPhotoCapture = async () => {
+    try {
+      const response = await fetch('/api/photo-capture/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error('Failed to create photo capture session');
+      
+      const session = await response.json();
+      setPhotoCaptureSession(session);
+      
+      // Generate QR code
+      const qrDataUrl = await QRCode.toDataURL(session.captureUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#1e3a8a',
+          light: '#ffffff'
+        }
+      });
+      setQrCodeDataUrl(qrDataUrl);
+      setShowQrCode(true);
+      
+      // Start polling for photos
+      pollForPhotos(session.sessionId);
+      
+      // For Median mobile app, check if we can use native camera
+      if ((window as any).Median?.isMobileApp) {
+        openNativeCamera();
+      }
+    } catch (error) {
+      console.error('Error starting photo capture:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start photo capture session",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const pollForPhotos = (sessionId: string) => {
+    sessionPollIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/photo-capture/sessions/${sessionId}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.status === 'completed' && data.photos?.length > 0) {
+          // Stop polling
+          if (sessionPollIntervalRef.current) {
+            clearInterval(sessionPollIntervalRef.current);
+          }
+          
+          // Process photos
+          setUploadedPhotos(data.photos);
+          setShowQrCode(false);
+          
+          // Process first photo automatically
+          if (data.photos[0]) {
+            await processPhotoAsFile(data.photos[0]);
+          }
+          
+          toast({
+            title: "Photos received",
+            description: `${data.photos.length} photo(s) captured successfully`
+          });
+        }
+      } catch (error) {
+        console.error('Error polling for photos:', error);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+
+  const processPhotoAsFile = async (photo: { url: string; filename: string }) => {
+    try {
+      // Fetch the photo from the URL
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      const file = new File([blob], photo.filename, { type: blob.type });
+      
+      // Set it as the selected file and process
+      setSelectedFile(file);
+      await parseFileUpload(file);
+    } catch (error) {
+      console.error('Error processing photo:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process captured photo",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openNativeCamera = () => {
+    // For Median mobile app
+    const median = (window as any).Median;
+    if (median?.camera) {
+      median.camera.takePicture({
+        maxImages: 5,
+        quality: 0.8,
+        allowMultiple: true,
+        saveToGallery: false
+      }, async (result: any) => {
+        if (result.success && result.images) {
+          // Upload images to our session
+          for (const imageData of result.images) {
+            await uploadMedianPhoto(imageData);
+          }
+        }
+      });
+    }
+  };
+
+  const uploadMedianPhoto = async (imageData: string) => {
+    if (!photoCaptureSession) return;
+    
+    try {
+      // Convert base64 to blob
+      const response = await fetch(imageData);
+      const blob = await response.blob();
+      
+      // Create FormData
+      const formData = new FormData();
+      formData.append('photo', blob, 'photo.jpg');
+      
+      // Upload to session
+      const uploadResponse = await fetch(`/api/photo-capture/sessions/${photoCaptureSession.sessionId}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) throw new Error('Failed to upload photo');
+      
+      // Complete session after upload
+      const completeResponse = await fetch(`/api/photo-capture/sessions/${photoCaptureSession.sessionId}/complete`, {
+        method: 'POST'
+      });
+      
+      if (completeResponse.ok) {
+        const data = await completeResponse.json();
+        setUploadedPhotos(data.photos);
+        setShowQrCode(false);
+        
+        if (data.photos[0]) {
+          await processPhotoAsFile(data.photos[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading Median photo:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload photo",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Form for discrete fields
   const form = useForm<PatientFormData>({
@@ -544,6 +719,59 @@ export function PatientParser() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      {/* QR Code Dialog */}
+      <Dialog open={showQrCode} onOpenChange={setShowQrCode}>
+        <DialogContent className="sm:max-w-md" data-median="qr-code-dialog">
+          <DialogHeader>
+            <DialogTitle>Scan QR Code with Your Phone</DialogTitle>
+            <DialogDescription>
+              Scan this QR code with your phone's camera to take photos of patient documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4 py-4">
+            {qrCodeDataUrl && (
+              <img 
+                src={qrCodeDataUrl} 
+                alt="QR Code for photo capture"
+                className="w-64 h-64 border-2 border-gray-200 rounded-lg"
+              />
+            )}
+            <div className="text-center space-y-2">
+              <p className="text-sm text-gray-600">
+                1. Open your phone's camera app
+              </p>
+              <p className="text-sm text-gray-600">
+                2. Point it at this QR code
+              </p>
+              <p className="text-sm text-gray-600">
+                3. Tap the notification to open the camera
+              </p>
+              <p className="text-sm text-gray-600">
+                4. Take photos of ID cards, insurance cards, etc.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-gray-500">Waiting for photos...</span>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowQrCode(false);
+                if (sessionPollIntervalRef.current) {
+                  clearInterval(sessionPollIntervalRef.current);
+                }
+              }}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -606,6 +834,47 @@ export function PatientParser() {
                     </div>
                   </Label>
                 </div>
+              </div>
+
+              {/* Photo capture option */}
+              <div className="relative">
+                <div className="flex items-center gap-2 my-4">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="text-sm text-gray-500 px-2">or</span>
+                  <div className="flex-1 border-t border-gray-300"></div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={startPhotoCapture}
+                  className="w-full flex items-center gap-2"
+                  data-median="photo-capture-button"
+                >
+                  <Smartphone className="h-4 w-4" />
+                  <span data-median="button-text">Take Photo with Phone</span>
+                  <QrCode className="h-4 w-4 ml-auto" />
+                </Button>
+
+                {uploadedPhotos.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label>Captured Photos</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {uploadedPhotos.map((photo, index) => (
+                        <div key={index} className="relative">
+                          <img 
+                            src={photo.url} 
+                            alt={`Captured photo ${index + 1}`}
+                            className="w-full h-24 object-cover rounded border"
+                          />
+                          <Badge className="absolute top-1 right-1 text-xs">
+                            {index + 1}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

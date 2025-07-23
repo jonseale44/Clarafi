@@ -6046,6 +6046,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   const { eprescribingRoutes } = await import("./eprescribing-routes.js");
   app.use(eprescribingRoutes);
 
+  // Import and register photo capture routes
+  const { default: photoCaptureRoutes } = await import("./photo-capture-routes.js");
+  app.use("/api/photo-capture", photoCaptureRoutes);
+
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
   registerBillingRoutes(app);
