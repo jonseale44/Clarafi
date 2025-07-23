@@ -83,6 +83,14 @@ Resolved "undefined is not an object (evaluating 'item.toString')" error in Note
 3. **Fallback Value** - Added default fallback to "soap" to prevent undefined from being passed to Select component
 4. **Impact** - Fixes mobile app crash when clicking on encounters in patient chart view
 
+### Fixed Stripe Runtime Error in Mobile App
+Resolved Stripe initialization error that was causing "Please call Stripe() with your publishable key" overlay:
+
+1. **Root Cause** - Payment page was initializing Stripe with empty string when `VITE_STRIPE_PUBLISHABLE_KEY` was undefined
+2. **Fixed Logic** - Added conditional initialization: only create stripePromise if publishable key exists
+3. **UI Fallback** - Added user-friendly message when Stripe is not configured instead of crashing
+4. **Impact** - Prevents runtime error overlay from blocking the app when Stripe keys are not set
+
 ### Photo Capture Flow
 - Photos are uploaded via `/api/photo-capture/sessions/:sessionId/upload`
 - Stored in `/uploads/photo-capture/` directory

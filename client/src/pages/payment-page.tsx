@@ -13,8 +13,9 @@ import {
 } from '@stripe/react-stripe-js';
 import { CheckCircle, AlertCircle, CreditCard } from 'lucide-react';
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+// Initialize Stripe only if we have a publishable key
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 function CheckoutForm() {
   const stripe = useStripe();
@@ -200,15 +201,23 @@ export default function PaymentPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Elements 
-                stripe={stripePromise} 
-                options={{ 
-                  clientSecret,
-                  appearance,
-                }}
-              >
-                <CheckoutForm />
-              </Elements>
+              {stripePromise ? (
+                <Elements 
+                  stripe={stripePromise} 
+                  options={{ 
+                    clientSecret,
+                    appearance,
+                  }}
+                >
+                  <CheckoutForm />
+                </Elements>
+              ) : (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                  <p className="text-gray-600">Payment processing is not configured.</p>
+                  <p className="text-sm text-gray-500 mt-2">Please contact support for assistance.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
