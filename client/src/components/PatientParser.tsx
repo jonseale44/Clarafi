@@ -86,6 +86,7 @@ export function PatientParser() {
   const [photoCaptureSession, setPhotoCaptureSession] = useState<{ sessionId: string; captureUrl: string } | null>(null);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ url: string; filename: string }>>([]);
+  const [isQrLoading, setIsQrLoading] = useState(false);
   const { toast } = useToast();
   const textDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const quickParseDebounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,8 +102,16 @@ export function PatientParser() {
     };
   }, []);
 
+  // Auto-start photo capture when upload tab is active
+  useEffect(() => {
+    if (activeTab === 'upload' && !photoCaptureSession && !isQrLoading) {
+      startPhotoCapture();
+    }
+  }, [activeTab]);
+
   // Photo capture functions
   const startPhotoCapture = async () => {
+    setIsQrLoading(true);
     try {
       const response = await fetch('/api/photo-capture/sessions', {
         method: 'POST',
@@ -116,7 +125,7 @@ export function PatientParser() {
       
       // Generate QR code
       const qrDataUrl = await QRCode.toDataURL(session.captureUrl, {
-        width: 300,
+        width: 400,
         margin: 2,
         color: {
           dark: '#1e3a8a',
@@ -124,7 +133,6 @@ export function PatientParser() {
         }
       });
       setQrCodeDataUrl(qrDataUrl);
-      setShowQrCode(true);
       
       // Start polling for photos
       pollForPhotos(session.sessionId);
@@ -140,6 +148,8 @@ export function PatientParser() {
         description: "Failed to start photo capture session",
         variant: "destructive"
       });
+    } finally {
+      setIsQrLoading(false);
     }
   };
 
@@ -158,7 +168,10 @@ export function PatientParser() {
           
           // Process photos
           setUploadedPhotos(data.photos);
-          setShowQrCode(false);
+          
+          // Clear the QR code and session after successful capture
+          setPhotoCaptureSession(null);
+          setQrCodeDataUrl('');
           
           // Process first photo automatically
           if (data.photos[0]) {
@@ -726,58 +739,7 @@ export function PatientParser() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* QR Code Dialog */}
-      <Dialog open={showQrCode} onOpenChange={setShowQrCode}>
-        <DialogContent className="sm:max-w-md" data-median="qr-code-dialog">
-          <DialogHeader>
-            <DialogTitle>Scan QR Code with Your Phone</DialogTitle>
-            <DialogDescription>
-              Scan this QR code with your phone's camera to take photos of patient documents.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center space-y-4 py-4">
-            {qrCodeDataUrl && (
-              <img 
-                src={qrCodeDataUrl} 
-                alt="QR Code for photo capture"
-                className="w-64 h-64 border-2 border-gray-200 rounded-lg"
-              />
-            )}
-            <div className="text-center space-y-2">
-              <p className="text-sm text-gray-600">
-                1. Open your phone's camera app
-              </p>
-              <p className="text-sm text-gray-600">
-                2. Point it at this QR code
-              </p>
-              <p className="text-sm text-gray-600">
-                3. Tap the notification to open the camera
-              </p>
-              <p className="text-sm text-gray-600">
-                4. Take photos of ID cards, insurance cards, etc.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-500">Waiting for photos...</span>
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowQrCode(false);
-                if (sessionPollIntervalRef.current) {
-                  clearInterval(sessionPollIntervalRef.current);
-                }
-              }}
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       <Card>
         <CardHeader>
@@ -851,37 +813,75 @@ export function PatientParser() {
                   <div className="flex-1 border-t border-gray-300"></div>
                 </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={startPhotoCapture}
-                  className="w-full flex items-center gap-2"
-                  data-median="photo-capture-button"
-                >
-                  <Smartphone className="h-4 w-4" />
-                  <span data-median="button-text">Take Photo with Phone</span>
-                  <QrCode className="h-4 w-4 ml-auto" />
-                </Button>
-
-                {uploadedPhotos.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <Label>Captured Photos</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {uploadedPhotos.map((photo, index) => (
-                        <div key={index} className="relative">
-                          <img 
-                            src={photo.url} 
-                            alt={`Captured photo ${index + 1}`}
-                            className="w-full h-24 object-cover rounded border"
-                          />
-                          <Badge className="absolute top-1 right-1 text-xs">
-                            {index + 1}
-                          </Badge>
-                        </div>
-                      ))}
+                {/* QR Code Display */}
+                <div className="flex flex-col items-center space-y-4 py-4" data-median="qr-code-section">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Smartphone className="h-5 w-5" />
+                    Scan with Your Phone to Take Photos
+                  </h3>
+                  
+                  {isQrLoading ? (
+                    <div className="w-80 h-80 flex items-center justify-center border-2 border-gray-200 rounded-lg">
+                      <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
                     </div>
-                  </div>
-                )}
+                  ) : qrCodeDataUrl ? (
+                    <>
+                      <img 
+                        src={qrCodeDataUrl} 
+                        alt="QR Code for photo capture"
+                        className="w-80 h-80 border-2 border-gray-200 rounded-lg shadow-lg"
+                      />
+                      <div className="text-center space-y-2 max-w-md">
+                        <p className="text-sm text-gray-600">
+                          1. Open your phone's camera app
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          2. Point it at this QR code
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          3. Tap the notification to open the camera
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          4. Take photos of ID cards, insurance cards, etc.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="animate-pulse h-2 w-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-gray-500">Waiting for photos...</span>
+                      </div>
+                    </>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={startPhotoCapture}
+                      className="flex items-center gap-2"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      Generate QR Code
+                    </Button>
+                  )}
+
+                  {uploadedPhotos.length > 0 && (
+                    <div className="w-full space-y-2">
+                      <Label>Captured Photos</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {uploadedPhotos.map((photo, index) => (
+                          <div key={index} className="relative">
+                            <img 
+                              src={photo.url} 
+                              alt={`Captured photo ${index + 1}`}
+                              className="w-full h-24 object-cover rounded border"
+                            />
+                            <Badge className="absolute top-1 right-1 text-xs">
+                              {index + 1}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </TabsContent>
 

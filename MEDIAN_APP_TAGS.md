@@ -95,6 +95,9 @@ These tags allow you to:
 - `data-median="mobile-vital-card-priority"` - Priority vital cards (BP, HR, pain)
 - `data-median="mobile-vital-card-secondary"` - Secondary vital cards (temp, O2)
 
+#### Patient Parser
+- `data-median="qr-code-section"` - QR code photo capture section in patient parser
+
 ## Usage with Median
 
 To apply mobile-specific styles or behavior in your Median app configuration:

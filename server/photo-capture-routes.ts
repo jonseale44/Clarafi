@@ -27,7 +27,7 @@ const photoCaptureSessions = new Map<string, {
 // Clean up expired sessions every 5 minutes
 setInterval(() => {
   const now = new Date();
-  for (const [sessionId, session] of photoCaptureSessions.entries()) {
+  for (const [sessionId, session] of Array.from(photoCaptureSessions.entries())) {
     const sessionAge = now.getTime() - session.createdAt.getTime();
     if (sessionAge > 10 * 60 * 1000) { // 10 minutes
       session.status = 'expired';
