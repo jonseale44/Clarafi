@@ -16,8 +16,8 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 23, 2025)
 
-### Mobile Optimization for Median Native App (PatientChartView)
-Implemented comprehensive mobile optimizations for the PatientChartView component to work seamlessly in the Median native app:
+### Mobile Optimization for Median Native App (PatientChartView & EncounterView)
+Implemented comprehensive mobile optimizations for both PatientChartView and EncounterDetailView components to work seamlessly in the Median native app:
 
 1. **Added Data-Median Attributes** - Tagged all key UI elements with `data-median` attributes for CSS/JS targeting
 2. **Enhanced React-Based Solution** - Uses `window.isMedianMobile` flag set by Median JS override for native React state management
@@ -29,12 +29,15 @@ Implemented comprehensive mobile optimizations for the PatientChartView componen
 8. **Touch Optimizations** - Minimum 44px touch targets, swipe-to-close gesture support
 9. **Responsive Layout** - Header elements stack on mobile, full-width buttons on small screens
 10. **Web Overrides Created** - Comprehensive CSS and JS overrides documented in `median-web-overrides.md`
+11. **Fixed Sidebar Default State** - UnifiedChartPanel now correctly defaults to closed for encounter view on mobile
+12. **Mobile Menu Toggle** - Added hamburger menu button in encounter view header that only appears on mobile
+13. **Close Button in Sidebar** - Added X close button in sidebar header that only appears on mobile
 
 Key implementation details:
-- React-based detection using `window.isMedianMobile` flag
+- React-based detection using `window.isMedianMobile` flag (requires JavaScript override in Median dashboard)
 - Sidebar controlled via React props (`isOpen`, `onOpenChange`, `isPatientChartView`)
 - Patient chart view opens by default on mobile with full screen width
-- Encounter view starts closed on mobile with slide-over behavior
+- Encounter view starts closed on mobile with slide-over behavior for provider documentation focus
 - New Encounter button renders in encounters section when on mobile
 - Mobile menu toggle conditionally rendered only in Median app
 - Close button in sidebar header visible only on mobile
@@ -42,6 +45,8 @@ Key implementation details:
 - Body scroll locked when sidebar is open (handled in React)
 - Swipe left gesture closes sidebar (via JS override)
 - CSS classes applied conditionally based on mobile state and view type
+
+**Important**: Both CSS and JavaScript overrides must be added in Median dashboard for mobile detection to work properly.
 
 ### Fixed Allergy Source Badge Linking Issue  
 Resolved issue where allergy badges from attachments weren't linking to source documents:

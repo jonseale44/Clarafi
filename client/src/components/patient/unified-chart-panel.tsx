@@ -124,7 +124,9 @@ export function UnifiedChartPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   
   // MEDIAN: Handle controlled open state for mobile
-  const isPanelOpen = isOpen !== undefined ? isOpen : true; // Default to open if not controlled
+  // Default behavior: Patient chart view opens by default, encounter view starts closed
+  const defaultOpenState = isMedianMobile ? (isPatientChartView ? true : false) : true;
+  const isPanelOpen = isOpen !== undefined ? isOpen : defaultOpenState;
   
   // MEDIAN: Effect to handle open state changes
   useEffect(() => {

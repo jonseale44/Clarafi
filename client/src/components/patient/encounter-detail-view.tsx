@@ -171,12 +171,9 @@ export function EncounterDetailView({
   }) as { data?: { id?: number; role?: string } };
   
   // MEDIAN: Check if running in Median mobile app
-  // Force mobile mode for testing - remove this line after confirming it works
-  const forceMobileMode = true; // TEMPORARY: Remove after testing
-  
   // Also fallback to screen size detection if window.isMedianMobile is not set
   const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
-  const isMedianMobile = forceMobileMode || (typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen));
+  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen);
   
   // MEDIAN: Encounter view should default to closed sidebar on mobile
   const isPatientChartView = false; // This is encounter view, not patient chart view
@@ -3866,16 +3863,10 @@ Please provide medical suggestions based on this complete conversation context.`
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
-          {/* TEMPORARY: Visual indicator for mobile mode */}
-          {isMedianMobile && (
-            <div className="bg-yellow-100 text-yellow-800 text-xs p-1 mb-2 rounded">
-              Mobile Mode Active - Menu button should be visible below
-            </div>
-          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* MEDIAN: Mobile menu toggle - only show in Median app */}
-              {isMedianMobile ? (
+              {isMedianMobile && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -3883,15 +3874,12 @@ Please provide medical suggestions based on this complete conversation context.`
                     console.log('🔍 [MEDIAN DEBUG] Menu toggle clicked, opening sidebar');
                     setMobileSidebarOpen(true);
                   }}
-                  className="p-2 bg-blue-500 text-white"
+                  className="p-2"
                   data-median="mobile-menu-toggle"
                   data-median-app="true"
-                  style={{ display: 'block', visibility: 'visible' }}
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-              ) : (
-                <span>No Mobile Menu</span>
               )}
               <h1 className="text-xl font-semibold">Provider Documentation</h1>
             </div>
