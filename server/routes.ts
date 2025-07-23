@@ -16,6 +16,8 @@
  * For specific functionality, search for the relevant section below.
  */
 import type { Express, Request, Response } from "express";
+import express from "express";
+import path from "path";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -598,6 +600,29 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+  
+  // Serve static files from uploads directory with proper MIME types
+  const uploadsPath = path.join(process.cwd(), 'uploads');
+  app.use('/uploads', express.static(uploadsPath, {
+    setHeaders: (res, filePath) => {
+      // Set proper MIME types based on file extension
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
+        '.pdf': 'application/pdf'
+      };
+      
+      const mimeType = mimeTypes[ext];
+      if (mimeType) {
+        res.setHeader('Content-Type', mimeType);
+      }
+    }
+  }));
   
   // Set up HIPAA audit logging middleware for all routes
   const { auditPHIAccess } = await import("./audit-logging.js");

@@ -1,0 +1,47 @@
+Patient parsing error: BadRequestError: 400 Invalid MIME type. Only image types are supported.
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/error.ts:72:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/core.ts:462:21)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PatientParserService.parsePatientInfo (/home/runner/workspace/server/patient-parser-service.ts:121:24)
+    at async <anonymous> (/home/runner/workspace/server/parse-routes.ts:52:25) {
+  status: 400,
+  headers: {
+    'access-control-expose-headers': 'X-Request-ID',
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '963be2b3cceb281a-SEA',
+    connection: 'keep-alive',
+    'content-length': '180',
+    'content-type': 'application/json',
+    date: 'Wed, 23 Jul 2025 14:32:09 GMT',
+    'openai-organization': 'cv-infotech-7lnc8u',
+    'openai-processing-ms': '9',
+    'openai-project': 'proj_kQHr5nlhMsvVYJs0K9xIEl1X',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=aprx79pjeLd5dMm9Hx.1l6gZoBsNnYJYUvD8L9PoBHY-1753281129-1.0.1.1-kNkWiG.roZvo26cDWD0vp5ln983jILBGb_TcR.Y.P6kZeXksYnug5jfPNH7o54tn0qRUI18qsb366niDpJFQG96Y67YAU.jqlWSVr62sPrE; path=/; expires=Wed, 23-Jul-25 15:02:09 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=BkEPJaznI67vvp5biy1WdIN60oAk_MJywQAqhx5e1X0-1753281129921-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'x-ratelimit-limit-input-images': '50000',
+    'x-ratelimit-limit-requests': '30000',
+    'x-ratelimit-limit-tokens': '150000000',
+    'x-ratelimit-remaining-input-images': '49999',
+    'x-ratelimit-remaining-requests': '29999',
+    'x-ratelimit-remaining-tokens': '149998881',
+    'x-ratelimit-reset-input-images': '1ms',
+    'x-ratelimit-reset-requests': '2ms',
+    'x-ratelimit-reset-tokens': '0s',
+    'x-request-id': '988c5959-c428-4376-b52b-48c03a63023c'
+  },
+  request_id: '988c5959-c428-4376-b52b-48c03a63023c',
+  error: {
+    message: 'Invalid MIME type. Only image types are supported.',
+    type: 'invalid_request_error',
+    param: null,
+    code: 'invalid_image_format'
+  },
+  code: 'invalid_image_format',
+  param: null,
+  type: 'invalid_request_error'
+}

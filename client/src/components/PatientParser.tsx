@@ -194,7 +194,24 @@ export function PatientParser() {
       // Fetch the photo from the URL
       const response = await fetch(photo.url);
       const blob = await response.blob();
-      const file = new File([blob], photo.filename, { type: blob.type });
+      
+      // Determine MIME type from filename if blob.type is empty
+      let mimeType = blob.type;
+      if (!mimeType || mimeType === 'application/octet-stream') {
+        const ext = photo.filename.toLowerCase().split('.').pop();
+        const mimeTypes: Record<string, string> = {
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'png': 'image/png',
+          'gif': 'image/gif',
+          'bmp': 'image/bmp',
+          'webp': 'image/webp'
+        };
+        mimeType = mimeTypes[ext || ''] || 'image/jpeg'; // Default to JPEG if unknown
+      }
+      
+      // Create file with proper MIME type
+      const file = new File([blob], photo.filename, { type: mimeType });
       
       // Set it as the selected file and process
       setSelectedFile(file);
