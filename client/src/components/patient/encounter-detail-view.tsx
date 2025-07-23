@@ -179,6 +179,19 @@ export function EncounterDetailView({
   const isPatientChartView = false; // This is encounter view, not patient chart view
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // Always start closed in encounter view
 
+  // Debug logging for mobile detection
+  useEffect(() => {
+    console.log('🔍 [MEDIAN DEBUG] Encounter View Mobile Detection:', {
+      windowIsMedianMobile: typeof window !== 'undefined' ? (window as any).isMedianMobile : 'undefined',
+      windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth : 'undefined',
+      isMobileScreen,
+      isMedianMobile,
+      mobileSidebarOpen,
+      isPatientChartView,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'undefined'
+    });
+  }, [isMedianMobile, mobileSidebarOpen, isMobileScreen]);
+
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">(
     "INACTIVE",
@@ -3857,13 +3870,22 @@ Please provide medical suggestions based on this complete conversation context.`
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setMobileSidebarOpen(true)}
+                  onClick={() => {
+                    console.log('🔍 [MEDIAN DEBUG] Menu toggle clicked, opening sidebar');
+                    setMobileSidebarOpen(true);
+                  }}
                   className="p-2"
                   data-median="mobile-menu-toggle"
                   data-median-app="true"
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
+              )}
+              {/* Debug: Log why menu button is not showing */}
+              {!isMedianMobile && (
+                <span style={{ display: 'none' }}>
+                  {console.log('🔍 [MEDIAN DEBUG] Menu button hidden because isMedianMobile =', isMedianMobile)}
+                </span>
               )}
               <h1 className="text-xl font-semibold">Provider Documentation</h1>
             </div>

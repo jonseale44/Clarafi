@@ -165,12 +165,26 @@ Copy and paste this JavaScript into the Median Web Override JS field:
 
 // Set flag immediately before any other code runs
 window.isMedianMobile = true;
+console.log('🔍 [MEDIAN JS OVERRIDE] Setting window.isMedianMobile = true');
+
+// Add a visible indicator that JavaScript override is active
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🔍 [MEDIAN JS OVERRIDE] DOM Content Loaded, window.isMedianMobile =', window.isMedianMobile);
+  
+  // Add a hidden element to confirm JS override is active
+  const indicator = document.createElement('div');
+  indicator.id = 'median-js-override-active';
+  indicator.style.display = 'none';
+  indicator.textContent = 'Median JS Override Active';
+  document.body.appendChild(indicator);
+});
 
 (function() {
   'use strict';
   
   // Ensure flag persists
   window.isMedianMobile = true;
+  console.log('🔍 [MEDIAN JS OVERRIDE] Inside IIFE, window.isMedianMobile =', window.isMedianMobile);
   
   // Wait for DOM to be ready
   function onReady(fn) {

@@ -72,6 +72,20 @@ export function UnifiedChartPanel({
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
   
+  // Debug logging for mobile props
+  useEffect(() => {
+    console.log('🔍 [MEDIAN DEBUG] UnifiedChartPanel Props:', {
+      isMedianMobile,
+      mobileSidebarOpen,
+      isOpen,
+      isPatientChartView,
+      encounterId,
+      hasOnOpenChange: !!onOpenChange,
+      hasOnCloseMobileSidebar: !!onCloseMobileSidebar,
+      hasOnNewEncounter: !!onNewEncounter
+    });
+  }, [isMedianMobile, mobileSidebarOpen, isOpen, isPatientChartView]);
+  
   // Get current user for role-based filtering
   const { data: currentUser } = useQuery<UserType>({
     queryKey: ["/api/user"],
