@@ -86,6 +86,9 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // MEDIAN: State for mobile sidebar visibility
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // MEDIAN: Check if running in Median mobile app
+  const isMedianMobile = typeof window !== 'undefined' && (window as any).isMedianMobile === true;
 
   // Handle URL parameters for navigation from vitals to attachments
   const [highlightAttachmentId, setHighlightAttachmentId] = useState<number | undefined>(undefined);
@@ -441,6 +444,9 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         }}
         mobileSidebarOpen={mobileSidebarOpen}
         onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
+        isMedianMobile={isMedianMobile}
+        isOpen={isMedianMobile ? mobileSidebarOpen : undefined}
+        onOpenChange={isMedianMobile ? setMobileSidebarOpen : undefined}
         data-median="patient-chart-sidebar"
         data-median-app="true"
       />
@@ -452,16 +458,18 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           <div className="flex items-center justify-between mb-4" data-median="patient-chart-header" data-median-app="true">
             <div className="flex items-center gap-3" data-median="patient-info-block">
               {/* MEDIAN TAG: Mobile menu toggle button - only visible on mobile */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="p-2"
-                onClick={() => setMobileSidebarOpen(true)}
-                data-median="mobile-menu-toggle"
-                data-median-app="true"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
+              {isMedianMobile && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="p-2"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  data-median="mobile-menu-toggle"
+                  data-median-app="true"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              )}
               <div>
                 <h1 className="patient-title font-bold text-gray-900" data-median="patient-name">
                   {patient.firstName} {patient.lastName}

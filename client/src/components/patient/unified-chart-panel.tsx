@@ -41,6 +41,9 @@ interface UnifiedChartPanelProps {
   activeSection?: string;
   mobileSidebarOpen?: boolean; // MEDIAN: Mobile sidebar visibility state
   onCloseMobileSidebar?: () => void; // MEDIAN: Function to close mobile sidebar
+  isMedianMobile?: boolean; // MEDIAN: Flag to indicate if running in Median mobile app
+  isOpen?: boolean; // MEDIAN: Controlled open state for mobile
+  onOpenChange?: (open: boolean) => void; // MEDIAN: Callback for open state changes
 }
 
 
@@ -57,7 +60,10 @@ export function UnifiedChartPanel({
   onSectionChange,
   activeSection,
   mobileSidebarOpen = false,
-  onCloseMobileSidebar
+  onCloseMobileSidebar,
+  isMedianMobile = false,
+  isOpen,
+  onOpenChange
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
   
@@ -97,6 +103,27 @@ export function UnifiedChartPanel({
   const [dragStartWidth, setDragStartWidth] = useState(0);
   const [panelWidth, setPanelWidth] = useState(400);
   const panelRef = useRef<HTMLDivElement>(null);
+  
+  // MEDIAN: Handle controlled open state for mobile
+  const isPanelOpen = isOpen !== undefined ? isOpen : true; // Default to open if not controlled
+  
+  // MEDIAN: Effect to handle open state changes
+  useEffect(() => {
+    if (isMedianMobile && onOpenChange && isOpen !== undefined) {
+      // Handle any necessary side effects when panel opens/closes
+      if (isOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    
+    return () => {
+      if (isMedianMobile) {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [isOpen, isMedianMobile, onOpenChange]);
 
   // Update panel width when user preferences load
   useEffect(() => {
@@ -280,11 +307,13 @@ export function UnifiedChartPanel({
       ref={panelRef}
       className={`bg-gray-50 border-r border-gray-200 flex flex-col relative transition-all duration-300 ${
         panelState.isExpanded ? 'shadow-lg' : ''
+      } ${
+        isMedianMobile && mobileSidebarOpen ? 'mobile-sidebar-open' : ''
       }`}
       style={{ 
-        width: panelState.isExpanded ? panelState.currentWidth : `${panelWidth}px`,
-        minWidth: panelState.isExpanded ? '500px' : '280px',
-        maxWidth: panelState.isExpanded ? '90vw' : '50vw'
+        width: isMedianMobile ? undefined : (panelState.isExpanded ? panelState.currentWidth : `${panelWidth}px`),
+        minWidth: isMedianMobile ? undefined : (panelState.isExpanded ? '500px' : '280px'),
+        maxWidth: isMedianMobile ? undefined : (panelState.isExpanded ? '90vw' : '50vw')
       }}
       data-median="unified-chart-panel"
       data-median-app="true"

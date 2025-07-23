@@ -2,6 +2,14 @@
 
 This document contains the CSS and JavaScript Web Overrides to make the PatientChartView component mobile-friendly in the Median native app.
 
+## Enhanced React-Based Implementation
+
+The implementation now includes:
+1. **window.isMedianMobile flag** - Set by JavaScript override to enable React-based mobile detection
+2. **Controlled sidebar state** - UnifiedChartPanel accepts isOpen/onOpenChange props for better state management
+3. **Conditional rendering** - Mobile toggle button only shows when isMedianMobile is true
+4. **Smart close behavior** - Sidebar closes automatically when selecting sections on mobile
+
 ## CSS Web Override
 
 Copy and paste this CSS into the Median Web Override CSS field:
@@ -40,14 +48,8 @@ Copy and paste this CSS into the Median Web Override CSS field:
   z-index: 40;
 }
 
-/* Show mobile menu toggle button only on mobile */
-[data-median="mobile-menu-toggle"] {
-  display: none;
-}
-
-[data-median-app="true"] [data-median="mobile-menu-toggle"] {
-  display: inline-flex;
-}
+/* Mobile menu toggle button is now controlled by React isMedianMobile flag */
+/* No CSS needed for visibility as it's conditionally rendered */
 
 /* Hide desktop close button on mobile, show mobile close */
 [data-median-app="true"] [data-median="mobile-sidebar-close"] {
@@ -142,6 +144,9 @@ Copy and paste this JavaScript into the Median Web Override JS field:
 
 (function() {
   'use strict';
+  
+  // Set flag to indicate we're running in Median mobile app
+  window.isMedianMobile = true;
   
   // Wait for DOM to be ready
   function onReady(fn) {
