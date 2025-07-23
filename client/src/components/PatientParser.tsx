@@ -185,7 +185,12 @@ export function PatientParser() {
       
       // Set it as the selected file and process
       setSelectedFile(file);
-      await parseFileUpload(file);
+      setParseResult(null);
+      setExtractedData(null);
+      setCreatedPatient(null);
+      
+      // Automatically parse the file using the same function as regular uploads
+      await parsePatientInfoFromFile(file);
     } catch (error) {
       console.error('Error processing photo:', error);
       toast({
@@ -246,6 +251,7 @@ export function PatientParser() {
         setUploadedPhotos(data.photos);
         setShowQrCode(false);
         
+        // Process first photo automatically
         if (data.photos[0]) {
           await processPhotoAsFile(data.photos[0]);
         }
