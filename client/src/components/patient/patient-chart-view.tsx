@@ -458,26 +458,29 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
         data-median-app="true"
       />
 
-      {/* Main Content - Hidden on mobile */}
-      {!isMedianMobile && (
+      {/* Mobile menu toggle button - always visible on mobile when in patient chart view */}
+      {isMedianMobile && isPatientChartView && !mobileSidebarOpen && (
+        <div className="fixed top-4 left-4 z-30">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-2 bg-white shadow-md"
+            onClick={() => setMobileSidebarOpen(true)}
+            data-median="mobile-menu-toggle"
+            data-median-app="true"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
+
+      {/* Main Content - Hidden on mobile when in patient chart view */}
+      {!(isMedianMobile && isPatientChartView) && (
         <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content" data-median-app="true">
           <div className="max-w-full">
           {/* MEDIAN TAG: Header section needs mobile-friendly styling (stacked layout, smaller buttons) */}
           <div className="flex items-center justify-between mb-4" data-median="patient-chart-header" data-median-app="true">
             <div className="flex items-center gap-3" data-median="patient-info-block">
-              {/* MEDIAN TAG: Mobile menu toggle button - only visible on mobile */}
-              {isMedianMobile && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-2"
-                  onClick={() => setMobileSidebarOpen(true)}
-                  data-median="mobile-menu-toggle"
-                  data-median-app="true"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              )}
               <div>
                 <h1 className="patient-title font-bold text-gray-900" data-median="patient-name">
                   {patient.firstName} {patient.lastName}
