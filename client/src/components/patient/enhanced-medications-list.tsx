@@ -3,7 +3,7 @@
  * Mirrors the medical problems list architecture for consistency
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -270,8 +270,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const [editingMedication, setEditingMedication] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<any>(null);
-  const [intelligentGroups, setIntelligentGroups] = useState<any[]>([]);
-  const [isLoadingIntelligentGroups, setIsLoadingIntelligentGroups] = useState(false);
+  // Removed state variables - will use React Query instead
   const { toast } = useToast();
   const { isDenseView } = useDenseView();
   
@@ -846,36 +845,35 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       ]
     : ((medicationData as MedicationResponse)?.groupedByStatus?.[activeStatusTab] || []);
 
-  // Fetch intelligent grouping when medications change and mode is medical_problem
-  useEffect(() => {
-    const fetchIntelligentGroups = async () => {
-      if (groupingMode === 'medical_problem' && currentMedications.length > 0) {
-        setIsLoadingIntelligentGroups(true);
-        try {
-          const response = await apiRequest('POST', `/api/patients/${patientId}/medications-enhanced/intelligent-grouping`, {
-            medications: currentMedications.map(med => ({
-              id: med.id,
-              medicationName: med.medicationName,
-              clinicalIndication: med.clinicalIndication,
-              dosage: med.dosage,
-              route: med.route
-            }))
-          });
-          const result = await response.json();
-          if (result.success) {
-            setIntelligentGroups(result.groups);
-          }
-        } catch (error) {
-          console.error('Failed to fetch intelligent groups:', error);
-          // Fall back to default grouping on error
-        } finally {
-          setIsLoadingIntelligentGroups(false);
-        }
-      }
-    };
+  // Create a stable key for React Query based on medication IDs
+  const medicationIds = currentMedications.map(m => m.id).sort().join(',');
 
-    fetchIntelligentGroups();
-  }, [currentMedications, groupingMode, patientId]);
+  // Use React Query for intelligent grouping with proper caching
+  const { data: intelligentGroupsData, isLoading: isLoadingIntelligentGroups } = useQuery({
+    queryKey: ['intelligent-grouping', patientId, medicationIds, groupingMode],
+    queryFn: async () => {
+      if (groupingMode !== 'medical_problem' || currentMedications.length === 0) {
+        return { groups: [] };
+      }
+
+      const response = await apiRequest('POST', `/api/patients/${patientId}/medications-enhanced/intelligent-grouping`, {
+        medications: currentMedications.map(med => ({
+          id: med.id,
+          medicationName: med.medicationName,
+          clinicalIndication: med.clinicalIndication,
+          dosage: med.dosage,
+          route: med.route
+        }))
+      });
+      const result = await response.json();
+      return result.success ? result : { groups: [] };
+    },
+    enabled: groupingMode === 'medical_problem' && currentMedications.length > 0,
+    staleTime: 30000, // Cache for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes (formerly cacheTime)
+  });
+
+  const intelligentGroups = intelligentGroupsData?.groups || [];
 
   // Group medications based on grouping mode
   const groupedMedications = groupingMode === 'alphabetical' 

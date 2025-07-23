@@ -16,6 +16,15 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 23, 2025)
 
+### Fixed Medication Intelligent Grouping Infinite Loop
+Resolved critical issue where medications were flashing and disappearing due to infinite API calls:
+
+1. **Replaced useEffect with React Query** - Removed problematic useEffect that was causing infinite loops
+2. **Added Proper Caching** - Implemented 30-second stale time and 5-minute cache time for grouping results
+3. **Stable Query Keys** - Created stable medication ID keys to prevent unnecessary refetches
+4. **Maintained Polling** - Preserved 2-second medication polling without triggering grouping API calls
+5. **Fixed State Management** - Removed useState for intelligent groups in favor of React Query data
+
 ### Enhanced Patient Parser Logging
 Added comprehensive logging and validation to diagnose and fix "Invalid MIME type" errors when parsing patient information from images:
 
