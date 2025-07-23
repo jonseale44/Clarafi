@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Save,
   AlertTriangle,
+  Menu,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -168,6 +169,15 @@ export function EncounterDetailView({
   const { data: currentUser } = useQuery({
     queryKey: ["/api/user"],
   }) as { data?: { id?: number; role?: string } };
+  
+  // MEDIAN: Check if running in Median mobile app
+  // Also fallback to screen size detection if window.isMedianMobile is not set
+  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen);
+  
+  // MEDIAN: Encounter view should default to closed sidebar on mobile
+  const isPatientChartView = false; // This is encounter view, not patient chart view
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // Always start closed in encounter view
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">(
@@ -3803,6 +3813,16 @@ Please provide medical suggestions based on this complete conversation context.`
   return (
     <div className="flex h-full">
       {/* Left Chart Panel - Unified Expandable */}
+      {/* MEDIAN: Mobile overlay backdrop when sidebar is open */}
+      {isMedianMobile && mobileSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setMobileSidebarOpen(false)}
+          data-median="mobile-sidebar-overlay"
+          data-median-app="true"
+        />
+      )}
+      
       <UnifiedChartPanel
         patient={patient}
         config={{
@@ -3818,6 +3838,12 @@ Please provide medical suggestions based on this complete conversation context.`
         onBackToChart={onBackToChart}
         isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
         medicalProblemsProgress={medicalProblemsProgress}
+        isMedianMobile={isMedianMobile}
+        isOpen={isMedianMobile ? mobileSidebarOpen : undefined}
+        onOpenChange={isMedianMobile ? setMobileSidebarOpen : undefined}
+        isPatientChartView={isPatientChartView}
+        mobileSidebarOpen={mobileSidebarOpen}
+        onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
       />
 
       {/* Main Content */}
@@ -3825,7 +3851,22 @@ Please provide medical suggestions based on this complete conversation context.`
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Provider Documentation</h1>
+            <div className="flex items-center gap-2">
+              {/* MEDIAN: Mobile menu toggle - only show in Median app */}
+              {isMedianMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileSidebarOpen(true)}
+                  className="p-2"
+                  data-median="mobile-menu-toggle"
+                  data-median-app="true"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              )}
+              <h1 className="text-xl font-semibold">Provider Documentation</h1>
+            </div>
             <div className="text-sm text-gray-600">
               Encounter ID: {encounterId}
             </div>

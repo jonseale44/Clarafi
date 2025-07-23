@@ -91,6 +91,17 @@ The OCR processing happens automatically through the existing document analysis 
 - GPT-4 Vision extracts text, generates titles, and classifies document types
 - Results are stored in the `attachmentExtractedContent` table
 
+### Mobile Optimization for Encounter View in Median Native App
+Implemented mobile-specific behaviors for encounter-detail-view component:
+
+1. **Mobile Detection** - Added isMedianMobile detection with fallback to screen width (≤768px)
+2. **Default Closed Sidebar** - Encounter view starts with sidebar closed for provider documentation focus
+3. **Mobile Menu Toggle** - Added menu button in header that only appears in Median app
+4. **Mobile Overlay** - Added dark overlay backdrop when sidebar is open on mobile
+5. **State Management** - Added mobileSidebarOpen state to control sidebar visibility
+6. **Props Propagation** - All mobile-specific props passed to UnifiedChartPanel
+7. **Consistent Architecture** - Same mobile detection and state pattern as patient-chart-view
+
 ## Project Architecture
 
 ### Frontend (React + TypeScript)

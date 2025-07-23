@@ -288,3 +288,28 @@ If the mobile sidebar isn't working:
 2. Verify data-median attributes are rendering in the DOM
 3. Check browser console for any JavaScript errors
 4. Ensure CSS specificity is sufficient
+
+## Implementation Status
+
+### ✅ Patient Chart View (patient-chart-view.tsx)
+- Mobile detection with fallback to screen width (≤768px)
+- Sidebar opens by default (full-width 100vw) on mobile
+- New Encounter button relocated to sidebar encounters section
+- Mobile menu toggle button conditionally rendered
+- Overlay backdrop when sidebar is open
+- All mobile props passed to UnifiedChartPanel
+
+### ✅ Encounter View (encounter-detail-view.tsx)
+- Mobile detection with fallback to screen width (≤768px)
+- Sidebar closed by default (slide-over behavior)
+- Mobile menu toggle button in header (only shows in Median app)
+- Overlay backdrop when sidebar is open
+- All mobile props passed to UnifiedChartPanel
+- Provider documentation focused by default
+
+### ✅ UnifiedChartPanel (unified-chart-panel.tsx)
+- Accepts all mobile-specific props
+- Handles isOpen/onOpenChange for controlled state
+- Mobile close button in header
+- Conditional styling based on isPatientChartView
+- Auto-close on section selection (encounter view only)
