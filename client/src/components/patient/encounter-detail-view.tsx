@@ -3875,7 +3875,7 @@ Please provide medical suggestions based on this complete conversation context.`
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* MEDIAN: Mobile menu toggle - only show in Median app */}
-              {isMedianMobile && (
+              {isMedianMobile ? (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -3883,18 +3883,15 @@ Please provide medical suggestions based on this complete conversation context.`
                     console.log('🔍 [MEDIAN DEBUG] Menu toggle clicked, opening sidebar');
                     setMobileSidebarOpen(true);
                   }}
-                  className="p-2"
+                  className="p-2 bg-blue-500 text-white"
                   data-median="mobile-menu-toggle"
                   data-median-app="true"
+                  style={{ display: 'block', visibility: 'visible' }}
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-              )}
-              {/* Debug: Log why menu button is not showing */}
-              {!isMedianMobile && (
-                <span style={{ display: 'none' }}>
-                  {console.log('🔍 [MEDIAN DEBUG] Menu button hidden because isMedianMobile =', isMedianMobile)}
-                </span>
+              ) : (
+                <span>No Mobile Menu</span>
               )}
               <h1 className="text-xl font-semibold">Provider Documentation</h1>
             </div>
