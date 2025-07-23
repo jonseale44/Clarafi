@@ -26,6 +26,10 @@ These tags allow you to:
 - Clear context button in navigation breadcrumb
 - Chevron icon in user profile menu
 - Weight card in quick stats
+- Scheduling and Blog navigation tabs in dashboard
+- All admin navigation items (Admin Prompts, Admin Users, Subscription Config, etc.)
+- Practice Migration link for both admin and provider roles
+- "Create Patient" button text (keeping icon only on mobile)
 
 #### `data-median="mobile-hide-column"`
 **Usage**: Hide specific table columns on mobile
@@ -48,6 +52,15 @@ These tags allow you to:
 #### Header Components
 - `data-median="header-desktop-layout"` - Main header container
 - `data-median="mobile-notification-icon"` - Notification bell icon
+- `data-median="mobile-header-wrapper"` - Top navigation bar wrapper in dashboard
+- `data-median="mobile-header-content"` - Header content flex container
+- `data-median="mobile-nav-container"` - Navigation container with brand and tabs
+- `data-median="mobile-brand"` - Brand logo and text container
+- `data-median="mobile-brand-text"` - CLARAFI brand text
+- `data-median="mobile-scrollable-nav"` - Navigation that should be horizontally scrollable on mobile
+- `data-median="mobile-header-actions"` - Right side actions container (Create Patient, User Menu)
+- `data-median="mobile-compact-button"` - Compact button style for mobile
+- `data-median="mobile-user-menu"` - User profile menu wrapper
 
 #### User Profile
 - `data-median="mobile-compact-profile"` - User profile button
@@ -107,6 +120,25 @@ To apply mobile-specific styles or behavior in your Median app configuration:
 /* Make tables responsive */
 [data-median="mobile-patient-table"] table {
     font-size: 0.875rem;
+}
+
+/* Mobile header responsive styles */
+[data-median="mobile-header-wrapper"] {
+    padding: 0.5rem !important;
+}
+
+[data-median="mobile-nav-container"] {
+    gap: 0.5rem !important;
+}
+
+[data-median="mobile-scrollable-nav"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Icon-only button on mobile */
+[data-median="mobile-compact-button"] span {
+    display: none !important;
 }
 
 /* Adjust vital cards layout */

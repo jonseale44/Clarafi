@@ -238,21 +238,21 @@ export default function Dashboard() {
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-white border-b border-gray-200 px-6 py-3" data-median="mobile-header-wrapper">
+        <div className="flex items-center justify-between" data-median="mobile-header-content">
           {/* Left side - Brand and Navigation */}
-          <div className="flex items-center space-x-8">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-8" data-median="mobile-nav-container">
+            <div className="flex items-center space-x-3" data-median="mobile-brand">
               <div className="w-8 h-8 bg-navy-blue rounded-lg flex items-center justify-center">
                 <span className="text-gold font-bold text-sm">C</span>
               </div>
-              <span className="font-bold text-xl">
+              <span className="font-bold text-xl" data-median="mobile-brand-text">
                 <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
               </span>
             </div>
             
             {/* Main Navigation */}
-            <nav className="flex items-center space-x-6" data-median="mobile-dashboard-tabs">
+            <nav className="flex items-center space-x-6" data-median="mobile-dashboard-tabs mobile-scrollable-nav">
               <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -283,12 +283,12 @@ export default function Dashboard() {
               >
                 Encounters
               </button>
-              <Link href="/scheduling">
+              <Link href="/scheduling" data-median="hide-on-mobile-app">
                 <button className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                   Scheduling
                 </button>
               </Link>
-              <Link href="/blog">
+              <Link href="/blog" data-median="hide-on-mobile-app">
                 <button className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                   Blog
                 </button>
@@ -296,7 +296,7 @@ export default function Dashboard() {
               {/* Admin-only navigation items */}
               {currentUser?.role === 'admin' && (
                 <>
-                  <Link href="/admin/prompts">
+                  <Link href="/admin/prompts" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -305,7 +305,7 @@ export default function Dashboard() {
                       Admin Prompts
                     </button>
                   </Link>
-                  <Link href="/admin/users">
+                  <Link href="/admin/users" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -314,7 +314,7 @@ export default function Dashboard() {
                       Admin Users
                     </button>
                   </Link>
-                  <Link href="/admin/subscription-config">
+                  <Link href="/admin/subscription-config" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -323,7 +323,7 @@ export default function Dashboard() {
                       Subscription Config
                     </button>
                   </Link>
-                  <Link href="/admin/health-system-upgrade">
+                  <Link href="/admin/health-system-upgrade" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -332,7 +332,7 @@ export default function Dashboard() {
                       🚀 Test Upgrade
                     </button>
                   </Link>
-                  <Link href="/admin/subscription-keys">
+                  <Link href="/admin/subscription-keys" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -341,7 +341,7 @@ export default function Dashboard() {
                       Subscription Keys
                     </button>
                   </Link>
-                  <Link href="/admin/clinic-import">
+                  <Link href="/admin/clinic-import" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -350,7 +350,7 @@ export default function Dashboard() {
                       Clinic Import
                     </button>
                   </Link>
-                  <Link href="/admin/verification-review">
+                  <Link href="/admin/verification-review" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -359,7 +359,7 @@ export default function Dashboard() {
                       🔍 Verification Review
                     </button>
                   </Link>
-                  <Link href="/practice-migration">
+                  <Link href="/practice-migration" data-median="hide-on-mobile-app">
                     <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       false // Admin pages don't have active state in dashboard
                         ? "bg-primary text-white" 
@@ -373,7 +373,7 @@ export default function Dashboard() {
               
               {/* Practice Migration for providers */}
               {currentUser?.role === 'provider' && (
-                <Link href="/practice-migration">
+                <Link href="/practice-migration" data-median="hide-on-mobile-app">
                   <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     false
                       ? "bg-primary text-white" 
@@ -389,14 +389,16 @@ export default function Dashboard() {
           </div>
           
           {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4" data-median="mobile-header-actions">
             <Link href="/patients/create">
-              <Button className="flex items-center gap-2" size="sm">
+              <Button className="flex items-center gap-2" size="sm" data-median="mobile-compact-button">
                 <UserPlus className="h-4 w-4" />
-                Create Patient
+                <span data-median="hide-on-mobile-app">Create Patient</span>
               </Button>
             </Link>
-            <UserProfileMenu />
+            <div data-median="mobile-user-menu">
+              <UserProfileMenu />
+            </div>
           </div>
         </div>
       </div>
