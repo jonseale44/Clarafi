@@ -30,8 +30,11 @@ import {
   Search,
   X,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Camera,
+  QrCode
 } from "lucide-react";
+import QRCode from 'qrcode';
 import { formatDistanceToNow } from "date-fns";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -342,6 +345,12 @@ export function PatientAttachments({
 
   const [showUploadForm, setShowUploadForm] = useState(false);
   
+  // Photo capture states (QR code functionality)
+  const [photoCaptureSession, setPhotoCaptureSession] = useState<string | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [isQrLoading, setIsQrLoading] = useState(false);
+  const sessionPollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
@@ -573,6 +582,151 @@ export function PatientAttachments({
     setIsConfidential(false);
     setUploadMode('single');
     setShowUploadForm(false);
+    // Also clear photo capture session
+    setPhotoCaptureSession(null);
+    setQrCodeDataUrl('');
+    if (sessionPollIntervalRef.current) {
+      clearInterval(sessionPollIntervalRef.current);
+    }
+  };
+  
+  // Photo capture functions (QR code functionality)
+  const startPhotoCapture = async () => {
+    setIsQrLoading(true);
+    try {
+      // Create a photo capture session
+      const response = await fetch('/api/photo-capture/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      
+      if (!response.ok) throw new Error('Failed to create photo capture session');
+      
+      const data = await response.json();
+      const sessionId = data.sessionId;
+      const captureUrl = data.captureUrl;
+      
+      // Generate QR code
+      const qrDataUrl = await QRCode.toDataURL(captureUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      setPhotoCaptureSession(sessionId);
+      setQrCodeDataUrl(qrDataUrl);
+      
+      // Start polling for photos
+      pollForPhotos(sessionId);
+      
+      // For Median mobile app, check if we can use native camera
+      if ((window as any).Median?.isMobileApp) {
+        (window as any).Median.camera.takePicture({
+          maxWidth: 3000,
+          maxHeight: 3000,
+          quality: 85,
+          allowEdit: false,
+          saveToPhotoAlbum: false
+        });
+      }
+    } catch (error) {
+      console.error('Error starting photo capture:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start photo capture session",
+        variant: "destructive"
+      });
+    } finally {
+      setIsQrLoading(false);
+    }
+  };
+  
+  const pollForPhotos = (sessionId: string) => {
+    sessionPollIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/photo-capture/sessions/${sessionId}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        console.log("📸 [PatientAttachments] Session poll response:", data);
+        
+        // Check if photos have been uploaded but session not yet completed
+        if (data.photoCount > 0 && data.status === 'active') {
+          // Stop polling
+          if (sessionPollIntervalRef.current) {
+            clearInterval(sessionPollIntervalRef.current);
+          }
+          
+          // Complete the session to get photo URLs
+          const completeResponse = await fetch(`/api/photo-capture/sessions/${sessionId}/complete`, {
+            method: 'POST'
+          });
+          
+          if (completeResponse.ok) {
+            const completeData = await completeResponse.json();
+            console.log("📸 [PatientAttachments] Session completion response:", completeData);
+            
+            if (completeData.photos?.length > 0) {
+              // Process photos with automatic OCR
+              await processPhotosAsAttachments(completeData.photos);
+              
+              // Clear the QR code and session after successful capture
+              setPhotoCaptureSession(null);
+              setQrCodeDataUrl('');
+              
+              toast({
+                title: "Photos received",
+                description: `${completeData.photos.length} photo(s) captured and processing...`
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling for photos:', error);
+      }
+    }, 2000); // Poll every 2 seconds
+  };
+  
+  const processPhotosAsAttachments = async (photos: Array<{ url: string; filename: string }>) => {
+    try {
+      // Process each photo as an attachment
+      for (const photo of photos) {
+        console.log("📸 [PatientAttachments] Processing photo:", photo);
+        
+        // Fetch the photo from the URL
+        const response = await fetch(photo.url);
+        const blob = await response.blob();
+        
+        // Create file from blob - use a safer approach for TypeScript
+        const file = new (window.File || (window as any).File)([blob], photo.filename, { 
+          type: blob.type || 'image/jpeg' 
+        }) as File;
+        
+        // Create FormData for upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', `Photo captured - ${new Date().toLocaleString()}`);
+        formData.append('description', 'Photo captured via mobile device');
+        formData.append('isConfidential', 'false');
+        if (encounterId) {
+          formData.append('encounterId', encounterId.toString());
+        }
+        
+        // Upload the photo as an attachment (OCR will happen automatically)
+        await uploadMutation.mutateAsync(formData);
+      }
+    } catch (error) {
+      console.error('Error processing photos as attachments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process captured photos",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -783,7 +937,7 @@ export function PatientAttachments({
       {!isReadOnly && (
         <Card data-median="attachments-upload-card">
           <CardContent className="pt-6">
-            {!showUploadForm ? (
+            {!showUploadForm && !photoCaptureSession ? (
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
                   isDragOver 
@@ -803,19 +957,66 @@ export function PatientAttachments({
                   id="file-upload"
                   multiple
                 />
-                <div className="space-y-2">
-                  <Upload className={`h-10 w-10 mx-auto ${
-                    isDragOver ? 'text-navy-blue-500' : 'text-gray-400'
-                  }`} />
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Click to upload</span> or drag and drop
-                    <br />
-                    PDF, Images, Documents (up to 100MB each)
-                    <br />
-                    <span className="text-xs text-navy-blue-600 dark:text-navy-blue-400">
-                      Select multiple files for bulk upload
-                    </span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Upload className={`h-10 w-10 mx-auto ${
+                      isDragOver ? 'text-navy-blue-500' : 'text-gray-400'
+                    }`} />
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Click to upload</span> or drag and drop
+                      <br />
+                      PDF, Images, Documents (up to 100MB each)
+                      <br />
+                      <span className="text-xs text-navy-blue-600 dark:text-navy-blue-400">
+                        Select multiple files for bulk upload
+                      </span>
+                    </div>
                   </div>
+                  
+                  <div className="flex items-center justify-center">
+                    <div className="text-xs text-gray-500">or</div>
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={startPhotoCapture}
+                    disabled={isQrLoading}
+                    className="w-full"
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Capture Photo with Mobile Device
+                  </Button>
+                </div>
+              </div>
+            ) : photoCaptureSession && qrCodeDataUrl ? (
+              // Photo capture QR code display
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Scan QR Code with Mobile Device</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Use your phone camera to scan this code and capture photos
+                  </p>
+                  <div className="flex justify-center mb-4">
+                    <div className="p-4 bg-white rounded-lg shadow-md">
+                      <img 
+                        src={qrCodeDataUrl} 
+                        alt="QR Code for photo capture"
+                        className="w-64 h-64"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Waiting for photos...</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={resetUploadForm}
+                    className="mt-4"
+                  >
+                    Cancel
+                  </Button>
                 </div>
               </div>
             ) : (

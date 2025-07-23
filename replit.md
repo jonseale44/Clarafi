@@ -32,6 +32,21 @@ Added comprehensive logging and validation to diagnose and fix "Invalid MIME typ
 - Served with proper MIME types via Express static middleware
 - Client fetches photos and converts to base64 before sending to patient parser
 
+### QR Code Photo Capture in Patient Attachments
+Replicated the QR code photo capture functionality from PatientParser to the patient attachments section:
+
+1. **Added Photo Capture States** - Session management, QR code display, and polling logic
+2. **QR Code Generation** - Creates scannable QR codes for mobile photo capture
+3. **Session Polling** - Polls for uploaded photos every 2 seconds
+4. **Automatic OCR Processing** - Photos are automatically processed with GPT-4 Vision when uploaded
+5. **UI Integration** - Added "Capture Photo with Mobile Device" button alongside traditional upload
+6. **Error Handling** - Comprehensive error messages and cleanup on failure
+
+The OCR processing happens automatically through the existing document analysis pipeline:
+- Files uploaded as attachments are queued for processing
+- GPT-4 Vision extracts text, generates titles, and classifies document types
+- Results are stored in the `attachmentExtractedContent` table
+
 ## Project Architecture
 
 ### Frontend (React + TypeScript)
