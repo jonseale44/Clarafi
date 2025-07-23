@@ -160,28 +160,44 @@ export function PatientParser() {
         if (!response.ok) return;
         
         const data = await response.json();
-        if (data.status === 'completed' && data.photos?.length > 0) {
+        console.log("📸 [PatientParser] Session poll response:", data);
+        
+        // Check if photos have been uploaded but session not yet completed
+        if (data.photoCount > 0 && data.status === 'active') {
           // Stop polling
           if (sessionPollIntervalRef.current) {
             clearInterval(sessionPollIntervalRef.current);
           }
           
-          // Process photos
-          setUploadedPhotos(data.photos);
-          
-          // Clear the QR code and session after successful capture
-          setPhotoCaptureSession(null);
-          setQrCodeDataUrl('');
-          
-          // Process first photo automatically
-          if (data.photos[0]) {
-            await processPhotoAsFile(data.photos[0]);
-          }
-          
-          toast({
-            title: "Photos received",
-            description: `${data.photos.length} photo(s) captured successfully`
+          // Complete the session to get photo URLs
+          const completeResponse = await fetch(`/api/photo-capture/sessions/${sessionId}/complete`, {
+            method: 'POST'
           });
+          
+          if (completeResponse.ok) {
+            const completeData = await completeResponse.json();
+            console.log("📸 [PatientParser] Session completion response:", completeData);
+            
+            if (completeData.photos?.length > 0) {
+              // Process photos with URLs
+              setUploadedPhotos(completeData.photos);
+              
+              // Clear the QR code and session after successful capture
+              setPhotoCaptureSession(null);
+              setQrCodeDataUrl('');
+              
+              // Process first photo automatically
+              if (completeData.photos[0]) {
+                console.log("📸 [PatientParser] First photo to process:", completeData.photos[0]);
+                await processPhotoAsFile(completeData.photos[0]);
+              }
+              
+              toast({
+                title: "Photos received",
+                description: `${completeData.photos.length} photo(s) captured successfully`
+              });
+            }
+          }
         }
       } catch (error) {
         console.error('Error polling for photos:', error);
