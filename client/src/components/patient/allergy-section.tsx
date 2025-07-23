@@ -272,9 +272,13 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
     
     switch (sourceType) {
       case 'attachment_extracted': {
+        // Check visit history for attachment ID if not directly available
+        const attachmentId = allergy.extractedFromAttachmentId || 
+          allergy.visitHistory?.find(visit => visit.source === 'attachment' && visit.attachmentId)?.attachmentId;
+        
         const handleDocumentClick = () => {
-          if (allergy.extractedFromAttachmentId) {
-            console.log("Navigate to attachment:", allergy.extractedFromAttachmentId);
+          if (attachmentId) {
+            console.log("Navigate to attachment:", attachmentId);
             // When in encounter mode, stay within the encounter context
             if (mode === 'encounter' && location.includes('/encounters/')) {
               // Extract encounter ID from current location
@@ -283,23 +287,24 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
               if (encounterMatch) {
                 const currentEncounterId = encounterMatch[1];
                 // Navigate within the encounter context
-                setLocation(`/patients/${patientId}/encounters/${currentEncounterId}?section=attachments&highlight=${allergy.extractedFromAttachmentId}`);
+                setLocation(`/patients/${patientId}/encounters/${currentEncounterId}?section=attachments&highlight=${attachmentId}`);
               } else {
                 // Fallback to regular navigation if we can't extract encounter ID
-                navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
+                navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "allergies", mode || "patient-chart");
               }
             } else {
               // Regular navigation for patient chart mode
-              navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${allergy.extractedFromAttachmentId}`, "allergies", mode || "patient-chart");
+              navigateWithContext(`/patients/${patientId}/chart?section=attachments&highlight=${attachmentId}`, "allergies", mode || "patient-chart");
             }
           }
         };
+        
         return (
           <Badge 
             variant="secondary" 
-            className="text-xs cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors bg-amber-100 text-amber-800 border-amber-200"
-            onClick={handleDocumentClick}
-            title={`Click to view source document (Attachment #${allergy.extractedFromAttachmentId})`}
+            className={`text-xs bg-amber-100 text-amber-800 border-amber-200 ${attachmentId ? 'cursor-pointer hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors' : ''}`}
+            onClick={attachmentId ? handleDocumentClick : undefined}
+            title={attachmentId ? `Click to view source document (Attachment #${attachmentId})` : 'Source document not available'}
           >
             MR {confidencePercent}%
           </Badge>
