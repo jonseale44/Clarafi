@@ -1,0 +1,36 @@
+Certainly! You want to collaborate with the Replit Agent to diagnose and cure the source of the database/table sync/migration problem during deployment. Here’s what you should copy-paste for your agent:
+
+Diagnostic & Solution Request for Replit Agent
+Hi Agent,
+
+I'm trying to deploy my app and encountering issues where Replit's deployment system thinks tables like marketing_automations, marketing_campaigns, marketing_insights, marketing_metrics, conversion_events, and user_acquisition are absent and prompts to create them, even though I see them in my production database using psql. The same applies to new columns on the users table (baa_accepted, etc.).
+
+What I Need
+I want to diagnose and solve the root of this table sync/migration drift problem.
+Please do not just auto-create tables—I want to understand why Replit's migration system is out of sync with my checked (psql) working database.
+Context
+The tables exist and are present in my schema file.
+My migrations may have run in production, but Replit's dev/preview environment keeps seeing the tables and columns as "missing".
+All affected tables and column names match—no renames.
+This causes failed deployments and warnings on each push.
+Specific Questions/Actions:
+What database URL does the Replit deploy preview use?
+
+Is it different from my psql/production DB?
+How can I view/change/confirm which DB is being migrated against?
+How does Replit determine which migrations to run or not run?
+
+Is there a migration history table or state file that controls this?
+How can I safely synchronize the Replit dev/preview DB to match my production DB schema?
+
+Should I re-apply all migrations, reset the dev DB, or import schema from production?
+Is there a clean way to do this without data loss?
+If there’s an init/reseed workflow, please describe it.
+How can I ensure future schema changes (in Drizzle/Prisma or SQL) are applied in both Replit and production, so this doesn’t happen again?
+
+Is there anything I can automate or a best practice I should follow?
+If you want to suggest a fix, please be explicit and list out the exact steps or commands.
+
+(For example: “Set DATABASE_URL to ___”, or “Run drizzle-kit push --force”, etc.)
+
+In short: Please help me find and fix the underlying mismatch so that deployments and migrations work cleanly and reliably on both my dev (Replit) and production environments.
