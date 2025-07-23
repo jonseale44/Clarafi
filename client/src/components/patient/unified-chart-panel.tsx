@@ -39,6 +39,8 @@ interface UnifiedChartPanelProps {
   medicalProblemsProgress?: number;
   onSectionChange?: (sectionId: string) => void;
   activeSection?: string;
+  mobileSidebarOpen?: boolean; // MEDIAN: Mobile sidebar visibility state
+  onCloseMobileSidebar?: () => void; // MEDIAN: Function to close mobile sidebar
 }
 
 
@@ -53,7 +55,9 @@ export function UnifiedChartPanel({
   isAutoGeneratingMedicalProblems = false,
   medicalProblemsProgress = 0,
   onSectionChange,
-  activeSection
+  activeSection,
+  mobileSidebarOpen = false,
+  onCloseMobileSidebar
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
   
@@ -283,13 +287,18 @@ export function UnifiedChartPanel({
         maxWidth: panelState.isExpanded ? '90vw' : '50vw'
       }}
       data-median="unified-chart-panel"
+      data-median-app="true"
+      /* MEDIAN TAG: This is the main sidebar container that will slide in/out on mobile */
     >
       {/* Resize Handle */}
+      {/* MEDIAN TAG: Hide resize handle on mobile */}
       {config.allowResize && (
         <div
           className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-navy-blue-400 bg-gray-200 transition-colors group z-20"
           onMouseDown={handleMouseDown}
           title="Drag to resize panel"
+          data-median="panel-resize-handle"
+          data-median-app="true"
         >
           <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity">
             <GripVertical className="h-4 w-4 text-gray-600" />
@@ -346,6 +355,19 @@ export function UnifiedChartPanel({
 
           {/* Panel Controls */}
           <div className="flex items-center space-x-1 flex-shrink-0">
+            {/* MEDIAN TAG: Mobile close button - only visible on mobile when sidebar is open */}
+            {onCloseMobileSidebar && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onCloseMobileSidebar}
+                className="h-8 w-8 p-0"
+                data-median="mobile-sidebar-close"
+                data-median-app="true"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             {panelState.isExpanded && (
               <Button
                 variant="ghost"

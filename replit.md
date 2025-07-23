@@ -16,6 +16,25 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 23, 2025)
 
+### Mobile Optimization for Median Native App (PatientChartView)
+Implemented comprehensive mobile optimizations for the PatientChartView component to work seamlessly in the Median native app:
+
+1. **Added Data-Median Attributes** - Tagged all key UI elements with `data-median` attributes for CSS/JS targeting
+2. **Mobile Sidebar State** - Added `mobileSidebarOpen` state and toggle functionality
+3. **Slide-Over Sidebar** - UnifiedChartPanel transforms into slide-over panel on mobile (85vw width, max 350px)
+4. **Mobile Menu Toggle** - Added hamburger menu button that only appears in Median app
+5. **Touch Optimizations** - Minimum 44px touch targets, swipe-to-close gesture support
+6. **Responsive Layout** - Header elements stack on mobile, full-width buttons on small screens
+7. **Web Overrides Created** - Comprehensive CSS and JS overrides documented in `median-web-overrides.md`
+
+Key implementation details:
+- Sidebar slides in from left with smooth animation
+- Overlay backdrop prevents interaction with main content
+- Close button added to sidebar header for mobile
+- Selecting a chart section auto-closes sidebar on mobile
+- Body scroll locked when sidebar is open
+- Swipe left gesture closes sidebar
+
 ### Fixed Allergy Source Badge Linking Issue  
 Resolved issue where allergy badges from attachments weren't linking to source documents:
 
