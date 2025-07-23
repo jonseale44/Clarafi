@@ -84,7 +84,21 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   const [currentEncounterId, setCurrentEncounterId] = useState<number | null>(null);
   const [showEncounterDetail, setShowEncounterDetail] = useState(false);
   // MEDIAN: Check if running in Median mobile app
-  const isMedianMobile = typeof window !== 'undefined' && (window as any).isMedianMobile === true;
+  // Also fallback to screen size detection if window.isMedianMobile is not set
+  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen);
+  
+  // Debug logging for Median mobile detection
+  useEffect(() => {
+    console.log('📱 [Median Mobile Detection]', {
+      windowExists: typeof window !== 'undefined',
+      isMedianMobile: (window as any).isMedianMobile,
+      detectedAsMobile: isMedianMobile,
+      userAgent: navigator.userAgent,
+      screenWidth: window.innerWidth,
+      pathname: location.pathname
+    });
+  }, []);
   
   // MEDIAN: Different default states for patient chart vs encounter view
   const isPatientChartView = location.pathname.includes('/chart');
