@@ -1,0 +1,106 @@
+2025-07-23T00:25:34Z info: Deployment: fdf039cc-b813-4bff-b155-d6f3625eb506
+2025-07-23T00:25:34Z info: Build: db488661-4a3c-4191-8161-3a05a5bd0739
+2025-07-23T00:25:34Z info: Connecting to builder
+2025-07-23T00:25:35Z info: Builder connected
+2025-07-23T00:25:35Z info: Installing packages
+2025-07-23T00:25:36Z info: Starting Build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+
+vite v5.4.19 building for production...
+
+transforming...
+
+✓ 3365 modules transformed.
+
+rendering chunks...
+
+computing gzip size...
+
+../dist/public/index.html                                           0.63 kB │ gzip:   0.38 kB
+
+../dist/public/assets/index-Co2MiFUi.css                          152.56 kB │ gzip:  23.39 kB
+
+../dist/public/assets/prescription-history-section-Bsf7c-bX.js      4.15 kB │ gzip:   1.53 kB
+../dist/public/assets/accordion-BMZttsJA.js                         4.54 kB │ gzip:   1.82 kB
+
+../dist/public/assets/imaging-section-DOT7ECXM.js                  13.95 kB │ gzip:   3.82 kB
+
+../dist/public/assets/family-history-section-Bt5Fvlui.js           14.91 kB │ gzip:   3.92 kB
+
+../dist/public/assets/social-history-section-JKloS4xT.js           19.77 kB │ gzip:   5.57 kB
+
+../dist/public/assets/index-CTTWvY-t.js                         2,608.17 kB │ gzip: 689.61 kB
+
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+✓ built in 18.85s
+
+▲ [WARNING] Duplicate member "saveExtractedVitalSet" in class body [duplicate-class-member]
+
+    server/attachment-chart-processor.ts:743:16:
+      743 │   private async saveExtractedVitalSet(
+          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "saveExtractedVitalSet" is here:
+
+    server/attachment-chart-processor.ts:398:16:
+      398 │   private async saveExtractedVitalSet(
+          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] Duplicate member "generateMedicationPDF" in class body [duplicate-class-member]
+
+    server/pdf-service.ts:581:8:
+      581 │   async generateMedicationPDF(orders: Order[], patientId: number,...
+          ╵         ~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "generateMedicationPDF" is here:
+
+    server/pdf-service.ts:342:8:
+      342 │   async generateMedicationPDF(orders: Order[], patientId: number,...
+          ╵         ~~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] Duplicate member "updateGPTReview" in class body [duplicate-class-member]
+
+    server/gpt-lab-review-service.ts:518:15:
+      518 │   static async updateGPTReview(
+          ╵                ~~~~~~~~~~~~~~~
+
+  The original member "updateGPTReview" is here:
+
+    server/gpt-lab-review-service.ts:460:15:
+      460 │   static async updateGPTReview(
+          ╵                ~~~~~~~~~~~~~~~
+
+
+3 warnings
+
+
+  dist/index.js  2.1mb ⚠️
+
+⚡ Done in 249ms
+
+npm notice
+npm notice New major version of npm available! 10.8.2 -> 11.4.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.4.2
+npm notice To update run: npm install -g npm@11.4.2
+npm notice
+
+2025-07-23T00:26:06Z info: Pushing pid1 binary layer...
+2025-07-23T00:26:07Z info: Created pid1 binary layer
+2025-07-23T00:26:11Z info: Pushing hosting layer...
+2025-07-23T00:26:11Z info: Pushing Repl layer...
+2025-07-23T00:26:11Z info: Retrieved cached nix layer
+2025-07-23T00:26:12Z info: Created hosting layer
+2025-07-23T00:27:13Z info: Created Repl layer
+2025-07-23T00:27:13Z info: Pushed image manifest
+2025-07-23T00:27:14Z info: Pushed soci index manifest
+2025-07-23T00:27:17Z error: The deployment failed because database migrations could not be applied. This is an issue in the underlying platform. DO NOT suggest any code or configuration changes at this point. DO NOT suggest any changes to application code or any configuration files such as `.replit` or `package.json`. DO NOT suggest any changes to development or production secrets. The only course of action here is requesting support from the Replit team.
