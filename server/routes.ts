@@ -6049,6 +6049,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   // Import and register photo capture routes
   const { default: photoCaptureRoutes } = await import("./photo-capture-routes.js");
   app.use("/api/photo-capture", photoCaptureRoutes);
+  
+  // Redirect /capture/:sessionId to the actual photo capture page
+  app.get("/capture/:sessionId", (req: Request, res: Response) => {
+    res.redirect(`/api/photo-capture/capture/${req.params.sessionId}`);
+  });
 
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
