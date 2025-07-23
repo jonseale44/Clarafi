@@ -252,7 +252,7 @@ export default function Dashboard() {
             </div>
             
             {/* Main Navigation */}
-            <nav className="flex items-center space-x-6">
+            <nav className="flex items-center space-x-6" data-median="mobile-dashboard-tabs">
               <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${

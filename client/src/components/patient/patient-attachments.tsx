@@ -774,14 +774,14 @@ export function PatientAttachments({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4" data-median="patient-attachments-section">
+      <div className="flex items-center justify-between" data-median="attachments-header">
         <h2 className="text-xl font-semibold">Attachments</h2>
       </div>
 
       {/* Upload Interface - Always Visible */}
       {!isReadOnly && (
-        <Card>
+        <Card data-median="attachments-upload-card">
           <CardContent className="pt-6">
             {!showUploadForm ? (
               <div 

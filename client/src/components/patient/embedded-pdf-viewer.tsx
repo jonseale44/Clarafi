@@ -82,13 +82,13 @@ export function EmbeddedPDFViewer({
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader className="flex flex-row items-center justify-between">
+      <Card className="w-full" data-median="embedded-pdf-viewer-card">
+        <CardHeader className="flex flex-row items-center justify-between" data-median="pdf-viewer-header">
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             {title}
             {files.length > 0 && (
-              <Badge variant="secondary">{files.length}</Badge>
+              <Badge variant="secondary" data-median="pdf-count-badge">{files.length}</Badge>
             )}
           </CardTitle>
           <Button

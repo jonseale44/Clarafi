@@ -668,7 +668,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-median="nursing-encounter-view">
       {/* Left Chart Panel - Unified Expandable */}
       <UnifiedChartPanel
         patient={patient}
@@ -686,7 +686,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden" data-median="nursing-main-content">
         {/* Header */}
         <div className="px-8 py-4 border-b border-gray-200 bg-white">
           <div className="flex items-center justify-between">

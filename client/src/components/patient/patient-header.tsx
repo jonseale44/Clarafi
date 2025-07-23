@@ -40,10 +40,10 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
   );
 
   return (
-    <Card className="p-6 mb-6">
+    <Card className="p-6 mb-6" data-median="patient-header-card">
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-6">
-          <Avatar className="w-20 h-20 border-2 border-gray-200">
+          <Avatar className="w-20 h-20 border-2 border-gray-200" data-median="patient-avatar">
             <AvatarImage 
               src={patient.profilePhotoFilename ? `/uploads/${patient.profilePhotoFilename}` : undefined}
               alt={`${patient.firstName} ${patient.lastName}`}
@@ -63,8 +63,8 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
               </Badge>
             </div>
             
-            <div className="grid grid-cols-4 gap-6 text-sm">
-              <div>
+            <div className="grid grid-cols-4 gap-6 text-sm" data-median="patient-info-grid">
+              <div data-median="patient-info-mrn">
                 <p className="text-gray-500">MRN</p>
                 <p className="font-medium">{patient.mrn}</p>
               </div>

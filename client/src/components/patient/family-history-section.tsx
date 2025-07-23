@@ -502,13 +502,13 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
   }
 
   return (
-    <div className={`emr-tight-spacing ${className}`}>
-      <Card>
-        <CardHeader className="emr-card-header-tight">
+    <div className={`emr-tight-spacing ${className}`} data-median="family-history-section">
+      <Card data-median="family-history-card">
+        <CardHeader className="emr-card-header-tight" data-median="family-history-header">
           <div className="flex items-center justify-between">
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="emr-ultra-compact-header">
+                <Button size="sm" className="emr-ultra-compact-header" data-median="add-family-history-button">
                   <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>

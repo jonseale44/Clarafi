@@ -58,9 +58,9 @@ export default function ConversionEvents() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-median="conversion-events">
       {/* Controls */}
-      <div className="flex gap-4">
+      <div className="flex gap-4" data-median="conversion-controls">
         <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -76,7 +76,7 @@ export default function ConversionEvents() {
       </div>
 
       {/* Conversion Funnel */}
-      <Card>
+      <Card data-median="conversion-funnel-card">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Conversion Funnel</h3>
           <div className="space-y-3">

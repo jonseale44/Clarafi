@@ -46,9 +46,9 @@ export default function MarketingMetricsDashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-median="marketing-metrics-dashboard">
       {/* Controls */}
-      <div className="flex gap-4">
+      <div className="flex gap-4" data-median="metrics-controls">
         <Select value={metricType} onValueChange={setMetricType}>
           <SelectTrigger className="w-40">
             <SelectValue />
@@ -62,8 +62,8 @@ export default function MarketingMetricsDashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-median="metrics-summary-grid">
+        <Card data-median="total-visits-card">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>

@@ -116,7 +116,7 @@ export function EncounterSignaturePanel({
 
   if (encounterStatus === 'signed') {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-green-200 bg-green-50" data-median="encounter-signed-status">
         <CardHeader>
           <CardTitle className="flex items-center text-green-800 text-xl font-semibold">
             <CheckCircle className="h-5 w-5 mr-2" />
@@ -166,7 +166,7 @@ export function EncounterSignaturePanel({
   ];
 
   return (
-    <Card className="border-navy-blue-200">
+    <Card className="border-navy-blue-200" data-median="encounter-signature-panel">
       <CardHeader>
         <CardTitle className="flex items-center text-xl font-semibold">
           <PenTool className="h-5 w-5 mr-2" />

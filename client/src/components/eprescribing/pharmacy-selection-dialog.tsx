@@ -322,8 +322,8 @@ export function PharmacySelectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[80vh]" data-median="pharmacy-selection-dialog">
+        <DialogHeader data-median="pharmacy-dialog-header">
           <DialogTitle className="flex items-center gap-2">
             <Store className="h-5 w-5 text-primary" />
             {mode === 'fax' ? 'Select Pharmacy for Fax' : 'Select Pharmacy'}

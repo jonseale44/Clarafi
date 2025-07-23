@@ -71,10 +71,10 @@ export default function AcquisitionTracking() {
     .sort((a, b) => b.users - a.users);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-median="acquisition-tracking">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-median="acquisition-summary-grid">
+        <Card data-median="total-signups-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
@@ -86,7 +86,7 @@ export default function AcquisitionTracking() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card data-median="top-source-card">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>

@@ -282,6 +282,7 @@ export function UnifiedChartPanel({
         minWidth: panelState.isExpanded ? '500px' : '280px',
         maxWidth: panelState.isExpanded ? '90vw' : '50vw'
       }}
+      data-median="unified-chart-panel"
     >
       {/* Resize Handle */}
       {config.allowResize && (

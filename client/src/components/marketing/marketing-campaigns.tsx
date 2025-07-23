@@ -159,9 +159,9 @@ export default function MarketingCampaigns() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-median="marketing-campaigns">
       {/* Controls */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center" data-median="campaigns-controls">
         <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? undefined : v)}>
           <SelectTrigger className="w-48">
             <SelectValue />
@@ -181,13 +181,13 @@ export default function MarketingCampaigns() {
       </div>
 
       {/* Campaigns Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-median="campaigns-grid">
         {stubCampaigns.map((campaign) => {
           const spentPercentage = (campaign.spentAmount / campaign.budget) * 100;
           const roi = calculateROI(campaign.spentAmount, campaign.performanceMetrics.conversions);
 
           return (
-            <Card key={campaign.id}>
+            <Card key={campaign.id} data-median="campaign-card">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>

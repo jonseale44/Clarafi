@@ -413,7 +413,7 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
                         <Edit2 className="h-3 w-3" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
+                    <DialogContent className="max-w-2xl" data-median="edit-allergy-dialog">
                       <DialogHeader>
                         <DialogTitle>Edit Allergy</DialogTitle>
                       </DialogHeader>
@@ -517,17 +517,17 @@ export function AllergySection({ patientId, className = "", mode }: AllergySecti
   }
 
   return (
-    <Card className={`emr-card ${className}`}>
-      <CardHeader className="emr-card-header">
+    <Card className={`emr-card ${className}`} data-median="allergy-section-card">
+      <CardHeader className="emr-card-header" data-median="allergy-header">
         <div className="flex items-center justify-between">
           <Dialog open={isCreating} onOpenChange={setIsCreating}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="emr-button-compact">
+              <Button size="sm" variant="outline" className="emr-button-compact" data-median="add-allergy-button">
                 <Plus className="h-4 w-4 mr-1" />
                 Add
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl" data-median="add-allergy-dialog">
               <DialogHeader>
                 <DialogTitle>Add New Allergy</DialogTitle>
               </DialogHeader>

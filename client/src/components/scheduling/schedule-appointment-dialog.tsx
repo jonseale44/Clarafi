@@ -350,11 +350,11 @@ export function ScheduleAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl" data-median="schedule-appointment-dialog">
+        <DialogHeader data-median="appointment-dialog-header">
           <DialogTitle>Schedule New Appointment</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4" data-median="appointment-form-container">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="patient">Patient</Label>

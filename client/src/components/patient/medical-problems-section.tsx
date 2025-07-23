@@ -364,9 +364,9 @@ export function MedicalProblemsSection({
   const showAddButton = !isReadOnly;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" data-median="medical-problems-container">
       {mode !== "encounter" && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" data-median="medical-problems-header">
           <h2 className="text-xl font-semibold">Medical Problems</h2>
         </div>
       )}
@@ -379,7 +379,7 @@ export function MedicalProblemsSection({
               if (!open) resetForm();
             }}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-slate-700 hover:bg-slate-800 text-white">
+                <Button size="sm" className="bg-slate-700 hover:bg-slate-800 text-white" data-median="add-problem-button">
                   <Plus className="h-3 w-3 mr-1" />
                   Add Problem
                 </Button>

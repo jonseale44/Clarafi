@@ -768,10 +768,10 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
   }
   
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col" data-median="calendar-view">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4" data-median="calendar-controls">
+        <div className="flex items-center gap-2" data-median="calendar-navigation">
           <Button
             variant="outline"
             size="icon"
@@ -800,7 +800,7 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
           </Button>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-median="calendar-view-controls">
           <Button
             variant={viewMode === 'month' ? 'default' : 'outline'}
             size="sm"
@@ -864,12 +864,12 @@ export function CalendarView({ providerId, locationId }: CalendarViewProps) {
       
       {/* Appointment Details Dialog */}
       <Dialog open={showAppointmentDetails} onOpenChange={setShowAppointmentDetails}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" data-median="appointment-details-dialog">
           <DialogHeader>
             <DialogTitle>Appointment Details</DialogTitle>
           </DialogHeader>
           {selectedAppointment && (
-            <div className="space-y-4">
+            <div className="space-y-4" data-median="appointment-details-content">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Patient</Label>

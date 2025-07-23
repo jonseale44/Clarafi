@@ -334,13 +334,13 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
 
       {/* Cancel Appointment Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent data-median="cancel-appointment-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Appointment</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to cancel this appointment?
               {selectedAppointment && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                <div className="mt-4 p-3 bg-gray-50 rounded-md" data-median="appointment-details-summary">
                   <p className="font-medium">{selectedAppointment.appointmentType}</p>
                   <p className="text-sm text-gray-600">
                     {format(new Date(selectedAppointment.appointmentDate), 'MMMM d, yyyy')} at {selectedAppointment.appointmentTime}

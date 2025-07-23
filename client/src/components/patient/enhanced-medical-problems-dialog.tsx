@@ -369,8 +369,8 @@ export function EnhancedMedicalProblemsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" data-median="medical-problems-dialog">
+        <DialogHeader data-median="medical-problems-dialog-header">
           <DialogTitle>
             {problem ? "Edit Medical Problem" : "Add Medical Problem"}
           </DialogTitle>

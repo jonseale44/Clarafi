@@ -140,8 +140,8 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div data-median="encounters-tab-container">
+      <div className="flex items-center justify-between mb-6" data-median="encounters-header">
         <h4 className="text-lg font-semibold text-gray-900">Recent Encounters</h4>
         {onRefresh && (
           <Button 
@@ -149,6 +149,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
             size="sm" 
             onClick={onRefresh}
             className="flex items-center gap-2"
+            data-median="refresh-button"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh

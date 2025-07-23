@@ -499,12 +499,13 @@ The system was designed with a three-tier hierarchy:
 ✓ **Token Analysis**: Added comprehensive cost tracking and projection capabilities to TokenCostAnalyzer
 ✓ **Method Implementation**: Completed missing logCostAnalysis and calculateProjections methods
 
-### Median App Mobile Optimization (July 20, 2025)
+### Median App Mobile Optimization (July 20-23, 2025)
 ✓ Added comprehensive `data-median` attributes throughout React components for mobile app optimization
 ✓ Implemented tagging system to enable different UI behaviors between web browser and Median mobile app
 ✓ Tagged components include: headers, navigation, tables, dashboards, vital cards, and page layouts
 ✓ Created MEDIAN_APP_TAGS.md documentation file with complete tag reference and usage examples
 ✓ Tags enable hiding elements, adjusting layouts, and prioritizing content for mobile without affecting web experience
+✓ July 23: Continued systematic tagging - added data-median attributes to medical-problems-section, allergy-section, and enhanced-medications-list components
 
 ### Schema Alignment (July 19, 2025) - PARTIAL FIX ONLY
 ✓ Fixed critical database/schema discrepancies affecting PDF generation and orders
@@ -640,6 +641,19 @@ Preferred communication style: Simple, everyday language.
 - Production-scale system requires better modularity for maintainability
 
 ## Recent Changes
+
+### Median App Data-Median Attribute Tagging (January 23, 2025)
+- **COMPREHENSIVE COMPONENT TAGGING**: Adding data-median attributes across healthcare web application for mobile app compatibility
+- **COMPLETED COMPONENTS**:
+  - Marketing components: marketing-metrics-dashboard, acquisition-tracking, conversion-events, marketing-campaigns
+  - Patient chart components: unified-chart-panel, nursing-encounter-view, fast-medication-intelligence
+  - Allergy management: allergy-section dialogs (both edit and add functionality)
+  - Scheduling components: calendar-view main container, appointment details dialog, cancel appointment dialog  
+  - Encounter components: encounter-signature-panel (both signed status and main panel)
+  - Billing components: billing-summary (both empty state and full view), cpt-codes-diagnoses
+- **TAGGING APPROACH**: Using descriptive attribute names like "mobile-stats-grid", "hide-on-mobile-app", "mobile-reduced-width"
+- **DESIGN PRINCIPLE**: Tags are invisible and have no effect on standard web browsers, only activated in Median mobile app context
+- **REFERENCE DOCUMENT**: MEDIAN_APP_TAGS.md contains comprehensive tagging requirements and patterns
 
 ### OB/GYN Specialty SOAP Template (January 21, 2025)
 - **NEW SPECIALTY TEMPLATE**: Created comprehensive OB/GYN SOAP note template following established pattern from psychiatric template

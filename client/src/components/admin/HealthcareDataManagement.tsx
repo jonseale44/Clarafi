@@ -188,14 +188,14 @@ export function HealthcareDataManagement() {
   const hasData = currentStats.healthSystems > 0;
 
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="import" className="w-full">
+    <div className="space-y-6" data-median="healthcare-data-management-container">
+      <Tabs defaultValue="import" className="w-full" data-median="admin-tabs">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="import" className="flex items-center gap-2">
+          <TabsTrigger value="import" className="flex items-center gap-2" data-median="import-tab">
             <Database className="w-4 h-4" />
             Data Import
           </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
+          <TabsTrigger value="settings" className="flex items-center gap-2" data-median="settings-tab">
             <Settings className="w-4 h-4" />
             Update Settings
           </TabsTrigger>

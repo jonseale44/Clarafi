@@ -231,11 +231,11 @@ export function FastMedicationIntelligence({
   }, [onChange]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-median="fast-medication-intelligence">
       {/* Medication Intelligence Status */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" data-median="medication-status">
         {medicationData && (
-          <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md">
+          <div className="flex items-center gap-2 p-2 bg-green-50 rounded-md" data-median="medication-data-loaded">
             <Zap className="h-4 w-4 text-green-600" />
             <div className="text-sm">
               <span className="font-medium text-green-800">{medicationData.therapeuticClass}</span>

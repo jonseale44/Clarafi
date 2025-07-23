@@ -407,7 +407,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-median="patient-chart-main">
       {/* Left Chart Panel - Unified Resizable */}
       <UnifiedChartPanel
         patient={patient}
@@ -425,21 +425,22 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           console.log('🔗 [PatientChartView] Received section change:', sectionId);
           setActiveSection(sectionId);
         }}
+        data-median="patient-chart-sidebar"
       />
 
       {/* Main Content */}
-      <div className="flex-1 patient-header overflow-y-auto">
+      <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content">
         <div className="max-w-full">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4" data-median="patient-chart-header">
             <div>
               <h1 className="patient-title font-bold text-gray-900">
                 {patient.firstName} {patient.lastName}
               </h1>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 text-sm" data-median="patient-chart-info">
                 Patient Chart • DOB: {formatDate(patient.dateOfBirth)} • Age: {calculateAge(patient.dateOfBirth)}
               </p>
             </div>
-            <Button onClick={handleStartNewEncounter} className="bg-slate-700 hover:bg-slate-800 text-white">
+            <Button onClick={handleStartNewEncounter} className="bg-slate-700 hover:bg-slate-800 text-white" data-median="new-encounter-button">
               <Plus className="h-4 w-4 mr-2" />
               New Encounter
             </Button>

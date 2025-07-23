@@ -138,11 +138,11 @@ export function HealthcareUpdateSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-median="healthcare-update-settings-container">
       {/* Current Status */}
-      <Card>
+      <Card data-median="update-status-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" data-median="update-status-header">
             <RefreshCw className={`w-5 h-5 ${status?.isRunning ? 'animate-spin text-blue-500' : ''}`} />
             Update Status
           </CardTitle>

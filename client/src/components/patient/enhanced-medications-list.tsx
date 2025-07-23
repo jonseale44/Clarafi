@@ -885,14 +885,14 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-1 emr-compact-header">
+    <Card data-median="medications-list-card">
+      <CardHeader className="pb-1 emr-compact-header" data-median="medications-header">
         <div className="emr-tight-spacing">
           {/* Controls Row - Guaranteed to stay within card bounds */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2 min-w-0 flex-1">
               <Select value={groupingMode} onValueChange={(value: any) => setGroupingMode(value)}>
-                <SelectTrigger className="w-full sm:w-40 min-w-[140px] max-w-[180px]">
+                <SelectTrigger className="w-full sm:w-40 min-w-[140px] max-w-[180px]" data-median="grouping-select">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -908,6 +908,7 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
                   onClick={() => setIsAddingMedication(true)}
                   size="sm"
                   className="flex items-center gap-1 w-full sm:w-auto min-w-[100px]"
+                  data-median="add-medication-button"
                 >
                   <Plus className="h-4 w-4" />
                   <span className="hidden sm:inline">Add Medication</span>

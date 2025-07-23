@@ -161,8 +161,8 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md" data-median="passkey-setup-dialog">
+        <DialogHeader data-median="passkey-setup-header">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -175,6 +175,7 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
               size="icon"
               onClick={handleDismiss}
               className="h-8 w-8"
+              data-median="dismiss-passkey-button"
             >
               <X className="h-4 w-4" />
             </Button>

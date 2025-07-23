@@ -500,13 +500,13 @@ export function SurgicalHistorySection({ patientId, mode, isReadOnly = false }: 
   }
 
   return (
-    <Card>
-      <CardHeader className="emr-card-header-proportional">
+    <Card data-median="surgical-history-card">
+      <CardHeader className="emr-card-header-proportional" data-median="surgical-history-header">
         <div className="flex items-center justify-between">
           {!isReadOnly && (
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="emr-ultra-tight-spacing">
+                <Button size="sm" variant="outline" className="emr-ultra-tight-spacing" data-median="add-surgery-button">
                   <Plus className="h-3 w-3 mr-1" />
                   Add Surgery
                 </Button>

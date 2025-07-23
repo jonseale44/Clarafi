@@ -86,7 +86,7 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
 
   if (cptCodes.length === 0) {
     return (
-      <Card className="p-6">
+      <Card className="p-6" data-median="billing-summary-empty">
         <CardHeader className="px-0 pt-0">
           <CardTitle className="flex items-center text-xl font-semibold">
             <DollarSign className="h-5 w-5 mr-2" />
@@ -105,21 +105,21 @@ export function BillingSummary({ patientId, encounterId, cptCodes, diagnoses }: 
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-6" data-median="billing-summary">
       <CardHeader className="px-0 pt-0">
         <CardTitle className="flex items-center justify-between text-xl font-semibold">
           <div className="flex items-center">
             <DollarSign className="h-5 w-5 mr-2" />
             Billing Summary
           </div>
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-2xl font-bold text-green-600" data-median="total-reimbursement">
             ${totalReimbursement.toFixed(2)}
           </div>
         </CardTitle>
       </CardHeader>
 
       <CardContent className="px-0">
-        <div className="space-y-4">
+        <div className="space-y-4" data-median="billing-content">
           {/* CPT Code Breakdown */}
           <div>
             <h4 className="font-medium text-sm mb-2">CPT Code Breakdown</h4>

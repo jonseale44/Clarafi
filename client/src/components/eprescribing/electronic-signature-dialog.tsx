@@ -190,8 +190,8 @@ export function ElectronicSignatureDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl" data-median="electronic-signature-dialog">
+        <DialogHeader data-median="signature-dialog-header">
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
             {requiresDea ? 'DEA Electronic Signature Required' : 'Electronic Signature Required'}

@@ -576,11 +576,11 @@ export function CPTCodesDiagnoses({ patientId, encounterId, isAutoGenerating = f
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-6" data-median="cpt-codes-diagnoses">
       <CardHeader className="px-0 pt-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-semibold">Billing</CardTitle>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2" data-median="billing-controls">
             <Button
               size="sm"
               variant="outline"
