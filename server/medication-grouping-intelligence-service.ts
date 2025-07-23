@@ -49,21 +49,21 @@ export class MedicationGroupingIntelligenceService {
 Your task is to group medications by their PRIMARY therapeutic area or clinical use.
 
 CRITICAL GROUPING PRINCIPLES:
-1. Use clinical hierarchies - group related conditions together (e.g., HFrEF under Heart Failure)
+1. Use clinical hierarchies - group related conditions together (e.g., HFrEF under CHF)
 2. Assign medications to their most likely primary indication based on the medication and any provided indication
-3. Common therapeutic groups should include:
-   - Cardiovascular - Heart Failure (includes HFrEF, HFpEF, CHF)
-   - Cardiovascular - Hypertension
-   - Cardiovascular - Arrhythmia
-   - Cardiovascular - Anticoagulation/Antiplatelet
-   - Diabetes Management
-   - Lipid Management
-   - Respiratory
-   - Pain Management
-   - Psychiatric Medications
-   - GI/Acid Suppression
+3. Use STANDARD MEDICAL ABBREVIATIONS that physicians use daily:
+   - CHF (includes HFrEF, HFpEF)
+   - HTN
+   - Arrhythmia/AF
+   - Anticoag/Antiplatelet
+   - DM
+   - Lipids
+   - Resp
+   - Pain
+   - Psych
+   - GI
    - Thyroid
-   - Other (for miscellaneous)
+   - Other
 
 4. For multi-indication medications (e.g., Metoprolol for HTN + CHF + AF):
    - Place in the most clinically relevant group based on dosing and context
@@ -78,8 +78,8 @@ RESPONSE FORMAT:
 {
   "groups": [
     {
-      "groupName": "Cardiovascular - Heart Failure",
-      "description": "Medications for heart failure management",
+      "groupName": "CHF",
+      "description": "Heart failure medications",
       "priority": 1,
       "medications": [
         {
@@ -90,7 +90,9 @@ RESPONSE FORMAT:
       ]
     }
   ]
-}`;
+}
+
+Keep group names SHORT using standard medical abbreviations.`;
 
     const userPrompt = `Please group these medications intelligently:
 
@@ -173,48 +175,48 @@ Group these medications by their primary therapeutic area, using clinical judgme
     const name = medicationName.toLowerCase();
     const ind = indication?.toLowerCase() || '';
     
-    // Cardiovascular - Heart Failure
+    // CHF
     if (ind.includes('hfref') || ind.includes('hfpef') || ind.includes('chf') || 
         ind.includes('heart failure') || ind.includes('edema')) {
-      return 'Cardiovascular - Heart Failure';
+      return 'CHF';
     }
     
     // Common medication patterns
     if (name.includes('furosemide') || name.includes('torsemide') || name.includes('bumetanide')) {
-      return 'Cardiovascular - Heart Failure';
+      return 'CHF';
     }
     
     if (name.includes('lisinopril') || name.includes('enalapril') || name.includes('ramipril') ||
         name.includes('losartan') || name.includes('valsartan')) {
-      return ind.includes('heart failure') ? 'Cardiovascular - Heart Failure' : 'Cardiovascular - Hypertension';
+      return ind.includes('heart failure') ? 'CHF' : 'HTN';
     }
     
     if (name.includes('metoprolol') || name.includes('carvedilol') || name.includes('bisoprolol')) {
-      return ind.includes('heart failure') ? 'Cardiovascular - Heart Failure' : 'Cardiovascular - Hypertension';
+      return ind.includes('heart failure') ? 'CHF' : 'HTN';
     }
     
     if (name.includes('spironolactone') || name.includes('eplerenone')) {
-      return 'Cardiovascular - Heart Failure';
+      return 'CHF';
     }
     
-    // Diabetes
+    // DM
     if (name.includes('insulin') || name.includes('metformin') || name.includes('glipizide') ||
         name.includes('januvia') || name.includes('ozempic') || ind.includes('diabetes') || 
         ind.includes('t2dm') || ind.includes('t1dm')) {
-      return 'Diabetes Management';
+      return 'DM';
     }
     
-    // Anticoagulation
+    // Anticoag
     if (name.includes('warfarin') || name.includes('eliquis') || name.includes('xarelto') ||
         name.includes('pradaxa') || name.includes('aspirin') || ind.includes('anticoag') ||
         ind.includes('dvt') || ind.includes('prophylaxis')) {
-      return 'Cardiovascular - Anticoagulation';
+      return 'Anticoag';
     }
     
     // Lipids
     if (name.includes('statin') || name.includes('atorvastatin') || name.includes('simvastatin') ||
         name.includes('rosuvastatin') || ind.includes('hyperlipidemia') || ind.includes('cholesterol')) {
-      return 'Lipid Management';
+      return 'Lipids';
     }
     
     // Default

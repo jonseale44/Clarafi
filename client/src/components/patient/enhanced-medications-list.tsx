@@ -3,7 +3,7 @@
  * Mirrors the medical problems list architecture for consistency
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -846,18 +846,59 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
       ]
     : ((medicationData as MedicationResponse)?.groupedByStatus?.[activeStatusTab] || []);
 
+  // Fetch intelligent grouping when medications change and mode is medical_problem
+  useEffect(() => {
+    const fetchIntelligentGroups = async () => {
+      if (groupingMode === 'medical_problem' && currentMedications.length > 0) {
+        setIsLoadingIntelligentGroups(true);
+        try {
+          const response = await apiRequest('POST', `/api/patients/${patientId}/medications-enhanced/intelligent-grouping`, {
+            medications: currentMedications.map(med => ({
+              id: med.id,
+              medicationName: med.medicationName,
+              clinicalIndication: med.clinicalIndication,
+              dosage: med.dosage,
+              route: med.route
+            }))
+          });
+          const result = await response.json();
+          if (result.success) {
+            setIntelligentGroups(result.groups);
+          }
+        } catch (error) {
+          console.error('Failed to fetch intelligent groups:', error);
+          // Fall back to default grouping on error
+        } finally {
+          setIsLoadingIntelligentGroups(false);
+        }
+      }
+    };
+
+    fetchIntelligentGroups();
+  }, [currentMedications, groupingMode, patientId]);
+
   // Group medications based on grouping mode
   const groupedMedications = groupingMode === 'alphabetical' 
-    ? { 'all': [...currentMedications].sort((a, b) => a.medicationName.localeCompare(b.medicationName)) }
-    : currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
-        const groupKey = medication.clinicalIndication || 'No indication specified';
-        
-        if (!groups[groupKey]) {
-          groups[groupKey] = [];
-        }
-        groups[groupKey].push(medication);
-        return groups;
-      }, {});
+    ? { 'All Medications': [...currentMedications].sort((a, b) => a.medicationName.localeCompare(b.medicationName)) }
+    : isLoadingIntelligentGroups 
+      ? { 'Loading...': [] }
+      : intelligentGroups.length > 0
+        ? intelligentGroups.reduce((acc: Record<string, Medication[]>, group) => {
+            // Map intelligent group medications back to full medication objects
+            acc[group.groupName] = group.medications.map((medRef: any) => 
+              currentMedications.find(med => med.id === medRef.id)!
+            ).filter(Boolean);
+            return acc;
+          }, {})
+        : currentMedications.reduce((groups: Record<string, Medication[]>, medication: Medication) => {
+            const groupKey = medication.clinicalIndication || 'Other';
+            
+            if (!groups[groupKey]) {
+              groups[groupKey] = [];
+            }
+            groups[groupKey].push(medication);
+            return groups;
+          }, {});
 
   if (isLoading) {
     return (
