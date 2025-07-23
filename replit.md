@@ -75,6 +75,14 @@ Added comprehensive logging and validation to diagnose and fix "Invalid MIME typ
 5. **Enhanced Error Messages** - Provides specific feedback about unsupported formats
 6. **Base64 Validation** - Ensures image data is properly encoded
 
+### Fixed NoteTypeSelector toString() Error in Mobile App
+Resolved "undefined is not an object (evaluating 'item.toString')" error in NoteTypeSelector component:
+
+1. **Root Cause** - `getCurrentValue()` method was checking if `selectedTemplate` prop existed but not if it had a value
+2. **Fixed Logic** - Added proper null check `selectedTemplate && selectedTemplate.id` before accessing properties
+3. **Fallback Value** - Added default fallback to "soap" to prevent undefined from being passed to Select component
+4. **Impact** - Fixes mobile app crash when clicking on encounters in patient chart view
+
 ### Photo Capture Flow
 - Photos are uploaded via `/api/photo-capture/sessions/:sessionId/upload`
 - Stored in `/uploads/photo-capture/` directory
