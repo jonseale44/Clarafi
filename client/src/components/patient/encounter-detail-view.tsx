@@ -171,9 +171,12 @@ export function EncounterDetailView({
   }) as { data?: { id?: number; role?: string } };
   
   // MEDIAN: Check if running in Median mobile app
+  // Force mobile mode for testing - remove this line after confirming it works
+  const forceMobileMode = true; // TEMPORARY: Remove after testing
+  
   // Also fallback to screen size detection if window.isMedianMobile is not set
   const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
-  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen);
+  const isMedianMobile = forceMobileMode || (typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMobileScreen));
   
   // MEDIAN: Encounter view should default to closed sidebar on mobile
   const isPatientChartView = false; // This is encounter view, not patient chart view
