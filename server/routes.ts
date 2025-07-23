@@ -802,6 +802,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
   app.use("/api/vitals", unifiedVitalsAPI);
 
+  // Database health check endpoint for deployment verification
+  app.get("/api/health/db", async (req, res) => {
+    try {
+      const { db } = await import("./db.js");
+      const tables = await db.execute(`
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        ORDER BY table_name
+      `);
+      
+      const requiredTables = [
+        'marketing_automations',
+        'marketing_campaigns', 
+        'marketing_insights',
+        'marketing_metrics',
+        'conversion_events',
+        'user_acquisition'
+      ];
+      
+      const existingTables = tables.rows.map((row: any) => row.table_name);
+      const missingTables = requiredTables.filter(t => !existingTables.includes(t));
+      
+      // Also check for critical user columns
+      const userColumns = await db.execute(`
+        SELECT column_name 
+        FROM information_schema.columns
+        WHERE table_name = 'users' 
+        AND column_name IN ('baa_accepted', 'baa_accepted_at', 'baa_version')
+      `);
+      
+      const requiredUserColumns = ['baa_accepted', 'baa_accepted_at', 'baa_version'];
+      const existingUserColumns = userColumns.rows.map((col: any) => col.column_name);
+      const missingUserColumns = requiredUserColumns.filter(c => !existingUserColumns.includes(c));
+      
+      res.json({
+        status: missingTables.length === 0 && missingUserColumns.length === 0 ? 'healthy' : 'unhealthy',
+        totalTables: existingTables.length,
+        missingTables,
+        missingUserColumns,
+        databaseUrl: process.env.DATABASE_URL?.split('@')[1] // Show host only for security
+      });
+    } catch (error: any) {
+      res.status(500).json({ status: 'error', error: error.message });
+    }
+  });
+
   // Parse-only endpoint for Quick Parse form population (returns data without saving)
   app.post("/api/vitals/parse-only", async (req, res) => {
     try {

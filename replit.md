@@ -116,6 +116,18 @@ The system was designed with a three-tier hierarchy:
 
 ## Recent Changes
 
+### Database Deployment Synchronization Solution (January 24, 2025)
+✓ **ISSUE IDENTIFIED**: Replit deployment system reports missing tables (marketing_*, conversion_events, user_acquisition) and user columns (baa_accepted) that exist in development database
+✓ **ROOT CAUSE**: Replit Deployments uses a separate database instance that hasn't been synchronized with schema changes
+✓ **SOLUTION IMPLEMENTED**:
+  - Created comprehensive documentation at `docs/database-deployment-sync-solution.md`
+  - Added database health check endpoint at `/api/health/db` for deployment verification
+  - Created deployment preparation script at `scripts/prepare-deployment.ts`
+  - Health check verifies existence of all marketing tables and critical user columns
+✓ **KEY INSIGHT**: The issue isn't with code or schema - it's about ensuring deployment database receives same schema updates as development
+✓ **DEPLOYMENT FIX**: Use `drizzle-kit push` as part of deployment process to sync schema automatically
+✓ **VERIFICATION**: All tables confirmed present in development database via SQL queries
+
 ### Enterprise Admin Verification System Fixes (January 23, 2025)
 ✓ **CRITICAL TYPESCRIPT ERRORS FIXED**: Fixed multiple TypeScript errors preventing the AI-based verification system from functioning with configured API keys
 ✓ **FIXES IMPLEMENTED**:
