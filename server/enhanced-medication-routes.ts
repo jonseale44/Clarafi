@@ -6,6 +6,7 @@
 import { Router } from "express";
 import { storage } from "./storage";
 import { medicationDelta } from "./medication-delta-service";
+import { MedicationGroupingIntelligenceService } from "./medication-grouping-intelligence-service";
 import type { Request, Response } from "express";
 
 const router = Router();
@@ -634,6 +635,48 @@ router.post("/medication-fix/process-existing-order/:orderId", async (req: Reque
   } catch (error) {
     console.error(`❌ [MedicationFix] Error processing existing order:`, error);
     res.status(500).json({ error: "Failed to process existing order" });
+  }
+});
+
+/**
+ * POST /api/patients/:patientId/medications-enhanced/intelligent-grouping
+ * Apply intelligent grouping to patient medications without duplication
+ * This enhances the existing medication list organization
+ */
+router.post("/patients/:patientId/medications-enhanced/intelligent-grouping", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    const { medications } = req.body;
+    
+    if (!medications || !Array.isArray(medications)) {
+      return res.status(400).json({ error: "Medications array required" });
+    }
+
+    console.log(`🧠 [IntelligentGrouping] Applying intelligent grouping for ${medications.length} medications`);
+
+    // Initialize the grouping service
+    const groupingService = new MedicationGroupingIntelligenceService();
+    
+    // Apply intelligent grouping
+    const intelligentGroups = await groupingService.groupMedicationsIntelligently(medications);
+    
+    console.log(`✅ [IntelligentGrouping] Created ${intelligentGroups.length} intelligent groups`);
+
+    // Return the enhanced grouping
+    res.json({
+      success: true,
+      groups: intelligentGroups,
+      totalMedications: medications.length,
+      groupCount: intelligentGroups.length
+    });
+
+  } catch (error) {
+    console.error("❌ [IntelligentGrouping] Error applying intelligent grouping:", error);
+    res.status(500).json({ error: "Failed to apply intelligent grouping" });
   }
 });
 

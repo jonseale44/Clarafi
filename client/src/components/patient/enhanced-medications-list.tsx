@@ -270,6 +270,8 @@ export function EnhancedMedicationsList({ patientId, encounterId, readOnly = fal
   const [groupingMode, setGroupingMode] = useState<'medical_problem' | 'alphabetical'>('medical_problem');
   const [editingMedication, setEditingMedication] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<any>(null);
+  const [intelligentGroups, setIntelligentGroups] = useState<any[]>([]);
+  const [isLoadingIntelligentGroups, setIsLoadingIntelligentGroups] = useState(false);
   const { toast } = useToast();
   const { isDenseView } = useDenseView();
   
