@@ -46,6 +46,7 @@ export class PatientParserService {
     imageData?: string,
     textContent?: string,
     isTextContent: boolean = false,
+    mimeType: string = 'image/jpeg',
   ): Promise<PatientParseResult> {
     try {
       const systemPrompt = `You are a medical AI assistant specialized in extracting patient demographic information from medical documents, insurance cards, EHR screenshots, and intake forms.
@@ -103,7 +104,7 @@ Return a JSON object with these exact fields:
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:image/jpeg;base64,${imageData}`,
+                  url: `data:${mimeType};base64,${imageData}`,
                   detail: "high",
                 },
               },

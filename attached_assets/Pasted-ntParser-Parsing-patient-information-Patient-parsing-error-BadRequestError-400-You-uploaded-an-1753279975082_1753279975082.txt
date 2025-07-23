@@ -1,0 +1,43 @@
+ntParser] Parsing patient information...
+Patient parsing error: BadRequestError: 400 You uploaded an unsupported image. Please make sure your image has of one the following formats: ['png', 'jpeg', 'gif', 'webp'].
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/error.ts:72:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/core.ts:462:21)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async PatientParserService.parsePatientInfo (/home/runner/workspace/server/patient-parser-service.ts:120:24)
+    at async <anonymous> (/home/runner/workspace/server/parse-routes.ts:51:25) {
+  status: 400,
+  headers: {
+    'access-control-expose-headers': 'X-Request-ID',
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '963bc5b53826a59f-SEA',
+    connection: 'keep-alive',
+    'content-length': '258',
+    'content-type': 'application/json',
+    date: 'Wed, 23 Jul 2025 14:12:22 GMT',
+    'openai-organization': 'cv-infotech-7lnc8u',
+    'openai-processing-ms': '33',
+    'openai-project': 'proj_kQHr5nlhMsvVYJs0K9xIEl1X',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=zU6BE_8dyjSdSkoDXslLF4kv0_Ua8x64GqaZvONnLsY-1753279942-1.0.1.1-r8nfP79mqYUcq93RDvIc8Y6yc5Fz72N4_Xcs3dD2P2yuIAdAqjGdSFuOra7kmnEwAryTLAfHnbeKEg14X0W2fZZcDxx9WbaIZMUdTx9x7TA; path=/; expires=Wed, 23-Jul-25 14:42:22 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=BCJoQtvW5tiJRkPWvnKfmt.CujPzLNyfWHNqbKpKc5M-1753279942487-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'x-ratelimit-limit-input-images': '50000',
+    'x-ratelimit-limit-requests': '30000',
+    'x-ratelimit-limit-tokens': '150000000',
+    'x-ratelimit-remaining-input-images': '49999',
+    'x-ratelimit-remaining-requests': '29999',
+    'x-ratelimit-remaining-tokens': '149998881',
+    'x-ratelimit-reset-input-images': '1ms',
+    'x-ratelimit-reset-requests': '2ms',
+    'x-ratelimit-reset-tokens': '0s',
+    'x-request-id': 'req_3ff71853ee405b49412ec1e89f91ef57'
+  },
+  request_id: 'req_3ff71853ee405b49412ec1e89f91ef57',
+  error: {
+    message: "You uploaded an unsupported image. Please make sure your image has of one the following formats: ['png', 'jpeg', 'gif', 'webp'].",
+    type: 'invalid_request_error',
+    param: null,
+    code: 'invalid_image_format'

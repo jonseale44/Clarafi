@@ -14,6 +14,7 @@ const parseRequestSchema = z.object({
   imageData: z.string().optional(),
   textContent: z.string().optional(),
   isTextContent: z.boolean().default(false),
+  mimeType: z.string().optional().default('image/jpeg'), // Add mimeType with default
 });
 
 // Initialize the parser service
@@ -37,7 +38,7 @@ router.post("/parse-patient-info", async (req: Request, res: Response) => {
       });
     }
 
-    const { imageData, textContent, isTextContent } = validationResult.data;
+    const { imageData, textContent, isTextContent, mimeType } = validationResult.data;
 
     // Ensure we have either image or text content
     if (!imageData && !textContent) {
@@ -51,7 +52,8 @@ router.post("/parse-patient-info", async (req: Request, res: Response) => {
     const parseResult = await parserService.parsePatientInfo(
       imageData,
       textContent,
-      isTextContent
+      isTextContent,
+      mimeType
     );
 
     if (!parseResult.success) {
@@ -94,13 +96,14 @@ router.post("/parse-and-create-patient", tenantIsolation, async (req: Request, r
       });
     }
 
-    const { imageData, textContent, isTextContent } = validationResult.data;
+    const { imageData, textContent, isTextContent, mimeType } = validationResult.data;
 
     // Parse the patient information
     const parseResult = await parserService.parsePatientInfo(
       imageData,
       textContent,
-      isTextContent
+      isTextContent,
+      mimeType
     );
 
     if (!parseResult.success || !parseResult.data) {

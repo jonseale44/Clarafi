@@ -423,7 +423,8 @@ export function PatientParser() {
       const base64Data = await convertFileToBase64(file);
       const requestBody = {
         imageData: base64Data,
-        isTextContent: false
+        isTextContent: false,
+        mimeType: file.type
       };
 
       const response = await fetch('/api/parse-patient-info', {
