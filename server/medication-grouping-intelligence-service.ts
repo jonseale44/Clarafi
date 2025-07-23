@@ -92,7 +92,9 @@ RESPONSE FORMAT:
   ]
 }
 
-Keep group names SHORT using standard medical abbreviations.`;
+Keep group names SHORT using standard medical abbreviations.
+
+Return your response as a JSON object.`;
 
     const userPrompt = `Please group these medications intelligently:
 

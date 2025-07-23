@@ -1,0 +1,45 @@
+
+✅ [IntelligentGrouping] Created 9 intelligent groups
+❌ [MedGrouping] Error grouping medications: BadRequestError: 400 'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.
+    at Function.generate (/home/runner/workspace/node_modules/openai/src/error.ts:72:14)
+    at OpenAI.makeStatusError (/home/runner/workspace/node_modules/openai/src/core.ts:462:21)
+    at OpenAI.makeRequest (/home/runner/workspace/node_modules/openai/src/core.ts:526:24)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async MedicationGroupingIntelligenceService.groupMedicationsIntelligently (/home/runner/workspace/server/medication-grouping-intelligence-service.ts:110:24)
+    at async <anonymous> (/home/runner/workspace/server/enhanced-medication-routes.ts:665:31) {
+  status: 400,
+  headers: {
+    'access-control-expose-headers': 'X-Request-ID',
+    'alt-svc': 'h3=":443"; ma=86400',
+    'cf-cache-status': 'DYNAMIC',
+    'cf-ray': '963c7debfe8aa329-SEA',
+    connection: 'keep-alive',
+    'content-length': '219',
+    'content-type': 'application/json',
+    date: 'Wed, 23 Jul 2025 16:18:07 GMT',
+    'openai-organization': 'cv-infotech-7lnc8u',
+    'openai-processing-ms': '60',
+    'openai-project': 'proj_kQHr5nlhMsvVYJs0K9xIEl1X',
+    'openai-version': '2020-10-01',
+    server: 'cloudflare',
+    'set-cookie': '__cf_bm=FYO4bZkQ3bRGLjImO77Fqc3TnI5GQkQVk7ZfoK.23Rw-1753287487-1.0.1.1-R9yxojXOYJnbN4v8g.RrJQj8bWytRd0.ZIQwJKNICpA_Hw7t1cC9L1M3JICIXdAOtq9kX2ha4.BWZRQC8XgpLb2z_N9a77d.DbxMuF6GJBc; path=/; expires=Wed, 23-Jul-25 16:48:07 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None, _cfuvid=SupQhg75YbMlj2hHho2wL30QeKJUHw9F90izr_ixVvE-1753287487736-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+    'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
+    'x-content-type-options': 'nosniff',
+    'x-envoy-upstream-service-time': '296',
+    'x-ratelimit-limit-requests': '10000',
+    'x-ratelimit-limit-tokens': '30000000',
+    'x-ratelimit-remaining-requests': '9999',
+    'x-ratelimit-remaining-tokens': '29999386',
+    'x-ratelimit-reset-requests': '6ms',
+    'x-ratelimit-reset-tokens': '1ms',
+    'x-request-id': 'req_a98bb3cade5c04183d0dbb7f0b1bca92'
+  },
+  request_id: 'req_a98bb3cade5c04183d0dbb7f0b1bca92',
+  error: {
+    message: "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.",
+    type: 'invalid_request_error',
+    param: 'messages',
+    code: null
+  },
+  code: null,
+  param: 'messages',
