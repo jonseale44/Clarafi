@@ -3866,6 +3866,12 @@ Please provide medical suggestions based on this complete conversation context.`
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
+          {/* TEMPORARY: Visual indicator for mobile mode */}
+          {isMedianMobile && (
+            <div className="bg-yellow-100 text-yellow-800 text-xs p-1 mb-2 rounded">
+              Mobile Mode Active - Menu button should be visible below
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* MEDIAN: Mobile menu toggle - only show in Median app */}
