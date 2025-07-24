@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section 
         id="hero" 
-        className="relative min-h-screen pt-32 pb-8 px-4 overflow-hidden"
+        className="relative min-h-screen pt-32 pb-0 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%)'
         }}
@@ -152,7 +152,7 @@ export default function LandingPage() {
             </div>
             
             {/* Trust line */}
-            <p className="text-base text-gray-400 mt-12 animate-fadeInUp delay-400">
+            <p className="text-base text-gray-400 mt-6 animate-fadeInUp delay-400">
               <span className="text-green-400 font-semibold">✓ No credit card required</span>
               <span className="mx-3">•</span>
               <span>No sales calls</span>
@@ -164,7 +164,7 @@ export default function LandingPage() {
           </div>
           
           {/* Hero Visual - Split screen */}
-          <div className="mt-16 relative animate-fadeInUp delay-500">
+          <div className="mt-4 relative animate-fadeInUp delay-500">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-black/30 backdrop-blur-sm border border-white/10">
               <div className="grid md:grid-cols-2 min-h-[400px]">
                 {/* Left side - Physician with patient */}
