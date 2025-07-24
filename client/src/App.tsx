@@ -50,12 +50,16 @@ import BusinessAssociateAgreement from "@/pages/legal/business-associate-agreeme
 import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
 
 import NotFound from "@/pages/not-found";
+import LandingPage from "@/pages/landing-page";
 
 function Router() {
   return (
     <Switch>
+      {/* Public landing page as root */}
+      <Route path="/" component={LandingPage} />
+      
+      {/* Protected dashboard route */}
       <ProtectedRoute path="/dashboard" component={Dashboard} />
-      <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/healthcare-data" component={AdminHealthcareData} />
       <ProtectedRoute path="/clinic-admin" component={ClinicAdminDashboard} />
