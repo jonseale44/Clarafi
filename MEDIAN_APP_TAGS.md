@@ -166,67 +166,113 @@ To apply mobile-specific styles or behavior in your Median app configuration:
 
 /* === ENCOUNTER VIEW MOBILE LAYOUT === */
 
-/* Collapse unified chart panel by default in encounter views */
-[data-median="encounter-view-chart-panel"] {
-    width: 48px !important;
-    min-width: 48px !important;
-    max-width: 48px !important;
-    overflow: hidden !important;
-}
-
-/* Hide ALL chart content when collapsed - more comprehensive */
-[data-median="encounter-view-chart-panel"][data-collapsed="true"] > * {
-    display: none !important;
-}
-
-/* Only show expand button when collapsed */
-[data-median="encounter-view-chart-panel"][data-collapsed="true"] [data-median="expand-chart-button"] {
-    display: flex !important;
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    width: 36px !important;
-    height: 36px !important;
+/* Main encounter view container */
+[data-median="encounter-detail-view"],
+[data-median="nursing-encounter-view"] {
     padding: 0 !important;
     margin: 0 !important;
-    justify-content: center !important;
-    align-items: center !important;
+}
+
+/* Collapse unified chart panel by default in encounter views */
+[data-median="encounter-view-chart-panel"] {
+    position: fixed !important;
+    left: -320px !important;
+    top: 0 !important;
+    height: 100vh !important;
+    width: 320px !important;
     background: white !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 8px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    z-index: 1000 !important;
+    transition: left 0.3s ease !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* When expanded, show full panel */
+/* When expanded, slide in from left */
 [data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) {
-    width: auto !important;
-    min-width: 320px !important;
-    max-width: 90vw !important;
+    left: 0 !important;
 }
 
-/* Hide expand button when panel is expanded */
-[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) [data-median="expand-chart-button"] {
-    display: none !important;
-}
-
-/* Add a collapse button when expanded */
-[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) [data-median="collapse-chart-button"] {
+/* Show expand button fixed on left edge */
+[data-median="expand-chart-button"] {
     display: flex !important;
-    position: absolute !important;
-    top: 10px !important;
-    right: -20px !important;
+    position: fixed !important;
+    left: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
     width: 40px !important;
     height: 40px !important;
     padding: 0 !important;
     margin: 0 !important;
     justify-content: center !important;
     align-items: center !important;
-    background: white !important;
+    background: #1e3a8a !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    z-index: 999 !important;
+}
+
+/* Hide expand button when panel is expanded */
+[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) ~ [data-median="expand-chart-button"] {
+    display: none !important;
+}
+
+/* Collapse button inside expanded panel */
+[data-median="collapse-chart-button"] {
+    display: none !important;
+}
+
+[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) [data-median="collapse-chart-button"] {
+    display: flex !important;
+    position: absolute !important;
+    right: 10px !important;
+    top: 10px !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: #f3f4f6 !important;
     border: 1px solid #e5e7eb !important;
-    border-radius: 0 8px 8px 0 !important;
-    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
-    z-index: 100 !important;
+    border-radius: 6px !important;
+    z-index: 10 !important;
+}
+
+/* Provider documentation content - full width */
+[data-median="provider-documentation-content"] {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* Fix card and content padding */
+[data-median="provider-documentation-content"] .p-6 {
+    padding: 16px !important;
+}
+
+[data-median="provider-documentation-content"] .p-4 {
+    padding: 12px !important;
+}
+
+/* Ensure buttons stay within their containers */
+[data-median="provider-documentation-content"] button {
+    max-width: 100% !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+}
+
+/* Fix flex containers to prevent overflow */
+[data-median="provider-documentation-content"] .flex {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+/* Ensure cards fill width */
+[data-median="provider-documentation-content"] > div > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 /* === OTHER MOBILE STYLES === */
