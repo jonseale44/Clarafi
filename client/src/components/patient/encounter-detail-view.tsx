@@ -30,6 +30,7 @@ import {
   RefreshCw,
   Save,
   AlertTriangle,
+  Menu,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -3802,6 +3803,22 @@ Please provide medical suggestions based on this complete conversation context.`
 
   return (
     <div className="flex h-full" data-median="encounter-detail-view">
+      {/* Mobile Expand Button - Outside of chart panel */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="hidden"
+        data-median="expand-chart-button"
+        onClick={() => {
+          const wrapper = document.querySelector('[data-median="encounter-view-chart-panel"]');
+          if (wrapper) {
+            wrapper.setAttribute('data-collapsed', 'false');
+          }
+        }}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {/* Left Chart Panel - Unified Expandable */}
       <div data-median="encounter-view-chart-panel" data-collapsed="true" className="relative">
         <UnifiedChartPanel

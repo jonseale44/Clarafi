@@ -25,25 +25,32 @@ Implemented mobile-specific layout optimizations using Median's Web Overrides CS
    - "New Encounter" button moved from header to encounters tab for better mobile accessibility
 
 2. **Encounter View Mobile Layout** 
-   - UnifiedChartPanel wrapped in collapsible container (`data-median="encounter-view-chart-panel"`)
-   - CSS rules make chart panel completely hidden off-screen by default (48px width) on mobile
-   - Added expand button (`data-median="expand-chart-button"`) positioned absolutely when collapsed
-   - Added collapse button (`data-median="collapse-chart-button"`) visible when expanded
-   - Provider documentation takes primary screen space when chart is collapsed
-   - JavaScript handles toggling `data-collapsed` attribute for expand/collapse functionality
+   - Chart panel slides in/out from left side using fixed positioning
+   - Panel is completely off-screen by default (`left: -320px`)
+   - Expand button fixed on left edge of screen (blue circular button with menu icon)
+   - Collapse button inside expanded panel (top right corner)
+   - Provider documentation takes full screen width when chart is collapsed
+   - Smooth slide animation when toggling panel visibility
 
-3. **CSS Implementation**
+3. **Button Overflow Fixes**
+   - Added responsive CSS rules for narrow screens (max-width: 768px)
+   - Buttons wrap properly within their containers
+   - "Update from SOAP" and "Add Order" buttons scale down on mobile
+   - Fixed spacing and padding issues that caused content spillover
+   - Solutions apply to both web (narrow windows) and mobile views
+
+4. **CSS Implementation**
    - All mobile-specific styles controlled via data-median attributes in MEDIAN_APP_TAGS.md
-   - CSS-only solution - no JavaScript overrides needed in Median app
+   - CSS-only solution with JavaScript for expand/collapse functionality
    - Styles only apply in Median mobile app, desktop experience unchanged
-   - Uses absolute positioning for buttons to appear outside collapsed panel
+   - Uses fixed positioning for slide-out panel behavior
 
-4. **Technical Approach**
+5. **Technical Approach**
    - Using `data-median` attributes throughout components for mobile-specific targeting
    - CSS rules with `!important` to override default styles in mobile context
-   - Maintained component structure while adding mobile-specific wrappers
-   - Panel collapses to 48px width showing only expand button
-   - When expanded, panel shows at 320px minimum width up to 90vw maximum
+   - Panel slides completely off-screen when collapsed
+   - Fixed expand button always visible on left edge
+   - Responsive button sizing to prevent overflow
 
 ## Recent Changes (July 23, 2025)
 

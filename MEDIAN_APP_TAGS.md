@@ -275,6 +275,40 @@ To apply mobile-specific styles or behavior in your Median app configuration:
     box-sizing: border-box !important;
 }
 
+/* === RESPONSIVE BUTTON FIXES (Web and Mobile) === */
+
+/* Fix button overflow for Orders and Billing sections */
+@media (max-width: 768px) {
+    /* Order section buttons */
+    [data-median="provider-documentation-content"] .space-y-4 > div > div:first-child {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    /* Update from SOAP and Add Order buttons */
+    [data-median="provider-documentation-content"] button[type="button"] {
+        min-width: auto !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+    }
+    
+    /* Ensure proper spacing */
+    [data-median="provider-documentation-content"] .p-6 {
+        padding: 12px !important;
+    }
+    
+    /* Fix card headers */
+    [data-median="provider-documentation-content"] .space-y-4 {
+        width: 100% !important;
+    }
+    
+    /* Ensure full width for sections */
+    [data-median="provider-documentation-content"] .flex-1 {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
 /* === OTHER MOBILE STYLES === */
 
 /* Adjust grid layout for mobile */
