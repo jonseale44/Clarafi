@@ -911,9 +911,13 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-white mb-2">30-Day Guarantee</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 mb-3">
                   Not happy? Get a full refund. No questions, no hassle, no risk.
                 </p>
+                <div className="flex justify-center gap-2">
+                  <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">100%</span>
+                  <span className="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Risk-Free</span>
+                </div>
               </div>
             </div>
             
@@ -1001,8 +1005,11 @@ export default function LandingPage() {
               <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:border-yellow-500/30 transition-all">
                 <h3 className="text-2xl font-bold text-white mb-2">Individual Provider</h3>
                 <div className="mb-6">
-                  <span className="text-5xl font-bold text-white">$149</span>
-                  <span className="text-gray-400">/month</span>
+                  <span className="text-gray-400 block text-sm mb-1">Perfect for solo practitioners</span>
+                  <div>
+                    <span className="text-5xl font-bold text-white">$149</span>
+                    <span className="text-gray-400">/month</span>
+                  </div>
                 </div>
                 
                 <ul className="space-y-3 mb-8">
@@ -1062,7 +1069,7 @@ export default function LandingPage() {
                   <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">POPULAR</span>
                 </div>
                 <div className="mb-6">
-                  <span className="text-gray-400">Starting at</span>
+                  <span className="text-gray-400 block text-sm mb-1">Starting at</span>
                   <div>
                     <span className="text-5xl font-bold text-white">$399</span>
                     <span className="text-gray-400">/month</span>
