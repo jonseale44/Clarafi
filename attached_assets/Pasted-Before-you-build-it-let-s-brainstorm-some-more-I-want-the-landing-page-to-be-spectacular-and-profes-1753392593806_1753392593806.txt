@@ -1,0 +1,24 @@
+Before you build it let's brainstorm some more. I want the landing page to be spectacular and
+professional, but not overly burdensome. Remember, these are physicians after all. We want to get to the
+point while also being attractive to the human eye.
+1. I want to take a top-down approach to designing this, since the details might be too many for you to
+handle all at once.Let's create a scaffold upon which to further expand each area one at a time, that
+way we can really develop each detail perfectly.
+2. I want you first review the file I just created called "landing page" which outlines a few areas of
+importance when it comes to designing our landing page. It's essentially a train-of-thought about the
+features of our EMR. It contains a number of important details as well. Use this information to help
+you and I brainstorm ideas for a really good landing page.
+3. I want you to scour the internet and review some of my competitors website designs. Keep in mind
+that my competitors include Ai scribes like Freed, Heidi, Deepscribe, Abridge, Nabla, ScribeHealth
+Al, Augmedix, Suki, Omni MD but they also include full EMRS like EPIC, Athena, and Cerner. In a
+sense, I am fighting on two separate fronts here to gain customers/users. One front is the Ai scribes
+which physicians flock to because of time saved. The other is the EMRs which are gigantic, but they
+are dinosaurs in their approach. Only i have the best of both worlds with Ai scribe and an EMR that is
+built around Al. Other EMRs just tack Ai to the side. Get some ideas from the way they handle their
+landing page and DO NOT UNDERESTIMATE THE IMPORTANCE OF SEO.
+4. Also I want you to remember that we have partially developed an SEO and marketing monitoring
+page within our admin dashboard. Everything we do in the landing page will ultimately need to have
+connections to our admin dashboard for SEO monitoring. We will need to gather as much
+information as we possibly can at all times, to help us maximize SEO and marketing.
+Review these items and brainstorm first before making any code changes. Please ask me any clarifying
+questions you have.
