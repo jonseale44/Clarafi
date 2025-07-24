@@ -1,0 +1,38 @@
+8,448,442,434,531,524,503,469,449,443,435,536,509,488,474,454,527,520,499,465,445,439,431,535,508,487,473,453,436,542,515,494,480,460,544,517,496,482,462,526,519,498,463,444,438,430
+🤖 [GPTLabReview] Starting review generation for patient 3, results: 543,516,495,481,461,541,514,493,479,459,539,512,491,477,457,540,513,492,478,458,437,533,506,485,471,451,545,518,497,483,464,538,511,490,476,456,537,510,489,475,455,534,507,486,472,452,429,532,505,484,470,450,529,522,501,467,447,441,433,528,521,500,466,446,440,432,504,525,546,530,523,502,468,448,442,434,531,524,503,469,449,443,435,536,509,488,474,454,527,520,499,465,445,439,431,535,508,487,473,453,436,542,515,494,480,460,544,517,496,482,462,526,519,498,463,444,438,430
+🤖 [GPTLabReview] Error generating review: error: column "extraction_notes" does not exist
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async Function.generateLabReview (/home/runner/workspace/server/gpt-lab-review-service.ts:80:30)
+    at async <anonymous> (/home/runner/workspace/server/gpt-lab-review-routes.ts:52:22) {
+  length: 118,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '1003',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3722',
+  routine: 'errorMissingColumn'
+}
+🤖 [GPTLabReviewRoutes] Generate review error details: {
+  message: 'column "extraction_notes" does not exist',
+  stack: 'error: column "extraction_notes" does not exist\n' +
+    '    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)\n' +
+    '    at async Function.generateLabReview (/home/runner/workspace/server/gpt-lab-review-service.ts:80:30)\n' +
+    '    at async <anonymous> (/home/runner/workspace/server/gpt-lab-review-routes.ts:52:22)',
+  requestedBy: 8
+}
+[API Error 500] column "extraction_notes" does not exist 
+6:22:01 PM [express] POST /api/gpt-lab-review/generate 500 in 74ms :: {"success":false,"error":{"cod…
