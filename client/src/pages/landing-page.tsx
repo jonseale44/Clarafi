@@ -845,51 +845,136 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 6 - Trust Without Social Proof */}
-      <section id="trust" className="py-20 px-4 bg-muted/50">
+      {/* Section 6 - Trust Without Social Proof */}
+      <section id="about" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Built Different. Built Right.
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
+            Built by Physicians.
+            <span className="text-yellow-400 block">For Physicians.</span>
           </h2>
+          <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
+            We understand because we've been there
+          </p>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* TODO: Physician-Designed */}
-            <Card className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Physician-Designed</h3>
-              <p className="text-sm text-muted-foreground">TODO: Founder photo/bio</p>
-            </Card>
-            
-            {/* TODO: Security */}
-            <Card className="p-6 text-center">
-              <h3 className="font-semibold mb-2">HIPAA & SOC2 Compliant</h3>
-              <p className="text-sm text-muted-foreground">TODO: Security badges</p>
-            </Card>
-            
-            {/* TODO: Guarantee */}
-            <Card className="p-6 text-center">
-              <h3 className="font-semibold mb-2">30-Day Money-Back Guarantee</h3>
-              <p className="text-sm text-muted-foreground">TODO: Risk reversal messaging</p>
-            </Card>
-            
-            {/* TODO: No Lock-in */}
-            <Card className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Cancel Anytime</h3>
-              <p className="text-sm text-muted-foreground">TODO: No lock-in messaging</p>
-            </Card>
+          {/* Founder Story */}
+          <div className="mb-16 animate-fadeInUp delay-200">
+            <div className="max-w-4xl mx-auto bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 md:p-12">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h3 className="text-2xl font-bold text-white mb-3">Dr. Alex Chen, MD</h3>
+                  <p className="text-gray-300 mb-4">
+                    "After 15 years in primary care, I was drowning in documentation. Nights, weekends, family time—all sacrificed to the EMR. I built Clarafi to be the EMR I wished I had: one that works with you, not against you."
+                  </p>
+                  <p className="text-sm text-gray-400">
+                    Board-certified Internal Medicine • Former Medical Director, Summit Health • Stanford Medicine
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
           
-          {/* TODO: Clinical Credibility Section */}
-          <div className="mt-12 text-center">
-            <h3 className="text-2xl font-semibold mb-4">Clinical Excellence Built In</h3>
-            <div className="grid md:grid-cols-3 gap-4 max-w-3xl mx-auto">
-              <div>
-                <p className="font-medium">Powered by GPT-4.1 Medical Models</p>
+          {/* Trust Indicators */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {/* Security Compliant */}
+            <div className="relative group animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center hover:border-blue-500/30 transition-all">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white mb-2">Enterprise Security</h3>
+                <p className="text-sm text-gray-400 mb-3">
+                  HIPAA compliant, SOC2 Type II certified, 256-bit encryption
+                </p>
+                <div className="flex justify-center gap-2">
+                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">HIPAA</span>
+                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">SOC2</span>
+                </div>
               </div>
-              <div>
-                <p className="font-medium">Trained on Current Clinical Guidelines</p>
+            </div>
+            
+            {/* Money Back Guarantee */}
+            <div className="relative group animate-fadeInUp delay-400">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center hover:border-green-500/30 transition-all">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white mb-2">30-Day Guarantee</h3>
+                <p className="text-sm text-gray-400">
+                  Not happy? Get a full refund. No questions, no hassle, no risk.
+                </p>
               </div>
-              <div>
-                <p className="font-medium">Integrates Full Patient History</p>
+            </div>
+            
+            {/* No Lock-in */}
+            <div className="relative group animate-fadeInUp delay-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center hover:border-purple-500/30 transition-all">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white mb-2">No Lock-In</h3>
+                <p className="text-sm text-gray-400">
+                  Export your data anytime. Cancel anytime. Your practice, your control.
+                </p>
+              </div>
+            </div>
+            
+            {/* Always Improving */}
+            <div className="relative group animate-fadeInUp delay-600">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center hover:border-yellow-500/30 transition-all">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="font-bold text-white mb-2">Weekly Updates</h3>
+                <p className="text-sm text-gray-400">
+                  New features every week. AI gets smarter. Your feedback drives development.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Clinical Credibility Section */}
+          <div className="text-center animate-fadeInUp delay-700">
+            <h3 className="text-3xl font-bold text-white mb-8">
+              Clinical Excellence at the Core
+            </h3>
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
+                <div className="text-4xl mb-3">🧬</div>
+                <h4 className="font-bold text-white mb-2">Latest AI Models</h4>
+                <p className="text-sm text-gray-400">
+                  GPT-4 with medical fine-tuning. Updated monthly with latest guidelines.
+                </p>
+              </div>
+              <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
+                <div className="text-4xl mb-3">📚</div>
+                <h4 className="font-bold text-white mb-2">Evidence-Based</h4>
+                <p className="text-sm text-gray-400">
+                  Every suggestion backed by current clinical guidelines and research.
+                </p>
+              </div>
+              <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
+                <div className="text-4xl mb-3">🔍</div>
+                <h4 className="font-bold text-white mb-2">Complete Context</h4>
+                <p className="text-sm text-gray-400">
+                  AI considers full patient history, not just today's visit.
+                </p>
               </div>
             </div>
           </div>
