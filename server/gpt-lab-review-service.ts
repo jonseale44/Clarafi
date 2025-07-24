@@ -175,7 +175,7 @@ export class GPTLabReviewService {
     }>
   > {
     // Get unique test names from current results
-    const testNames = [...new Set(currentResults.map((r) => r.testName))];
+    const testNames = Array.from(new Set(currentResults.map((r) => r.testName)));
 
     // Get historical results for these tests (last 12 months)
     const twelveMonthsAgo = new Date();
@@ -507,85 +507,6 @@ The patient and nurse messages should be identical in content but different in p
         status: "approved",
         reviewedBy: approvedBy,
         reviewedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(gptLabReviewNotes.id, reviewId));
-  }
-
-  /**
-   * Update GPT review content (for provider edits)
-   */
-  static async updateGPTReview(
-    reviewId: number,
-    updates: {
-      clinicalReview?: string;
-      patientMessage?: string;
-      nurseMessage?: string;
-      revisedBy: number;
-      revisionReason: string;
-    },
-  ): Promise<void> {
-    // Get current version for revision history
-    const currentReview = await this.getGPTReview(reviewId);
-    if (!currentReview) {
-      throw new Error("Review not found");
-    }
-
-    // Build revision history entry
-    const revisionEntry = {
-      revisedAt: new Date().toISOString(),
-      revisedBy: updates.revisedBy,
-      changes: {} as any,
-      reason: updates.revisionReason,
-    };
-
-    if (
-      updates.clinicalReview &&
-      updates.clinicalReview !== currentReview.clinicalReview
-    ) {
-      revisionEntry.changes.clinicalReview = {
-        old: currentReview.clinicalReview,
-        new: updates.clinicalReview,
-      };
-    }
-
-    if (
-      updates.patientMessage &&
-      updates.patientMessage !== currentReview.patientMessage
-    ) {
-      revisionEntry.changes.patientMessage = {
-        old: currentReview.patientMessage,
-        new: updates.patientMessage,
-      };
-    }
-
-    if (
-      updates.nurseMessage &&
-      updates.nurseMessage !== currentReview.nurseMessage
-    ) {
-      revisionEntry.changes.nurseMessage = {
-        old: currentReview.nurseMessage,
-        new: updates.nurseMessage,
-      };
-    }
-
-    // Update with revision history
-    const newRevisionHistory = [
-      ...(currentReview.revisionHistory || []),
-      revisionEntry,
-    ];
-
-    await db
-      .update(gptLabReviewNotes)
-      .set({
-        ...(updates.clinicalReview && {
-          clinicalReview: updates.clinicalReview,
-        }),
-        ...(updates.patientMessage && {
-          patientMessage: updates.patientMessage,
-        }),
-        ...(updates.nurseMessage && { nurseMessage: updates.nurseMessage }),
-        revisionHistory: newRevisionHistory,
         updatedAt: new Date(),
       })
       .where(eq(gptLabReviewNotes.id, reviewId));

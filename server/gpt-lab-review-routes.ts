@@ -78,11 +78,9 @@ router.post("/generate", async (req: Request, res: Response) => {
     console.error('🤖 [GPTLabReviewRoutes] Generate review error details:', {
       message: error.message,
       stack: error.stack,
-      patientId,
-      resultIds,
-      requestedBy
+      requestedBy: (req as any).user?.id
     });
-    return APIResponseHandler.error(res, "GPT_REVIEW_FAILED", error.message || "Failed to generate GPT lab review", 500);
+    return APIResponseHandler.error(res, error.message || "Failed to generate GPT lab review", 500, "GPT_REVIEW_FAILED");
   }
 });
 
@@ -110,7 +108,7 @@ router.get("/:reviewId", async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('🤖 [GPTLabReviewRoutes] Get review error:', error);
-    return APIResponseHandler.error(res, "FETCH_FAILED", "Failed to fetch GPT review", 500);
+    return APIResponseHandler.error(res, "Failed to fetch GPT review", 500, "FETCH_FAILED");
   }
 });
 
@@ -145,7 +143,7 @@ router.post("/approve", async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('🤖 [GPTLabReviewRoutes] Approve review error:', error);
-    return APIResponseHandler.error(res, "APPROVAL_FAILED", "Failed to approve GPT review", 500);
+    return APIResponseHandler.error(res, "Failed to approve GPT review", 500, "APPROVAL_FAILED");
   }
 });
 
@@ -186,9 +184,9 @@ router.put("/update", async (req: Request, res: Response) => {
       review: updatedReview
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('🤖 [GPTLabReviewRoutes] Update review error:', error);
-    return APIResponseHandler.error(res, "UPDATE_FAILED", error.message || "Failed to update GPT review", 500);
+    return APIResponseHandler.error(res, error.message || "Failed to update GPT review", 500, "UPDATE_FAILED");
   }
 });
 
@@ -219,7 +217,7 @@ router.get("/results/:resultIds", async (req: Request, res: Response) => {
 
   } catch (error) {
     console.error('🤖 [GPTLabReviewRoutes] Get reviews for results error:', error);
-    return APIResponseHandler.error(res, "FETCH_FAILED", "Failed to fetch GPT reviews", 500);
+    return APIResponseHandler.error(res, "Failed to fetch GPT reviews", 500, "FETCH_FAILED");
   }
 });
 
