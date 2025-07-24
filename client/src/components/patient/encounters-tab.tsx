@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Encounter } from "@shared/schema";
 import { Plus, Eye, Edit, MapPin, User, Calendar, RefreshCw } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 interface EncountersTabProps {
   encounters: Encounter[];
@@ -14,11 +16,47 @@ interface EncountersTabProps {
 
 export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTabProps) {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   
   // Fetch all users/providers for name lookup
   const { data: providers = [] } = useQuery({
     queryKey: ["/api/users"],
     enabled: encounters.length > 0,
+  });
+  
+  // Get current user
+  const { data: currentUser } = useQuery<any>({
+    queryKey: ["/api/user"],
+  });
+  
+  // Mutation to create new encounter
+  const createEncounterMutation = useMutation({
+    mutationFn: async (encounterData: any) => {
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(encounterData),
+      });
+      if (!response.ok) throw new Error('Failed to create encounter');
+      return response.json();
+    },
+    onSuccess: (newEncounter) => {
+      // Navigate to the newly created encounter
+      setLocation(`/patients/${patientId}/encounters/${newEncounter.id}`);
+      toast({
+        title: "Success",
+        description: "New encounter created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const getProviderName = (providerId: number | null) => {
