@@ -981,47 +981,170 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 7 - Pricing */}
-      <section id="pricing" className="py-20 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <h2 className="text-4xl font-bold text-center mb-4">
+      {/* Section 7 - Pricing */}
+      <section id="pricing" className="py-20 px-4 bg-gray-900">
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             Simple Pricing. Powerful Results.
           </h2>
-          <p className="text-xl text-center text-muted-foreground mb-12">
-            Choose the plan that fits your practice
+          <p className="text-xl text-center text-gray-400 mb-16 animate-fadeInUp delay-100">
+            Start free. Scale when you're ready.
           </p>
           
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Individual Practice */}
-            <Card className="p-8">
-              <h3 className="text-2xl font-bold mb-2">Individual Practice</h3>
-              <p className="text-3xl font-bold mb-4">$149<span className="text-lg font-normal">/month</span></p>
-              <ul className="space-y-2 mb-6">
-                <li>✓ Everything included</li>
-                <li>✓ Unlimited patients</li>
-                <li>✓ All AI features</li>
-                <li>✓ Cancel anytime</li>
-              </ul>
-              <Button className="w-full" size="lg">Start 30-Day Trial</Button>
-            </Card>
+            {/* Individual Provider */}
+            <div className="relative animate-fadeInUp delay-200">
+              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold px-4 py-1 rounded-full text-sm">
+                NO CREDIT CARD
+              </div>
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:border-yellow-500/30 transition-all">
+                <h3 className="text-2xl font-bold text-white mb-2">Individual Provider</h3>
+                <div className="mb-6">
+                  <span className="text-5xl font-bold text-white">$149</span>
+                  <span className="text-gray-400">/month</span>
+                </div>
+                
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Everything included - no tiers</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Unlimited patients & encounters</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">All AI features & updates</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">E-prescribing & lab ordering</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Cancel anytime, no questions</span>
+                  </li>
+                </ul>
+                
+                <Link href="/auth?tab=register">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all" 
+                    size="lg"
+                  >
+                    Start 30-Day Free Trial
+                  </Button>
+                </Link>
+                
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  No credit card required • Setup in 3 minutes
+                </p>
+              </div>
+            </div>
             
             {/* Enterprise */}
-            <Card className="p-8 border-primary">
-              <h3 className="text-2xl font-bold mb-2">Enterprise</h3>
-              <p className="text-3xl font-bold mb-4">Custom Pricing</p>
-              <ul className="space-y-2 mb-6">
-                <li>✓ Multi-location support</li>
-                <li>✓ Advanced analytics</li>
-                <li>✓ Priority support</li>
-                <li>✓ Custom integrations</li>
-              </ul>
-              <Button className="w-full" size="lg" variant="outline">Schedule 15-Min Call</Button>
-            </Card>
+            <div className="relative animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-2xl opacity-10" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-2xl font-bold text-white">Enterprise</h3>
+                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">POPULAR</span>
+                </div>
+                <div className="mb-6">
+                  <span className="text-gray-400">Starting at</span>
+                  <div>
+                    <span className="text-5xl font-bold text-white">$399</span>
+                    <span className="text-gray-400">/month</span>
+                  </div>
+                </div>
+                
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Everything in Individual</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Multi-location support</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Advanced analytics & reporting</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Priority support & training</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-gray-300">Custom integrations available</span>
+                  </li>
+                </ul>
+                
+                <Button 
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all" 
+                  size="lg"
+                  onClick={() => {
+                    // TODO: Implement contact sales
+                    toast({
+                      title: "Enterprise Sales",
+                      description: "Please email sales@clarafi.com or call 1-800-CLARAFI",
+                    });
+                  }}
+                >
+                  Contact Sales Team
+                </Button>
+                
+                <p className="text-xs text-gray-500 text-center mt-4">
+                  Volume discounts available
+                </p>
+              </div>
+            </div>
           </div>
           
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            *Credit card required to prevent abuse. Cancel anytime within 30 days for full refund.
-          </p>
+          {/* Trust badges */}
+          <div className="mt-16 text-center animate-fadeInUp delay-400">
+            <div className="inline-flex items-center gap-8 text-gray-500">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span className="text-sm">HIPAA Compliant</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span className="text-sm">Bank-Level Security</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                </svg>
+                <span className="text-sm">30-Day Guarantee</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
