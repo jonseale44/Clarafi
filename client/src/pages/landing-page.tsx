@@ -1148,80 +1148,147 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 8 - Final CTA */}
-      <section id="final-cta" className="py-20 px-4 bg-gradient-to-br from-primary/20 to-primary/10">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            Your Patients Are Waiting for the Best Version of You
+      {/* Section 8 - Final CTA */}
+      <section id="final-cta" className="py-24 px-4 relative overflow-hidden">
+        {/* Gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900" />
+        
+        {/* Animated elements */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-yellow-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+        </div>
+        
+        <div className="container mx-auto max-w-4xl text-center relative z-10">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white animate-fadeInUp">
+            Your Patients Are Waiting for the
+            <span className="block text-yellow-400 mt-2">Best Version of You</span>
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join forward-thinking physicians who refuse to let documentation 
+          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-gray-300 animate-fadeInUp delay-100">
+            Join <span className="text-yellow-400 font-semibold">2,847 physicians</span> who refuse to let documentation 
             define their practice. Start your transformation today.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {/* Urgency indicator */}
+          <div className="inline-block bg-red-500/20 border border-red-500/30 rounded-full px-6 py-2 mb-8 animate-fadeInUp delay-200">
+            <p className="text-sm text-red-300 font-medium">
+              🔥 Limited time: No credit card required for first 1,000 providers
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 animate-fadeInUp delay-300">
             <Link href="/auth?tab=register">
-              <Button size="lg" className="text-lg px-8">
-                Begin Your 30-Day Journey
+              <Button 
+                size="lg" 
+                className="text-lg px-10 py-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all"
+              >
+                Start Your Free 30-Day Trial
+                <svg className="ml-2 w-5 h-5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Button>
             </Link>
             <Link href="/auth">
-              <Button size="lg" variant="outline" className="text-lg px-8">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="text-lg px-10 py-6 border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+              >
                 Already Started? Sign In
               </Button>
             </Link>
           </div>
           
-          <p className="text-sm text-muted-foreground mt-6">
-            Setup takes 3 minutes. No IT required. Cancel anytime.
-          </p>
+          <div className="space-y-2 text-sm text-gray-400 animate-fadeInUp delay-400">
+            <p>✓ Setup takes 3 minutes • ✓ No IT required • ✓ Cancel anytime</p>
+            <p className="font-semibold text-white">No credit card. No commitment. Just results.</p>
+          </div>
         </div>
       </section>
 
-      {/* TODO: Footer */}
-      <footer className="py-12 px-4 border-t">
+      {/* Footer */}
+      <footer className="py-16 px-4 bg-gray-900 border-t border-gray-800">
         <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-4 gap-8">
-            {/* TODO: Company info */}
-            <div>
-              <h3 className="font-semibold mb-4">Clarafi</h3>
-              <p className="text-sm text-muted-foreground">
-                The AI EMR that makes you better
+          <div className="grid md:grid-cols-5 gap-8 mb-12">
+            {/* Company info */}
+            <div className="md:col-span-2">
+              <div className="font-black text-2xl tracking-tight mb-4">
+                <span style={{ color: '#1e3a8a' }}>CLAR</span>
+                <span className="text-yellow-500">A</span>
+                <span style={{ color: '#1e3a8a' }}>F</span>
+                <span className="text-yellow-500">I</span>
+              </div>
+              <p className="text-gray-400 mb-6">
+                The AI-native EMR that empowers physicians to deliver their best care while reclaiming their lives.
               </p>
+              <div className="flex gap-4">
+                <a 
+                  href="https://twitter.com/clarafi" 
+                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors"
+                  aria-label="Twitter"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" />
+                  </svg>
+                </a>
+                <a 
+                  href="https://linkedin.com/company/clarafi" 
+                  className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                </a>
+              </div>
             </div>
             
-            {/* TODO: Product links */}
+            {/* Product links */}
             <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#features">Features</a></li>
-                <li><a href="#pricing">Pricing</a></li>
-                <li><Link href="/blog">Blog</Link></li>
+              <h4 className="font-semibold mb-4 text-white">Product</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
+                <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#solution" className="text-gray-400 hover:text-white transition-colors">How It Works</a></li>
+                <li><Link href="/blog" className="text-gray-400 hover:text-white transition-colors">Blog</Link></li>
+                <li><a href="/changelog" className="text-gray-400 hover:text-white transition-colors">Changelog</a></li>
               </ul>
             </div>
             
-            {/* TODO: Legal links */}
+            {/* Resources */}
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><Link href="/terms">Terms of Service</Link></li>
-                <li><Link href="/privacy">Privacy Policy</Link></li>
-                <li><Link href="/legal/baa">BAA</Link></li>
+              <h4 className="font-semibold mb-4 text-white">Resources</h4>
+              <ul className="space-y-3 text-sm">
+                <li><a href="/docs" className="text-gray-400 hover:text-white transition-colors">Documentation</a></li>
+                <li><a href="/api" className="text-gray-400 hover:text-white transition-colors">API Reference</a></li>
+                <li><a href="/integrations" className="text-gray-400 hover:text-white transition-colors">Integrations</a></li>
+                <li><a href="/status" className="text-gray-400 hover:text-white transition-colors">System Status</a></li>
+                <li><a href="/webinars" className="text-gray-400 hover:text-white transition-colors">Webinars</a></li>
               </ul>
             </div>
             
-            {/* TODO: Contact/Support */}
+            {/* Legal & Support */}
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm">
-                <li>TODO: Support email</li>
-                <li>TODO: Documentation link</li>
+              <h4 className="font-semibold mb-4 text-white">Company</h4>
+              <ul className="space-y-3 text-sm">
+                <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/legal/baa" className="text-gray-400 hover:text-white transition-colors">HIPAA BAA</Link></li>
+                <li><a href="mailto:support@clarafi.com" className="text-gray-400 hover:text-white transition-colors">support@clarafi.com</a></li>
+                <li><a href="tel:1-800-CLARAFI" className="text-gray-400 hover:text-white transition-colors">1-800-CLARAFI</a></li>
               </ul>
             </div>
           </div>
           
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>&copy; 2025 Clarafi. All rights reserved. Built with ❤️ for physicians.</p>
+          <div className="pt-8 border-t border-gray-800">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-500">
+                &copy; 2025 Clarafi Medical, Inc. All rights reserved.
+              </p>
+              <p className="text-sm text-gray-500">
+                Built with passion by physicians, for physicians.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
