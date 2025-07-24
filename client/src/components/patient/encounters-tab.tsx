@@ -35,7 +35,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       // Format as M/D/YY (e.g., 7/3/25)
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const year = date.getFullYear().toString().slice(-2);
+      const year = date.getFullYear()?.toString()?.slice(-2) || '00';
       return `${month}/${day}/${year}`;
     } catch {
       return "Invalid Date";
@@ -65,7 +65,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       // Format as M/D/YY at H:MM AM/PM
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const year = date.getFullYear().toString().slice(-2);
+      const year = date.getFullYear()?.toString()?.slice(-2) || '00';
       const time = date.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",

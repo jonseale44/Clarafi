@@ -170,7 +170,7 @@ export default function PrescriptionHistorySection({ patientId }: PrescriptionHi
                   const provider = item.provider;
                   
                   return (
-                    <TableRow key={transmission.id}>
+                    <TableRow key={transmission?.id || `transmission-${Math.random()}`}>
                       <TableCell className="whitespace-nowrap">
                         {format(new Date(transmission.transmittedAt), "MMM d, yyyy h:mm a")}
                       </TableCell>
