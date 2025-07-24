@@ -323,7 +323,7 @@ export default function LandingPage() {
                 {/* Left side - Upload visualization */}
                 <div className="space-y-6">
                   <h3 className="text-3xl font-bold text-white mb-4">
-                    Your Patient's Entire History.
+                    <span className="block mb-2">Your Patient's Entire History.</span>
                     <span className="block text-yellow-400">Instantly Organized.</span>
                   </h3>
                   
@@ -653,7 +653,7 @@ export default function LandingPage() {
       <section id="features" className="pt-12 pb-20 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
-            Everything You Need...
+            <span className="block mb-2">Everything You Need...</span>
             <span className="text-yellow-400 block">Plus Some Things You'll Love</span>
           </h2>
           <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
@@ -850,7 +850,7 @@ export default function LandingPage() {
       <section id="about" className="pt-12 pb-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
-            Built by Physicians.
+            <span className="block mb-2">Built by Physicians.</span>
             <span className="text-yellow-400 block">For Physicians.</span>
           </h2>
           <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
