@@ -35,6 +35,18 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 - Changed "Individual Practice" to "Individual Provider" per user request
 - Prominently displays "NO CREDIT CARD" message on tier 1 pricing
 
+### Landing Page Refinements (July 24, 2025 - 11:18 PM) - COMPLETED
+- **E-prescribing description** - Enhanced to emphasize auto-ordering capabilities: "Auto-prescribe at a click. Send to any pharmacy. Track fills automatically."
+- **Attachment parsing claim** - Removed "perfectly" from "reads doctor's handwriting" for accuracy
+- **Hero text overflow fix** - Reduced text sizes from 5xl/7xl/8xl to 4xl/6xl/7xl to prevent overflow on smaller screens
+- **Value proposition update** - Changed "You need less than legacy bloat" to "You need better than legacy bloat"
+- **AI technology update** - Updated GPT-4 references to GPT-4.1 with promise of updates as new versions release
+- **Terminology adjustment** - Changed "medical fine-tuning" to "finely tuned prompts" to avoid confusing technical AI terms
+- **Update frequency** - Changed "weekly updates" to "regular updates" for more realistic expectations
+- **Testimonial compliance** - Removed fictional Dr. Alex Chen quote, replaced with generic "Physician-Founded" messaging
+- **Scheduling AI feature** - Added description: "AI predicts visit duration based on complexity" 
+- **Navigation visibility** - Improved contrast by changing nav links from text-gray-300 to text-gray-100 and increased size to text-lg
+
 ### Complete HL7 Integration Implementation
 Successfully implemented full HL7 integration architecture while preserving all existing GPT functionality:
 

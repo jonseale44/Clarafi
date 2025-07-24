@@ -38,16 +38,16 @@ export default function LandingPage() {
             
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#solution" className="text-gray-300 hover:text-white transition-colors font-medium">
+              <a href="#solution" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 Features
               </a>
-              <a href="#pricing" className="text-gray-300 hover:text-white transition-colors font-medium">
+              <a href="#pricing" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 Pricing
               </a>
-              <a href="#about" className="text-gray-300 hover:text-white transition-colors font-medium">
+              <a href="#about" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 About
               </a>
-              <Link href="/blog" className="text-gray-300 hover:text-white transition-colors font-medium">
+              <Link href="/blog" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 Blog
               </Link>
             </div>
@@ -107,7 +107,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-8">
             {/* Main headline with bold typography */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight animate-fadeInUp">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight animate-fadeInUp">
               Stop Charting.
               <span className="block bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient">
                 Start Living.
@@ -476,7 +476,7 @@ export default function LandingPage() {
             Why Settle for Half a Solution?
           </h2>
           <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
-            You need more than a scribe. You need less than legacy bloat.
+            You need more than a scribe. You need better than legacy bloat.
           </p>
           
           {/* Two-track comparative messaging */}
@@ -732,7 +732,7 @@ export default function LandingPage() {
                       <div className="bg-gray-900/50 rounded-lg p-4">
                         <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
                         <ul className="text-sm text-gray-400 space-y-1">
-                          <li>• Reads doctor's handwriting perfectly</li>
+                          <li>• Reads doctor's handwriting</li>
                           <li>• Highlights critical findings</li>
                           <li>• Links everything to source docs</li>
                         </ul>
@@ -810,8 +810,8 @@ export default function LandingPage() {
                       <div className="bg-gray-900/50 rounded-lg p-4">
                         <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
                         <ul className="text-sm text-gray-400 space-y-1">
-                          <li>• E-prescribing to any pharmacy</li>
-                          <li>• Lab ordering & tracking</li>
+                          <li>• Auto-prescribing from visit notes</li>
+                          <li>• Auto lab/imaging ordering</li>
                           <li>• Automated billing/coding</li>
                         </ul>
                       </div>
@@ -819,7 +819,7 @@ export default function LandingPage() {
                         <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
                         <ul className="text-sm text-gray-400 space-y-1">
                           <li>• Patients self-schedule online</li>
-                          <li>• AI optimizes your schedule</li>
+                          <li>• AI predicts visit duration based on complexity</li>
                           <li>• Revenue insights dashboard</li>
                         </ul>
                       </div>
@@ -866,12 +866,12 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <div className="flex-1 text-center md:text-left">
-                  <h3 className="text-2xl font-bold text-white mb-3">Dr. Alex Chen, MD</h3>
+                  <h3 className="text-2xl font-bold text-white mb-3">Physician-Founded</h3>
                   <p className="text-gray-300 mb-4">
-                    "After 15 years in primary care, I was drowning in documentation. Nights, weekends, family time—all sacrificed to the EMR. I built Clarafi to be the EMR I wished I had: one that works with you, not against you."
+                    Built by physicians who understand the daily struggle with documentation. We've experienced the nights, weekends, and family time lost to EMRs. Clarafi was designed from the ground up to give you your life back.
                   </p>
                   <p className="text-sm text-gray-400">
-                    Board-certified Internal Medicine • Former Medical Director, Summit Health • Stanford Medicine
+                    Created by practicing physicians who use it every day
                   </p>
                 </div>
               </div>
@@ -941,9 +941,9 @@ export default function LandingPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
-                <h3 className="font-bold text-white mb-2">Weekly Updates</h3>
+                <h3 className="font-bold text-white mb-2">Regular Updates</h3>
                 <p className="text-sm text-gray-400">
-                  New features every week. AI gets smarter. Your feedback drives development.
+                  Continuous improvements. AI gets smarter. Your feedback drives development.
                 </p>
               </div>
             </div>
@@ -959,7 +959,7 @@ export default function LandingPage() {
                 <div className="text-4xl mb-3">🧬</div>
                 <h4 className="font-bold text-white mb-2">Latest AI Models</h4>
                 <p className="text-sm text-gray-400">
-                  GPT-4 with medical fine-tuning. Updated monthly with latest guidelines.
+                  GPT-4.1 with finely tuned prompts. Updates with each new GPT version.
                 </p>
               </div>
               <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700 rounded-lg p-6">
