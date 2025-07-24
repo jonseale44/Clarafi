@@ -1,0 +1,473 @@
+[
+  {
+    "time": 18.08001399040222,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/3/1/0",
+      "type": "svg",
+      "source": "webview",
+      "bounds": {
+        "x": 365,
+        "y": 121.66666412353516,
+        "width": 16,
+        "height": 16
+      },
+      "attributes": {
+        "fill": "currentColor",
+        "width": "16",
+        "height": "16",
+        "viewBox": "0 0 24 24"
+      }
+    },
+    "duration": 0.08910489082336426,
+    "coordinates": {
+      "x": 369.25,
+      "y": 129.53125
+    },
+    "position": {
+      "x": 0.9419642857142857,
+      "y": 0.15221063454759107
+    },
+    "localPosition": {
+      "x": 0.265625,
+      "y": 0.49153661727905273
+    }
+  },
+  {
+    "time": 19.980214953422546,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/0/0/1/1/0/1/0/0/1",
+      "type": "input",
+      "source": "webview",
+      "bounds": {
+        "x": 57,
+        "y": 410.66666412353516,
+        "width": 279,
+        "height": 40
+      },
+      "attributes": {
+        "id": "username",
+        "name": "username",
+        "class": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "placeholder": "Enter your username",
+        "data-component-name": "Input",
+        "data-replit-metadata": "client/src/pages/auth-page.tsx:674:22"
+      }
+    },
+    "duration": 0.11803603172302246,
+    "coordinates": {
+      "x": 182.01041666666669,
+      "y": 428.65625
+    },
+    "position": {
+      "x": 0.46431228741496605,
+      "y": 0.5037088719153937
+    },
+    "localPosition": {
+      "x": 0.4480660095579451,
+      "y": 0.4497396469116211
+    }
+  },
+  {
+    "type": "typeText",
+    "text": "jon seale"
+  },
+  {
+    "key": "\b",
+    "time": 24.025169014930725,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 24.211490988731384,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 24.345831990242004,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 24.484521985054016,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 24.63893699645996,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 25.128371953964233,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "type": "typeText",
+    "text": "seale22"
+  },
+  {
+    "key": "\t",
+    "time": 26.879927039146423,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Tab"
+  },
+  {
+    "type": "typeText",
+    "text": "Yregru$4"
+  },
+  {
+    "time": 33.17927706241608,
+    "type": "swipe",
+    "appId": "co.median.ios.pkjbyp",
+    "moves": [
+      {
+        "x": -0.021670386904761953,
+        "y": 0,
+        "t": 0.10694098472595215
+      },
+      {
+        "x": -0.037879995748299415,
+        "y": 0,
+        "t": 0.12799692153930664
+      },
+      {
+        "x": -0.05812872023809526,
+        "y": 0,
+        "t": 0.1471569538116455
+      },
+      {
+        "x": -0.08278858418367355,
+        "y": 0,
+        "t": 0.15292692184448242
+      },
+      {
+        "x": -0.10744844812925175,
+        "y": 0,
+        "t": 0.17433393001556396
+      },
+      {
+        "x": -0.13210831207482995,
+        "y": 0,
+        "t": 0.18854200839996338
+      },
+      {
+        "x": -0.15695418792517013,
+        "y": 0,
+        "t": 0.20858895778656006
+      },
+      {
+        "x": -0.18400563350340138,
+        "y": 0,
+        "t": 0.2197279930114746
+      },
+      {
+        "x": -0.20885150935374155,
+        "y": 0,
+        "t": 0.24660193920135498
+      },
+      {
+        "x": -0.23369738520408162,
+        "y": 0,
+        "t": 0.2532479763031006
+      },
+      {
+        "x": -0.25615167942176875,
+        "y": -0.0013770564042302504,
+        "t": 0.27318692207336426
+      },
+      {
+        "x": -0.2807849702380953,
+        "y": -0.00421685272228746,
+        "t": 0.28393399715423584
+      },
+      {
+        "x": -0.3012197066326531,
+        "y": -0.006175332941637334,
+        "t": 0.31128692626953125
+      },
+      {
+        "x": -0.32587957057823136,
+        "y": -0.009015129259694544,
+        "t": 0.32845091819763184
+      },
+      {
+        "x": -0.34065423044217696,
+        "y": -0.011420387779083432,
+        "t": 0.33410000801086426
+      },
+      {
+        "x": -0.36090295493197283,
+        "y": -0.01408881707794749,
+        "t": 0.35492491722106934
+      },
+      {
+        "x": -0.3771125637755103,
+        "y": -0.016585879357618533,
+        "t": 0.37614595890045166
+      },
+      {
+        "x": -0.39778645833333337,
+        "y": -0.019578681942812422,
+        "t": 0.38864994049072266
+      },
+      {
+        "x": -0.4103555484693878,
+        "y": -0.021904377203290314,
+        "t": 0.4052809476852417
+      },
+      {
+        "x": -0.42129039115646266,
+        "y": -0.023605806893850327,
+        "t": 0.41993796825408936
+      },
+      {
+        "x": -0.43385948129251706,
+        "y": -0.02535007833920873,
+        "t": 0.4416189193725586
+      },
+      {
+        "x": -0.4431600765306123,
+        "y": -0.026959704269486857,
+        "t": 0.4587728977203369
+      },
+      {
+        "x": -0.4540949192176871,
+        "y": -0.028079710144927515,
+        "t": 0.47604596614837646
+      },
+      {
+        "x": -0.4619472789115647,
+        "y": -0.029114032510771597,
+        "t": 0.491237998008728
+      },
+      {
+        "x": -0.4651493409863946,
+        "y": -0.029114032510771597,
+        "t": 0.5068929195404053
+      },
+      {
+        "x": -0.47155346513605445,
+        "y": -0.02960977281629451,
+        "t": 0.5121839046478271
+      },
+      {
+        "x": -0.4767086522108844,
+        "y": -0.030062671367019237,
+        "t": 0.5290819406509399
+      },
+      {
+        "x": -0.4775988520408164,
+        "y": -0.03047272816294551,
+        "t": 0.5388269424438477
+      },
+      {
+        "x": -0.4804421768707483,
+        "y": -0.03047272816294551,
+        "t": 0.5519049167633057
+      },
+      {
+        "x": -0.4822225765306123,
+        "y": -0.03047272816294551,
+        "t": 0.581591010093689
+      },
+      {
+        "x": -0.4840029761904762,
+        "y": -0.03088278495887185,
+        "t": 0.584541916847229
+      },
+      {
+        "x": -0.4848267431972789,
+        "y": -0.03088278495887185,
+        "t": 0.6026149988174438
+      }
+    ],
+    "coordinates": {
+      "x": 230.63541666666669,
+      "y": 455.15625
+    },
+    "position": {
+      "x": 0.5883556547619048,
+      "y": 0.5348487074030552
+    }
+  },
+  {
+    "key": "\b",
+    "time": 33.618545055389404,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 33.765650033950806,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 33.88643002510071,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.36662805080414,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.45157504081726,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.535547971725464,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.62119698524475,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.70010304450989,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.781174063682556,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.89305806159973,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 34.95568001270294,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 35.038951992988586,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "type": "typeText",
+    "text": "Yregrus44444"
+  },
+  {
+    "key": "\r",
+    "time": 38.219846963882446,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Enter"
+  },
+  {
+    "time": 41.796103954315186,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/0/0/0/1/1",
+      "type": "button",
+      "source": "webview",
+      "bounds": {
+        "x": 307.5,
+        "y": 119.66666412353516,
+        "width": 77.984375,
+        "height": 36
+      },
+      "attributes": {
+        "class": "px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+        "data-component-name": "button",
+        "data-replit-metadata": "client/src/pages/dashboard.tsx:285:14"
+      }
+    },
+    "duration": 0.08918702602386475,
+    "coordinates": {
+      "x": 354.31770833333337,
+      "y": 137.8125
+    },
+    "position": {
+      "x": 0.9038717049319729,
+      "y": 0.1619418331374853
+    },
+    "localPosition": {
+      "x": 0.6003472917918926,
+      "y": 0.5040509965684679
+    }
+  },
+  {
+    "time": 43.0806200504303,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/1/0",
+      "type": "div",
+      "source": "webview",
+      "bounds": {
+        "x": 24,
+        "y": 202.66666412353516,
+        "width": 345,
+        "height": 280.328125
+      },
+      "attributes": {
+        "class": "rounded-lg border bg-card text-card-foreground shadow-sm p-6",
+        "data-component-name": "Card",
+        "data-replit-metadata": "client/src/pages/dashboard.tsx:218:10"
+      }
+    },
+    "duration": 0.09015798568725586,
+    "coordinates": {
+      "x": 91.11979166666667,
+      "y": 382.578125
+    },
+    "position": {
+      "x": 0.23244844812925172,
+      "y": 0.4495630141010576
+    },
+    "localPosition": {
+      "x": 0.19455012077294687,
+      "y": 0.6417888354101638
+    }
+  }
+]

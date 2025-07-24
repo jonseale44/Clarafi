@@ -98,10 +98,16 @@ export function UnifiedChartPanel({
   });
 
   // Panel state
+  const defaultExpanded = config?.context ? getDefaultExpandedSections(config.context) : [];
+  // Ensure all items are valid strings before creating the Set
+  const validExpandedSections = (defaultExpanded && Array.isArray(defaultExpanded) 
+    ? defaultExpanded.filter(item => item && typeof item === 'string') 
+    : []);
+  
   const [panelState, setPanelState] = useState<ChartPanelState>({
-    expandedSections: new Set(getDefaultExpandedSections(config.context)),
+    expandedSections: new Set(validExpandedSections),
     isExpanded: false,
-    currentWidth: config.defaultWidth || "w-80",
+    currentWidth: config?.defaultWidth || "w-80",
     activeSection: activeSection,
     searchQuery: ""
   });
@@ -180,13 +186,20 @@ export function UnifiedChartPanel({
   // Filter sections based on search query
   const filteredSections = panelState.searchQuery && panelState.searchQuery.trim()
     ? availableSections.filter(section =>
-        section.label.toLowerCase().includes((panelState.searchQuery || "").toLowerCase())
+        section && section.label && section.label.toLowerCase().includes((panelState.searchQuery || "").toLowerCase())
       )
-    : availableSections;
+    : availableSections.filter(section => section && section.id);
 
   const toggleSection = (sectionId: string) => {
+    if (!sectionId || typeof sectionId !== 'string') {
+      console.error('[UnifiedChartPanel] Invalid sectionId:', sectionId);
+      return;
+    }
+    
     setPanelState(prev => {
-      const newExpanded = new Set(prev.expandedSections);
+      // Convert Set to Array, filter out invalid values, then create new Set
+      const currentExpanded = Array.from(prev.expandedSections).filter(id => id && typeof id === 'string');
+      const newExpanded = new Set(currentExpanded);
       let newActiveSection = prev.activeSection;
       
       if (newExpanded.has(sectionId)) {
@@ -498,9 +511,9 @@ export function UnifiedChartPanel({
           
           return (
             <Collapsible
-              key={section.id?.toString() || 'unknown'}
+              key={section.id ? String(section.id) : `section-${filteredSections.indexOf(section)}`}
               open={isExpanded}
-              onOpenChange={() => toggleSection(section.id)}
+              onOpenChange={() => section.id && toggleSection(section.id)}
             >
               <CollapsibleTrigger className="w-full">
                 <div 
@@ -508,7 +521,7 @@ export function UnifiedChartPanel({
                     isActive ? 'bg-navy-blue-50 border-navy-blue-200' : ''
                   }`}
                   onDoubleClick={(e) => {
-                    if (section.allowExpanded && !panelState.isExpanded) {
+                    if (section.allowExpanded && !panelState.isExpanded && section.id) {
                       e.stopPropagation();
                       expandSection(section.id);
                     }
@@ -522,7 +535,7 @@ export function UnifiedChartPanel({
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          expandSection(section.id);
+                          if (section.id) expandSection(section.id);
                         }}
                         className="h-6 w-6 p-1 ml-2 opacity-70 hover:opacity-100 transition-opacity cursor-pointer rounded hover:bg-gray-100 flex items-center justify-center"
                         title="Click to expand section"
