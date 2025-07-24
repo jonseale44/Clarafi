@@ -1,0 +1,255 @@
+2025-07-23 18:17:14.683936-0700 Median[92844:4306919] Reachability Flag Status: -R ------- networkStatusForFlags
+
+2025-07-23 18:17:15.044779-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request storage access user agent string quirks from WebPrivacy.
+2025-07-23 18:17:15.044829-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request storage access quirks from WebPrivacy.
+
+2025-07-23 18:17:15.158703-0700 Median[92844:4307005] [default] Failed to resolve host network app id to config: bundleID: com.apple.WebKit.Networking instance ID: Optional([_EXExtensionInstanceIdentifier: D3A0E0D3-E549-4FD8-B426-0DB7CD81B6A9])
+
+2025-07-23 18:17:16.316444-0700 Median[92844:4307000] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:16.494876-0700 Median[92844:4307000] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:16.807716-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request query parameters from WebPrivacy.
+
+2025-07-23 18:17:16.810677-0700 Median[92844:4306919] got original agent Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148
+
+2025-07-23 18:17:16.815812-0700 Median[92844:4307000] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:16.835975-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request restricted opener domains from WebPrivacy
+
+2025-07-23 18:17:16.846137-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request allowed query parameters from WebPrivacy.
+
+2025-07-23 18:17:17.409295-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request query parameters from WebPrivacy.
+
+2025-07-23 18:17:17.901027-0700 Median[92844:4306995] [XPC] Updated list with error: DownloadFailed
+2025-07-23 18:17:17.901072-0700 Median[92844:4306995] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:18.193273-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request allowed query parameters from WebPrivacy.
+
+2025-07-23 18:17:18.410963-0700 Median[92844:4306995] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:19.252904-0700 Median[92844:4307000] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:20.768620-0700 Median[92844:4306919] Web console logs enabled
+
+2025-07-23 18:17:20.903657-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/user
+
+2025-07-23 18:17:20.957708-0700 Median[92844:4306919] [console.log] ❌ [QueryClient] Unauthorized for: /api/user
+
+2025-07-23 18:17:26.179864-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request query parameters from WebPrivacy.
+
+2025-07-23 18:17:26.257161-0700 Median[92844:4306919] [ResourceLoadStatistics] Failed to request query parameters from WebPrivacy.
+
+2025-07-23 18:17:27.448669-0700 Median[92844:4306996] [XPC] Updated list with error: DownloadFailed
+
+2025-07-23 18:17:37.327984-0700 Median[92844:4306919] [UIFocus] UIKeyboardLayoutStar implements focusItemsInRect: - caching for linear focus movement is limited as long as this view is on screen.
+
+2025-07-23 18:17:37.423525-0700 Median[92844:4306919] API error: <_UIKBCompatInputView: 0x105016d00; frame = (0 0; 0 0); layer = <CALayer: 0x6000024c3300>> returned 0 width, assuming UIViewNoIntrinsicMetric
+
+2025-07-23 18:17:37.423610-0700 Median[92844:4306919] API error: <_UIKBCompatInputView: 0x105016d00; frame = (0 0; 0 0); layer = <CALayer: 0x6000024c3300>> returned 0 width, assuming UIViewNoIntrinsicMetric
+
+2025-07-23 18:17:39.990759-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+2025-07-23 18:17:39.990808-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+2025-07-23 18:17:39.990840-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+
+2025-07-23 18:17:39.990862-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+2025-07-23 18:17:39.990884-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+2025-07-23 18:17:39.990908-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+2025-07-23 18:17:39.990928-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+
+2025-07-23 18:17:39.990948-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+2025-07-23 18:17:39.990996-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+
+2025-07-23 18:17:39.991018-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+2025-07-23 18:17:39.991038-0700 Median[92844:4306919] [Unknown process name] Error: this application, or a library it uses, has passed an invalid numeric value (NaN, or not-a-number) to CoreGraphics API and this value is being ignored. Please fix this problem.
+2025-07-23 18:17:39.991055-0700 Median[92844:4306919] [Unknown process name] If you want to see the backtrace, please set CG_NUMERICS_SHOW_BACKTRACE environmental variable.
+
+2025-07-23 18:17:46.043674-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/user/session-location
+
+2025-07-23 18:17:46.246346-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/user/session-location Data length: object
+
+2025-07-23 18:17:46.258017-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/dashboard/stats
+
+2025-07-23 18:17:46.258495-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/dashboard/pending-encounters
+
+2025-07-23 18:17:46.258807-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/dashboard/lab-orders-to-review
+
+2025-07-23 18:17:46.259665-0700 Median[92844:4306919] [console.log] Dashboard redirect check: {
+  "currentUser": {
+    "id": 8,
+    "username": "jonseale22",
+    "email": "jonathanseale+22@gmail.com",
+    "password": "4b3ca4aeb55a5e2d139ba027cee649aa5cf9cb39d2019e1bfdc6a486124871c1175e56532faf92e2779d16e0825bdd4866ed7b3b77842d32a8c005f0f113f613.7d6b0dbbf85a47e0fcce0d7de5ce1d85",
+    "healthSystemId": 5322,
+    "firstName": "Jonathan",
+    "lastName": "Seale",
+    "role": "provider",
+    "npi": null,
+    "credentials": "",
+    "specialties": null,
+    "licenseNumber": null,
+    "licenseState": null,
+    "bio": null,
+    "profileImageUrl": null,
+    "emailVerified": true,
+    "emailVerificationToken": null,
+    "emailVerificationExpires": null,
+    "mfaEnabled": false,
+    "mfaSecret": null,
+    "accountStatus": "active",
+    "lastLogin": "2025-07-24T01:02:43.705Z",
+    "failedLoginAttempts": 0,
+    "accountLockedUntil": null,
+    "requirePasswordChange": false,
+
+    "baaAccepted": true,
+    "baaAcceptedAt": "2025-07-22T21:46:18.845Z",
+    "baaVersion": "v1.0-2025",
+    "verificationStatus": "unverified",
+    "verifiedWithKeyId": null,
+    "verifiedAt": null,
+    "active": true,
+    "createdAt": "2025-07-22T21:46:19.073Z",
+    "updatedAt": "2025-07-22T21:46:18.863Z"
+  },
+  "role": "provider",
+  "healthSystemId": 5322,
+  "location": "/",
+  "shouldRedirect": false
+}
+
+2025-07-23 18:17:46.259833-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/patients
+
+2025-07-23 18:17:46.394963-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/dashboard/pending-encounters Data length: 1
+
+2025-07-23 18:17:46.443343-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/dashboard/stats Data length: object
+
+2025-07-23 18:17:46.463071-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/dashboard/lab-orders-to-review Data length: 0
+
+2025-07-23 18:17:46.531379-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/patients Data length: 1
+
+2025-07-23 18:17:46.537296-0700 Median[92844:4306919] [console.log] Fetching patient with ID: 3
+
+2025-07-23 18:17:46.537727-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/patients/3/vitals/latest
+
+2025-07-23 18:17:46.537967-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/patients/3/encounters
+
+2025-07-23 18:17:46.538353-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/patients/3/allergies
+
+2025-07-23 18:17:46.682619-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/patients/3/allergies Data length: 0
+
+2025-07-23 18:17:46.704891-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/patients/3/encounters Data length: 1
+
+2025-07-23 18:17:58.561374-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/locations
+
+2025-07-23 18:17:58.711373-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/locations Data length: 1
+
+2025-07-23 18:18:00.095807-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/user/preferences
+
+2025-07-23 18:18:00.096359-0700 Median[92844:4306919] [console.log] 🔍 [QueryClient] Fetching URL: /api/patients/3/encounters
+
+2025-07-23 18:18:00.097994-0700 Median[92844:4306919] [console.log] 🔍 [MEDIAN DEBUG] UnifiedChartPanel Props: {
+  "isMedianMobile": true,
+  "mobileSidebarOpen": true,
+  "isOpen": true,
+  "isPatientChartView": true,
+  "hasOnOpenChange": true,
+  "hasOnCloseMobileSidebar": true,
+  "hasOnNewEncounter": true
+}
+
+2025-07-23 18:18:00.100493-0700 Median[92844:4306919] [console.log] 📱 [Median Mobile Detection] {
+  "windowExists": true,
+  "detectedAsMobile": true,
+  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 median",
+  "screenWidth": 393,
+  "pathname": "/patients/3/chart"
+}
+
+2025-07-23 18:18:00.100682-0700 Median[92844:4306919] [console.log] 🔗 [PatientChart] URL parameters: {
+  "section": null,
+  "highlight": null,
+  "currentLocation": "https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/patients/3/chart",
+  "availableSections": [
+    "encounters",
+    "problems",
+    "medication",
+    "allergies",
+    "labs",
+    "vitals",
+    "imaging",
+    "family-history",
+    "social-history",
+    "surgical-history",
+    "attachments",
+    "appointments",
+    "documents",
+    "prescription-history"
+  ]
+}
+2025-07-23 18:18:00.100956-0700 Median[92844:4306919] [console.log] 💾 [StateSave] Saved chart state: {
+  "activeSection": "encounters",
+  "expandedSections": [
+    "encounters"
+  ],
+  "timestamp": 1753319880100
+}
+
+2025-07-23 18:18:00.101035-0700 Median[92844:4306919] [console.log] 🔗 [PatientChart] Enhanced URL parameters: {
+  "section": null,
+  "highlight": null,
+  "returnUrl": null,
+  "fromSection": null,
+  "currentLocation": "https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/patients/3/chart",
+  "availableSections": [
+    "encounters",
+    "problems",
+    "medication",
+    "allergies",
+    "labs",
+    "vitals",
+    "imaging",
+    "family-history",
+    "social-history",
+    "surgical-history",
+    "attachments",
+    "appointments",
+    "documents",
+    "prescription-history"
+  ]
+}
+2025-07-23 18:18:00.101148-0700 Median[92844:4306919] [console.log] 🏥 [PatientChart] Encounters data: {
+  "encounters": [],
+  "encountersLength": 0,
+  "encountersType": "object",
+  "isArray": true,
+  "activeSection": "encounters",
+  "shouldShowEncounters": true
+}
+
+2025-07-23 18:18:00.102482-0700 Median[92844:4306919] [console.error] The above error occurred in the <UnifiedChartPanel> component:
+
+UnifiedChartPanel@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/components/patient/unified-chart-panel.tsx:43:10
+div
+PatientChartView@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/components/patient/patient-chart-view.tsx:47:54
+main
+div
+PatientView@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/pages/patient-view.tsx:26:27
+Route@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:206:14
+ProtectedRoute@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/lib/protected-route.tsx:22:7
+Switch@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:263:27
+Router
+
+TooltipProviderProvider@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js:38:13
+TooltipProvider@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js:66:43
+UploadProvider@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/contexts/UploadContext.tsx:21:5
+AuthProvider@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/src/hooks/use-auth.tsx:28:5
+QueryClientProvider@https://5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2934:9
+App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+2025-07-23 18:18:00.252207-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/user/preferences Data length: object
+
+2025-07-23 18:18:00.252395-0700 Median[92844:4306919] [console.log] ✅ [QueryClient] Success for: /api/patients/3/encounters Data length: 1
