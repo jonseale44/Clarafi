@@ -16,6 +16,28 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 24, 2025)
 
+### Lab System Database Schema Alignment
+Aligned TypeScript schema with production database structure for lab-related tables:
+
+1. **external_labs table** - Added production-ready fields:
+   - SFTP integration fields (host, username, password, directory)
+   - HL7 configuration (version, sending/receiving facility)
+   - Contact information (phone, email, technical contact)
+   - Test and result mappings (JSON)
+   - Connection monitoring (status, last test, error log)
+   - Billing information and patient consent tracking
+
+2. **lab_results table** - Added missing fields:
+   - Patient communication tracking (sent status, method, timestamp, message)
+   - Extraction metadata (notes, consolidation reasoning, merged IDs)
+   - Visit history tracking (JSON)
+   - Delta check and trend indicators
+   - Changed sourceConfidence from decimal to text to match database
+
+These changes preserve existing GPT processing capabilities while ensuring schema matches production database structure.
+
+## Recent Changes (July 24, 2025)
+
 ### Fixed "New Encounter" Button Navigation Issue
 Fixed issue where "New Encounter" buttons in the left sidebar were trying to navigate to non-existent route:
 

@@ -1840,28 +1840,68 @@ export const diagnoses = pgTable("diagnoses", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// External Labs
+// External Labs - Production-ready integration with major lab vendors
 export const externalLabs = pgTable("external_labs", {
   id: serial("id").primaryKey(),
+  
+  // Lab identification
   labName: text("lab_name").notNull(), // "LabCorp", "Quest Diagnostics"
+  labCode: text("lab_code"), // Lab-specific identifier code
   labIdentifier: text("lab_identifier").notNull().unique(), // CLIA number
   
-  // Integration method
-  integrationType: text("integration_type").notNull(), // 'hl7', 'api', 'manual_fax'
-  apiEndpoint: text("api_endpoint"),
-  hl7Endpoint: text("hl7_endpoint"),
+  // Integration configuration
+  integrationType: text("interface_type").notNull(), // 'hl7', 'api', 'manual_fax', 'sftp'
+  connectionDetails: jsonb("connection_details"), // Flexible connection configuration
   
-  // Authentication (encrypted)
-  apiKeyEncrypted: text("api_key_encrypted"),
+  // API Integration
+  apiEndpoint: text("api_endpoint"),
+  apiKeyEncrypted: text("api_key"),
+  
+  // HL7 Integration
+  hl7Endpoint: text("hl7_endpoint"),
+  hl7Version: text("hl7_version"), // '2.3', '2.5.1', '2.7'
+  hl7SendingFacility: text("hl7_sending_facility"),
+  hl7ReceivingFacility: text("hl7_receiving_facility"),
+  
+  // SFTP Integration
+  sftpHost: text("sftp_host"),
+  sftpUsername: text("sftp_username"),
+  sftpPassword: text("sftp_password"), // Encrypted
+  sftpDirectory: text("sftp_directory"),
+  
+  // Authentication
   usernameEncrypted: text("username_encrypted"),
   sslCertificatePath: text("ssl_certificate_path"),
+  accountNumber: text("account_number"), // Lab account number
   
-  // Capabilities
-  supportedTests: jsonb("supported_tests"), // Array of LOINC codes
+  // Contact information
+  operatingHours: jsonb("operating_hours"), // Lab operating hours by day
+  contactPhone: text("contact_phone"),
+  contactEmail: text("contact_email"),
+  technicalContact: text("technical_contact"), // Technical support contact
+  
+  // Capabilities and mappings
+  supportedTests: jsonb("supported_tests"), // Array of LOINC codes or test names
   turnaroundTimes: jsonb("turnaround_times"), // Expected results time by test type
+  testMapping: jsonb("test_mapping"), // Map internal codes to lab codes
+  resultMapping: jsonb("result_mapping"), // Map lab result formats to internal format
   
+  // Compliance
+  requiresPatientConsent: boolean("requires_patient_consent").default(false),
+  consentFormUrl: text("consent_form_url"),
+  
+  // Billing
+  billingInfo: jsonb("billing_info"), // Billing configuration and rates
+  
+  // Connection monitoring
+  lastConnectionTest: timestamp("last_connection_test"),
+  connectionStatus: text("connection_status"), // 'active', 'failed', 'testing'
+  errorLog: jsonb("error_log"), // Recent connection errors
+  
+  // Status
   active: boolean("active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Lab Orders - Enhanced for Production EMR Standards
@@ -2049,10 +2089,45 @@ export const labResults = pgTable("lab_results", {
   
   // Source classification for multi-source lab data
   sourceType: text("source_type").default("lab_order"), // 'lab_order', 'patient_reported', 'external_upload', 'provider_entered', 'imported_records', 'attachment'
-  sourceConfidence: decimal("source_confidence", { precision: 5, scale: 2 }).default("1.00"), // 0.00-1.00 confidence score
+  sourceConfidence: text("source_confidence"), // Confidence level as text (database has this as text, not decimal)
   sourceNotes: text("source_notes"), // Additional context about data source
   extractedFromAttachmentId: integer("extracted_from_attachment_id").references(() => patientAttachments.id, { onDelete: "set null" }), // Source attachment for extracted labs
   enteredBy: integer("entered_by").references(() => users.id), // Who entered non-standard results
+  
+  // Extraction and consolidation metadata
+  extractionNotes: text("extraction_notes"), // Notes from AI extraction process
+  consolidationReasoning: text("consolidation_reasoning"), // Why results were merged/consolidated
+  mergedIds: integer("merged_ids").array(), // IDs of results merged into this one
+  
+  // Visit history tracking
+  visitHistory: jsonb("visit_history").$type<Array<{
+    date: string;
+    encounterId?: number;
+    providerId?: number;
+    action: string;
+    notes?: string;
+  }>>(), // History of changes/reviews
+  
+  // Patient communication tracking (separate from communicationPlan)
+  patientCommunicationSent: boolean("patient_communication_sent").default(false),
+  patientCommunicationMethod: text("patient_communication_method"), // 'portal', 'phone', 'sms', 'letter'
+  patientCommunicationSentAt: timestamp("patient_communication_sent_at"),
+  patientNotifiedBy: integer("patient_notified_by").references(() => users.id),
+  patientMessage: text("patient_message"), // Actual message sent to patient
+  patientMessageSentAt: timestamp("patient_message_sent_at"),
+  
+  // Delta check and trend analysis
+  deltaCheck: jsonb("delta_check").$type<{
+    previousValue?: number;
+    percentChange?: number;
+    significantChange?: boolean;
+    alertGenerated?: boolean;
+  }>(), // Automated delta check results
+  trendIndicators: jsonb("trend_indicators").$type<{
+    trend?: 'improving' | 'worsening' | 'stable';
+    trajectory?: number; // Rate of change
+    predictedValue?: number;
+  }>(), // AI-generated trend analysis
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
