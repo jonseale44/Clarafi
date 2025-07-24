@@ -487,13 +487,18 @@ export function UnifiedChartPanel({
       {/* Chart Sections */}
       <div className="flex-1 overflow-y-auto">
         {filteredSections.map((section) => {
+          if (!section || !section.id) {
+            console.error('[UnifiedChartPanel] Invalid section:', section);
+            return null;
+          }
+          
           const Icon = section.icon;
-          const isExpanded = panelState.expandedSections.has(section.id);
-          const isActive = panelState.activeSection === section.id;
+          const isExpanded = section.id ? panelState.expandedSections.has(section.id) : false;
+          const isActive = section.id ? panelState.activeSection === section.id : false;
           
           return (
             <Collapsible
-              key={section.id}
+              key={section.id?.toString() || 'unknown'}
               open={isExpanded}
               onOpenChange={() => toggleSection(section.id)}
             >

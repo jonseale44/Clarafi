@@ -1,0 +1,241 @@
+[
+  {
+    "time": 22.621487021446228,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/0/0/1/1/0/1/0/0/1",
+      "type": "input",
+      "source": "webview",
+      "bounds": {
+        "x": 57,
+        "y": 472.66666412353516,
+        "width": 279,
+        "height": 40
+      },
+      "attributes": {
+        "id": "username",
+        "name": "username",
+        "class": "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "placeholder": "Enter your username",
+        "data-component-name": "Input",
+        "data-replit-metadata": "client/src/pages/auth-page.tsx:674:22"
+      }
+    },
+    "duration": 0.14782094955444336,
+    "coordinates": {
+      "x": 180.34375,
+      "y": 485.09375000000006
+    },
+    "position": {
+      "x": 0.46006058673469385,
+      "y": 0.5700279083431258
+    },
+    "localPosition": {
+      "x": 0.44209229390681004,
+      "y": 0.3106771469116225
+    }
+  },
+  {
+    "time": 23.856578946113586,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/1/0/0/2/0/0/1/0",
+      "type": "node",
+      "source": "uikit",
+      "bounds": {
+        "x": 0,
+        "y": 472,
+        "width": 393,
+        "height": 44
+      },
+      "attributes": {
+        "class": "_UIButtonBarStackView",
+        "baseClass": "UIStackView",
+        "userInteractionEnabled": true
+      }
+    },
+    "duration": 0.16393399238586426,
+    "coordinates": {
+      "x": 180.27604166666666,
+      "y": 485.09375000000006
+    },
+    "position": {
+      "x": 0.4598878613945578,
+      "y": 0.5700279083431258
+    },
+    "localPosition": {
+      "x": 0.45871766327396096,
+      "y": 0.29758522727272857
+    }
+  },
+  {
+    "type": "typeText",
+    "text": "jonsesale22"
+  },
+  {
+    "key": "\b",
+    "time": 28.078351974487305,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 28.256466031074524,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 28.405593991279602,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 28.554659962654114,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 28.730077028274536,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "key": "\b",
+    "time": 29.256732940673828,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Backspace"
+  },
+  {
+    "type": "typeText",
+    "text": "ale22"
+  },
+  {
+    "key": "\t",
+    "time": 31.113767981529236,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Tab"
+  },
+  {
+    "type": "typeText",
+    "text": "Yregrus44444"
+  },
+  {
+    "key": "\r",
+    "time": 34.62646198272705,
+    "type": "keypress",
+    "shiftKey": false,
+    "character": "Enter"
+  },
+  {
+    "time": 39.404739022254944,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/3/1/0/0",
+      "type": "path",
+      "source": "webview",
+      "bounds": {
+        "x": 368.3334655761719,
+        "y": 124.99178314208984,
+        "width": 9.341400146484375,
+        "height": 9.333358764648438
+      },
+      "attributes": {
+        "d": "M5.293 5.293a1 1 0 0 1 1.414 0L12 10.586l5.293-5.293a1 1 0 1 1 1.414 1.414L13.414 12l5.293 5.293a1 1 0 0 1-1.414 1.414L12 13.414l-5.293 5.293a1 1 0 0 1-1.414-1.414L10.586 12 5.293 6.707a1 1 0 0 1 0-1.414z"
+      }
+    },
+    "duration": 0.09916794300079346,
+    "coordinates": {
+      "x": 371.34375,
+      "y": 127.484375
+    },
+    "position": {
+      "x": 0.9473054846938775,
+      "y": 0.14980537602820213
+    },
+    "localPosition": {
+      "x": 0.322251951166126,
+      "y": 0.26706268565944763
+    }
+  },
+  {
+    "time": 44.80676603317261,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/0/0/0/1/1",
+      "type": "button",
+      "source": "webview",
+      "bounds": {
+        "x": 307.5,
+        "y": 119.66666412353516,
+        "width": 77.984375,
+        "height": 36
+      },
+      "attributes": {
+        "class": "px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+        "data-component-name": "button",
+        "data-replit-metadata": "client/src/pages/dashboard.tsx:285:14"
+      }
+    },
+    "duration": 0.05748105049133301,
+    "coordinates": {
+      "x": 337.1458333333333,
+      "y": 140.46354166666666
+    },
+    "position": {
+      "x": 0.8600659013605442,
+      "y": 0.16505704073638855
+    },
+    "localPosition": {
+      "x": 0.3801509383557067,
+      "y": 0.5776910428647639
+    }
+  },
+  {
+    "time": 46.62115800380707,
+    "type": "tap",
+    "appId": "co.median.ios.pkjbyp",
+    "element": {
+      "path": "/0/0/0/0/0/0/0/0/0/0/2/0/1/1/0",
+      "type": "div",
+      "source": "webview",
+      "bounds": {
+        "x": 24,
+        "y": 202.66666412353516,
+        "width": 345,
+        "height": 280.328125
+      },
+      "attributes": {
+        "class": "rounded-lg border bg-card text-card-foreground shadow-sm p-6",
+        "data-component-name": "Card",
+        "data-replit-metadata": "client/src/pages/dashboard.tsx:218:10"
+      }
+    },
+    "duration": 0.09018599987030029,
+    "coordinates": {
+      "x": 85.41145833333333,
+      "y": 390.96354166666663
+    },
+    "position": {
+      "x": 0.2178863732993197,
+      "y": 0.45941661770466113
+    },
+    "localPosition": {
+      "x": 0.1780042270531401,
+      "y": 0.6717016979410521
+    }
+  }
+]
