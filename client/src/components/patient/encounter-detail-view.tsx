@@ -30,7 +30,6 @@ import {
   RefreshCw,
   Save,
   AlertTriangle,
-  Menu,
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -169,30 +168,6 @@ export function EncounterDetailView({
   const { data: currentUser } = useQuery({
     queryKey: ["/api/user"],
   }) as { data?: { id?: number; role?: string } };
-  
-  // MEDIAN: Check if running in Median mobile app
-  // Also fallback to screen size detection if window.isMedianMobile is not set
-  const isMobileScreen = typeof window !== 'undefined' && window.innerWidth <= 768;
-  // Additional check for Median app using user agent
-  const isMedianApp = typeof window !== 'undefined' && navigator.userAgent.toLowerCase().includes('median');
-  const isMedianMobile = typeof window !== 'undefined' && ((window as any).isMedianMobile === true || isMedianApp || isMobileScreen);
-  
-  // MEDIAN: Encounter view should default to closed sidebar on mobile
-  const isPatientChartView = false; // This is encounter view, not patient chart view
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // Always start closed in encounter view
-
-  // Debug logging for mobile detection
-  useEffect(() => {
-    console.log('🔍 [MEDIAN DEBUG] Encounter View Mobile Detection:', {
-      windowIsMedianMobile: typeof window !== 'undefined' ? (window as any).isMedianMobile : 'undefined',
-      windowInnerWidth: typeof window !== 'undefined' ? window.innerWidth : 'undefined',
-      isMobileScreen,
-      isMedianMobile,
-      mobileSidebarOpen,
-      isPatientChartView,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'undefined'
-    });
-  }, [isMedianMobile, mobileSidebarOpen, isMobileScreen]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingState, setRecordingState] = useState<"INACTIVE" | "ACTIVE">(
@@ -1895,7 +1870,7 @@ export function EncounterDetailView({
       );
 
       const requestBody = {
-        patientId: patient.id?.toString() || '',
+        patientId: patient.id.toString(),
         userRole: "provider",
         isLiveChunk: "true",
         transcription: transcription,
@@ -2102,8 +2077,8 @@ export function EncounterDetailView({
 
         // Connect via WebSocket proxy (no API key needed)
         const params = new URLSearchParams({
-          patientId: patient.id?.toString() || '',
-          encounterId: encounterId?.toString() || '',  // Use encounterId prop instead of encounter.id
+          patientId: patient.id.toString(),
+          encounterId: encounterId.toString(),  // Use encounterId prop instead of encounter.id
         });
 
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -3443,7 +3418,7 @@ Please provide medical suggestions based on this complete conversation context.`
       );
 
       const requestBody = {
-        patientId: patient.id?.toString() || '',
+        patientId: patient.id.toString(),
         userRole: "provider",
         transcription: transcription,
       };
@@ -3826,18 +3801,8 @@ Please provide medical suggestions based on this complete conversation context.`
   };
 
   return (
-    <div className="flex h-full" data-median="encounter-detail-main" data-median-app="true">
+    <div className="flex h-full">
       {/* Left Chart Panel - Unified Expandable */}
-      {/* MEDIAN: Mobile overlay backdrop when sidebar is open */}
-      {isMedianMobile && mobileSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setMobileSidebarOpen(false)}
-          data-median="mobile-sidebar-overlay"
-          data-median-app="true"
-        />
-      )}
-      
       <UnifiedChartPanel
         patient={patient}
         config={{
@@ -3853,12 +3818,6 @@ Please provide medical suggestions based on this complete conversation context.`
         onBackToChart={onBackToChart}
         isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
         medicalProblemsProgress={medicalProblemsProgress}
-        isMedianMobile={isMedianMobile}
-        isOpen={isMedianMobile ? mobileSidebarOpen : undefined}
-        onOpenChange={isMedianMobile ? setMobileSidebarOpen : undefined}
-        isPatientChartView={isPatientChartView}
-        mobileSidebarOpen={mobileSidebarOpen}
-        onCloseMobileSidebar={() => setMobileSidebarOpen(false)}
       />
 
       {/* Main Content */}
@@ -3866,25 +3825,7 @@ Please provide medical suggestions based on this complete conversation context.`
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {/* MEDIAN: Mobile menu toggle - only show in Median app */}
-              {isMedianMobile && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    console.log('🔍 [MEDIAN DEBUG] Menu toggle clicked, opening sidebar');
-                    setMobileSidebarOpen(true);
-                  }}
-                  className="p-2"
-                  data-median="mobile-menu-toggle"
-                  data-median-app="true"
-                >
-                  <Menu className="h-5 w-5" />
-                </Button>
-              )}
-              <h1 className="text-xl font-semibold">Provider Documentation</h1>
-            </div>
+            <h1 className="text-xl font-semibold">Provider Documentation</h1>
             <div className="text-sm text-gray-600">
               Encounter ID: {encounterId}
             </div>
@@ -4180,8 +4121,8 @@ Please provide medical suggestions based on this complete conversation context.`
               <div className="flex items-center space-x-2 px-4 py-2">
                 {/* Real-time Clinical Note Integration */}
                 <RealtimeSOAPIntegration
-                  patientId={patient.id?.toString() || ''}
-                  encounterId={encounterId?.toString() || ''}
+                  patientId={patient.id.toString()}
+                  encounterId={encounterId.toString()}
                   transcription={transcription}
                   userEditingLock={userEditingLock}
                   recordingCooldown={recordingCooldown}
@@ -4440,8 +4381,8 @@ Please provide medical suggestions based on this complete conversation context.`
           {/* Unified Real-time Clinical Note Integration with Intelligent Streaming */}
           <RealtimeSOAPIntegration
             ref={realtimeSOAPRef}
-            patientId={patient.id?.toString() || ''}
-            encounterId={encounterId?.toString() || ''}
+            patientId={patient.id.toString()}
+            encounterId={encounterId.toString()}
             transcription={transcription}
             userEditingLock={userEditingLock}
             recordingCooldown={recordingCooldown}

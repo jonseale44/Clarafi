@@ -139,10 +139,10 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
   };
 
   const getCurrentValue = () => {
-    if (selectedTemplate && selectedTemplate.id) {
+    if (selectedTemplate) {
       return `template-${selectedTemplate.id}`;
     }
-    return noteType || "soap"; // Provide fallback to prevent undefined
+    return noteType;
   };
 
   return (

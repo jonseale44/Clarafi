@@ -940,7 +940,7 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
                       <Select 
-                        defaultValue={registerForm.getValues("role") || ""}
+                        defaultValue={registerForm.getValues("role")}
                         onValueChange={(value) => registerForm.setValue("role", value)}
                       >
                         <SelectTrigger>

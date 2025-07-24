@@ -11,8 +11,7 @@ import {
   Maximize2, 
   Minimize2,
   GripVertical,
-  X,
-  Plus
+  X
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
@@ -40,13 +39,6 @@ interface UnifiedChartPanelProps {
   medicalProblemsProgress?: number;
   onSectionChange?: (sectionId: string) => void;
   activeSection?: string;
-  mobileSidebarOpen?: boolean; // MEDIAN: Mobile sidebar visibility state
-  onCloseMobileSidebar?: () => void; // MEDIAN: Function to close mobile sidebar
-  isMedianMobile?: boolean; // MEDIAN: Flag to indicate if running in Median mobile app
-  isOpen?: boolean; // MEDIAN: Controlled open state for mobile
-  onOpenChange?: (open: boolean) => void; // MEDIAN: Callback for open state changes
-  onNewEncounter?: () => void; // MEDIAN: Function to create new encounter (mobile only)
-  isPatientChartView?: boolean; // MEDIAN: Whether we're in patient chart view (vs encounter view)
 }
 
 
@@ -61,30 +53,9 @@ export function UnifiedChartPanel({
   isAutoGeneratingMedicalProblems = false,
   medicalProblemsProgress = 0,
   onSectionChange,
-  activeSection,
-  mobileSidebarOpen = false,
-  onCloseMobileSidebar,
-  isMedianMobile = false,
-  isOpen,
-  onOpenChange,
-  onNewEncounter,
-  isPatientChartView = false
+  activeSection
 }: UnifiedChartPanelProps) {
   const queryClient = useQueryClient();
-  
-  // Debug logging for mobile props
-  useEffect(() => {
-    console.log('🔍 [MEDIAN DEBUG] UnifiedChartPanel Props:', {
-      isMedianMobile,
-      mobileSidebarOpen,
-      isOpen,
-      isPatientChartView,
-      encounterId,
-      hasOnOpenChange: !!onOpenChange,
-      hasOnCloseMobileSidebar: !!onCloseMobileSidebar,
-      hasOnNewEncounter: !!onNewEncounter
-    });
-  }, [isMedianMobile, mobileSidebarOpen, isOpen, isPatientChartView]);
   
   // Get current user for role-based filtering
   const { data: currentUser } = useQuery<UserType>({
@@ -98,16 +69,10 @@ export function UnifiedChartPanel({
   });
 
   // Panel state
-  const defaultExpanded = config?.context ? getDefaultExpandedSections(config.context) : [];
-  // Ensure all items are valid strings before creating the Set
-  const validExpandedSections = (defaultExpanded && Array.isArray(defaultExpanded) 
-    ? defaultExpanded.filter(item => item && typeof item === 'string') 
-    : []);
-  
   const [panelState, setPanelState] = useState<ChartPanelState>({
-    expandedSections: new Set(validExpandedSections),
+    expandedSections: new Set(getDefaultExpandedSections(config.context)),
     isExpanded: false,
-    currentWidth: config?.defaultWidth || "w-80",
+    currentWidth: config.defaultWidth || "w-80",
     activeSection: activeSection,
     searchQuery: ""
   });
@@ -128,29 +93,6 @@ export function UnifiedChartPanel({
   const [dragStartWidth, setDragStartWidth] = useState(0);
   const [panelWidth, setPanelWidth] = useState(400);
   const panelRef = useRef<HTMLDivElement>(null);
-  
-  // MEDIAN: Handle controlled open state for mobile
-  // Default behavior: Patient chart view opens by default, encounter view starts closed
-  const defaultOpenState = isMedianMobile ? (isPatientChartView ? true : false) : true;
-  const isPanelOpen = isOpen !== undefined ? isOpen : defaultOpenState;
-  
-  // MEDIAN: Effect to handle open state changes
-  useEffect(() => {
-    if (isMedianMobile && onOpenChange && isOpen !== undefined) {
-      // Handle any necessary side effects when panel opens/closes
-      if (isOpen) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-    }
-    
-    return () => {
-      if (isMedianMobile) {
-        document.body.style.overflow = '';
-      }
-    };
-  }, [isOpen, isMedianMobile, onOpenChange]);
 
   // Update panel width when user preferences load
   useEffect(() => {
@@ -186,20 +128,13 @@ export function UnifiedChartPanel({
   // Filter sections based on search query
   const filteredSections = panelState.searchQuery && panelState.searchQuery.trim()
     ? availableSections.filter(section =>
-        section && section.label && section.label.toLowerCase().includes((panelState.searchQuery || "").toLowerCase())
+        section.label.toLowerCase().includes((panelState.searchQuery || "").toLowerCase())
       )
-    : availableSections.filter(section => section && section.id);
+    : availableSections;
 
   const toggleSection = (sectionId: string) => {
-    if (!sectionId || typeof sectionId !== 'string') {
-      console.error('[UnifiedChartPanel] Invalid sectionId:', sectionId);
-      return;
-    }
-    
     setPanelState(prev => {
-      // Convert Set to Array, filter out invalid values, then create new Set
-      const currentExpanded = Array.from(prev.expandedSections).filter(id => id && typeof id === 'string');
-      const newExpanded = new Set(currentExpanded);
+      const newExpanded = new Set(prev.expandedSections);
       let newActiveSection = prev.activeSection;
       
       if (newExpanded.has(sectionId)) {
@@ -316,37 +251,6 @@ export function UnifiedChartPanel({
       );
     }
 
-    // Special handling for encounters section on mobile
-    if (section.id === "encounters" && isMedianMobile && onNewEncounter) {
-      return (
-        <div className="space-y-4">
-          {/* MEDIAN: Add New Encounter button for mobile */}
-          <div className="flex justify-end px-2">
-            <Button 
-              onClick={onNewEncounter} 
-              className="bg-slate-700 hover:bg-slate-800 text-white"
-              data-median="mobile-new-encounter-button"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Encounter
-            </Button>
-          </div>
-          <SharedChartSections
-            patientId={patient.id}
-            mode={config.context === 'patient-chart' ? 'patient-chart' : 'encounter'}
-            encounterId={encounterId}
-            isReadOnly={false}
-            sectionId={section.id}
-            highlightAttachmentId={highlightAttachmentId}
-            isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
-            medicalProblemsProgress={medicalProblemsProgress}
-            compactMode={false}
-            isExpanded={panelState.isExpanded}
-          />
-        </div>
-      );
-    }
-
     // Use compact mode for sections that have spillover issues
     const sectionConfig = getSectionConfig(section.id);
     const useCompactMode = sectionConfig?.compactMode && !panelState.isExpanded;
@@ -372,27 +276,20 @@ export function UnifiedChartPanel({
       ref={panelRef}
       className={`bg-gray-50 border-r border-gray-200 flex flex-col relative transition-all duration-300 ${
         panelState.isExpanded ? 'shadow-lg' : ''
-      } ${
-        isMedianMobile && mobileSidebarOpen ? 'mobile-sidebar-open' : ''
       }`}
       style={{ 
-        width: isMedianMobile ? undefined : (panelState.isExpanded ? panelState.currentWidth : `${panelWidth}px`),
-        minWidth: isMedianMobile ? undefined : (panelState.isExpanded ? '500px' : '280px'),
-        maxWidth: isMedianMobile ? undefined : (panelState.isExpanded ? '90vw' : '50vw')
+        width: panelState.isExpanded ? panelState.currentWidth : `${panelWidth}px`,
+        minWidth: panelState.isExpanded ? '500px' : '280px',
+        maxWidth: panelState.isExpanded ? '90vw' : '50vw'
       }}
       data-median="unified-chart-panel"
-      data-median-app="true"
-      /* MEDIAN TAG: This is the main sidebar container that will slide in/out on mobile */
     >
       {/* Resize Handle */}
-      {/* MEDIAN TAG: Hide resize handle on mobile */}
       {config.allowResize && (
         <div
           className="absolute top-0 right-0 w-2 h-full cursor-col-resize hover:bg-navy-blue-400 bg-gray-200 transition-colors group z-20"
           onMouseDown={handleMouseDown}
           title="Drag to resize panel"
-          data-median="panel-resize-handle"
-          data-median-app="true"
         >
           <div className="absolute right-0 top-1/2 transform translate-x-1/2 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity">
             <GripVertical className="h-4 w-4 text-gray-600" />
@@ -449,19 +346,6 @@ export function UnifiedChartPanel({
 
           {/* Panel Controls */}
           <div className="flex items-center space-x-1 flex-shrink-0">
-            {/* MEDIAN TAG: Mobile close button - only visible on mobile when sidebar is open */}
-            {onCloseMobileSidebar && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onCloseMobileSidebar}
-                className="h-8 w-8 p-0"
-                data-median="mobile-sidebar-close"
-                data-median-app="true"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
             {panelState.isExpanded && (
               <Button
                 variant="ghost"
@@ -500,20 +384,15 @@ export function UnifiedChartPanel({
       {/* Chart Sections */}
       <div className="flex-1 overflow-y-auto">
         {filteredSections.map((section) => {
-          if (!section || !section.id) {
-            console.error('[UnifiedChartPanel] Invalid section:', section);
-            return null;
-          }
-          
           const Icon = section.icon;
-          const isExpanded = section.id ? panelState.expandedSections.has(section.id) : false;
-          const isActive = section.id ? panelState.activeSection === section.id : false;
+          const isExpanded = panelState.expandedSections.has(section.id);
+          const isActive = panelState.activeSection === section.id;
           
           return (
             <Collapsible
-              key={section.id ? String(section.id) : `section-${filteredSections.indexOf(section)}`}
+              key={section.id}
               open={isExpanded}
-              onOpenChange={() => section.id && toggleSection(section.id)}
+              onOpenChange={() => toggleSection(section.id)}
             >
               <CollapsibleTrigger className="w-full">
                 <div 
@@ -521,7 +400,7 @@ export function UnifiedChartPanel({
                     isActive ? 'bg-navy-blue-50 border-navy-blue-200' : ''
                   }`}
                   onDoubleClick={(e) => {
-                    if (section.allowExpanded && !panelState.isExpanded && section.id) {
+                    if (section.allowExpanded && !panelState.isExpanded) {
                       e.stopPropagation();
                       expandSection(section.id);
                     }
@@ -535,7 +414,7 @@ export function UnifiedChartPanel({
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (section.id) expandSection(section.id);
+                          expandSection(section.id);
                         }}
                         className="h-6 w-6 p-1 ml-2 opacity-70 hover:opacity-100 transition-opacity cursor-pointer rounded hover:bg-gray-100 flex items-center justify-center"
                         title="Click to expand section"

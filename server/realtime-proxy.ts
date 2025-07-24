@@ -113,24 +113,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
 
     clientWs.on('message', async (data: WebSocket.Data) => {
       try {
-        // Add safety check for undefined data
-        if (!data) {
-          console.error('❌ [RealtimeProxy] Received undefined message data');
-          return;
-        }
-        // Handle different data types safely
-        let messageStr: string;
-        if (typeof data === 'string') {
-          messageStr = data;
-        } else if (data instanceof Buffer) {
-          messageStr = data.toString('utf8');
-        } else if (data && typeof data.toString === 'function') {
-          messageStr = data.toString();
-        } else {
-          console.error('❌ [RealtimeProxy] Received unsupported data type:', typeof data);
-          return;
-        }
-        const message = JSON.parse(messageStr);
+        const message = JSON.parse(data.toString());
         console.log('📥 [RealtimeProxy] Message from client:', message.type);
 
         // Handle session creation
@@ -265,19 +248,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             });
 
             openAiWs.on('message', (data) => {
-              // Handle different data types safely
-              let messageStr: string;
-              if (typeof data === 'string') {
-                messageStr = data;
-              } else if (data instanceof Buffer) {
-                messageStr = data.toString('utf8');
-              } else if (data && typeof data.toString === 'function') {
-                messageStr = data.toString();
-              } else {
-                console.error('❌ [RealtimeProxy] Received unsupported data type from OpenAI:', typeof data);
-                return;
-              }
-              const message = JSON.parse(messageStr);
+              const message = JSON.parse(data.toString());
               console.log('📨 [RealtimeProxy] Message from OpenAI:', message.type);
               
               // Log specific message types for debugging
@@ -311,7 +282,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               
               // Relay messages from OpenAI to client
               if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.send(messageStr);
+                clientWs.send(data.toString());
               }
             });
 
@@ -340,7 +311,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             openAiWs.on('close', (code, reason) => {
               console.log('🔌 [RealtimeProxy] OpenAI WebSocket closed');
               console.log('🔌 [RealtimeProxy] Close code:', code);
-              console.log('🔌 [RealtimeProxy] Close reason:', reason ? (reason instanceof Buffer ? reason.toString('utf8') : String(reason)) : 'No reason provided');
+              console.log('🔌 [RealtimeProxy] Close reason:', reason?.toString());
               console.log('🔌 [RealtimeProxy] Common close codes:');
               console.log('🔌 [RealtimeProxy] - 1000: Normal closure');
               console.log('🔌 [RealtimeProxy] - 1001: Going away');

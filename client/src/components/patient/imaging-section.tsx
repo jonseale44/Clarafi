@@ -174,11 +174,11 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
           // Check if we're in encounter mode
           if (mode === 'encounter' && encounterId) {
             // Navigate within the encounter context
-            const targetUrl = `/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${result.extractedFromAttachmentId?.toString() || ''}`;
+            const targetUrl = `/patients/${patientId}/encounters/${encounterId}?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`;
             navigateWithContext(targetUrl, "imaging", "encounter");
           } else {
             // Regular navigation for patient chart mode
-            const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId?.toString() || ''}`;
+            const targetUrl = `/patients/${patientId}/chart?section=attachments&highlight=${result.extractedFromAttachmentId.toString()}`;
             navigateWithContext(targetUrl, "imaging", "patient-chart");
           }
         }
@@ -432,8 +432,8 @@ export default function ImagingSection({ patientId, encounterId, mode, isReadOnl
             >
               {imagingResults.map((result: ImagingResult) => (
               <AccordionItem 
-                key={result.id || 'no-id'} 
-                value={result.id?.toString() || ''}
+                key={result.id} 
+                value={result.id.toString()}
                 className="border border-gray-200 rounded-lg"
               >
                 <AccordionTrigger className="px-4 py-3 hover:no-underline group">

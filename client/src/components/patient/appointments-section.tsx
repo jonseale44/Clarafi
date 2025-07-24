@@ -74,7 +74,7 @@ export function AppointmentsSection({ patientId }: AppointmentsSectionProps) {
     }],
     queryFn: async () => {
       const params = new URLSearchParams({
-        patientId: patientId?.toString() || '',
+        patientId: patientId.toString(),
         startDate: startDateStr,
         endDate: endDateStr
       });

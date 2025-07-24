@@ -35,7 +35,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       // Format as M/D/YY (e.g., 7/3/25)
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const year = date.getFullYear()?.toString()?.slice(-2) || '00';
+      const year = date.getFullYear().toString().slice(-2);
       return `${month}/${day}/${year}`;
     } catch {
       return "Invalid Date";
@@ -65,7 +65,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
       // Format as M/D/YY at H:MM AM/PM
       const month = date.getMonth() + 1;
       const day = date.getDate();
-      const year = date.getFullYear()?.toString()?.slice(-2) || '00';
+      const year = date.getFullYear().toString().slice(-2);
       const time = date.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
@@ -190,7 +190,7 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                        <span>{encounter.startTime ? formatDateTime(String(encounter.startTime)) : "No date/time"}</span>
+                        <span>{encounter.startTime ? formatDateTime(encounter.startTime.toString()) : "No date/time"}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5 text-gray-400" />

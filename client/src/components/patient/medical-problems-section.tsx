@@ -496,7 +496,7 @@ export function MedicalProblemsSection({
                                 {encounters.map((encounter: any) => {
                                   console.log('🔍 [MedicalProblems] Rendering encounter:', encounter.id, encounter.encounterType);
                                   return (
-                                    <SelectItem key={encounter.id || 'no-id'} value={encounter.id?.toString() || ''}>
+                                    <SelectItem key={encounter.id} value={encounter.id.toString()}>
                                       {encounter.encounterType} - {formatDate(encounter.startTime)}
                                     </SelectItem>
                                   );
