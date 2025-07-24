@@ -107,7 +107,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-8">
             {/* Main headline with bold typography */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight animate-fadeInUp">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight animate-fadeInUp mb-8">
               Stop Charting.
               <span className="block bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient">
                 Start Living.
@@ -221,7 +221,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 2 - Problem Agitation */}
-      <section id="problem" className="py-24 px-4 bg-gradient-to-b from-gray-900 to-black relative">
+      <section id="problem" className="pt-12 pb-20 px-4 bg-gradient-to-b from-gray-900 to-black relative">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
@@ -306,7 +306,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 3 - Solution Showcase */}
-      <section id="solution" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
+      <section id="solution" className="pt-12 pb-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             Watch AI Transform Your Practice in Real-Time
@@ -471,7 +471,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 4 - Unique Value Propositions */}
-      <section id="value-props" className="py-20 px-4 bg-gradient-to-b from-gray-900 to-black">
+      <section id="value-props" className="pt-12 pb-20 px-4 bg-gradient-to-b from-gray-900 to-black">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             Why Settle for Half a Solution?
@@ -650,7 +650,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 5 - Feature Deep Dive */}
-      <section id="features" className="py-20 px-4 bg-gray-900">
+      <section id="features" className="pt-12 pb-20 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             Everything You Need...
@@ -847,7 +847,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 6 - Trust Without Social Proof */}
-      <section id="about" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
+      <section id="about" className="pt-12 pb-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             Built by Physicians.
