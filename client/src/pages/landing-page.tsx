@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section 
         id="hero" 
-        className="relative min-h-screen pt-24 pb-20 px-4 overflow-hidden"
+        className="relative min-h-screen pt-32 pb-20 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%)'
         }}
@@ -152,7 +152,7 @@ export default function LandingPage() {
             </div>
             
             {/* Trust line */}
-            <p className="text-base text-gray-400 mt-6 animate-fadeInUp delay-400">
+            <p className="text-base text-gray-400 mt-12 animate-fadeInUp delay-400">
               <span className="text-green-400 font-semibold">✓ No credit card required</span>
               <span className="mx-3">•</span>
               <span>No sales calls</span>
@@ -210,10 +210,10 @@ export default function LandingPage() {
             </div>
             
             {/* Floating badges */}
-            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float">
+            <div className="absolute top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float">
               Save 2+ Hours Daily
             </div>
-            <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float delay-300">
+            <div className="absolute bottom-4 left-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float delay-300">
               99% Accuracy
             </div>
           </div>
@@ -221,7 +221,8 @@ export default function LandingPage() {
       </section>
 
       {/* Section 2 - Problem Agitation */}
-      <section id="problem" className="py-20 px-4 bg-gradient-to-b from-gray-900 to-black">
+      <section id="problem" className="py-24 px-4 bg-gradient-to-b from-gray-900 to-black relative">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
             How Much of Your Life Are You Losing to Documentation?
@@ -994,7 +995,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Individual Provider */}
             <div className="relative animate-fadeInUp delay-200">
-              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold px-4 py-1 rounded-full text-sm">
+              <div className="absolute -top-3 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold px-4 py-1 rounded-full text-sm z-10">
                 NO CREDIT CARD
               </div>
               <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:border-yellow-500/30 transition-all">
