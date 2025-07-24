@@ -162,6 +162,16 @@ To apply mobile-specific styles or behavior in your Median app configuration:
 /* Show mobile new encounter button in encounters tab */
 [data-median="mobile-new-encounter-container"] {
     display: block !important;
+    position: relative !important;
+    z-index: 100 !important;
+}
+
+/* Ensure the new encounter button is clickable */
+[data-median="mobile-new-encounter-button"] {
+    position: relative !important;
+    z-index: 101 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
 }
 
 /* === ENCOUNTER VIEW MOBILE LAYOUT === */
