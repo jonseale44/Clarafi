@@ -592,7 +592,7 @@ const FamilyHistorySection: React.FC<FamilyHistorySectionProps> = ({ patientId, 
           ) : (
             <Accordion type="multiple" value={expandedEntries} onValueChange={setExpandedEntries}>
               {familyHistory.map((entry: FamilyHistoryEntry) => (
-                <AccordionItem key={entry.id} value={entry.id.toString()}>
+                <AccordionItem key={entry.id || 'no-id'} value={entry.id?.toString() || ''}>
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center justify-between w-full pr-4 group">
                       <div className="flex items-center gap-3">

@@ -1895,7 +1895,7 @@ export function EncounterDetailView({
       );
 
       const requestBody = {
-        patientId: patient.id.toString(),
+        patientId: patient.id?.toString() || '',
         userRole: "provider",
         isLiveChunk: "true",
         transcription: transcription,
@@ -2102,8 +2102,8 @@ export function EncounterDetailView({
 
         // Connect via WebSocket proxy (no API key needed)
         const params = new URLSearchParams({
-          patientId: patient.id.toString(),
-          encounterId: encounterId.toString(),  // Use encounterId prop instead of encounter.id
+          patientId: patient.id?.toString() || '',
+          encounterId: encounterId?.toString() || '',  // Use encounterId prop instead of encounter.id
         });
 
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -3443,7 +3443,7 @@ Please provide medical suggestions based on this complete conversation context.`
       );
 
       const requestBody = {
-        patientId: patient.id.toString(),
+        patientId: patient.id?.toString() || '',
         userRole: "provider",
         transcription: transcription,
       };
@@ -4180,8 +4180,8 @@ Please provide medical suggestions based on this complete conversation context.`
               <div className="flex items-center space-x-2 px-4 py-2">
                 {/* Real-time Clinical Note Integration */}
                 <RealtimeSOAPIntegration
-                  patientId={patient.id.toString()}
-                  encounterId={encounterId.toString()}
+                  patientId={patient.id?.toString() || ''}
+                  encounterId={encounterId?.toString() || ''}
                   transcription={transcription}
                   userEditingLock={userEditingLock}
                   recordingCooldown={recordingCooldown}
@@ -4440,8 +4440,8 @@ Please provide medical suggestions based on this complete conversation context.`
           {/* Unified Real-time Clinical Note Integration with Intelligent Streaming */}
           <RealtimeSOAPIntegration
             ref={realtimeSOAPRef}
-            patientId={patient.id.toString()}
-            encounterId={encounterId.toString()}
+            patientId={patient.id?.toString() || ''}
+            encounterId={encounterId?.toString() || ''}
             transcription={transcription}
             userEditingLock={userEditingLock}
             recordingCooldown={recordingCooldown}
