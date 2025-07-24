@@ -124,6 +124,11 @@ To apply mobile-specific styles or behavior in your Median app configuration:
     display: none !important;
 }
 
+/* Hide auth hero section on mobile */
+[data-median="auth-hero-section"] {
+    display: none !important;
+}
+
 /* === PATIENT CHART VIEW MOBILE LAYOUT === */
 
 /* Hide desktop chart panel on mobile */
