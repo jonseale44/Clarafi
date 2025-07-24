@@ -70,15 +70,15 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-8">
             {/* Main headline with bold typography */}
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-tight animate-fadeInUp">
               Stop Charting.
-              <span className="block bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient">
                 Start Living.
               </span>
             </h1>
             
             {/* Subheadline */}
-            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fadeInUp delay-200">
               The only AI EMR that drafts everything—notes, orders, billing—while you focus on what matters. 
               <span className="block mt-2 text-yellow-400 font-semibold">
                 Built by physicians, for physicians.
@@ -86,7 +86,7 @@ export default function LandingPage() {
             </p>
             
             {/* Primary and Secondary CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 animate-fadeInUp delay-300">
               <Link href="/auth?tab=register">
                 <Button 
                   size="lg" 
@@ -115,7 +115,7 @@ export default function LandingPage() {
             </div>
             
             {/* Trust line */}
-            <p className="text-base text-gray-400 mt-6">
+            <p className="text-base text-gray-400 mt-6 animate-fadeInUp delay-400">
               <span className="text-green-400 font-semibold">✓ No credit card required</span>
               <span className="mx-3">•</span>
               <span>No sales calls</span>
@@ -127,13 +127,13 @@ export default function LandingPage() {
           </div>
           
           {/* Hero Visual - Split screen */}
-          <div className="mt-16 relative">
+          <div className="mt-16 relative animate-fadeInUp delay-500">
             <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-black/30 backdrop-blur-sm border border-white/10">
               <div className="grid md:grid-cols-2 min-h-[400px]">
                 {/* Left side - Physician with patient */}
-                <div className="relative p-8 flex items-center justify-center bg-gradient-to-br from-blue-900/20 to-purple-900/20">
+                <div className="relative p-8 flex items-center justify-center bg-gradient-to-br from-blue-900/20 to-purple-900/20 animate-slideInLeft delay-600">
                   <div className="text-center">
-                    <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center">
+                    <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center animate-pulse-glow">
                       <svg className="w-20 h-20 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
@@ -144,21 +144,21 @@ export default function LandingPage() {
                 </div>
                 
                 {/* Right side - AI documentation */}
-                <div className="relative p-8 bg-gradient-to-br from-yellow-900/20 to-orange-900/20">
+                <div className="relative p-8 bg-gradient-to-br from-yellow-900/20 to-orange-900/20 animate-slideInRight delay-600">
                   <div className="space-y-3">
-                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm animate-fadeInUp delay-700">
                       <p className="text-sm font-mono text-green-400 mb-1">AI Transcribing...</p>
                       <p className="text-xs text-gray-400">Patient reports 3-day history of progressive chest pain...</p>
                     </div>
-                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm animate-fadeInUp delay-800">
                       <p className="text-sm font-mono text-blue-400 mb-1">SOAP Note Generating...</p>
                       <p className="text-xs text-gray-400">S: 45yo male presents with substernal chest pain...</p>
                     </div>
-                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm animate-fadeInUp delay-900">
                       <p className="text-sm font-mono text-yellow-400 mb-1">Orders Ready...</p>
                       <p className="text-xs text-gray-400">• CBC, CMP, Troponin • EKG • Chest X-ray</p>
                     </div>
-                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="bg-black/40 rounded-lg p-4 backdrop-blur-sm animate-fadeInUp delay-1000">
                       <p className="text-sm font-mono text-purple-400 mb-1">Billing Codes Selected...</p>
                       <p className="text-xs text-gray-400">99214 - Level 4 E/M • 93000 - EKG</p>
                     </div>
@@ -173,10 +173,10 @@ export default function LandingPage() {
             </div>
             
             {/* Floating badges */}
-            <div className="absolute -top-4 -right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-bounce">
+            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float">
               Save 2+ Hours Daily
             </div>
-            <div className="absolute -bottom-4 -left-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-bounce delay-300">
+            <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-float delay-300">
               99% Accuracy
             </div>
           </div>
