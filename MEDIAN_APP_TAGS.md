@@ -168,20 +168,65 @@ To apply mobile-specific styles or behavior in your Median app configuration:
 
 /* Collapse unified chart panel by default in encounter views */
 [data-median="encounter-view-chart-panel"] {
-    width: 60px !important;
-    min-width: 60px !important;
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    overflow: hidden !important;
 }
 
-/* Hide chart content when collapsed */
-[data-median="encounter-view-chart-panel"][data-collapsed="true"] .chart-section-trigger,
-[data-median="encounter-view-chart-panel"][data-collapsed="true"] [data-median="unified-chart-search"],
-[data-median="encounter-view-chart-panel"][data-collapsed="true"] .chart-section-content {
+/* Hide ALL chart content when collapsed - more comprehensive */
+[data-median="encounter-view-chart-panel"][data-collapsed="true"] > * {
     display: none !important;
 }
 
-/* Show expand button when collapsed */
+/* Only show expand button when collapsed */
 [data-median="encounter-view-chart-panel"][data-collapsed="true"] [data-median="expand-chart-button"] {
     display: flex !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* When expanded, show full panel */
+[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) {
+    width: auto !important;
+    min-width: 320px !important;
+    max-width: 90vw !important;
+}
+
+/* Hide expand button when panel is expanded */
+[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) [data-median="expand-chart-button"] {
+    display: none !important;
+}
+
+/* Add a collapse button when expanded */
+[data-median="encounter-view-chart-panel"]:not([data-collapsed="true"]) [data-median="collapse-chart-button"] {
+    display: flex !important;
+    position: absolute !important;
+    top: 10px !important;
+    right: -20px !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0 8px 8px 0 !important;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+    z-index: 100 !important;
 }
 
 /* === OTHER MOBILE STYLES === */

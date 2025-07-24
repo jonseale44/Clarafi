@@ -12,7 +12,8 @@ import {
   Minimize2,
   GripVertical,
   X,
-  Menu
+  Menu,
+  ChevronLeft
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
@@ -302,11 +303,34 @@ export function UnifiedChartPanel({
       <Button
         variant="ghost"
         size="sm"
-        className="hidden m-2"
+        className="hidden m-2 z-10"
         data-median="expand-chart-button"
-        onClick={() => setPanelState(prev => ({ ...prev, isExpanded: true }))}
+        onClick={() => {
+          // Toggle the data-collapsed attribute on parent
+          const wrapper = panelRef.current?.closest('[data-median="encounter-view-chart-panel"]');
+          if (wrapper) {
+            wrapper.setAttribute('data-collapsed', 'false');
+          }
+        }}
       >
         <Menu className="h-5 w-5" />
+      </Button>
+
+      {/* Mobile Collapse Button - Only visible when expanded on mobile */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="hidden"
+        data-median="collapse-chart-button"
+        onClick={() => {
+          // Toggle the data-collapsed attribute on parent
+          const wrapper = panelRef.current?.closest('[data-median="encounter-view-chart-panel"]');
+          if (wrapper) {
+            wrapper.setAttribute('data-collapsed', 'true');
+          }
+        }}
+      >
+        <ChevronLeft className="h-5 w-5" />
       </Button>
 
       {/* Patient Header */}

@@ -26,19 +26,24 @@ Implemented mobile-specific layout optimizations using Median's Web Overrides CS
 
 2. **Encounter View Mobile Layout** 
    - UnifiedChartPanel wrapped in collapsible container (`data-median="encounter-view-chart-panel"`)
-   - CSS rules make chart panel collapsed by default (60px width) on mobile
-   - Added expand button (`data-median="expand-chart-button"`) visible when collapsed
+   - CSS rules make chart panel completely hidden off-screen by default (48px width) on mobile
+   - Added expand button (`data-median="expand-chart-button"`) positioned absolutely when collapsed
+   - Added collapse button (`data-median="collapse-chart-button"`) visible when expanded
    - Provider documentation takes primary screen space when chart is collapsed
+   - JavaScript handles toggling `data-collapsed` attribute for expand/collapse functionality
 
 3. **CSS Implementation**
    - All mobile-specific styles controlled via data-median attributes in MEDIAN_APP_TAGS.md
-   - No JavaScript changes needed - purely CSS-based responsive behavior
+   - CSS-only solution - no JavaScript overrides needed in Median app
    - Styles only apply in Median mobile app, desktop experience unchanged
+   - Uses absolute positioning for buttons to appear outside collapsed panel
 
 4. **Technical Approach**
    - Using `data-median` attributes throughout components for mobile-specific targeting
    - CSS rules with `!important` to override default styles in mobile context
    - Maintained component structure while adding mobile-specific wrappers
+   - Panel collapses to 48px width showing only expand button
+   - When expanded, panel shows at 320px minimum width up to 90vw maximum
 
 ## Recent Changes (July 23, 2025)
 

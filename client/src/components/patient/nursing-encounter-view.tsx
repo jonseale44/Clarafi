@@ -670,7 +670,7 @@ Format each bullet point on its own line with no extra spacing between them.`,
   return (
     <div className="flex h-full" data-median="nursing-encounter-view">
       {/* Left Chart Panel - Unified Expandable */}
-      <div data-median="encounter-view-chart-panel" data-collapsed="true">
+      <div data-median="encounter-view-chart-panel" data-collapsed="true" className="relative">
         <UnifiedChartPanel
           patient={patient}
           config={{

@@ -3803,7 +3803,7 @@ Please provide medical suggestions based on this complete conversation context.`
   return (
     <div className="flex h-full" data-median="encounter-detail-view">
       {/* Left Chart Panel - Unified Expandable */}
-      <div data-median="encounter-view-chart-panel" data-collapsed="true">
+      <div data-median="encounter-view-chart-panel" data-collapsed="true" className="relative">
         <UnifiedChartPanel
           patient={patient}
           config={{
