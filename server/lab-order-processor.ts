@@ -80,7 +80,7 @@ export class LabOrderProcessor {
         testCategory: testMapping.category,
         priority: order.priority || 'routine',
         clinicalIndication: order.clinicalIndication || 'Laboratory testing as ordered',
-        orderedBy: order.orderedBy || 1,
+        orderedBy: order.providerId || order.orderedBy || 1,
         orderedAt: order.createdAt,
         specimenType: testMapping.specimenType,
         fastingRequired: testMapping.fastingRequired || false,

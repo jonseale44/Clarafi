@@ -16,6 +16,17 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 24, 2025)
 
+### Fixed Lab Results Dashboard Issue
+Resolved critical issue where lab results weren't appearing in dashboard's "Lab Orders to Review" section:
+
+1. **Root Cause** - Orders table had null `providerId` values, lab processor defaulted `orderedBy` to user ID 1
+2. **Dashboard Filter** - Dashboard filtered by current user ID (8), so no results appeared
+3. **Fix Applied**:
+   - Updated lab processor to use `providerId` from original order: `orderedBy: order.providerId || order.orderedBy || 1`
+   - Fixed 12 existing lab orders to have correct provider ID (changed from 1 to 8)
+   - Dashboard now correctly shows 96 lab results to review for the logged-in provider
+4. **Result** - Lab ordering and review system now properly tracks ordering provider, preserving GPT processing capabilities
+
 ### Lab System Database Schema Alignment
 Aligned TypeScript schema with production database structure for lab-related tables:
 
