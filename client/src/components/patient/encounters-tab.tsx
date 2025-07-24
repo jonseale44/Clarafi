@@ -119,18 +119,18 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
   };
 
   const handleViewEncounter = (encounterId: number) => {
-    // Navigate to encounter view page
-    setLocation(`/encounters/${encounterId}`);
+    // Navigate to encounter view page with patient context
+    setLocation(`/patients/${patientId}/encounters/${encounterId}`);
   };
 
   const handleEditEncounter = (encounterId: number) => {
-    // Navigate to encounter edit page  
-    setLocation(`/encounters/${encounterId}`);
+    // Navigate to encounter edit page with patient context
+    setLocation(`/patients/${patientId}/encounters/${encounterId}`);
   };
 
   const handleContinueEncounter = (encounterId: number) => {
-    // Navigate to continue encounter
-    setLocation(`/encounters/${encounterId}`);
+    // Navigate to continue encounter with patient context
+    setLocation(`/patients/${patientId}/encounters/${encounterId}`);
   };
 
   const stripHtmlTags = (html: string) => {
