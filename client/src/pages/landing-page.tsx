@@ -507,7 +507,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-white">E-Prescribing Built In</h4>
-                      <p className="text-sm text-gray-400">Send prescriptions directly to pharmacies. No copy-paste required.</p>
+                      <p className="text-sm text-gray-400">Auto-prescribe at a click. Send to any pharmacy.</p>
                     </div>
                   </div>
                   
@@ -519,7 +519,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-white">Lab Order Integration</h4>
-                      <p className="text-sm text-gray-400">Order labs, track results, auto-notify patients—all in one place.</p>
+                      <p className="text-sm text-gray-400">Order labs. Track results. Auto-notify patients.</p>
                     </div>
                   </div>
                   
@@ -531,7 +531,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-white">Billing & Revenue Cycle</h4>
-                      <p className="text-sm text-gray-400">CPT codes selected automatically. Never leave money on the table.</p>
+                      <p className="text-sm text-gray-400">CPT codes auto-selected. Maximize every visit.</p>
                     </div>
                   </div>
                   
