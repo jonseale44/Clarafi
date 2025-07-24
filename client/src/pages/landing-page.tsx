@@ -135,7 +135,7 @@ export default function LandingPage() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-10 py-6 border-2 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
+                className="text-lg px-10 py-6 border-2 border-white/30 bg-transparent text-white hover:bg-white/10 backdrop-blur-sm"
                 onClick={() => {
                   // TODO: Open demo video modal
                   toast({
