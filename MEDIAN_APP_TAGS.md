@@ -191,13 +191,12 @@ To apply mobile-specific styles or behavior in your Median app configuration:
     left: 0 !important;
 }
 
-/* Show expand button fixed on left edge */
+/* Show expand button fixed at top to align with collapse button */
 [data-median="expand-chart-button"] {
     display: flex !important;
     position: fixed !important;
     left: 10px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    top: 80px !important; /* Aligned with typical header height */
     width: 40px !important;
     height: 40px !important;
     padding: 0 !important;
@@ -306,6 +305,28 @@ To apply mobile-specific styles or behavior in your Median app configuration:
     [data-median="provider-documentation-content"] .flex-1 {
         width: 100% !important;
         min-width: 0 !important;
+    }
+}
+
+/* === LANDSCAPE ORIENTATION FIXES === */
+
+/* Apply same collapse behavior in landscape mode */
+@media (orientation: landscape) {
+    /* Ensure chart panel stays off-screen when collapsed in landscape */
+    [data-median="encounter-view-chart-panel"][data-collapsed="true"] {
+        left: -320px !important;
+    }
+    
+    /* Keep expand button visible in landscape */
+    [data-median="expand-chart-button"] {
+        display: flex !important;
+    }
+    
+    /* Adjust top position for landscape if needed */
+    @media (max-height: 500px) {
+        [data-median="expand-chart-button"] {
+            top: 60px !important; /* Slightly higher for smaller landscape screens */
+        }
     }
 }
 

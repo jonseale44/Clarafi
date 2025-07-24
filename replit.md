@@ -27,10 +27,12 @@ Implemented mobile-specific layout optimizations using Median's Web Overrides CS
 2. **Encounter View Mobile Layout** 
    - Chart panel slides in/out from left side using fixed positioning
    - Panel is completely off-screen by default (`left: -320px`)
-   - Expand button fixed on left edge of screen (blue circular button with menu icon)
+   - Expand button fixed at top of screen (80px from top, aligned with header)
+   - Blue circular button with menu icon, only visible when panel is collapsed
    - Collapse button inside expanded panel (top right corner)
    - Provider documentation takes full screen width when chart is collapsed
    - Smooth slide animation when toggling panel visibility
+   - Landscape orientation properly maintains collapsed state
 
 3. **Button Overflow Fixes**
    - Added responsive CSS rules for narrow screens (max-width: 768px)
