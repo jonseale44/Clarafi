@@ -73,6 +73,7 @@ import gptLabReviewRoutes from "./gpt-lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
 import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
+import hl7Routes from "./hl7-routes";
 import subscriptionKeyRoutes from "./subscription-key-routes";
 import blogRoutes from "./blog-routes";
 import multer from "multer";
@@ -4859,6 +4860,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/lab-review", labReviewRoutes);
   app.use("/api/gpt-lab-review", gptLabReviewRoutes);
   app.use("/api/lab-simulator", labSimulatorRoutes);
+  app.use("/api/hl7", hl7Routes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
 
   // PDF download routes (for accessing generated PDFs)

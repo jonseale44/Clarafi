@@ -1977,6 +1977,21 @@ export const labOrders = pgTable("lab_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// HL7 Messages Audit Trail
+export const hl7Messages = pgTable("hl7_messages", {
+  id: serial("id").primaryKey(),
+  externalLabId: integer("external_lab_id").references(() => externalLabs.id),
+  messageType: text("message_type").notNull(), // ORU^R01, ORM^O01, etc.
+  messageControlId: text("message_control_id"),
+  rawMessage: text("raw_message").notNull(),
+  direction: text("direction").default("inbound"), // inbound/outbound
+  processedAt: timestamp("processed_at").defaultNow(),
+  processingStatus: text("processing_status"), // pending/processing/completed/failed
+  processingError: text("processing_error"),
+  metadata: jsonb("metadata"), // Additional context
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Lab Results - Enhanced with AI Intelligence and Clinical Context
 export const labResults = pgTable("lab_results", {
   id: serial("id").primaryKey(),

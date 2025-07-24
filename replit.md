@@ -16,6 +16,35 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 24, 2025)
 
+### Complete HL7 Integration Implementation
+Successfully implemented full HL7 integration architecture while preserving all existing GPT functionality:
+
+1. **Dual Pathway Architecture** - Created complementary system that supports both:
+   - Manual attachment uploads processed by GPT (existing functionality)
+   - Automated HL7 feeds from external labs (new functionality)
+   - Both pathways populate same lab_results table for unified patient communication
+
+2. **HL7 Components Implemented**:
+   - **HL7Parser** - Parses HL7 ORU (lab result) messages and converts to lab results format
+   - **HL7ReceiverService** - Processes incoming HL7 messages from external labs
+   - **hl7Messages table** - Stores all HL7 messages for audit trail and debugging
+   - **HL7 API Routes** (`/api/hl7`) - RESTful endpoints for receiving and processing HL7 messages
+
+3. **Key Features**:
+   - Automatic patient matching via MRN
+   - Lab order tracking with external order IDs
+   - Support for both ORU (results) and ORM (order status) messages
+   - Integration with existing GPT patient communication service
+   - Full message audit trail and error handling
+
+4. **API Endpoints**:
+   - `POST /api/hl7/receive` - Receive raw HL7 messages from external labs
+   - `GET /api/hl7/messages` - Query HL7 message history with filters
+   - `GET /api/hl7/messages/:id` - Get full message details
+   - `POST /api/hl7/test` - Test HL7 parsing without processing
+
+5. **Result** - Production-ready HL7 integration that complements GPT processing, enabling both manual and automated lab result workflows
+
 ### Fixed Lab Results Dashboard Issue
 Resolved critical issue where lab results weren't appearing in dashboard's "Lab Orders to Review" section:
 
