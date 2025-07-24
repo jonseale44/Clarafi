@@ -3801,27 +3801,29 @@ Please provide medical suggestions based on this complete conversation context.`
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-median="encounter-detail-view">
       {/* Left Chart Panel - Unified Expandable */}
-      <UnifiedChartPanel
-        patient={patient}
-        config={{
-          context: "provider-encounter",
-          userRole: currentUser?.role,
-          allowResize: true,
-          defaultWidth: "w-80",
-          maxExpandedWidth: "90vw",
-          enableSearch: true,
-        }}
-        encounterId={encounterId}
-        encounter={encounter}
-        onBackToChart={onBackToChart}
-        isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
-        medicalProblemsProgress={medicalProblemsProgress}
-      />
+      <div data-median="encounter-view-chart-panel" data-collapsed="true">
+        <UnifiedChartPanel
+          patient={patient}
+          config={{
+            context: "provider-encounter",
+            userRole: currentUser?.role,
+            allowResize: true,
+            defaultWidth: "w-80",
+            maxExpandedWidth: "90vw",
+            enableSearch: true,
+          }}
+          encounterId={encounterId}
+          encounter={encounter}
+          onBackToChart={onBackToChart}
+          isAutoGeneratingMedicalProblems={isAutoGeneratingMedicalProblems}
+          medicalProblemsProgress={medicalProblemsProgress}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden" data-median="provider-documentation-content">
         {/* Top Navigation */}
         <div className="bg-white border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">

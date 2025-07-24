@@ -11,7 +11,8 @@ import {
   Maximize2, 
   Minimize2,
   GripVertical,
-  X
+  X,
+  Menu
 } from "lucide-react";
 import { Patient } from "@shared/schema";
 import { SharedChartSections } from "./shared-chart-sections";
@@ -297,6 +298,17 @@ export function UnifiedChartPanel({
         </div>
       )}
 
+      {/* Mobile Expand Button - Only visible when collapsed on mobile */}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="hidden m-2"
+        data-median="expand-chart-button"
+        onClick={() => setPanelState(prev => ({ ...prev, isExpanded: true }))}
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+
       {/* Patient Header */}
       <div className="p-4 bg-white border-b border-gray-200">
         <div className="flex items-start justify-between">
@@ -371,6 +383,7 @@ export function UnifiedChartPanel({
               value={panelState.searchQuery}
               onChange={(e) => setPanelState(prev => ({ ...prev, searchQuery: e.target.value }))}
               className="pl-10 text-sm"
+              data-median="unified-chart-search"
             />
           </div>
         </div>

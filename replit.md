@@ -14,6 +14,32 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 - Appointment scheduling
 - Comprehensive clinical documentation
 
+## Recent Changes (July 24, 2025)
+
+### Mobile Layout Optimization with Median Web Overrides
+Implemented mobile-specific layout optimizations using Median's Web Overrides CSS system:
+
+1. **Patient Chart View Mobile Layout**
+   - UnifiedChartPanel now takes full horizontal screen space on mobile (`data-median="mobile-full-width-chart"`)
+   - Desktop split-panel layout hidden on mobile (`data-median="desktop-chart-panel"` and `data-median="desktop-only"`)
+   - "New Encounter" button moved from header to encounters tab for better mobile accessibility
+
+2. **Encounter View Mobile Layout** 
+   - UnifiedChartPanel wrapped in collapsible container (`data-median="encounter-view-chart-panel"`)
+   - CSS rules make chart panel collapsed by default (60px width) on mobile
+   - Added expand button (`data-median="expand-chart-button"`) visible when collapsed
+   - Provider documentation takes primary screen space when chart is collapsed
+
+3. **CSS Implementation**
+   - All mobile-specific styles controlled via data-median attributes in MEDIAN_APP_TAGS.md
+   - No JavaScript changes needed - purely CSS-based responsive behavior
+   - Styles only apply in Median mobile app, desktop experience unchanged
+
+4. **Technical Approach**
+   - Using `data-median` attributes throughout components for mobile-specific targeting
+   - CSS rules with `!important` to override default styles in mobile context
+   - Maintained component structure while adding mobile-specific wrappers
+
 ## Recent Changes (July 23, 2025)
 
 ### Fixed Allergy Source Badge Linking Issue  

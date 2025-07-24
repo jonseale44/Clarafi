@@ -670,20 +670,22 @@ Format each bullet point on its own line with no extra spacing between them.`,
   return (
     <div className="flex h-full" data-median="nursing-encounter-view">
       {/* Left Chart Panel - Unified Expandable */}
-      <UnifiedChartPanel
-        patient={patient}
-        config={{
-          context: 'nurse-encounter',
-          userRole: currentUser?.role,
-          allowResize: true,
-          defaultWidth: "w-80",
-          maxExpandedWidth: "90vw",
-          enableSearch: true
-        }}
-        encounterId={encounterId}
-        encounter={encounter}
-        onBackToChart={onBackToChart}
-      />
+      <div data-median="encounter-view-chart-panel" data-collapsed="true">
+        <UnifiedChartPanel
+          patient={patient}
+          config={{
+            context: 'nurse-encounter',
+            userRole: currentUser?.role,
+            allowResize: true,
+            defaultWidth: "w-80",
+            maxExpandedWidth: "90vw",
+            enableSearch: true
+          }}
+          encounterId={encounterId}
+          encounter={encounter}
+          onBackToChart={onBackToChart}
+        />
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden" data-median="nursing-main-content">

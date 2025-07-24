@@ -157,6 +157,18 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
         )}
       </div>
       
+      {/* New Encounter Button - Added for mobile */}
+      <div className="mb-4" data-median="mobile-new-encounter-container">
+        <Button 
+          onClick={handleNewEncounter} 
+          className="w-full bg-slate-700 hover:bg-slate-800 text-white"
+          data-median="mobile-new-encounter-button"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          New Encounter
+        </Button>
+      </div>
+      
       <div className="space-y-4">
         {encounters.length === 0 ? (
           <Card className="p-8 text-center">

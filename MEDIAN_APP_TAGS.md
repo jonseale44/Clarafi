@@ -87,8 +87,16 @@ These tags allow you to:
 - `data-median="patient-view-container"` - Patient view page container
 - `data-median="mobile-patient-header"` - Patient page header
 - `data-median="mobile-patient-main"` - Patient main content area
+- `data-median="patient-chart-main"` - Patient chart main container
+- `data-median="desktop-chart-panel"` - Desktop-only chart panel
+- `data-median="desktop-only"` - Desktop-only content sections
+- `data-median="mobile-full-width-chart"` - Mobile full-width chart container
 - `data-median="encounter-view-container"` - Encounter view container
 - `data-median="mobile-encounter-main"` - Encounter main content area
+- `data-median="encounter-detail-view"` - Encounter detail view container
+- `data-median="nursing-encounter-view"` - Nursing encounter view container
+- `data-median="encounter-view-chart-panel"` - Encounter view chart panel wrapper
+- `data-median="provider-documentation-content"` - Provider documentation main content
 
 #### Vital Signs
 - `data-median="mobile-vitals-grid"` - Vitals grid container
@@ -97,6 +105,13 @@ These tags allow you to:
 
 #### Patient Parser
 - `data-median="qr-code-section"` - QR code photo capture section in patient parser
+
+#### UI Elements
+- `data-median="new-encounter-button"` - New encounter button in header (hidden on mobile)
+- `data-median="mobile-new-encounter-container"` - Mobile new encounter container in encounters tab
+- `data-median="unified-chart-panel"` - Unified chart panel container
+- `data-median="unified-chart-search"` - Chart search input
+- `data-median="expand-chart-button"` - Mobile expand button for collapsed chart
 
 ## Usage with Median
 
@@ -108,6 +123,63 @@ To apply mobile-specific styles or behavior in your Median app configuration:
 [data-median="hide-on-mobile-app"] {
     display: none !important;
 }
+
+/* === PATIENT CHART VIEW MOBILE LAYOUT === */
+
+/* Hide desktop chart panel on mobile */
+[data-median="desktop-chart-panel"] {
+    display: none !important;
+}
+
+/* Hide desktop main content on mobile */
+[data-median="desktop-only"] {
+    display: none !important;
+}
+
+/* Show full-width mobile chart panel */
+[data-median="mobile-full-width-chart"] {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Make unified chart panel full width on mobile */
+[data-median="mobile-full-width-chart"] [data-median="unified-chart-panel"] {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+}
+
+/* Hide new encounter button in header on mobile (it's in encounters tab now) */
+[data-median="new-encounter-button"] {
+    display: none !important;
+}
+
+/* Show mobile new encounter button in encounters tab */
+[data-median="mobile-new-encounter-container"] {
+    display: block !important;
+}
+
+/* === ENCOUNTER VIEW MOBILE LAYOUT === */
+
+/* Collapse unified chart panel by default in encounter views */
+[data-median="encounter-view-chart-panel"] {
+    width: 60px !important;
+    min-width: 60px !important;
+}
+
+/* Hide chart content when collapsed */
+[data-median="encounter-view-chart-panel"][data-collapsed="true"] .chart-section-trigger,
+[data-median="encounter-view-chart-panel"][data-collapsed="true"] [data-median="unified-chart-search"],
+[data-median="encounter-view-chart-panel"][data-collapsed="true"] .chart-section-content {
+    display: none !important;
+}
+
+/* Show expand button when collapsed */
+[data-median="encounter-view-chart-panel"][data-collapsed="true"] [data-median="expand-chart-button"] {
+    display: flex !important;
+}
+
+/* === OTHER MOBILE STYLES === */
 
 /* Adjust grid layout for mobile */
 [data-median="mobile-stats-grid"] {

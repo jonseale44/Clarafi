@@ -368,7 +368,7 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           mode="patient-chart" 
           isReadOnly={false} 
           sectionId={activeSection}
-          highlightAttachmentId={highlightAttachmentId}
+          highlightAttachmentId={highlightAttachmentId ?? undefined}
         />;
 
       default:
@@ -408,7 +408,28 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
 
   return (
     <div className="flex h-full" data-median="patient-chart-main">
-      {/* Left Chart Panel - Unified Resizable */}
+      {/* Mobile-specific full-width chart panel */}
+      <div className="hidden" data-median="mobile-full-width-chart">
+        <UnifiedChartPanel
+          patient={patient}
+          config={{
+            context: 'patient-chart',
+            userRole: (currentUser as any)?.role,
+            allowResize: false,
+            defaultWidth: "w-full",
+            maxExpandedWidth: "100vw",
+            enableSearch: true
+          }}
+          highlightAttachmentId={highlightAttachmentId ?? undefined}
+          activeSection={activeSection}
+          onSectionChange={(sectionId) => {
+            console.log('🔗 [PatientChartView] Received section change:', sectionId);
+            setActiveSection(sectionId);
+          }}
+        />
+      </div>
+
+      {/* Desktop Chart Panel - Unified Resizable */}
       <UnifiedChartPanel
         patient={patient}
         config={{
@@ -419,17 +440,17 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
           maxExpandedWidth: "90vw",
           enableSearch: true
         }}
-        highlightAttachmentId={highlightAttachmentId}
+        highlightAttachmentId={highlightAttachmentId ?? undefined}
         activeSection={activeSection}
         onSectionChange={(sectionId) => {
           console.log('🔗 [PatientChartView] Received section change:', sectionId);
           setActiveSection(sectionId);
         }}
-        data-median="patient-chart-sidebar"
+        data-median="patient-chart-sidebar desktop-chart-panel"
       />
 
-      {/* Main Content */}
-      <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content">
+      {/* Main Content - Desktop Only */}
+      <div className="flex-1 patient-header overflow-y-auto" data-median="patient-chart-content desktop-only">
         <div className="max-w-full">
           <div className="flex items-center justify-between mb-4" data-median="patient-chart-header">
             <div>
