@@ -107,7 +107,7 @@ export default function LandingPage() {
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center space-y-8">
             {/* Main headline with bold typography */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight animate-fadeInUp mb-8">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-normal animate-fadeInUp mb-8">
               Stop Charting.
               <span className="block bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent animate-gradient">
                 Start Living.
