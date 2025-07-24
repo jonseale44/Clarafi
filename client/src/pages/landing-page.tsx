@@ -183,81 +183,251 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 2 - Problem Agitation (Motivational) */}
-      <section id="problem" className="py-20 px-4 bg-muted/50">
+      {/* Section 2 - Problem Agitation */}
+      <section id="problem" className="py-20 px-4 bg-gradient-to-b from-gray-900 to-black">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            You Became a Doctor to Heal, Not Type
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
+            How Much of Your Life Are You Losing to Documentation?
           </h2>
+          <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
+            Every hour charting is an hour stolen from your life.
+          </p>
           
-          {/* TODO: Three animated pain points with icons */}
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="p-6">
-              <div className="text-center">
-                <div className="text-4xl mb-4">⏰</div>
-                <h3 className="text-xl font-semibold mb-2">2+ hours lost to documentation daily</h3>
-                <p className="text-muted-foreground">TODO: Animated counter showing yearly hours</p>
+            {/* Pain Point 1 - Time Lost */}
+            <div className="relative group animate-fadeInUp delay-200">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-800 rounded-lg blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-red-500/20 p-8 rounded-lg hover:border-red-500/40 transition-all duration-300">
+                <div className="text-red-500 mb-6">
+                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white">2-3 Hours Daily on Documentation</h3>
+                <p className="text-gray-300 mb-4">
+                  That's 15+ hours per week. 60+ hours per month. 720+ hours per year.
+                </p>
+                <p className="text-red-400 font-semibold">
+                  What could you do with 720 hours of your life back?
+                </p>
               </div>
-            </Card>
+            </div>
             
-            <Card className="p-6">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🔗</div>
-                <h3 className="text-xl font-semibold mb-2">Critical context scattered across systems</h3>
-                <p className="text-muted-foreground">TODO: Visual of disconnected data points</p>
+            {/* Pain Point 2 - Scattered Information */}
+            <div className="relative group animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-800 rounded-lg blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-orange-500/20 p-8 rounded-lg hover:border-orange-500/40 transition-all duration-300">
+                <div className="text-orange-500 mb-6">
+                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white">Critical Data Trapped Everywhere</h3>
+                <p className="text-gray-300 mb-4">
+                  Paper charts. Faxed consults. Scanned PDFs. Hand-written notes. Different EMRs.
+                </p>
+                <p className="text-orange-400 font-semibold">
+                  Your patient's story is scattered across a dozen disconnected systems.
+                </p>
               </div>
-            </Card>
+            </div>
             
-            <Card className="p-6">
-              <div className="text-center">
-                <div className="text-4xl mb-4">⚖️</div>
-                <h3 className="text-xl font-semibold mb-2">Choose: Complete notes or patient connection?</h3>
-                <p className="text-muted-foreground">TODO: Animated scale tipping</p>
+            {/* Pain Point 3 - Lost Revenue */}
+            <div className="relative group animate-fadeInUp delay-400">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-800 rounded-lg blur-xl opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-purple-500/20 p-8 rounded-lg hover:border-purple-500/40 transition-all duration-300">
+                <div className="text-purple-500 mb-6">
+                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-white">$125,000+ Left Behind Annually</h3>
+                <p className="text-gray-300 mb-4">
+                  Undercoding. Missed procedures. Denials. Incomplete documentation.
+                </p>
+                <p className="text-purple-400 font-semibold">
+                  Every rushed note is money walking out the door.
+                </p>
               </div>
-            </Card>
+            </div>
           </div>
           
-          {/* TODO: Transition text */}
-          <p className="text-2xl text-center mt-12 font-medium">
-            What if technology finally worked FOR you?
-          </p>
+          {/* Central burnout message */}
+          <div className="text-center mt-20 animate-fadeInUp delay-500">
+            <div className="inline-block relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 blur-3xl opacity-20" />
+              <p className="relative text-3xl md:text-4xl text-white font-bold mb-4">
+                75% of physicians report burnout.
+              </p>
+              <p className="relative text-xl text-gray-400">
+                This isn't sustainable. And it's not why you became a physician.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* TODO: Section 3 - Solution Showcase */}
-      <section id="solution" className="py-20 px-4">
+      {/* Section 3 - Solution Showcase */}
+      <section id="solution" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Watch AI Transform Your Practice
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
+            Watch AI Transform Your Practice in Real-Time
           </h2>
+          <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
+            From chaos to clarity in seconds. Any format. Any source. Any time period.
+          </p>
           
-          {/* TODO: Interactive Demo Section */}
-          <div className="bg-muted rounded-lg p-8">
-            <div className="aspect-video bg-background rounded flex items-center justify-center">
-              <p className="text-muted-foreground">
-                TODO: Embedded video player with chapter markers
-              </p>
-            </div>
-            
-            {/* TODO: Workflow visualization */}
-            <div className="grid md:grid-cols-3 gap-4 mt-8">
-              <div className="text-center">
-                <p className="font-semibold">Start Recording</p>
-                <p className="text-sm text-muted-foreground">TODO: Wave visualization</p>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">AI Drafts in Real-Time</p>
-                <p className="text-sm text-muted-foreground">TODO: Text appearing animation</p>
-              </div>
-              <div className="text-center">
-                <p className="font-semibold">Orders & Billing Ready</p>
-                <p className="text-sm text-muted-foreground">TODO: Instant population visual</p>
+          {/* Hero Feature - Attachment Processing */}
+          <div className="relative mb-20 animate-fadeInUp delay-200">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-3xl opacity-20" />
+            <div className="relative bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-2xl p-8 md:p-12">
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                {/* Left side - Upload visualization */}
+                <div className="space-y-6">
+                  <h3 className="text-3xl font-bold text-white mb-4">
+                    Your Patient's Entire History.
+                    <span className="block text-yellow-400">Instantly Organized.</span>
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 text-gray-300">
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p>Upload <span className="font-semibold text-white">any document</span> - handwritten notes, faxes, PDFs, photos</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-gray-300">
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p>AI reads <span className="font-semibold text-white">everything</span> - diagnoses, meds, labs, procedures</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-gray-300">
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p>Creates <span className="font-semibold text-white">complete chart</span> - structured, searchable, compliant</p>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
+                  >
+                    See It In Action →
+                  </Button>
+                </div>
+                
+                {/* Right side - Visual demonstration */}
+                <div className="relative">
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Input documents */}
+                    <div className="space-y-3">
+                      <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 transform -rotate-3 hover:rotate-0 transition-transform">
+                        <p className="text-xs text-gray-400 mb-1">Handwritten Note</p>
+                        <div className="h-20 bg-gray-800 rounded flex items-center justify-center">
+                          <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-700/50 p-3 rounded-lg border border-gray-600 transform rotate-2 hover:rotate-0 transition-transform">
+                        <p className="text-xs text-gray-400 mb-1">Faxed Lab Results</p>
+                        <div className="h-20 bg-gray-800 rounded flex items-center justify-center">
+                          <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Arrow */}
+                    <div className="flex items-center justify-center">
+                      <svg className="w-12 h-12 text-yellow-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {/* Output - Structured Chart */}
+                  <div className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-green-500 to-emerald-600 p-4 rounded-lg shadow-2xl animate-float">
+                    <p className="text-sm font-bold text-white mb-2">Complete Chart</p>
+                    <div className="space-y-1 text-xs text-white/90">
+                      <p>✓ Medical Problems</p>
+                      <p>✓ Medications</p>
+                      <p>✓ Lab History</p>
+                      <p>✓ Procedures</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
           
-          <p className="text-2xl text-center mt-8 font-medium">
-            Everything drafted. Nothing missed. Go home on time.
+          {/* Three-step workflow */}
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            {/* Step 1 - Voice Recording */}
+            <div className="relative group animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/30 backdrop-blur-sm border border-gray-700 p-8 rounded-lg hover:border-gray-600 transition-all duration-300">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 text-center">Start Recording</h3>
+                <p className="text-gray-400 text-center">
+                  Just talk naturally with your patient. AI captures every detail.
+                </p>
+              </div>
+            </div>
+            
+            {/* Step 2 - AI Processing */}
+            <div className="relative group animate-fadeInUp delay-400">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-yellow-800 rounded-lg blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/30 backdrop-blur-sm border border-gray-700 p-8 rounded-lg hover:border-gray-600 transition-all duration-300">
+                <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 text-center">AI Drafts Everything</h3>
+                <p className="text-gray-400 text-center">
+                  SOAP notes, orders, prescriptions, billing codes—all in real-time.
+                </p>
+              </div>
+            </div>
+            
+            {/* Step 3 - Complete Documentation */}
+            <div className="relative group animate-fadeInUp delay-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-green-800 rounded-lg blur-xl opacity-0 group-hover:opacity-20 transition-opacity" />
+              <div className="relative bg-gray-800/30 backdrop-blur-sm border border-gray-700 p-8 rounded-lg hover:border-gray-600 transition-all duration-300">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4 mx-auto">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2 text-center">Review & Sign</h3>
+                <p className="text-gray-400 text-center">
+                  Everything complete. Nothing missed. Go home on time.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <p className="text-2xl md:text-3xl text-center font-bold text-white animate-fadeInUp delay-600">
+            Finally. Technology that works
+            <span className="text-yellow-400"> for you</span>, not
+            <span className="text-red-400"> against you</span>.
           </p>
         </div>
       </section>
