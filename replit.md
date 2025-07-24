@@ -76,6 +76,29 @@ Aligned TypeScript schema with production database structure for lab-related tab
 
 These changes preserve existing GPT processing capabilities while ensuring schema matches production database structure.
 
+### Lab Order System Consolidation
+Successfully consolidated lab ordering system to eliminate technical debt while maintaining production standards:
+
+1. **Single Source of Truth** - Lab orders now created directly in `labOrders` table:
+   - SOAP order extraction updated to create lab orders in labOrders table
+   - Storage.ts now prevents lab orders from being created in orders table
+   - Eliminated dual-table architecture and conversion process
+   - Removed LabOrderProcessor trigger from storage.createOrder
+
+2. **Key Changes**:
+   - Modified `/api/encounters/:encounterId/extract-orders-from-soap` to separate lab orders
+   - Lab orders created directly with LOINC codes, CPT codes, and lab-specific fields
+   - Non-lab orders (medications, imaging, referrals) continue using existing flow
+   - Storage.createOrder now throws error if orderType='lab' to enforce consolidation
+
+3. **Preserved Functionality**:
+   - GPT processing for attachment uploads remains intact
+   - UnifiedLabParser continues processing lab results from attachments
+   - GPT lab review service still generates patient communication
+   - All existing lab result reporting features maintained
+
+4. **Result** - Production-ready single-table lab order system with full HL7 integration support
+
 ## Recent Changes (July 24, 2025)
 
 ### Fixed "New Encounter" Button Navigation Issue

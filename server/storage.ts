@@ -1264,6 +1264,13 @@ export class DatabaseStorage implements IStorage {
     console.log(`🔍 [STORAGE] Full Order Data:`, JSON.stringify(insertOrder, null, 2));
     console.log(`🔍 [STORAGE] ===============================`);
     
+    // CONSOLIDATED LAB ORDER HANDLING - Prevent lab orders from being created in orders table
+    if (insertOrder.orderType === 'lab') {
+      console.error(`❌ [STORAGE] Lab orders should now be created directly in labOrders table`);
+      console.error(`❌ [STORAGE] Use POST /api/lab-orders/create endpoint instead`);
+      throw new Error('Lab orders must be created through consolidated lab routes. Use POST /api/lab-orders/create');
+    }
+    
     const [order] = await db
       .insert(orders)
       .values([{
@@ -1306,25 +1313,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    // Trigger lab order processing automatically for signed lab orders
-    if (insertOrder.orderType === 'lab' && insertOrder.orderStatus === 'approved') {
-      console.log(`🧪 [STORAGE] Triggering lab order processing for signed lab order`);
-      try {
-        // Import dynamically to avoid circular dependencies
-        const { LabOrderProcessor } = await import("./lab-order-processor.js");
-        // Use setImmediate to run after current execution cycle completes
-        setImmediate(async () => {
-          try {
-            await LabOrderProcessor.processSignedLabOrders(insertOrder.patientId, insertOrder.encounterId || undefined);
-            console.log(`✅ [STORAGE] Lab order processing completed for order ${order.id}`);
-          } catch (labError) {
-            console.error(`❌ [STORAGE] Lab order processing failed for order ${order.id}:`, labError);
-          }
-        });
-      } catch (importError) {
-        console.error(`❌ [STORAGE] Failed to import lab order processor:`, importError);
-      }
-    }
+    // Lab order processing removed - lab orders are now created directly in labOrders table
     
     return order;
   }

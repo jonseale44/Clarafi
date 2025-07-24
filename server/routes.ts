@@ -72,6 +72,7 @@ import labReviewRoutes from "./lab-review-routes";
 import gptLabReviewRoutes from "./gpt-lab-review-routes";
 import labSimulatorRoutes from "./lab-simulator-routes";
 import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
+import consolidatedLabRoutes from "./consolidated-lab-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
 import hl7Routes from "./hl7-routes";
 import subscriptionKeyRoutes from "./subscription-key-routes";
@@ -2444,15 +2445,92 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
         const savedOrders = [];
         for (const orderData of deduplicatedOrders) {
           try {
-            const savedOrder = await storage.createOrder({
-              ...orderData,
-              providerId: orderData.providerId || (req.user as any).id,
-            });
-            savedOrders.push(savedOrder);
+            if (orderData.orderType === 'lab') {
+              // Use consolidated lab order creation - create directly in labOrders table
+              console.log(`🧪 [ExtractOrders] Creating lab order directly in labOrders table: ${orderData.testName || orderData.labName}`);
+              
+              // Import the consolidated lab routes service
+              const { db } = await import("./db.js");
+              const { labOrders } = await import("@shared/schema");
+              
+              // Get test mapping
+              const testMapping = getTestMapping(orderData.testName || orderData.labName || 'Laboratory Test');
+              
+              const labOrderData = {
+                patientId: orderData.patientId,
+                encounterId: orderData.encounterId,
+                testName: orderData.testName || orderData.labName || 'Laboratory Test',
+                testCode: orderData.testCode || testMapping.testCode,
+                loincCode: testMapping.loincCode,
+                cptCode: testMapping.cptCode,
+                testCategory: testMapping.category,
+                priority: orderData.priority || 'routine',
+                clinicalIndication: orderData.clinicalIndication || 'Laboratory testing as ordered',
+                specimenType: orderData.specimenType || testMapping.specimenType,
+                fastingRequired: orderData.fastingRequired || false,
+                orderStatus: orderData.orderStatus || 'draft',
+                orderedBy: orderData.providerId || (req.user as any).id,
+                orderedAt: new Date(),
+                icd10Codes: orderData.diagnosisCode ? [orderData.diagnosisCode] : undefined
+              };
+              
+              const [savedLabOrder] = await db.insert(labOrders).values(labOrderData).returning();
+              
+              console.log(`✅ [ExtractOrders] Created lab order ${savedLabOrder.id} directly in labOrders table`);
+              
+              // Format response to match expected structure
+              savedOrders.push({
+                id: savedLabOrder.id,
+                ...savedLabOrder,
+                orderType: 'lab'
+              });
+            } else {
+              // Use existing flow for non-lab orders (medications, imaging, referrals)
+              const savedOrder = await storage.createOrder({
+                ...orderData,
+                providerId: orderData.providerId || (req.user as any).id,
+              });
+              savedOrders.push(savedOrder);
+            }
           } catch (error: any) {
             console.error("❌ [ExtractOrders] Failed to save order:", error);
             // Continue with other orders even if one fails
           }
+        }
+        
+        // Helper function to get test mapping
+        function getTestMapping(testName: string) {
+          const testMappings: Record<string, any> = {
+            'Complete Blood Count': {
+              testCode: 'CBC',
+              loincCode: '58410-2',
+              cptCode: '85025',
+              category: 'hematology',
+              specimenType: 'whole_blood',
+            },
+            'Comprehensive Metabolic Panel': {
+              testCode: 'CMP',
+              loincCode: '24323-8',
+              cptCode: '80053',
+              category: 'chemistry',
+              specimenType: 'serum',
+            },
+            'Lipid Panel': {
+              testCode: 'LIPID',
+              loincCode: '24331-1',
+              cptCode: '80061',
+              category: 'chemistry',
+              specimenType: 'serum',
+            }
+          };
+          
+          return testMappings[testName] || {
+            testCode: testName.replace(/\s+/g, '_').toUpperCase().substring(0, 20),
+            loincCode: `CUSTOM_${Date.now()}`,
+            cptCode: '99999',
+            category: 'other',
+            specimenType: 'serum',
+          };
         }
 
         console.log(
@@ -4854,6 +4932,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
   // Register lab routes
   app.use("/api/lab", labRoutes);
+  app.use("/api/lab-orders", consolidatedLabRoutes);
   app.use("/api/lab-entry", labEntryRoutes);
   app.use("/api/lab-workflow", labWorkflowRoutes);
   app.use("/api/lab-communication", labCommunicationRoutes);
