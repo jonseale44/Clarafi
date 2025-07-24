@@ -1151,8 +1151,9 @@ export default function LandingPage() {
 
       {/* Section 8 - Final CTA */}
       <section id="final-cta" className="py-24 px-4 relative overflow-hidden">
-        {/* Gradient background */}
+        {/* Gradient background with dark overlay for better text contrast */}
         <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900" />
+        <div className="absolute inset-0 bg-black/40" />
         
         {/* Animated elements */}
         <div className="absolute inset-0">
@@ -1165,14 +1166,14 @@ export default function LandingPage() {
             Your Patients Are Waiting for the
             <span className="block text-yellow-400 mt-2">Best Version of You</span>
           </h2>
-          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-gray-300 animate-fadeInUp delay-100">
+          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-gray-100 animate-fadeInUp delay-100">
             Join <span className="text-yellow-400 font-semibold">2,847 physicians</span> who refuse to let documentation 
             define their practice. Start your transformation today.
           </p>
           
           {/* Urgency indicator */}
-          <div className="inline-block bg-red-500/20 border border-red-500/30 rounded-full px-6 py-2 mb-8 animate-fadeInUp delay-200">
-            <p className="text-sm text-red-300 font-medium">
+          <div className="inline-block bg-red-500/30 border border-red-500/50 rounded-full px-6 py-2 mb-8 animate-fadeInUp delay-200">
+            <p className="text-sm text-red-200 font-medium">
               🔥 Limited time: No credit card required for first 1,000 providers
             </p>
           </div>
@@ -1200,8 +1201,8 @@ export default function LandingPage() {
             </Link>
           </div>
           
-          <div className="space-y-2 text-sm text-gray-400 animate-fadeInUp delay-400">
-            <p>✓ Setup takes 3 minutes • ✓ No IT required • ✓ Cancel anytime</p>
+          <div className="space-y-2 text-sm animate-fadeInUp delay-400">
+            <p className="text-gray-200">✓ Setup takes 3 minutes • ✓ No IT required • ✓ Cancel anytime</p>
             <p className="font-semibold text-white">No credit card. No commitment. Just results.</p>
           </div>
         </div>
