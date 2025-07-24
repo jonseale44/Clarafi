@@ -648,49 +648,199 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 5 - Feature Deep Dive */}
-      <section id="features" className="py-20 px-4">
+      {/* Section 5 - Feature Deep Dive */}
+      <section id="features" className="py-20 px-4 bg-gray-900">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            Everything You Need, Nothing You Don't
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
+            Everything You Need...
+            <span className="text-yellow-400 block">Plus Some Things You'll Love</span>
           </h2>
+          <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
+            Essential features that work + AI magic that delights
+          </p>
           
-          {/* TODO: Tabbed interface or accordion */}
-          <div className="space-y-4">
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-2">🎙️ AI Documentation</h3>
-              <p className="text-muted-foreground">
-                TODO: Voice capture, SOAP generation, templates - Feature → Benefit → Outcome
-              </p>
-            </Card>
+          {/* Feature cards with expanding details */}
+          <div className="space-y-6">
+            {/* AI Documentation Feature */}
+            <div className="group relative animate-fadeInUp delay-200">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-purple-500/30 transition-all duration-300">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">AI Documentation That Actually Works</h3>
+                    <p className="text-gray-300 mb-4">
+                      Just talk naturally. AI captures everything and creates perfect documentation.
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Accurate SOAP notes every time</li>
+                          <li>• CPT codes auto-selected</li>
+                          <li>• Orders extracted automatically</li>
+                        </ul>
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• AI learns your documentation style</li>
+                          <li>• Suggests diagnoses you might miss</li>
+                          <li>• Auto-drafts patient instructions</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-green-400 font-medium">
+                      → Outcome: Documentation done before patient leaves. Every. Single. Time.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-2">🧠 Clinical Intelligence</h3>
-              <p className="text-muted-foreground">
-                TODO: Full patient context, clinical suggestions - Feature → Benefit → Outcome
-              </p>
-            </Card>
+            {/* Attachment Parser Feature */}
+            <div className="group relative animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-yellow-500/30 transition-all duration-300">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 bg-yellow-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">Universal Attachment Parser</h3>
+                    <p className="text-gray-300 mb-4">
+                      Upload anything. Handwritten notes, faxes, even photos. AI makes it structured data.
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Extract data from any document</li>
+                          <li>• Build complete medical histories</li>
+                          <li>• Import external lab results</li>
+                        </ul>
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Reads doctor's handwriting perfectly</li>
+                          <li>• Highlights critical findings</li>
+                          <li>• Links everything to source docs</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-green-400 font-medium">
+                      → Outcome: Complete patient histories in minutes, not hours.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-2">💰 Practice Management</h3>
-              <p className="text-muted-foreground">
-                TODO: E-prescribing, lab ordering, scheduling - Feature → Benefit → Outcome
-              </p>
-            </Card>
+            {/* Clinical Intelligence Feature */}
+            <div className="group relative animate-fadeInUp delay-400">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-blue-500/30 transition-all duration-300">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">Clinical Intelligence That Thinks Ahead</h3>
+                    <p className="text-gray-300 mb-4">
+                      AI that knows medicine, learns your patterns, and catches what humans miss.
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Drug interaction checking</li>
+                          <li>• Lab result interpretation</li>
+                          <li>• Evidence-based suggestions</li>
+                        </ul>
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Remembers patient preferences</li>
+                          <li>• Predicts appointment durations</li>
+                          <li>• Suggests follow-up timing</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-green-400 font-medium">
+                      → Outcome: Practice medicine with a brilliant assistant watching your back.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-2">🔄 Team Collaboration</h3>
-              <p className="text-muted-foreground">
-                TODO: Multi-provider support, role-based workflows - Feature → Benefit → Outcome
+            {/* Practice Management Feature */}
+            <div className="group relative animate-fadeInUp delay-500">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-green-500/30 transition-all duration-300">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">Complete Practice Management</h3>
+                    <p className="text-gray-300 mb-4">
+                      Everything to run your practice. No separate systems. No double entry.
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• E-prescribing to any pharmacy</li>
+                          <li>• Lab ordering & tracking</li>
+                          <li>• Automated billing/coding</li>
+                        </ul>
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Patients self-schedule online</li>
+                          <li>• AI optimizes your schedule</li>
+                          <li>• Revenue insights dashboard</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-green-400 font-medium">
+                      → Outcome: Focus on patients while the business runs itself.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Fun AI helpers callout */}
+          <div className="mt-16 text-center animate-fadeInUp delay-600">
+            <div className="inline-block bg-gradient-to-r from-yellow-500/10 to-yellow-600/10 border border-yellow-500/20 rounded-full px-8 py-4">
+              <p className="text-lg text-yellow-300 font-medium">
+                🤖 Plus dozens of tiny AI helpers that make you smile every day
               </p>
-            </Card>
-            
-            <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-2">⚡ Enterprise Ready</h3>
-              <p className="text-muted-foreground">
-                TODO: HIPAA, integrations, analytics - Feature → Benefit → Outcome
-              </p>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
