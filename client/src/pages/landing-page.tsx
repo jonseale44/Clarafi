@@ -24,30 +24,67 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      {/* TODO: Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b">
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 w-full z-50 bg-gray-900/95 backdrop-blur-xl border-b border-white/10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            {/* TODO: Logo/Brand */}
-            <div>
-              <h1 className="text-2xl font-bold">Clarafi</h1>
+            {/* Logo with custom color scheme */}
+            <div className="font-black text-3xl tracking-tight">
+              <span style={{ color: '#1e3a8a' }}>CLAR</span>
+              <span className="text-yellow-500">A</span>
+              <span style={{ color: '#1e3a8a' }}>F</span>
+              <span className="text-yellow-500">I</span>
             </div>
             
-            {/* TODO: Navigation Links */}
-            <div className="hidden md:flex items-center gap-6">
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
-              <Link href="/blog">Blog</Link>
+            {/* Desktop Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#solution" className="text-gray-300 hover:text-white transition-colors font-medium">
+                Features
+              </a>
+              <a href="#pricing" className="text-gray-300 hover:text-white transition-colors font-medium">
+                Pricing
+              </a>
+              <a href="#about" className="text-gray-300 hover:text-white transition-colors font-medium">
+                About
+              </a>
+              <Link href="/blog" className="text-gray-300 hover:text-white transition-colors font-medium">
+                Blog
+              </Link>
             </div>
             
-            {/* TODO: Auth CTAs */}
+            {/* Auth CTAs */}
             <div className="flex items-center gap-4">
               <Link href="/auth">
-                <Button variant="ghost">Sign In</Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-gray-300 hover:text-white hover:bg-white/10"
+                >
+                  Sign In
+                </Button>
               </Link>
               <Link href="/auth?tab=register">
-                <Button>Start Free Trial</Button>
+                <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-lg">
+                  Start Free Trial
+                </Button>
               </Link>
+              
+              {/* Mobile menu button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden text-white hover:bg-white/10"
+                onClick={() => {
+                  // TODO: Implement mobile menu toggle
+                  toast({
+                    title: "Mobile Menu",
+                    description: "Mobile menu coming soon",
+                  });
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </Button>
             </div>
           </div>
         </div>
