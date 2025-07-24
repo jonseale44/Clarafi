@@ -618,7 +618,7 @@ export default function AuthPage() {
     <TooltipProvider>
       <div className="min-h-screen bg-background flex">
       {/* Left side - Authentication Forms */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8" data-median="auth-forms-section"></div>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
@@ -1344,7 +1344,7 @@ export default function AuthPage() {
       </div>
       
       {/* Right side - Hero Section */}
-      <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto">
+      <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto" data-median="auth-hero-section">
         <div className="max-w-2xl text-center py-4">
           <h2 className="text-4xl font-bold mb-4">
             Built by Doctors, for Doctors
