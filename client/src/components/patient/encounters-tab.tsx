@@ -152,8 +152,19 @@ export function EncountersTab({ encounters, patientId, onRefresh }: EncountersTa
   };
 
   const handleNewEncounter = () => {
-    // Navigate to create new encounter
-    setLocation(`/patients/${patientId}/encounters/new`);
+    // Create new encounter via API
+    const encounterData = {
+      patientId: patientId,
+      providerId: currentUser?.id || 1,
+      encounterType: "Office Visit",
+      encounterSubtype: "Routine",
+      startTime: new Date().toISOString(),
+      encounterStatus: "scheduled",
+      chiefComplaint: "",
+      note: null,
+    };
+    
+    createEncounterMutation.mutate(encounterData);
   };
 
   const handleViewEncounter = (encounterId: number) => {

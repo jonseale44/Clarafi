@@ -16,6 +16,15 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 24, 2025)
 
+### Fixed "New Encounter" Button Navigation Issue
+Fixed issue where "New Encounter" buttons in the left sidebar were trying to navigate to non-existent route:
+
+1. **Issue Identified** - Buttons in Recent Encounters section and encounters tab were navigating to `/patients/{id}/encounters/new` which doesn't exist
+2. **Root Cause** - `handleNewEncounter` function was using navigation instead of API mutation
+3. **Solution Implemented** - Updated to create encounter via API POST to `/api/encounters` then navigate to created encounter
+4. **Affected Components** - `EncountersTab` component used in both Recent Encounters section and expandable encounters tab
+5. **Result** - All "New Encounter" buttons now work consistently, creating encounters properly
+
 ### Mobile Layout Optimization with Median Web Overrides
 Implemented mobile-specific layout optimizations using Median's Web Overrides CSS system:
 
