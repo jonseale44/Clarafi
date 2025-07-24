@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section 
         id="hero" 
-        className="relative min-h-screen pt-32 pb-20 px-4 overflow-hidden"
+        className="relative min-h-screen pt-32 pb-8 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%)'
         }}
