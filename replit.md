@@ -54,6 +54,12 @@ Implemented mobile-specific layout optimizations using Median's Web Overrides CS
    - Fixed expand button always visible on left edge
    - Responsive button sizing to prevent overflow
 
+6. **Toast Notification Removal**
+   - Removed frequent toast notifications that interfere with mobile UX
+   - Hidden notifications include: "Enhanced Recording Started", "Recording Complete", "Generating SOAP Note", and "Content Saved"
+   - Implementation uses CSS to hide all toasts in mobile app via Median Web Overrides
+   - Desktop experience remains unchanged with full toast functionality
+
 ## Recent Changes (July 23, 2025)
 
 ### Fixed Allergy Source Badge Linking Issue  

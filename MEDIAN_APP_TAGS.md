@@ -330,6 +330,40 @@ To apply mobile-specific styles or behavior in your Median app configuration:
     }
 }
 
+/* === HIDE FREQUENT TOAST NOTIFICATIONS IN MOBILE === */
+
+/* Hide all toast notifications in mobile app to prevent UI interference */
+/* This targets the Radix UI toast viewport and all toasts within it */
+.fixed.top-0.z-\\[100\\],
+.fixed.top-0.z-\\[100\\] > div[data-state="open"],
+.fixed.top-0.z-\\[100\\] > div[data-state="closed"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Alternative: Hide just the toast viewport completely */
+div[data-radix-presence-viewport],
+div[style*="--radix-toast"] {
+    display: none !important;
+}
+
+/* Backup: Target toast elements by their structure */
+.group.pointer-events-auto.relative.flex.w-full.items-center.justify-between {
+    display: none !important;
+}
+
+/* Additional targeting for any remaining toasts */
+[data-state="open"][data-swipe="move"],
+[data-state="open"][data-swipe="cancel"],
+[data-state="open"][data-swipe="end"],
+[data-state="open"].animate-in,
+[data-state="closed"].animate-out {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 /* === OTHER MOBILE STYLES === */
 
 /* Adjust grid layout for mobile */
