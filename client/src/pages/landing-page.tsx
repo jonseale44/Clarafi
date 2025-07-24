@@ -469,38 +469,181 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TODO: Section 4 - Unique Value Propositions */}
-      <section id="value-props" className="py-20 px-4 bg-muted/50">
+      {/* Section 4 - Unique Value Propositions */}
+      <section id="value-props" className="py-20 px-4 bg-gradient-to-b from-gray-900 to-black">
         <div className="container mx-auto max-w-6xl">
-          <h2 className="text-4xl font-bold text-center mb-12">
-            The Best of Both Worlds
+          <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
+            Why Settle for Half a Solution?
           </h2>
+          <p className="text-xl text-gray-400 text-center mb-16 animate-fadeInUp delay-100">
+            You need more than a scribe. You need less than legacy bloat.
+          </p>
           
-          {/* TODO: Two-track messaging */}
+          {/* Two-track comparative messaging */}
           <div className="grid md:grid-cols-2 gap-8">
             {/* vs AI Scribes */}
-            <Card className="p-8">
-              <h3 className="text-2xl font-bold mb-4">More Than a Scribe—A Complete EMR</h3>
-              <p className="text-muted-foreground mb-4">Unlike AI scribes that only take notes...</p>
-              <ul className="space-y-2">
-                <li>TODO: E-prescribing capability</li>
-                <li>TODO: Lab ordering integration</li>
-                <li>TODO: Billing & revenue cycle</li>
-                <li>TODO: Intelligent scheduling</li>
-              </ul>
-            </Card>
+            <div className="relative animate-fadeInUp delay-200">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur-2xl opacity-10" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-purple-500/20 rounded-2xl p-8 md:p-10">
+                <div className="mb-6">
+                  <span className="text-sm font-semibold text-purple-400 uppercase tracking-wider">Compared to AI Scribes</span>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    More Than a Scribe—
+                    <span className="text-purple-400 block">A Complete EMR</span>
+                  </h3>
+                </div>
+                
+                <p className="text-gray-300 mb-8">
+                  AI scribes stop at transcription. We built the entire ecosystem.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">E-Prescribing Built In</h4>
+                      <p className="text-sm text-gray-400">Send prescriptions directly to pharmacies. No copy-paste required.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Lab Order Integration</h4>
+                      <p className="text-sm text-gray-400">Order labs, track results, auto-notify patients—all in one place.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Billing & Revenue Cycle</h4>
+                      <p className="text-sm text-gray-400">CPT codes selected automatically. Never leave money on the table.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Patient Portal & Scheduling</h4>
+                      <p className="text-sm text-gray-400">Patients book appointments and access records 24/7.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-8 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <p className="text-sm text-purple-300 font-medium">
+                    💡 Scribes give you notes. We give you your practice back.
+                  </p>
+                </div>
+              </div>
+            </div>
             
             {/* vs Traditional EMRs */}
-            <Card className="p-8">
-              <h3 className="text-2xl font-bold mb-4">AI-Native, Not Bolted On</h3>
-              <p className="text-muted-foreground mb-4">Unlike legacy EMRs with add-on AI...</p>
-              <ul className="space-y-2">
-                <li>TODO: Autonomous documentation</li>
-                <li>TODO: Instant setup (3 minutes)</li>
-                <li>TODO: Physician-designed workflows</li>
-                <li>TODO: Continuous AI improvements</li>
-              </ul>
-            </Card>
+            <div className="relative animate-fadeInUp delay-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur-2xl opacity-10" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-blue-500/20 rounded-2xl p-8 md:p-10">
+                <div className="mb-6">
+                  <span className="text-sm font-semibold text-blue-400 uppercase tracking-wider">Compared to Legacy EMRs</span>
+                  <h3 className="text-3xl font-bold text-white mt-2">
+                    AI-Native, Not 
+                    <span className="text-blue-400 block">Bolted On</span>
+                  </h3>
+                </div>
+                
+                <p className="text-gray-300 mb-8">
+                  Traditional EMRs fight you at every click. We built for flow.
+                </p>
+                
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">3-Minute Setup</h4>
+                      <p className="text-sm text-gray-400">Not 6 months. Not 6 weeks. Just 3 minutes to your first patient.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Autonomous Documentation</h4>
+                      <p className="text-sm text-gray-400">AI doesn't just assist—it completes entire workflows for you.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Physician-Designed Workflows</h4>
+                      <p className="text-sm text-gray-400">Built by doctors who actually use it. Not IT committees.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Updates That Excite, Not Terrify</h4>
+                      <p className="text-sm text-gray-400">Weekly improvements, not yearly disasters requiring retraining.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <p className="text-sm text-blue-300 font-medium">
+                    🚀 Legacy EMRs trap you in 1995. We're building for 2030.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Central value prop */}
+          <div className="text-center mt-16 animate-fadeInUp delay-400">
+            <p className="text-2xl md:text-3xl font-bold text-white">
+              Finally. The
+              <span className="text-yellow-400"> complete solution</span> you've been waiting for.
+            </p>
+            <Link href="/auth?tab=register">
+              <Button 
+                size="lg" 
+                className="mt-8 text-lg px-10 py-6 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
+              >
+                See the Difference →
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
