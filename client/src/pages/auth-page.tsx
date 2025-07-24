@@ -342,10 +342,10 @@ export default function AuthPage() {
 
   // Update available health systems when data loads
   useEffect(() => {
-    if (healthSystemsData && availableHealthSystems.length === 0) {
+    if (healthSystemsData && Array.isArray(healthSystemsData) && availableHealthSystems.length === 0) {
       setAvailableHealthSystems(healthSystemsData);
     }
-  }, [healthSystemsData]);
+  }, [healthSystemsData, availableHealthSystems.length]);
 
   // Check if user has existing session location
   const { data: sessionLocation, refetch: refetchSessionLocation } = useQuery({
@@ -592,7 +592,7 @@ export default function AuthPage() {
     
     registerMutation.mutate({
       ...registerData,
-      registrationType: finalRegistrationType,
+      // Include additional properties not in the base schema
       existingHealthSystemId,
       selectedLocationId,
       googlePlaceData,
@@ -611,15 +611,15 @@ export default function AuthPage() {
       utmContent: acquisitionData.utmContent,
       referrerUrl: acquisitionData.referrerUrl,
       landingPage: acquisitionData.landingPage,
-    });
+    } as any);
   };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background flex">
-      {/* Left side - Authentication Forms */}
-      <div className="flex-1 flex items-center justify-center p-8" data-median="auth-forms-section"></div>
-        <div className="w-full max-w-md">
+        {/* Left side - Authentication Forms */}
+        <div className="flex-1 flex items-center justify-center p-8" data-median="auth-forms-section">
+          <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-12 h-12 bg-navy-blue rounded-lg flex items-center justify-center">
