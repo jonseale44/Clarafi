@@ -270,6 +270,38 @@ export class StripeService {
               .where(eq(healthSystems.id, healthSystemId));
             
             console.log(`✅ [Stripe] Upgraded health system ${healthSystemId} to tier 2`);
+            
+            // Track conversion event for subscription upgrade
+            try {
+              // Get the original provider who created the health system
+              const healthSystem = await db.select().from(healthSystems).where(eq(healthSystems.id, healthSystemId)).limit(1);
+              const originalProviderId = healthSystem[0]?.originalProviderId;
+              
+              if (originalProviderId) {
+                await db.insert(conversionEvents).values({
+                  userId: originalProviderId,
+                  healthSystemId: healthSystemId,
+                  eventType: 'subscription_upgrade',
+                  eventTimestamp: new Date(),
+                  sessionId: null,
+                  deviceType: 'unknown',
+                  browserInfo: null,
+                  acquisitionId: null,
+                  eventData: {
+                    fromTier: 1,
+                    toTier: 2,
+                    upgradeMethod: 'stripe_checkout',
+                    sessionId: session.id,
+                    stripeCustomerId: session.customer,
+                  },
+                  monetaryValue: session.amount_total ? session.amount_total / 100 : null, // Convert from cents to dollars
+                });
+                console.log(`🎯 [Stripe] Tracked subscription upgrade conversion for health system ${healthSystemId}`);
+              }
+            } catch (trackingError) {
+              console.error('❌ [Stripe] Failed to track upgrade conversion:', trackingError);
+              // Don't fail the upgrade if tracking fails
+            }
           } else if (session.metadata?.userId) {
             // Regular user subscription
             const userId = parseInt(session.metadata.userId);

@@ -1180,6 +1180,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const patient = await storage.createPatient(validatedData);
+      
+      // Track first patient creation as a conversion event
+      try {
+        // Check if this is the user's first patient
+        const patientCount = await storage.getPatientCountByUser(userId, healthSystemId);
+        if (patientCount === 1) {
+          // Track conversion event for first patient
+          await storage.createConversionEvent({
+            userId,
+            healthSystemId,
+            eventType: 'first_patient',
+            eventTimestamp: new Date(),
+            sessionId: null,
+            deviceType: 'unknown',
+            browserInfo: null,
+            acquisitionId: null,
+            eventData: {
+              patientId: patient.id,
+              creationContext,
+              dataOriginType: 'emr_direct'
+            },
+            monetaryValue: null,
+          });
+          console.log(`🎯 [PatientCreation] Tracked first patient conversion for user ${userId}`);
+        }
+        
+        // Track analytics event for all patient creations
+        await storage.createAnalyticsEvent({
+          userId,
+          healthSystemId,
+          eventType: 'feature_usage',
+          eventCategory: 'clinical',
+          eventData: {
+            feature: 'patient_creation',
+            patientId: patient.id,
+            creationContext,
+            hasInsurance: !!(patient.insurancePrimary || patient.insuranceSecondary),
+          },
+          timestamp: new Date(),
+        });
+      } catch (trackingError) {
+        console.error('❌ [PatientCreation] Failed to track conversion:', trackingError);
+        // Don't fail the patient creation if tracking fails
+      }
+      
       res.status(201).json(patient);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -2366,6 +2411,38 @@ Please provide medical suggestions based on what the ${isProvider ? "provider" :
       console.log(
         `✅ [ClinicalNotes] Request completed successfully in ${requestDuration}ms`,
       );
+
+      // Track conversion event for first SOAP note generation
+      if (noteType === 'soap') {
+        try {
+          // Check if this is the user's first SOAP note
+          const soapCount = await storage.getSOAPNoteCountByUser(userId, (req as any).userHealthSystemId);
+          if (soapCount === 1) {
+            await storage.createConversionEvent({
+              userId,
+              healthSystemId: (req as any).userHealthSystemId,
+              eventType: 'first_soap_note',
+              eventTimestamp: new Date(),
+              sessionId: null,
+              deviceType: 'unknown',
+              browserInfo: null,
+              acquisitionId: null,
+              eventData: {
+                patientId: parseInt(patientId),
+                encounterId,
+                noteType,
+                templateId,
+                processingTimeMs: requestDuration
+              },
+              monetaryValue: null,
+            });
+            console.log(`🎯 [ClinicalNotes] Tracked first SOAP note conversion for user ${userId}`);
+          }
+        } catch (trackingError) {
+          console.error('❌ [ClinicalNotes] Failed to track conversion:', trackingError);
+          // Don't fail the note generation if tracking fails
+        }
+      }
 
       // Return the complete note as JSON
       res.json({

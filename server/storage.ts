@@ -71,12 +71,14 @@ export interface IStorage {
   searchPatients(query: string, healthSystemId: number): Promise<Patient[]>;
   deletePatient(id: number, healthSystemId: number): Promise<void>;
   updatePatientAccess(patientId: number, userId: number, healthSystemId: number): Promise<void>;
+  getPatientCountByUser(userId: number, healthSystemId: number): Promise<number>;
   
   // Encounter management
   getEncounter(id: number): Promise<Encounter | undefined>;
   getPatientEncounters(patientId: number): Promise<Encounter[]>;
   createEncounter(encounter: InsertEncounter): Promise<Encounter>;
   updateEncounter(id: number, updates: Partial<Encounter>): Promise<Encounter>;
+  getSOAPNoteCountByUser(userId: number, healthSystemId: number): Promise<number>;
   
   // Vitals management
   getPatientVitals(patientId: number): Promise<Vitals[]>;
@@ -608,6 +610,19 @@ export class DatabaseStorage implements IStorage {
     return patient;
   }
 
+  async getPatientCountByUser(userId: number, healthSystemId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(patients)
+      .where(
+        and(
+          eq(patients.createdByProviderId, userId),
+          eq(patients.healthSystemId, healthSystemId)
+        )
+      );
+    return result[0]?.count || 0;
+  }
+
   async getAllPatients(healthSystemId: number): Promise<Patient[]> {
     return await db.select().from(patients)
       .where(eq(patients.healthSystemId, healthSystemId))
@@ -803,6 +818,20 @@ export class DatabaseStorage implements IStorage {
       .where(eq(encounters.id, id))
       .returning();
     return encounter;
+  }
+
+  async getSOAPNoteCountByUser(userId: number, healthSystemId: number): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(encounters)
+      .where(
+        and(
+          eq(encounters.createdByUserId, userId),
+          eq(encounters.healthSystemId, healthSystemId),
+          sql`${encounters.note} IS NOT NULL AND ${encounters.note} != ''`
+        )
+      );
+    return result[0]?.count || 0;
   }
 
   // Vitals management

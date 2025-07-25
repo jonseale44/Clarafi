@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients, userAcquisition } from "@shared/schema";
+import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients, userAcquisition, conversionEvents } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { EmailVerificationService } from "./email-verification-service";
 import { StripeService } from "./stripe-service";
@@ -388,6 +388,31 @@ export class RegistrationService {
         
         console.log(`📊 [RegistrationService] Tracked acquisition data for user ${newUser.id}`);
       }
+
+      // Track conversion event for signup
+      await tx
+        .insert(conversionEvents)
+        .values({
+          userId: newUser.id,
+          healthSystemId: healthSystemId,
+          eventType: 'signup',
+          eventTimestamp: new Date(),
+          sessionId: null, // We don't have session ID from backend
+          deviceType: 'unknown', // Will be populated from frontend tracking
+          browserInfo: null,
+          acquisitionId: data.utmSource || data.referrerUrl ? newUser.id : null, // Link to acquisition if tracking data exists
+          eventData: {
+            registrationType: registrationType,
+            role: userRole,
+            hasNPI: !!data.npi,
+            hasSubscriptionKey: !!validatedKeyId,
+            source: data.utmSource || 'direct',
+            medium: data.utmMedium || 'none'
+          },
+          monetaryValue: null, // Will be set on subscription upgrade
+        });
+      
+      console.log(`🎯 [RegistrationService] Tracked signup conversion for user ${newUser.id}`);
 
       // Generate verification token and update user within the transaction
       const verificationToken = EmailVerificationService.generateVerificationToken();
