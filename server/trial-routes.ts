@@ -4,7 +4,7 @@
 import { Express } from 'express';
 import { TrialManagementService } from './trial-management-service.js';
 import { db } from './db.js';
-import { users, healthSystems } from '../shared/schema.js';
+import { users, healthSystems, clinicAdminVerifications } from '../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 export function setupTrialRoutes(app: Express) {
@@ -199,13 +199,9 @@ export function setupTrialRoutes(app: Express) {
         healthSystemId: users.healthSystemId,
         healthSystemName: healthSystems.name,
         currentTier: healthSystems.subscriptionTier,
-        organizationType: healthSystems.organizationType,
+        systemType: healthSystems.systemType,
         taxId: healthSystems.taxId,
-        npiNumber: healthSystems.npiNumber,
-        address: healthSystems.address,
-        city: healthSystems.city,
-        state: healthSystems.state,
-        zip: healthSystems.zip,
+        npi: healthSystems.npi,
         website: healthSystems.website,
         phone: healthSystems.phone
       })
@@ -217,10 +213,15 @@ export function setupTrialRoutes(app: Express) {
         return res.status(400).json({ error: 'User not found' });
       }
 
-      // Only admins can apply for enterprise upgrade
-      if (userDetails.role !== 'admin') {
+      // Check if user can apply for enterprise upgrade
+      // Allow admins OR providers who are on individual provider plans
+      const canApplyForEnterprise = 
+        userDetails.role === 'admin' ||
+        (userDetails.role === 'provider' && userDetails.systemType === 'individual_provider');
+      
+      if (!canApplyForEnterprise) {
         return res.status(403).json({ 
-          error: 'Only system administrators can apply for enterprise upgrade' 
+          error: 'Only system administrators or individual providers can apply for enterprise upgrade' 
         });
       }
 
@@ -234,6 +235,17 @@ export function setupTrialRoutes(app: Express) {
       // Import the verification service
       const { ClinicAdminVerificationService } = await import('./clinic-admin-verification-service');
 
+      // Map systemType to organizationType
+      const mapSystemTypeToOrgType = (systemType: string) => {
+        switch (systemType) {
+          case 'health_system': return 'health_system';
+          case 'hospital_network': return 'hospital';
+          case 'clinic_group': return 'clinic';
+          case 'individual_provider': return 'private_practice';
+          default: return 'clinic';
+        }
+      };
+
       // Prepare verification request using existing health system data
       const verificationRequest = {
         // Personal info from current user
@@ -245,15 +257,15 @@ export function setupTrialRoutes(app: Express) {
         
         // Organization info from existing health system
         organizationName: userDetails.healthSystemName,
-        organizationType: userDetails.organizationType || 'clinic',
+        organizationType: mapSystemTypeToOrgType(userDetails.systemType || 'clinic_group'),
         taxId: userDetails.taxId || '',
-        npiNumber: userDetails.npiNumber,
+        npiNumber: userDetails.npi,
         
-        // Address from health system
-        address: userDetails.address || '',
-        city: userDetails.city || '',
-        state: userDetails.state || '',
-        zip: userDetails.zip || '',
+        // Address placeholder (health systems don't store addresses directly)
+        address: '123 Healthcare Way',
+        city: 'Austin',
+        state: 'TX',
+        zip: '78701',
         website: userDetails.website,
         
         // Legal (already accepted during trial)
