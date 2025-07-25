@@ -94,17 +94,14 @@ export default function AboutUs() {
             </h2>
             <div className="grid md:grid-cols-2 gap-8 items-center mb-6">
               {/* Clara's Photo */}
-              <div className="order-2 md:order-1">
-                <div className="relative">
-                  <div className="relative w-72 h-80 mx-auto rounded-lg overflow-hidden shadow-xl">
+              <div className="order-2 md:order-1 flex items-center">
+                <div className="relative w-full">
+                  <div className="relative w-72 h-80 ml-auto mr-12 rounded-lg overflow-hidden shadow-xl">
                     <img 
                       src={claraPhoto} 
                       alt="Clara - Registered Nurse"
                       className="absolute inset-0 w-[115%] h-[115%] -top-[7%] -left-[7%] object-cover sepia-[.30] hover:sepia-0 transition-all duration-700"
                     />
-                  </div>
-                  <div className="text-center mt-4">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">Clara - A dedicated nurse who served with compassion</p>
                   </div>
                 </div>
               </div>
