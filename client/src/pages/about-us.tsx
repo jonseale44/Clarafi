@@ -45,7 +45,7 @@ export default function AboutUs() {
               <div className="md:col-span-2 space-y-6">
                 <div>
                   <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-                    From Emergency Room to Innovation
+                    From ER to Innovation
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                     My journey in medicine began in the bustling emergency rooms where I worked as a medical scribe during college. 
