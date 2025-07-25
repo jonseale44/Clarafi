@@ -1542,6 +1542,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/patients/:patientId/lab-results/:resultId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.patientId);
+      const resultId = parseInt(req.params.resultId);
+      const userId = req.user!.id;
+
+      console.log(`🗑️ [LabResults] Deleting lab result ${resultId} for patient ${patientId}`);
+
+      // Delete the lab result
+      await storage.deleteLabResult(resultId, userId);
+
+      console.log(`✅ [LabResults] Lab result ${resultId} deleted successfully`);
+      res.json({ success: true, message: "Lab result deleted successfully" });
+    } catch (error: any) {
+      console.error("❌ [LabResults] Delete error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/patients/:patientId/lab-results/:resultId", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.patientId);
+      const resultId = parseInt(req.params.resultId);
+      const userId = req.user!.id;
+
+      console.log(`📝 [LabResults] Updating lab result ${resultId} for patient ${patientId}`);
+
+      // Update the lab result
+      const updatedResult = await storage.updateLabResult(resultId, req.body, userId);
+
+      console.log(`✅ [LabResults] Lab result ${resultId} updated successfully`);
+      res.json(updatedResult);
+    } catch (error: any) {
+      console.error("❌ [LabResults] Update error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/patients/:patientId/imaging-orders", async (req, res) => {
     try {
       if (!req.isAuthenticated()) return res.sendStatus(401);

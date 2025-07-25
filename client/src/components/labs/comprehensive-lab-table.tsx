@@ -13,11 +13,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, isValid } from "date-fns";
 import {
   TrendingUp, TrendingDown, Minus, AlertTriangle, AlertCircle, 
-  ChevronDown, ChevronRight, MessageSquare, CheckCircle2, Clock
+  ChevronDown, ChevronRight, MessageSquare, CheckCircle2, Clock, Trash2, Edit
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +53,8 @@ interface LabResult {
   clinicalIndication?: string;
   priority?: string;
   providerName?: string;
+  sourceType?: string;
+  sourceConfidence?: string;
 }
 
 interface ComprehensiveLabTableProps {
@@ -61,6 +67,15 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [bulkReviewNote, setBulkReviewNote] = useState("");
   const [showBulkReview, setShowBulkReview] = useState(false);
+  const [editingResult, setEditingResult] = useState<LabResult | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    resultValue: "",
+    resultUnits: "",
+    referenceRange: "",
+    abnormalFlag: "",
+    criticalFlag: false,
+    providerNotes: ""
+  });
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -161,6 +176,46 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
     }
   });
 
+  // Delete lab result mutation
+  const deleteLabResultMutation = useMutation({
+    mutationFn: async (resultId: number) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to delete lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete lab result", variant: "destructive" });
+    }
+  });
+
+  // Update lab result mutation
+  const updateLabResultMutation = useMutation({
+    mutationFn: async ({ resultId, updates }: { resultId: number, updates: typeof editFormData }) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result updated successfully" });
+      setEditingResult(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to update lab result", variant: "destructive" });
+    }
+  });
+
   const handleSelectResult = (resultId: number, checked: boolean) => {
     const newSelected = new Set(selectedResults);
     if (checked) {
@@ -169,6 +224,26 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
       newSelected.delete(resultId);
     }
     setSelectedResults(newSelected);
+  };
+
+  const handleEditResult = (result: LabResult) => {
+    setEditingResult(result);
+    setEditFormData({
+      resultValue: result.resultValue || "",
+      resultUnits: result.resultUnits || "",
+      referenceRange: result.referenceRange || "",
+      abnormalFlag: result.abnormalFlag || "",
+      criticalFlag: result.criticalFlag || false,
+      providerNotes: result.providerNotes || ""
+    });
+  };
+
+  const handleUpdateResult = () => {
+    if (!editingResult) return;
+    updateLabResultMutation.mutate({
+      resultId: editingResult.id,
+      updates: editFormData
+    });
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -358,7 +433,12 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="font-medium">{result.testName}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{result.testName}</span>
+                          {result.sourceType === 'user_entered' && (
+                            <Badge className="bg-blue-500 text-white text-xs">User Entered</Badge>
+                          )}
+                        </div>
                         {result.testCategory && (
                           <div className="text-xs text-muted-foreground">{result.testCategory}</div>
                         )}
@@ -435,20 +515,43 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
                     </TableCell>
 
                     <TableCell>
-                      {(result.providerNotes || result.clinicalIndication) && (
+                      <div className="flex items-center gap-1">
+                        {(result.providerNotes || result.clinicalIndication) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRowExpansion(result.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {expandedRows.has(result.id) ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleRowExpansion(result.id)}
-                          className="h-6 w-6 p-0"
+                          onClick={() => handleEditResult(result)}
+                          className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
                         >
-                          {expandedRows.has(result.id) ? (
-                            <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronRight className="h-3 w-3" />
-                          )}
+                          <Edit className="h-3 w-3" />
                         </Button>
-                      )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete the lab result for ${result.testName}?`)) {
+                              deleteLabResultMutation.mutate(result.id);
+                            }
+                          }}
+                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          disabled={deleteLabResultMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ];
@@ -500,6 +603,105 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
           No lab results found for this patient.
         </div>
       )}
+
+      {/* Edit Lab Result Dialog */}
+      <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Lab Result</DialogTitle>
+            <DialogDescription>
+              Modify the lab result values. User-entered values will be marked with a blue tag.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingResult && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="resultValue">Result Value</Label>
+                <Input
+                  id="resultValue"
+                  value={editFormData.resultValue}
+                  onChange={(e) => setEditFormData({...editFormData, resultValue: e.target.value})}
+                  placeholder="Enter result value"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="resultUnits">Units</Label>
+                <Input
+                  id="resultUnits"
+                  value={editFormData.resultUnits}
+                  onChange={(e) => setEditFormData({...editFormData, resultUnits: e.target.value})}
+                  placeholder="Enter units (e.g., mg/dL, mmol/L)"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referenceRange">Reference Range</Label>
+                <Input
+                  id="referenceRange"
+                  value={editFormData.referenceRange}
+                  onChange={(e) => setEditFormData({...editFormData, referenceRange: e.target.value})}
+                  placeholder="Enter reference range (e.g., 4.5-11.0)"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="abnormalFlag">Abnormal Flag</Label>
+                <Select 
+                  value={editFormData.abnormalFlag} 
+                  onValueChange={(value) => setEditFormData({...editFormData, abnormalFlag: value})}
+                >
+                  <SelectTrigger id="abnormalFlag">
+                    <SelectValue placeholder="Select abnormal flag" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Normal</SelectItem>
+                    <SelectItem value="L">Low</SelectItem>
+                    <SelectItem value="H">High</SelectItem>
+                    <SelectItem value="LL">Critical Low</SelectItem>
+                    <SelectItem value="HH">Critical High</SelectItem>
+                    <SelectItem value="A">Abnormal</SelectItem>
+                    <SelectItem value="AA">Critical Abnormal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="criticalFlag"
+                  checked={editFormData.criticalFlag}
+                  onCheckedChange={(checked) => setEditFormData({...editFormData, criticalFlag: !!checked})}
+                />
+                <Label htmlFor="criticalFlag">Critical Result</Label>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="providerNotes">Provider Notes</Label>
+                <Textarea
+                  id="providerNotes"
+                  value={editFormData.providerNotes}
+                  onChange={(e) => setEditFormData({...editFormData, providerNotes: e.target.value})}
+                  placeholder="Add any notes about this result"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setEditingResult(null)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleUpdateResult}
+                  disabled={updateLabResultMutation.isPending}
+                >
+                  {updateLabResultMutation.isPending ? "Updating..." : "Update Result"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -107,6 +107,7 @@ export interface IStorage {
   // Lab orders and results
   getPatientLabOrders(patientId: number): Promise<any[]>;
   getPatientLabResults(patientId: number): Promise<any[]>;
+  deleteLabResult(id: number, userId: number): Promise<void>;
   
   // Imaging orders and results
   getPatientImagingOrders(patientId: number): Promise<any[]>;
@@ -1233,6 +1234,79 @@ export class DatabaseStorage implements IStorage {
     } : 'No results found');
     
     return results;
+  }
+
+  /**
+   * Delete a lab result
+   * 
+   * @param id The lab result ID to delete
+   * @param userId The user ID performing the deletion (for audit trail)
+   */
+  async deleteLabResult(id: number, userId: number): Promise<void> {
+    console.log(`🗑️ [Storage] Deleting lab result ${id} by user ${userId}`);
+    
+    // First check if the lab result exists
+    const result = await db.select()
+      .from(labResults)
+      .where(eq(labResults.id, id))
+      .limit(1);
+    
+    if (result.length === 0) {
+      throw new Error('Lab result not found');
+    }
+    
+    // Delete the lab result
+    await db.delete(labResults)
+      .where(eq(labResults.id, id));
+    
+    console.log(`✅ [Storage] Lab result ${id} deleted successfully`);
+  }
+
+  /**
+   * Update a lab result
+   * 
+   * @param id The lab result ID to update
+   * @param updates The fields to update
+   * @param userId The user ID performing the update (for audit trail)
+   */
+  async updateLabResult(
+    id: number, 
+    updates: {
+      resultValue?: string;
+      resultUnits?: string;
+      referenceRange?: string;
+      abnormalFlag?: string;
+      criticalFlag?: boolean;
+      providerNotes?: string;
+    },
+    userId: number
+  ): Promise<typeof labResults.$inferSelect> {
+    console.log(`📝 [Storage] Updating lab result ${id} by user ${userId}`, updates);
+    
+    // First check if the lab result exists
+    const existing = await db.select()
+      .from(labResults)
+      .where(eq(labResults.id, id))
+      .limit(1);
+    
+    if (existing.length === 0) {
+      throw new Error('Lab result not found');
+    }
+    
+    // Update the lab result with user tracking
+    const updatedResults = await db.update(labResults)
+      .set({
+        ...updates,
+        sourceType: 'user_entered',
+        sourceConfidence: '100',
+        enteredBy: userId,
+        updatedAt: new Date()
+      })
+      .where(eq(labResults.id, id))
+      .returning();
+    
+    console.log(`✅ [Storage] Lab result ${id} updated successfully`);
+    return updatedResults[0];
   }
 
   // Imaging orders and results
