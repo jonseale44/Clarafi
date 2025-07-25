@@ -270,9 +270,9 @@ export default function Pricing() {
                 </div>
               </div>
 
-              <Link href="/auth?register=true&enterprise=true">
+              <Link href="/admin-verification">
                 <Button className="w-full bg-navy-blue hover:bg-navy-blue-700 text-white">
-                  Contact Sales
+                  Apply for Enterprise
                 </Button>
               </Link>
             </CardContent>
