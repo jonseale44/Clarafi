@@ -46,6 +46,7 @@ import AdminBlogManagement from "@/pages/admin-blog-management";
 import Pricing from "@/pages/pricing";
 import { AdminPharmacyImport } from "@/pages/AdminPharmacyImport";
 import AdminMarketingDashboard from "@/pages/admin-marketing-dashboard";
+import { MarketingAnalyticsDashboard } from "@/pages/marketing-analytics-dashboard";
 import TermsOfService from "@/pages/terms-of-service";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import BusinessAssociateAgreement from "@/pages/legal/business-associate-agreement";
@@ -92,6 +93,7 @@ function Router() {
       <ProtectedRoute path="/admin/blog" component={AdminBlogManagement} />
       <ProtectedRoute path="/admin/pharmacy-import" component={AdminPharmacyImport} />
       <ProtectedRoute path="/admin/marketing" component={AdminMarketingDashboard} />
+      <ProtectedRoute path="/admin/marketing-analytics" component={MarketingAnalyticsDashboard} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />

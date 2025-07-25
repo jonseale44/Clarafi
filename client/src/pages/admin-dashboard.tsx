@@ -111,7 +111,7 @@ export default function AdminDashboard() {
       icon: <TrendingUp className="h-6 w-6" />,
       actions: [
         { label: 'Marketing Dashboard', href: '/admin/marketing', variant: 'default' },
-        { label: 'View Analytics', href: '/admin/marketing', variant: 'secondary' }
+        { label: 'View Analytics', href: '/admin/marketing-analytics', variant: 'secondary' }
       ],
       stats: [
         { label: 'Monthly Signups', value: stats?.monthlySignups || 0 },

@@ -22,6 +22,139 @@ const requireAdmin = (req: any, res: any, next: any) => {
 };
 
 // ==========================================
+// Analytics Dashboard Endpoints
+// ==========================================
+
+// Get analytics summary
+router.get("/api/analytics/summary", requireAdmin, async (req, res) => {
+  try {
+    const { from, to, healthSystem } = req.query;
+    
+    // TODO: Implement actual analytics aggregation from the database
+    // For now, return mock data structure
+    const analyticsData = {
+      keyMetrics: {
+        totalUsers: 150,
+        activeUsers: 85,
+        newPatients: 320,
+        totalEncounters: 1250,
+        conversionRate: 4.5,
+        avgSessionDuration: 18.5,
+        customerLifetimeValue: 15000,
+        patientAcquisitionCost: 125
+      },
+      userEngagement: generateDateRangeData(from as string, to as string, [
+        { activeUsers: 45, newUsers: 8, avgSessionDuration: 15 },
+        { activeUsers: 52, newUsers: 12, avgSessionDuration: 18 },
+        { activeUsers: 48, newUsers: 10, avgSessionDuration: 16 }
+      ]),
+      clinicalEfficiency: {
+        avgSOAPTime: 3.5,
+        avgEncounterDuration: 12,
+        documentsProcessedPerDay: 85,
+        ordersPerEncounter: 2.8
+      },
+      opportunities: [
+        { type: "high_usage", message: "Dr. Smith has high engagement - perfect for case study", priority: "high" },
+        { type: "churn_risk", message: "3 providers haven't logged in for 2 weeks", priority: "urgent" },
+        { type: "upsell", message: "5 providers approaching patient limit - upgrade opportunity", priority: "medium" },
+        { type: "referral", message: "Dr. Johnson's practice showed 40% efficiency gain", priority: "high" }
+      ]
+    };
+    
+    res.json(analyticsData);
+  } catch (error) {
+    APIResponseHandler.error(res, error);
+  }
+});
+
+// Get conversion funnel data
+router.get("/api/analytics/conversions", requireAdmin, async (req, res) => {
+  try {
+    const conversionData = {
+      funnel: [
+        { stage: "Landing Page Visits", count: 10000, percentage: 100 },
+        { stage: "Sign Up Started", count: 3000, percentage: 30 },
+        { stage: "Account Created", count: 1500, percentage: 15 },
+        { stage: "First Patient Added", count: 1200, percentage: 12 },
+        { stage: "First SOAP Note", count: 900, percentage: 9 },
+        { stage: "Paid Conversion", count: 450, percentage: 4.5 }
+      ]
+    };
+    
+    res.json(conversionData);
+  } catch (error) {
+    APIResponseHandler.error(res, error);
+  }
+});
+
+// Get feature usage analytics
+router.get("/api/analytics/feature-usage", requireAdmin, async (req, res) => {
+  try {
+    const featureUsageData = {
+      features: [
+        { feature: "SOAP Note Generation", usageCount: 3250 },
+        { feature: "Attachment Processing", usageCount: 2100 },
+        { feature: "Lab Order Creation", usageCount: 1800 },
+        { feature: "Template Usage", usageCount: 1500 },
+        { feature: "Medication Prescribing", usageCount: 1200 },
+        { feature: "Patient Creation", usageCount: 950 },
+        { feature: "Bulk Document Upload", usageCount: 750 },
+        { feature: "Diagnoses Management", usageCount: 650 }
+      ]
+    };
+    
+    res.json(featureUsageData);
+  } catch (error) {
+    APIResponseHandler.error(res, error);
+  }
+});
+
+// Get acquisition analytics
+router.get("/api/analytics/acquisition", requireAdmin, async (req, res) => {
+  try {
+    const acquisitionData = {
+      channels: [
+        { channel: "Direct", users: 450, percentage: 45 },
+        { channel: "Google Search", users: 250, percentage: 25 },
+        { channel: "Referral", users: 150, percentage: 15 },
+        { channel: "Social Media", users: 100, percentage: 10 },
+        { channel: "Email Campaign", users: 50, percentage: 5 }
+      ],
+      trends: generateDateRangeData(req.query.from as string, req.query.to as string, [
+        { signups: 25, trials: 15, conversions: 3 },
+        { signups: 32, trials: 20, conversions: 5 },
+        { signups: 28, trials: 18, conversions: 4 }
+      ])
+    };
+    
+    res.json(acquisitionData);
+  } catch (error) {
+    APIResponseHandler.error(res, error);
+  }
+});
+
+// Helper function to generate date range data
+function generateDateRangeData(from: string | undefined, to: string | undefined, sampleData: any[]) {
+  const days = 7; // Generate 7 days of data
+  const result = [];
+  const startDate = from ? new Date(from) : new Date();
+  
+  for (let i = 0; i < days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    
+    const dataIndex = i % sampleData.length;
+    result.push({
+      date: date.toISOString().split('T')[0],
+      ...sampleData[dataIndex]
+    });
+  }
+  
+  return result;
+}
+
+// ==========================================
 // Module 1: Marketing Metrics Dashboard
 // ==========================================
 
