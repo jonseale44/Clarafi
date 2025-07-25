@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,6 +139,8 @@ export function VitalsFlowsheet({
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [quickParseText, setQuickParseText] = useState("");
   const [showQuickParse, setShowQuickParse] = useState(false);
+  const [isAutoParsing, setIsAutoParsing] = useState(false);
+  const parseTimerRef = useRef<NodeJS.Timeout | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
@@ -324,10 +326,44 @@ export function VitalsFlowsheet({
     return encounterMatch ? encounterMatch[1] : null;
   };
 
+  // Auto-parsing effect with debounce (like draft orders)
+  useEffect(() => {
+    // Clear existing timer if user is still typing
+    if (parseTimerRef.current) {
+      clearTimeout(parseTimerRef.current);
+    }
+
+    // Clear auto-parsing state when text is empty
+    if (!quickParseText.trim()) {
+      setIsAutoParsing(false);
+      return;
+    }
+
+    // Set auto-parsing indicator and start timer for 1.5 seconds (same as draft orders)
+    if (quickParseText.trim().length > 5) {
+      setIsAutoParsing(true);
+      
+      const timer = setTimeout(() => {
+        console.log("🔄 [VitalsFlowsheet] Auto-parsing triggered for:", quickParseText);
+        quickParseMutation.mutate(quickParseText.trim());
+      }, 1500);
+
+      parseTimerRef.current = timer;
+    }
+
+    // Cleanup timer
+    return () => {
+      if (parseTimerRef.current) {
+        clearTimeout(parseTimerRef.current);
+      }
+    };
+  }, [quickParseText]);
+
   // Quick parse mutation for form population (parse-only)
   const quickParseMutation = useMutation({
     mutationFn: async (text: string) => {
       console.log("🩺 [VitalsFlowsheet] Starting GPT parsing for text:", text);
+      setIsAutoParsing(false); // Clear auto-parsing indicator when request starts
       
       // Use parse-only endpoint to get structured data for form population
       const response = await fetch('/api/vitals/parse-only', {
@@ -999,6 +1035,7 @@ export function VitalsFlowsheet({
               quickParseMutation={quickParseMutation}
               encounterId={encounterId || editingEntry?.encounterId || undefined}
               patientId={patientId}
+              isAutoParsing={isAutoParsing}
             />
           )}
         </DialogContent>
@@ -1019,9 +1056,10 @@ interface VitalsEntryFormProps {
   quickParseMutation: any;
   encounterId: number;
   patientId: number;
+  isAutoParsing: boolean;
 }
 
-function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation, encounterId, patientId }: VitalsEntryFormProps) {
+function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParseText, setQuickParseText, quickParseMutation, encounterId, patientId, isAutoParsing }: VitalsEntryFormProps) {
   const [formData, setFormData] = useState<Partial<VitalsEntry>>(entry);
   const { toast } = useToast();
 
@@ -1137,29 +1175,23 @@ function VitalsEntryForm({ entry, onSave, onCancel, isSaving, ranges, quickParse
           <Label className="text-sm font-medium text-navy-blue-900">
             Quick Parse Vitals
           </Label>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              if (quickParseText.trim() && quickParseText.length > 5) {
-                quickParseMutation.mutate(quickParseText.trim());
-              }
-            }}
-            disabled={quickParseMutation.isPending || !quickParseText.trim()}
-            className="text-xs h-6"
-          >
-            {quickParseMutation.isPending ? 'Parsing...' : 'Parse'}
-          </Button>
+          {(isAutoParsing || quickParseMutation.isPending) && (
+            <div className="flex items-center gap-1 text-xs text-navy-blue-600">
+              <div className="animate-pulse">
+                {isAutoParsing ? 'AI parsing...' : 'Processing...'}
+              </div>
+            </div>
+          )}
         </div>
         <Textarea
-          placeholder="Enter vitals text then click Parse. e.g., '120/80, P 80, RR 23, 98% on room air'"
+          placeholder="Type vitals naturally. AI will parse automatically as you type. e.g., '120/80, P 80, RR 23, 98% on room air'"
           value={quickParseText}
           onChange={(e) => setQuickParseText(e.target.value)}
           className="flex-1 min-h-[60px] resize-none"
           rows={2}
         />
         <p className="text-xs text-navy-blue-700 mt-2">
-          Enter vitals text above and click "Parse" to automatically fill form fields. Examples: "BP 120/80", "HR 75", "Temp 98.6F"
+          AI automatically parses vitals as you type. Examples: "BP 120/80", "HR 75", "Temp 98.6F", "O2 sat 98%"
         </p>
       </div>
 
