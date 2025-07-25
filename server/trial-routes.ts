@@ -19,7 +19,7 @@ export function setupTrialRoutes(app: Express) {
       
       res.json({
         trialStatus,
-        upgradeUrl: '/upgrade'
+        upgradeUrl: '/admin/health-system-upgrade'
       });
     } catch (error: any) {
       console.error('❌ [TrialRoutes] Error getting trial status:', error);
@@ -85,41 +85,6 @@ export function setupTrialRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [TrialRoutes] Error setting trial expiry:', error);
       res.status(500).json({ message: error.message });
-    }
-  });
-
-  /**
-   * Upgrade trial to paid subscription
-   */
-  app.post('/api/upgrade-trial', async (req, res) => {
-    try {
-      if (!req.user?.healthSystemId) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-
-      // For now, simulate successful upgrade
-      // In production, this would integrate with Stripe
-      const healthSystemId = req.user.healthSystemId;
-      
-      // Update health system to paid status
-      const result = await db.update(healthSystems).set({
-        subscriptionStatus: 'active',
-        subscriptionTier: 1, // Tier 1 = Individual Provider ($149/month)
-        subscriptionStartDate: new Date(),
-        subscriptionEndDate: null, // No end date for active subscriptions
-        updatedAt: new Date()
-      }).where(eq(healthSystems.id, healthSystemId));
-
-      console.log('🎉 [TrialRoutes] Trial upgraded to paid plan for health system:', healthSystemId);
-      
-      res.json({ 
-        success: true,
-        message: 'Your account has been upgraded to the Professional plan!',
-        subscriptionTier: 1
-      });
-    } catch (error: any) {
-      console.error('❌ [TrialRoutes] Error upgrading trial:', error);
-      res.status(500).json({ message: 'Failed to upgrade account' });
     }
   });
 
