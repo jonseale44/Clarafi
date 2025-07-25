@@ -17,28 +17,29 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 ## Recent Changes (July 25, 2025)
 
 ### GPT-Driven Visit History Consolidation (July 25, 2025 - 5:30 PM) - COMPLETED
-Implemented intelligent visit history consolidation to prevent duplicate entries when multiple attachments from the same date are uploaded:
+### Updated Visit History Consolidation Rules (July 25, 2025 - 6:46 PM) - COMPLETED
+Implemented and refined visit history consolidation to prevent duplicate entries when multiple attachments from the same date are uploaded:
 
 1. **Problem Addressed**: When uploading multiple attachments from the same medical date (e.g., 12/12/2018), each attachment was creating separate visit history entries instead of consolidating information.
 
 2. **Solution Approach - GPT-Driven Consolidation**:
    - Enhanced GPT prompt to receive full visit history details (dates, notes, sources) for all existing problems
-   - Added explicit consolidation rules for GPT to intelligently handle same-date visits
-   - GPT now decides whether to consolidate same-date visits or keep them separate based on medical context
+   - Added explicit consolidation rules requiring GPT to ALWAYS consolidate same-date visits
    - Maintains GPT's exclusive authority over all medical decisions
 
 3. **Key Features**:
    - No automatic date-based filtering - GPT has full control
    - Handles attachments uploaded days or weeks apart that have the same medical date
    - Creates rich, comprehensive visit notes when consolidating
-   - Keeps visits separate when they represent distinct medical events (e.g., morning ER visit + evening admission)
+   - **ALL same-date visits are consolidated** - no exceptions (per physician preference)
 
 4. **Technical Implementation**:
    - Modified `unified-medical-problems-parser.ts` to pass full visit history to GPT
-   - Added consolidation rules to GPT prompt for intelligent decision-making
+   - Added strict consolidation rules to GPT prompt - NEVER create duplicate same-date visits
+   - Example consolidation: "5/23/25: On escitalopram 5mg daily (started 5/23/25). On lorazepam 0.5mg daily PRN (since 9/17/24). Prior meds: escitalopram 10mg daily (3/8/24, 7/2/24)"
    - Follows the same pattern as medical problems consolidation
 
-5. **Result**: Visit history now intelligently consolidates same-date information while maintaining medical accuracy and GPT's decision-making authority.
+5. **Result**: Visit history now strictly consolidates ALL same-date information into single comprehensive entries, preventing duplicate visits and reducing information repetition.
 
 ### Background Audio Support for Median App (July 25, 2025 - 3:53 PM) - COMPLETED
 Successfully implemented background audio functionality for iOS devices in the Median mobile app:

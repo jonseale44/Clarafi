@@ -465,18 +465,16 @@ ENHANCED EXAMPLES WITH RANKING AND CONFIDENCE:
 VISIT HISTORY CONSOLIDATION RULES - CRITICAL:
 1. ALWAYS check existing visit history for same-date entries before creating new visits
 2. When you find existing visits on the SAME DATE as the current document/encounter:
-   - CONSOLIDATE information into a single comprehensive visit entry
+   - ALWAYS CONSOLIDATE information into a single comprehensive visit entry
    - Combine clinical details from both sources into enriched notes
    - Preserve the most complete information from each source
-   - DO NOT create duplicate same-date visits unless they represent truly distinct medical events
-3. Examples of when to CONSOLIDATE same-date visits:
+   - NEVER create duplicate same-date visits - ALL same-date information must be consolidated
+3. Examples of how to CONSOLIDATE same-date visits:
    - Multiple lab results from same date → Single visit with all lab values
    - Progress note + lab results from same date → Single visit with exam findings AND lab values
    - Multiple documents from same clinic visit → Single comprehensive visit entry
-4. Examples of when to KEEP SEPARATE same-date visits:
-   - Morning ER visit + evening admission → Two distinct medical events
-   - Different specialties on same day → May warrant separate entries if clinically distinct
-5. When consolidating, create rich, comprehensive visit notes that include ALL relevant information
+   - Current meds + historical meds → "On escitalopram 5mg daily (started 5/23/25). Prior: 10mg daily (3/8/24, 7/2/24)"
+4. When consolidating, create rich, comprehensive visit notes that include ALL relevant information from all same-date sources
 
 VISIT HISTORY CREATION RULE - CRITICAL:
 ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
