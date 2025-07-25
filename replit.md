@@ -16,6 +16,13 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Added "Back to Home" Button to About Page (July 25, 2025 - 2:07 PM) - COMPLETED
+Added a prominent "Back to Home" navigation button to the About Us page:
+- Placed at the top of the hero section for visibility
+- Uses Home icon from lucide-react with clear label
+- Links directly to the landing page at root path "/"
+- Styled with outline variant to be noticeable but not intrusive
+
 ### Implemented Lab Result Management System (July 25, 2025 - 1:58 PM) - COMPLETED
 Implemented comprehensive manual management system for lab results with delete and modify functionality:
 

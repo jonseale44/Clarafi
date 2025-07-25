@@ -16,6 +16,14 @@ export default function AboutUs() {
       <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20" />
         <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="mb-8">
+            <Link href="/">
+              <Button variant="outline" className="gap-2">
+                <Home className="h-4 w-4" />
+                Back to Home
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-5xl md:text-6xl font-bold text-center mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Our Story
           </h1>
