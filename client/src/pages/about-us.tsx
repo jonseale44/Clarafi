@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, Stethoscope, Users, Home, BookOpen, Award } from 'lucide-react';
 import founderHeadshot from '@assets/Favorite-Aragon-Photo-1_1753409906439.jpeg';
+import claraPhoto from '@assets/1950s Nurse copy Large_1753477880884.png';
 
 export default function AboutUs() {
   useEffect(() => {
@@ -88,19 +89,39 @@ export default function AboutUs() {
             <div className="flex items-center justify-center mb-6">
               <Heart className="w-12 h-12 text-purple-600 dark:text-purple-400" />
             </div>
-            <h2 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-gray-100">
+            <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">
               In Honor of Clara
             </h2>
-            <div className="max-w-3xl mx-auto space-y-4">
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">
-                <span className="font-semibold text-xl text-purple-600 dark:text-purple-400">Clarafi</span> is named in loving memory 
-                of my grandmother, Clara—a dedicated registered nurse who touched countless lives throughout her remarkable 103 years.
-              </p>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">
-                She passed away just months ago, during the creation of this EMR. As the matriarch of our family and a healthcare 
-                professional who understood the importance of compassionate, thorough patient care, her legacy lives on in every 
-                feature designed to help you provide better care to your patients.
-              </p>
+            <div className="grid md:grid-cols-2 gap-8 items-center mb-6">
+              {/* Clara's Photo */}
+              <div className="order-2 md:order-1">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-blue-200 dark:from-purple-800 dark:to-blue-800 rounded-lg blur-2xl opacity-30"></div>
+                  <img 
+                    src={claraPhoto} 
+                    alt="Clara - Registered Nurse"
+                    className="relative w-full max-w-sm mx-auto rounded-lg shadow-2xl object-cover sepia-[.30] hover:sepia-0 transition-all duration-700"
+                  />
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 italic">Clara - A dedicated nurse who served with compassion</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Text Content */}
+              <div className="order-1 md:order-2 space-y-4">
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <span className="font-semibold text-xl text-purple-600 dark:text-purple-400">Clarafi</span> is named in loving memory 
+                  of my grandmother, Clara—a dedicated registered nurse who touched countless lives throughout her remarkable 103 years.
+                </p>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  She passed away just months ago, during the creation of this EMR. As the matriarch of our family and a healthcare 
+                  professional who understood the importance of compassionate, thorough patient care, her legacy lives on in every 
+                  feature designed to help you provide better care to your patients.
+                </p>
+              </div>
+            </div>
+            <div className="max-w-3xl mx-auto">
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center italic">
                 Her dedication to nursing excellence inspires our commitment to making your documentation work as seamless as possible, 
                 so you can focus on what matters most—your patients.

@@ -275,6 +275,12 @@ Successfully implemented comprehensive marketing and analytics system tracking a
 
 ## Recent Changes (July 25, 2025)
 
+### About Us Page Updates (July 25, 2025 - 9:13 PM)
+- Added Clara's photo to the "In Honor of Clara" section
+- Clara was the founder's grandmother, a registered nurse who lived to 103 years
+- Photo displays with a memorial-style layout, sepia effect, and caption
+- Located at `/client/src/pages/about-us.tsx`
+
 ### About Us Page (July 25, 2025 - 2:15 AM) - COMPLETED
 Created a professional About Us page that shares the founder's personal story while maintaining privacy:
 
