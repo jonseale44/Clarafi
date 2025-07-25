@@ -1,0 +1,22 @@
+Our Story
+My journey in medicine began on the front lines—as a college student scribbling through endless emergency department shifts, capturing every detail of each patient’s story. The experience paid my way through school, opened the door to medical school, and ingrained in me the vital importance of accurate, meaningful documentation in patient care.
+
+Today, after a decade in practice—including seven years caring for a rural community in Hillsboro, Texas—I can truthfully say that documentation is the most frustrating part of being a physician. Too often, it steals time from my patients, my family, and the practice of medicine itself. For all our advances, most EMRs remain clunky, outdated, and designed for the needs of insurance companies, not clinicians or patients. Every improvement in documentation has come with equal or greater burdens for those of us providing care.
+
+A few years ago, the arrival of modern AI tools changed everything for me. Voice recognition and advanced summarization (like Otter and Freed) drastically increased my efficiency and, for the first time, let me focus on my patients without losing track of documentation. These AI tools didn’t just save me time; my notes improved, my colleagues noticed, and I found myself able to give more attention to what matters most—caring for people at every stage, from newborns to seniors, from outpatient clinics to hospital wards, to the OB suite.
+
+But I saw the gap:
+
+Nobody had built an EMR from the ground up, around modern AI. Existing scribes helped write SOAP notes, but never went further. EMRs kept stapling on AI features, but fundamentally remained slow and ill-adapted. Doctors (and our patients) deserved more.
+
+That’s why I built Clarafi: a fully AI-powered EMR that does the charting, the coding, the ordering, even the tracking and scheduling—by listening, summarizing, and preparing everything you need, all drafted and ready for your review. Clarafi is about restoring the best of medicine. It’s about giving every clinician timely, complete information and the freedom to refocus on patient care, without sacrificing accuracy or compliance.
+
+In Honor of Clara
+Clarafi is named in loving memory of my grandmother, Clara. A proud member of the greatest generation, she served as a registered nurse and lived to 103, passing away as this EMR was taking shape. Her commitment to caring for others and leading our family is woven into the fabric of this company and inspires our mission every day.
+
+A Bit More About Me
+I’m blessed with a wonderful wife, five children, and the privilege of practicing medicine in a town I truly love. Whether seeing 20–30 clinic patients a day, rounding at the hospital, delivering babies, or assisting in surgery, I believe the heart of medicine is the human connection—something no EMR should ever get in the way of.
+
+At Clarafi, we’re getting medicine back to medicine.
+
+It’s time to let your EMR do the heavy lifting—so you can focus on what matters most.

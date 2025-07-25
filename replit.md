@@ -21,21 +21,28 @@ Created a professional About Us page that shares the founder's personal story wh
 
 1. **Page Design** - Built at `/client/src/pages/about-us.tsx`:
    - Hero section with "Our Story" title
-   - Founder story section with placeholder for professional headshot
+   - Founder story section with professional headshot positioned with object-top to prevent cropping
    - "In Honor of Clara" section explaining the name origin (grandmother who was an RN, lived to 103)
    - Values section highlighting Family First, Community Care, and Love What You Do
    - Mission statement and contact section
 
-2. **Personal Story Elements**:
+2. **Personal Story Elements** (Updated July 25, 2025 - 2:44 AM):
    - Journey from medical scribe in emergency rooms to physician
-   - Understanding of documentation challenges from firsthand experience
+   - Scribe experience paid for college and opened door to medical school
+   - Decade in practice including 7 years in Hillsboro, Texas rural community
+   - Daily practice: 20-30 clinic patients, hospital rounds, deliveries, surgery
+   - Frustration with traditional EMRs stealing time from patients and family
+   - Transformation through modern AI tools (voice recognition, summarization)
+   - Recognized gap: no EMR built from ground up around modern AI
    - Family-oriented (spouse and 5 children)
-   - Small town practice with genuine love for the work
+   - Clara was "proud member of the greatest generation"
 
 3. **Navigation Updates**:
    - Added route `/about` in App.tsx
    - Updated landing page navigation to link to dedicated About Us page
    - Added About Us link in footer Company section
+   - Added "Read Our Full Story" button in landing page trust section
+   - Updated title from "From Emergency Room to Innovation" to "From ER to Innovation" for better symmetry
 
 ### HIPAA-Compliant Data Archive System (July 25, 2025 - 1:30 AM) - COMPLETED
 Implemented comprehensive data archiving system for HIPAA compliance and user data protection:
