@@ -213,17 +213,13 @@ export function setupTrialRoutes(app: Express) {
         return res.status(400).json({ error: 'User not found' });
       }
 
-      // Check if user can apply for enterprise upgrade
-      // Allow admins OR providers who are on individual provider plans
-      const canApplyForEnterprise = 
-        userDetails.role === 'admin' ||
-        (userDetails.role === 'provider' && userDetails.systemType === 'individual_provider');
-      
-      if (!canApplyForEnterprise) {
-        return res.status(403).json({ 
-          error: 'Only system administrators or individual providers can apply for enterprise upgrade' 
-        });
-      }
+      // Any authenticated user can apply for enterprise upgrade
+      // The AI verification system will handle approval/rejection
+      console.log('🔍 [EnterpriseUpgrade] User applying for enterprise:', {
+        userId,
+        role: userDetails.role,
+        healthSystemId: userDetails.healthSystemId
+      });
 
       console.log('🚀 [EnterpriseUpgrade] Trial user requesting enterprise upgrade:', {
         userId,
