@@ -29,6 +29,8 @@ export class TrialManagementService {
         subscriptionStartDate: healthSystems.subscriptionStartDate,
         subscriptionStatus: healthSystems.subscriptionStatus,
         subscriptionTier: healthSystems.subscriptionTier,
+        trialEndDate: healthSystems.trialEndDate,
+        gracePeriodEndDate: healthSystems.gracePeriodEndDate,
       })
       .from(healthSystems)
       .where(eq(healthSystems.id, healthSystemId));
@@ -36,6 +38,13 @@ export class TrialManagementService {
     if (!healthSystem) {
       throw new Error('Health system not found');
     }
+
+    console.log(`🔍 [TrialManagement] Debug health system ${healthSystemId}:`, {
+      subscriptionStatus: healthSystem.subscriptionStatus,
+      trialEndDate: healthSystem.trialEndDate,
+      gracePeriodEndDate: healthSystem.gracePeriodEndDate,
+      now: new Date().toISOString()
+    });
 
     // If already paid, no trial restrictions
     if (healthSystem.subscriptionStatus === 'active') {
@@ -53,18 +62,55 @@ export class TrialManagementService {
     }
 
     const now = new Date();
-    const startDate = healthSystem.subscriptionStartDate || now;
     
-    // Get trial duration (default 30 days, but can be overridden for testing)
-    const trialDays = this.getTrialDuration();
-    const trialEndDate = new Date(startDate.getTime() + (trialDays * 24 * 60 * 60 * 1000));
-    const gracePeriodEndDate = new Date(trialEndDate.getTime() + (7 * 24 * 60 * 60 * 1000)); // 7-day grace period
+    // Use actual trial dates if set, otherwise calculate from start date
+    let trialEndDate = healthSystem.trialEndDate;
+    let gracePeriodEndDate = healthSystem.gracePeriodEndDate;
+    
+    if (!trialEndDate) {
+      const startDate = healthSystem.subscriptionStartDate || now;
+      const trialDays = this.getTrialDuration();
+      trialEndDate = new Date(startDate.getTime() + (trialDays * 24 * 60 * 60 * 1000));
+      gracePeriodEndDate = new Date(trialEndDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    } else if (!gracePeriodEndDate) {
+      // If we have trialEndDate but no gracePeriodEndDate, set a default
+      gracePeriodEndDate = new Date(trialEndDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+    }
     
     const timeUntilExpiry = trialEndDate.getTime() - now.getTime();
-    const timeUntilGraceExpiry = gracePeriodEndDate.getTime() - now.getTime();
+    const timeUntilGraceExpiry = gracePeriodEndDate ? gracePeriodEndDate.getTime() - now.getTime() : -1;
     const daysRemaining = Math.ceil(timeUntilExpiry / (24 * 60 * 60 * 1000));
 
-    // Determine status and restrictions
+    // Check subscription status first for trial_expired/deactivated states
+    if (healthSystem.subscriptionStatus === 'trial_expired') {
+      return {
+        status: 'grace_period',
+        daysRemaining: 0,
+        trialEndDate,
+        gracePeriodEndDate,
+        restrictions: {
+          readOnly: true,
+          noNewPatients: true,
+          noDataExport: false, // Allow data export during grace period
+        }
+      };
+    }
+    
+    if (healthSystem.subscriptionStatus === 'deactivated') {
+      return {
+        status: 'deactivated',
+        daysRemaining: 0,
+        trialEndDate,
+        gracePeriodEndDate,
+        restrictions: {
+          readOnly: true,
+          noNewPatients: true,
+          noDataExport: true,
+        }
+      };
+    }
+
+    // For trial status, check dates
     if (timeUntilExpiry > 0) {
       // Still in trial period
       if (daysRemaining <= 3) {
