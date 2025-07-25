@@ -3,6 +3,9 @@
 
 import { Express } from 'express';
 import { TrialManagementService } from './trial-management-service.js';
+import { db } from './db.js';
+import { users, healthSystems } from '../shared/schema.js';
+import { eq } from 'drizzle-orm';
 
 export function setupTrialRoutes(app: Express) {
   
@@ -85,6 +88,76 @@ export function setupTrialRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [TrialRoutes] Error setting trial expiry:', error);
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  /**
+   * Direct trial to tier 1 upgrade (no admin required)
+   */
+  app.post('/api/trial-upgrade-tier1', async (req, res) => {
+    try {
+      if (!req.user?.healthSystemId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { StripeService } = await import('./stripe-service.js');
+      
+      // Get user details
+      const userId = req.user.id;
+      const [user] = await db.select({
+        healthSystemId: users.healthSystemId,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        currentTier: healthSystems.subscriptionTier,
+        stripeCustomerId: healthSystems.stripeCustomerId,
+        healthSystemName: healthSystems.name,
+      })
+      .from(users)
+      .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
+      .where(eq(users.id, userId));
+
+      if (!user || !user.healthSystemId) {
+        return res.status(400).json({ error: 'No health system associated with user' });
+      }
+
+      console.log('🔄 [TrialUpgrade] Trial user upgrading to tier 1:', {
+        userId,
+        healthSystemId: user.healthSystemId,
+        currentTier: user.currentTier,
+        email: user.email
+      });
+
+      // Create Stripe checkout session for tier 1
+      const checkoutResult = await StripeService.createCheckoutSession({
+        email: user.email,
+        healthSystemName: user.healthSystemName || `${user.firstName} ${user.lastName}`,
+        tier: 1,
+        billingPeriod: 'monthly',
+        healthSystemId: user.healthSystemId,
+        metadata: {
+          upgradeFrom: 'trial',
+          healthSystemId: user.healthSystemId.toString(),
+          userId: userId.toString(),
+          action: 'trial-to-tier1'
+        }
+      });
+
+      if (checkoutResult.success && checkoutResult.sessionUrl) {
+        res.json({
+          success: true,
+          checkoutUrl: checkoutResult.sessionUrl
+        });
+      } else {
+        console.error('❌ [TrialUpgrade] Failed to create checkout session:', checkoutResult.error);
+        res.status(500).json({ 
+          error: 'Failed to create payment session',
+          details: checkoutResult.error 
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ [TrialUpgrade] Error creating trial upgrade:', error);
+      res.status(500).json({ error: 'Failed to create upgrade session' });
     }
   });
 

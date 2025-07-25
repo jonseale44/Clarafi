@@ -37,20 +37,17 @@ export function TrialUpgrade() {
     queryKey: ["/api/trial-status"],
   });
 
-  // Upgrade mutation using the existing health system upgrade routes
-  const upgradeMutation = useMutation({
-    mutationFn: async ({ targetTier, billingPeriod }: { targetTier: number, billingPeriod: string }) => {
-      console.log('[TrialUpgrade] Starting upgrade to tier', targetTier);
+  // Tier 1 upgrade mutation (direct trial upgrade)
+  const tier1UpgradeMutation = useMutation({
+    mutationFn: async () => {
+      console.log('[TrialUpgrade] Starting trial to tier 1 upgrade');
       
-      const data = await apiRequest('POST', '/api/health-system-upgrade/upgrade-checkout', {
-        targetTier,
-        billingPeriod
-      });
+      const data = await apiRequest('POST', '/api/trial-upgrade-tier1', {});
       
       return data;
     },
     onSuccess: (data) => {
-      console.log('[TrialUpgrade] Checkout session created:', data);
+      console.log('[TrialUpgrade] Tier 1 checkout session created:', data);
       
       if (data.checkoutUrl) {
         console.log('[TrialUpgrade] Redirecting to Stripe checkout');
@@ -64,7 +61,7 @@ export function TrialUpgrade() {
       }
     },
     onError: (error: any) => {
-      console.error('[TrialUpgrade] Upgrade error:', error);
+      console.error('[TrialUpgrade] Tier 1 upgrade error:', error);
       toast({
         title: 'Upgrade Failed',
         description: error.message || 'Failed to start upgrade process',
@@ -74,9 +71,47 @@ export function TrialUpgrade() {
     },
   });
 
-  const handleUpgrade = (targetTier: number, billingPeriod: 'monthly' | 'annual' = 'monthly') => {
+  // Tier 2 application mutation (requires special approval)
+  const tier2ApplicationMutation = useMutation({
+    mutationFn: async () => {
+      console.log('[TrialUpgrade] Starting tier 2 application process');
+      
+      // This would send an application to admin for review
+      const data = await apiRequest('POST', '/api/enterprise-application', {
+        requestedTier: 2,
+        reason: 'Trial user requesting enterprise features'
+      });
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('[TrialUpgrade] Enterprise application submitted:', data);
+      toast({
+        title: 'Application Submitted',
+        description: 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
+        variant: 'default',
+      });
+      setIsUpgrading(false);
+    },
+    onError: (error: any) => {
+      console.error('[TrialUpgrade] Enterprise application error:', error);
+      toast({
+        title: 'Application Failed',
+        description: error.message || 'Failed to submit enterprise application',
+        variant: 'destructive',
+      });
+      setIsUpgrading(false);
+    },
+  });
+
+  const handleTier1Upgrade = () => {
     setIsUpgrading(true);
-    upgradeMutation.mutate({ targetTier, billingPeriod });
+    tier1UpgradeMutation.mutate();
+  };
+
+  const handleTier2Application = () => {
+    setIsUpgrading(true);
+    tier2ApplicationMutation.mutate();
   };
 
   const trialStatus = trialData?.trialStatus;
@@ -160,11 +195,11 @@ export function TrialUpgrade() {
             <Button 
               size="lg" 
               className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={() => handleUpgrade(1)}
-              disabled={isUpgrading || upgradeMutation.isPending}
+              onClick={handleTier1Upgrade}
+              disabled={isUpgrading || tier1UpgradeMutation.isPending}
             >
               <CreditCard className="h-4 w-4 mr-2" />
-              {upgradeMutation.isPending ? 'Processing...' : 'Upgrade to Professional'}
+              {tier1UpgradeMutation.isPending ? 'Processing...' : 'Upgrade to Professional'}
             </Button>
           </CardContent>
         </Card>
@@ -219,17 +254,21 @@ export function TrialUpgrade() {
                 <strong>Perfect for group practices.</strong> Scale across multiple 
                 providers and locations.
               </p>
+              <p className="text-xs text-amber-600 mt-2">
+                <strong>Requires approval:</strong> Enterprise plans require system administrator 
+                review and approval before activation.
+              </p>
             </div>
 
             <Button 
               size="lg" 
               variant="outline"
-              className="w-full"
-              onClick={() => handleUpgrade(2)}
-              disabled={isUpgrading || upgradeMutation.isPending}
+              className="w-full border-purple-200 hover:bg-purple-50"
+              onClick={handleTier2Application}
+              disabled={isUpgrading || tier2ApplicationMutation.isPending}
             >
-              <CreditCard className="h-4 w-4 mr-2" />
-              {upgradeMutation.isPending ? 'Processing...' : 'Upgrade to Enterprise'}
+              <Shield className="h-4 w-4 mr-2" />
+              {tier2ApplicationMutation.isPending ? 'Submitting...' : 'Apply for Enterprise'}
             </Button>
           </CardContent>
         </Card>
