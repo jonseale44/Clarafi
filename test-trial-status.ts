@@ -22,7 +22,7 @@ async function updateTrialStatus(healthSystemId: number, daysFromNow: number) {
   const result = await db
     .update(healthSystems)
     .set({
-      trialEndDate: newTrialEndDate.toISOString(),
+      trialEndDate: newTrialEndDate,
       // Reset grace period if extending trial
       gracePeriodEndDate: daysFromNow > 0 ? null : undefined,
       // Reactivate if extending trial
@@ -54,8 +54,8 @@ async function setGracePeriod(healthSystemId: number) {
   const result = await db
     .update(healthSystems)
     .set({
-      trialEndDate: trialEnd.toISOString(),
-      gracePeriodEndDate: graceEnd.toISOString(),
+      trialEndDate: trialEnd,
+      gracePeriodEndDate: graceEnd,
       subscriptionStatus: 'trial_expired'
     })
     .where(eq(healthSystems.id, healthSystemId))
@@ -80,8 +80,8 @@ async function deactivateAccount(healthSystemId: number) {
   const result = await db
     .update(healthSystems)
     .set({
-      trialEndDate: trialEnd.toISOString(),
-      gracePeriodEndDate: graceEnd.toISOString(),
+      trialEndDate: trialEnd,
+      gracePeriodEndDate: graceEnd,
       subscriptionStatus: 'deactivated'
     })
     .where(eq(healthSystems.id, healthSystemId))
