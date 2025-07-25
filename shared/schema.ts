@@ -4760,6 +4760,87 @@ export const marketingAutomations = pgTable("marketing_automations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Analytics Events Tracking - Core table for all analytics events
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  userId: integer("user_id").references(() => users.id),
+  sessionId: text("session_id").notNull(),
+  
+  // Event details
+  eventType: text("event_type").notNull(), // 'page_view', 'feature_usage', 'clinical_action', 'conversion', etc.
+  eventCategory: text("event_category"), // 'patient_management', 'documentation', 'orders', etc.
+  eventAction: text("event_action"), // 'create', 'update', 'delete', 'view', etc.
+  eventLabel: text("event_label"), // Additional context
+  eventValue: integer("event_value"), // Numeric value if applicable
+  
+  // Event data
+  eventData: jsonb("event_data").$type<Record<string, any>>(),
+  
+  // Page context
+  pageUrl: text("page_url"),
+  pageTitle: text("page_title"),
+  referrer: text("referrer"),
+  
+  // Device & browser info
+  userAgent: text("user_agent"),
+  deviceType: text("device_type"), // 'desktop', 'mobile', 'tablet'
+  browserName: text("browser_name"),
+  browserVersion: text("browser_version"),
+  osName: text("os_name"),
+  osVersion: text("os_version"),
+  screenResolution: text("screen_resolution"),
+  
+  // Session context
+  sessionDuration: integer("session_duration"), // in seconds
+  isNewSession: boolean("is_new_session").default(false),
+  
+  // UTM parameters
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
+  
+  // Timestamps
+  timestamp: timestamp("timestamp").notNull(),
+  processedAt: timestamp("processed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Feature Usage Stats - Aggregated feature usage data
+export const featureUsageStats = pgTable("feature_usage_stats", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  userId: integer("user_id").references(() => users.id),
+  
+  // Feature identification
+  featureName: text("feature_name").notNull(), // 'soap_generation', 'attachment_parsing', etc.
+  featureCategory: text("feature_category"), // 'ai_features', 'documentation', 'clinical_tools'
+  
+  // Usage metrics
+  usageDate: date("usage_date").notNull(),
+  usageCount: integer("usage_count").default(0),
+  successCount: integer("success_count").default(0),
+  errorCount: integer("error_count").default(0),
+  
+  // Performance metrics
+  avgProcessingTime: decimal("avg_processing_time"), // in seconds
+  minProcessingTime: decimal("min_processing_time"),
+  maxProcessingTime: decimal("max_processing_time"),
+  
+  // Additional metrics
+  metadata: jsonb("metadata").$type<{
+    avgDataSize?: number;
+    commonErrors?: string[];
+    userFeedback?: { positive: number; negative: number };
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Marketing campaign tracking
 export const marketingCampaigns = pgTable("marketing_campaigns", {
   id: serial("id").primaryKey(),
@@ -4797,6 +4878,15 @@ export const marketingCampaigns = pgTable("marketing_campaigns", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Analytics Events Insert Schemas and Types
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents);
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+
+export const insertFeatureUsageStatsSchema = createInsertSchema(featureUsageStats);
+export type FeatureUsageStats = typeof featureUsageStats.$inferSelect;
+export type InsertFeatureUsageStats = z.infer<typeof insertFeatureUsageStatsSchema>;
 
 // Marketing Analytics Insert Schemas and Types
 export const insertMarketingMetricsSchema = createInsertSchema(marketingMetrics);

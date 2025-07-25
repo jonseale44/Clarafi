@@ -27,9 +27,11 @@ import {
   type NewsletterSubscriber, type InsertNewsletterSubscriber,
   // Marketing & Analytics Intelligence Modules
   marketingMetrics, userAcquisition, conversionEvents, marketingInsights, marketingAutomations, marketingCampaigns,
+  analyticsEvents, featureUsageStats,
   type MarketingMetrics, type InsertMarketingMetrics, type UserAcquisition, type InsertUserAcquisition,
   type ConversionEvent, type InsertConversionEvent, type MarketingInsight, type InsertMarketingInsight,
   type MarketingAutomation, type InsertMarketingAutomation, type MarketingCampaign, type InsertMarketingCampaign,
+  type AnalyticsEvent, type InsertAnalyticsEvent, type FeatureUsageStats, type InsertFeatureUsageStats,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db.js";
@@ -245,6 +247,39 @@ export interface IStorage {
   getMarketingCampaigns(healthSystemId: number, status?: string): Promise<MarketingCampaign[]>;
   createMarketingCampaign(campaign: InsertMarketingCampaign): Promise<MarketingCampaign>;
   updateMarketingCampaign(id: number, updates: Partial<MarketingCampaign>): Promise<MarketingCampaign>;
+  
+  // Analytics Events
+  createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  createAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]>;
+  getAnalyticsEvents(params: {
+    healthSystemId?: number;
+    userId?: number;
+    sessionId?: string;
+    eventType?: string;
+    eventCategory?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<AnalyticsEvent[]>;
+  
+  // Feature Usage Stats
+  updateFeatureUsageStats(stats: {
+    healthSystemId: number;
+    userId: number;
+    featureName: string;
+    featureCategory?: string;
+    usageDate: Date;
+    processingTime?: number;
+    success: boolean;
+    error?: string;
+  }): Promise<FeatureUsageStats>;
+  getFeatureUsageStats(params: {
+    healthSystemId?: number;
+    userId?: number;
+    featureName?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<FeatureUsageStats[]>;
   
   sessionStore: any;
 }
@@ -3675,6 +3710,219 @@ export class DatabaseStorage implements IStorage {
       .where(eq(marketingCampaigns.id, id))
       .returning();
     return updated;
+  }
+
+  // ========================================
+  // Analytics Events Implementation
+  // ========================================
+
+  async createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const eventToInsert = {
+      ...event,
+      timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+      createdAt: event.createdAt ? new Date(event.createdAt) : new Date(),
+    };
+    
+    const [newEvent] = await db
+      .insert(analyticsEvents)
+      .values(eventToInsert)
+      .returning();
+    return newEvent;
+  }
+
+  async createAnalyticsEventsBatch(events: InsertAnalyticsEvent[]): Promise<AnalyticsEvent[]> {
+    if (events.length === 0) return [];
+    
+    const eventsWithTimestamp = events.map(event => ({
+      ...event,
+      timestamp: event.timestamp ? new Date(event.timestamp) : new Date(),
+      createdAt: event.createdAt ? new Date(event.createdAt) : new Date(),
+    }));
+    
+    const newEvents = await db
+      .insert(analyticsEvents)
+      .values(eventsWithTimestamp)
+      .returning();
+    return newEvents;
+  }
+
+  async getAnalyticsEvents(params: {
+    healthSystemId?: number;
+    userId?: number;
+    sessionId?: string;
+    eventType?: string;
+    eventCategory?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<AnalyticsEvent[]> {
+    const conditions: any[] = [];
+    
+    if (params.healthSystemId) {
+      conditions.push(eq(analyticsEvents.healthSystemId, params.healthSystemId));
+    }
+    if (params.userId) {
+      conditions.push(eq(analyticsEvents.userId, params.userId));
+    }
+    if (params.sessionId) {
+      conditions.push(eq(analyticsEvents.sessionId, params.sessionId));
+    }
+    if (params.eventType) {
+      conditions.push(eq(analyticsEvents.eventType, params.eventType));
+    }
+    if (params.eventCategory) {
+      conditions.push(eq(analyticsEvents.eventCategory, params.eventCategory));
+    }
+    if (params.startDate) {
+      conditions.push(gte(analyticsEvents.timestamp, params.startDate));
+    }
+    if (params.endDate) {
+      conditions.push(lte(analyticsEvents.timestamp, params.endDate));
+    }
+    
+    let query = db.select().from(analyticsEvents);
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    query = query.orderBy(desc(analyticsEvents.timestamp));
+    
+    if (params.limit) {
+      query = query.limit(params.limit);
+    }
+    
+    return await query;
+  }
+
+  async updateFeatureUsageStats(stats: {
+    healthSystemId: number;
+    userId: number;
+    featureName: string;
+    featureCategory?: string;
+    usageDate: Date;
+    processingTime?: number;
+    success: boolean;
+    error?: string;
+  }): Promise<FeatureUsageStats> {
+    const dateStr = stats.usageDate.toISOString().split('T')[0];
+    
+    // Check if stats for this feature/user/date exist
+    const existing = await db
+      .select()
+      .from(featureUsageStats)
+      .where(and(
+        eq(featureUsageStats.healthSystemId, stats.healthSystemId),
+        eq(featureUsageStats.userId, stats.userId),
+        eq(featureUsageStats.featureName, stats.featureName),
+        eq(featureUsageStats.usageDate, dateStr)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      // Update existing stats
+      const current = existing[0];
+      const newUsageCount = current.usageCount + 1;
+      const newSuccessCount = current.successCount + (stats.success ? 1 : 0);
+      const newErrorCount = current.errorCount + (stats.success ? 0 : 1);
+      
+      // Update processing time averages
+      let avgProcessingTime = current.avgProcessingTime;
+      let minProcessingTime = current.minProcessingTime;
+      let maxProcessingTime = current.maxProcessingTime;
+      
+      if (stats.processingTime !== undefined) {
+        const currentTotal = Number(current.avgProcessingTime || 0) * current.usageCount;
+        avgProcessingTime = ((currentTotal + stats.processingTime) / newUsageCount).toString();
+        
+        minProcessingTime = current.minProcessingTime 
+          ? Math.min(Number(current.minProcessingTime), stats.processingTime).toString()
+          : stats.processingTime.toString();
+          
+        maxProcessingTime = current.maxProcessingTime
+          ? Math.max(Number(current.maxProcessingTime), stats.processingTime).toString()
+          : stats.processingTime.toString();
+      }
+      
+      // Update metadata
+      const metadata = current.metadata || {};
+      if (stats.error && !stats.success) {
+        metadata.commonErrors = metadata.commonErrors || [];
+        if (!metadata.commonErrors.includes(stats.error)) {
+          metadata.commonErrors.push(stats.error);
+        }
+      }
+      
+      const [updated] = await db
+        .update(featureUsageStats)
+        .set({
+          usageCount: newUsageCount,
+          successCount: newSuccessCount,
+          errorCount: newErrorCount,
+          avgProcessingTime,
+          minProcessingTime,
+          maxProcessingTime,
+          metadata,
+          updatedAt: new Date(),
+        })
+        .where(eq(featureUsageStats.id, existing[0].id))
+        .returning();
+      
+      return updated;
+    } else {
+      // Create new stats
+      const [newStats] = await db
+        .insert(featureUsageStats)
+        .values({
+          healthSystemId: stats.healthSystemId,
+          userId: stats.userId,
+          featureName: stats.featureName,
+          featureCategory: stats.featureCategory,
+          usageDate: dateStr,
+          usageCount: 1,
+          successCount: stats.success ? 1 : 0,
+          errorCount: stats.success ? 0 : 1,
+          avgProcessingTime: stats.processingTime?.toString(),
+          minProcessingTime: stats.processingTime?.toString(),
+          maxProcessingTime: stats.processingTime?.toString(),
+          metadata: stats.error ? { commonErrors: [stats.error] } : {},
+        })
+        .returning();
+      
+      return newStats;
+    }
+  }
+
+  async getFeatureUsageStats(params: {
+    healthSystemId?: number;
+    userId?: number;
+    featureName?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<FeatureUsageStats[]> {
+    const conditions: any[] = [];
+    
+    if (params.healthSystemId) {
+      conditions.push(eq(featureUsageStats.healthSystemId, params.healthSystemId));
+    }
+    if (params.userId) {
+      conditions.push(eq(featureUsageStats.userId, params.userId));
+    }
+    if (params.featureName) {
+      conditions.push(eq(featureUsageStats.featureName, params.featureName));
+    }
+    if (params.startDate) {
+      conditions.push(gte(featureUsageStats.usageDate, params.startDate.toISOString().split('T')[0]));
+    }
+    if (params.endDate) {
+      conditions.push(lte(featureUsageStats.usageDate, params.endDate.toISOString().split('T')[0]));
+    }
+    
+    return await db
+      .select()
+      .from(featureUsageStats)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(featureUsageStats.usageDate));
   }
 }
 

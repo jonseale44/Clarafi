@@ -304,7 +304,7 @@ class AnalyticsService {
   }
 
   // Update user context
-  public setUser(userId: number, healthSystemId: number): void {
+  public async setUser(userId: number, healthSystemId: number): Promise<void> {
     this.userId = userId;
     this.healthSystemId = healthSystemId;
     
@@ -313,6 +313,36 @@ class AnalyticsService {
       userId,
       healthSystemId
     });
+    
+    // Flush any pending events from before login
+    await this.flushPendingEvents();
+  }
+  
+  // Flush events that were queued before user was authenticated
+  private async flushPendingEvents(): Promise<void> {
+    try {
+      const stored = sessionStorage.getItem('pending_analytics_events');
+      if (!stored) return;
+      
+      const pendingEvents = JSON.parse(stored);
+      if (pendingEvents.length === 0) return;
+      
+      // Add user context to pending events
+      const eventsWithUser = pendingEvents.map((event: AnalyticsEvent) => ({
+        ...event,
+        userId: this.userId,
+        healthSystemId: this.healthSystemId
+      }));
+      
+      // Add to current queue and flush
+      this.eventQueue.push(...eventsWithUser);
+      sessionStorage.removeItem('pending_analytics_events');
+      
+      console.log(`📊 Flushing ${pendingEvents.length} pending events after login`);
+      await this.flushEvents();
+    } catch (error) {
+      console.error('Failed to flush pending events:', error);
+    }
   }
 
   // Event queue management
@@ -323,22 +353,41 @@ class AnalyticsService {
     this.eventQueue = [];
 
     try {
-      // In a real implementation, you'd send these to your analytics backend
-      // For now, we'll store them in localStorage for debugging
-      const stored = localStorage.getItem('analytics_events') || '[]';
-      const allEvents = JSON.parse(stored);
-      allEvents.push(...eventsToSend);
-      
-      // Keep only last 1000 events
-      if (allEvents.length > 1000) {
-        allEvents.splice(0, allEvents.length - 1000);
+      // Send events to backend
+      if (this.userId && this.healthSystemId) {
+        // Add device and browser info to each event
+        const deviceInfo = this.deviceDetector.getBrowserInfo();
+        const deviceType = this.deviceDetector.getDeviceType();
+        
+        const enrichedEvents = eventsToSend.map(event => ({
+          ...event,
+          eventCategory: this.getEventCategory(event.eventType),
+          deviceType,
+          browserName: deviceInfo.name,
+          browserVersion: deviceInfo.version,
+          operatingSystem: deviceInfo.os,
+          pageUrl: window.location.pathname,
+          referrer: document.referrer || null,
+        }));
+        
+        await apiRequest('POST', '/api/analytics/events/batch', {
+          events: enrichedEvents
+        });
+        
+        console.log(`📊 Flushed ${eventsToSend.length} events to backend`);
+      } else {
+        // If user not authenticated, store in sessionStorage temporarily
+        const stored = sessionStorage.getItem('pending_analytics_events') || '[]';
+        const pendingEvents = JSON.parse(stored);
+        pendingEvents.push(...eventsToSend);
+        
+        // Keep only last 500 events
+        if (pendingEvents.length > 500) {
+          pendingEvents.splice(0, pendingEvents.length - 500);
+        }
+        
+        sessionStorage.setItem('pending_analytics_events', JSON.stringify(pendingEvents));
       }
-      
-      localStorage.setItem('analytics_events', JSON.stringify(allEvents));
-      
-      // TODO: Send to actual analytics endpoint when ready
-      // await apiRequest('POST', '/api/analytics/events', { events: eventsToSend });
-      
     } catch (error) {
       console.error('Failed to flush analytics events:', error);
       // Re-queue events if send failed and not forcing
@@ -346,6 +395,17 @@ class AnalyticsService {
         this.eventQueue.unshift(...eventsToSend);
       }
     }
+  }
+  
+  // Helper to categorize events
+  private getEventCategory(eventType: string): string {
+    if (eventType.startsWith('conversion_')) return 'conversion';
+    if (eventType.startsWith('feature_')) return 'feature';
+    if (eventType === 'page_view') return 'navigation';
+    if (eventType === 'error') return 'error';
+    if (eventType === 'clinical_action') return 'clinical';
+    if (eventType === 'timing') return 'performance';
+    return 'general';
   }
 
   // Utility methods
