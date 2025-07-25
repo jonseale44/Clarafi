@@ -65,7 +65,7 @@ export default function AboutUs() {
                   <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">
                     From ER to Innovation
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed">
                     My journey in medicine began in the bustling emergency rooms where I worked as a medical scribe during college. 
                     Documenting every moment of patient care—from initial triage to discharge—I witnessed firsthand the critical 
                     importance of accurate, efficient medical documentation.
@@ -73,13 +73,13 @@ export default function AboutUs() {
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed">
                     This experience shaped my understanding of what physicians truly need: a documentation system that works 
                     <span className="font-semibold"> with</span> them, not against them. After years of working with various EMR systems 
                     and understanding their limitations, I set out to create something better.
                   </p>
                   
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed">
                     Today, as a practicing physician in a small town I love, I experience the same documentation challenges 
                     you face every day. That's why Clarafi isn't just another EMR—it's built by someone who truly understands 
                     the daily realities of medical practice.
@@ -117,11 +117,11 @@ export default function AboutUs() {
               
               {/* Text Content */}
               <div className="md:col-span-2 space-y-4">
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed">
                   <span className="font-semibold text-xl text-purple-600 dark:text-purple-400">Clarafi</span> is named in loving memory 
                   of my grandmother, Clara—a dedicated registered nurse who touched countless lives throughout her remarkable 103 years.
                 </p>
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed">
                   She passed away just months ago, during the creation of this EMR. As the matriarch of our family and a healthcare 
                   professional who understood the importance of compassionate, thorough patient care, her legacy lives on in every 
                   feature designed to help you provide better care to your patients.
@@ -129,7 +129,7 @@ export default function AboutUs() {
               </div>
             </div>
             <div className="max-w-3xl mx-auto">
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center italic">
+              <p className="text-[17px] text-gray-600 dark:text-gray-300 leading-relaxed text-center italic">
                 Her dedication to nursing excellence inspires our commitment to making your documentation work as seamless as possible, 
                 so you can focus on what matters most—your patients.
               </p>
@@ -150,7 +150,7 @@ export default function AboutUs() {
                 <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Family First</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-[17px] text-gray-600 dark:text-gray-300">
                 As a parent of five children and a devoted spouse, I understand the importance of work-life balance. 
                 Clarafi is designed to give you more time with those who matter most.
               </p>
@@ -161,7 +161,7 @@ export default function AboutUs() {
                 <Home className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Community Care</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-[17px] text-gray-600 dark:text-gray-300">
                 Working in a small town has taught me the value of personal connections in healthcare. 
                 Every feature is built with the understanding that behind every chart is a real person.
               </p>
@@ -172,7 +172,7 @@ export default function AboutUs() {
                 <Award className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Love What You Do</h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-[17px] text-gray-600 dark:text-gray-300">
                 I wake up every day genuinely excited about my work. Clarafi is built to preserve that joy 
                 in medicine by removing the frustrations that bog us down.
               </p>
