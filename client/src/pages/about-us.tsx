@@ -109,7 +109,7 @@ export default function AboutUs() {
                     <img 
                       src={claraPhoto} 
                       alt="Clara - Registered Nurse"
-                      className="w-full h-full object-cover object-top sepia-[.30] hover:sepia-0 transition-all duration-700"
+                      className="w-full h-full object-cover object-top scale-110 sepia-[.30] hover:sepia-0 transition-all duration-700"
                     />
                   </div>
                 </div>
