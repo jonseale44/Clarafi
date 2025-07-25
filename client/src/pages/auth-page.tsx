@@ -1536,7 +1536,7 @@ export default function AuthPage() {
           {/* Footer Links */}
           <div className="mt-8 pt-6 border-t border-white/20">
             <div className="flex flex-wrap justify-center gap-4 text-xs text-navy-blue-200">
-              <a href="#about" className="hover:text-white transition-colors">About Us</a>
+              <Link href="/about" className="hover:text-white transition-colors">About Us</Link>
               <span className="text-white/20">•</span>
               <a href="/blog" className="hover:text-white transition-colors">Blog</a>
               <span className="text-white/20">•</span>
