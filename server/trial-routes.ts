@@ -19,7 +19,7 @@ export function setupTrialRoutes(app: Express) {
       
       res.json({
         trialStatus,
-        upgradeUrl: '/admin/health-system-upgrade'
+        upgradeUrl: '/upgrade'
       });
     } catch (error: any) {
       console.error('❌ [TrialRoutes] Error getting trial status:', error);
