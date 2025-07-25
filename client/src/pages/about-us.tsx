@@ -57,23 +57,22 @@ export default function AboutUs() {
 
                 <div className="space-y-4">
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Today, after a decade in practice—including seven years caring for a rural community in Hillsboro, Texas—I 
-                    can truthfully say that documentation is the most frustrating part of being a physician. Too often, it steals 
-                    time from my patients, my family, and the practice of medicine itself. Traditional EMRs remain clunky, outdated, 
-                    and designed for insurance companies, not clinicians or patients.
+                    After years in practice, I can truthfully say that documentation is the most frustrating part of being a 
+                    physician. Too often, it steals time from patients, family, and the practice of medicine itself. Traditional 
+                    EMRs remain clunky, outdated, and designed for insurance companies, not clinicians or patients.
                   </p>
                   
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Everything changed when modern AI tools arrived. Voice recognition and advanced summarization drastically 
-                    increased my efficiency and, for the first time, let me focus on my patients without losing track of 
-                    documentation. But I saw the gap: <span className="font-semibold">nobody had built an EMR from the ground up, 
-                    around modern AI.</span>
+                    Everything changed when modern AI tools like Otter and Freed arrived. Voice recognition and advanced 
+                    summarization drastically increased my efficiency and, for the first time, let me focus on my patients 
+                    without losing track of documentation. But I saw the gap: <span className="font-semibold">nobody had built 
+                    an EMR from the ground up, around modern AI.</span>
                   </p>
                   
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Whether seeing 20–30 clinic patients a day, rounding at the hospital, delivering babies, or assisting in 
-                    surgery, I believe the heart of medicine is the human connection—something no EMR should ever get in the way of. 
-                    That's why I built Clarafi: to get medicine back to medicine.
+                    I believe the heart of medicine is the human connection—something no EMR should ever get in the way of. 
+                    That's why I built Clarafi: to restore the best of medicine by letting your EMR do the heavy lifting, 
+                    so you can focus on what matters most.
                   </p>
                 </div>
               </div>

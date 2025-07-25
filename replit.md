@@ -26,13 +26,12 @@ Created a professional About Us page that shares the founder's personal story wh
    - Values section highlighting Family First, Community Care, and Love What You Do
    - Mission statement and contact section
 
-2. **Personal Story Elements** (Updated July 25, 2025 - 2:44 AM):
+2. **Personal Story Elements** (Updated July 25, 2025 - 2:46 AM):
    - Journey from medical scribe in emergency rooms to physician
    - Scribe experience paid for college and opened door to medical school
-   - Decade in practice including 7 years in Hillsboro, Texas rural community
-   - Daily practice: 20-30 clinic patients, hospital rounds, deliveries, surgery
-   - Frustration with traditional EMRs stealing time from patients and family
-   - Transformation through modern AI tools (voice recognition, summarization)
+   - Years in practice experiencing documentation frustrations
+   - Traditional EMRs stealing time from patients and family
+   - Transformation through modern AI tools (Otter and Freed for voice recognition, summarization)
    - Recognized gap: no EMR built from ground up around modern AI
    - Family-oriented (spouse and 5 children)
    - Clara was "proud member of the greatest generation"
