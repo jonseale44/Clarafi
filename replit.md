@@ -49,6 +49,13 @@ Successfully implemented medication consolidation that creates ONE entry per med
 
 5. **Result**: Medications now consolidate exactly like medical problems - ONE entry per medication with rich visit history showing all dose changes, dates, and clinical context. System successfully prevents duplicate active medications while preserving complete historical information.
 
+### Visit History Reverse Chronological Sorting (July 25, 2025 - 8:59 PM) - COMPLETED
+Implemented reverse chronological order for medication visit history:
+
+1. **Update**: Modified sorting in `medication-delta-service.ts` to display most recent visits first
+2. **Applied to**: Both `updateMedicationWithFullHistory` method and new medication creation from attachments
+3. **Result**: Visit history now shows newest entries first (e.g., 2025-05-23 → 2025-04-28 → 2025-01-24) matching clinical workflow where doctors want to see most recent information at the top
+
 ### GPT-Driven Visit History Consolidation (July 25, 2025 - 5:30 PM) - COMPLETED
 ### Updated Visit History Consolidation Rules (July 25, 2025 - 6:46 PM) - COMPLETED
 Implemented and refined visit history consolidation to prevent duplicate entries when multiple attachments from the same date are uploaded:

@@ -1878,7 +1878,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       const uniqueNewEntries = newEntries.filter((entry: any) => !existingDates.has(entry.date));
       
       updatedVisitHistory = [...currentVisitHistory, ...uniqueNewEntries].sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
+        new Date(b.date).getTime() - new Date(a.date).getTime()
       );
     }
 
@@ -1999,7 +1999,9 @@ Please analyze this SOAP note and identify medication changes that occurred duri
           indication: medicationData.indication,
           status: medicationData.status,
         },
-      }));
+      })).sort((a: any, b: any) => 
+        new Date(b.encounterDate).getTime() - new Date(a.encounterDate).getTime()
+      );
     } else {
       // Fallback to simple entry if no visit history from GPT
       console.log(`💊 [AttachmentCreate] No GPT visit history found, using simple entry`);
