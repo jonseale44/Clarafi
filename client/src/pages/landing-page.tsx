@@ -44,9 +44,9 @@ export default function LandingPage() {
               <a href="#pricing" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 Pricing
               </a>
-              <a href="#about" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
+              <Link href="/about" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 About
-              </a>
+              </Link>
               <Link href="/blog" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
                 Blog
               </Link>
@@ -1280,6 +1280,7 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold mb-4 text-white">Company</h4>
               <ul className="space-y-3 text-sm">
+                <li><Link href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</Link></li>
                 <li><Link href="/terms" className="text-gray-400 hover:text-white transition-colors">Terms of Service</Link></li>
                 <li><Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/legal/baa" className="text-gray-400 hover:text-white transition-colors">HIPAA BAA</Link></li>

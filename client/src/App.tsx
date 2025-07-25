@@ -53,6 +53,7 @@ import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing-page";
+import AboutUs from "@/pages/about-us";
 
 function Router() {
   return (
@@ -110,6 +111,9 @@ function Router() {
       
       {/* Public Pricing Page */}
       <Route path="/pricing" component={Pricing} />
+      
+      {/* About Us Page */}
+      <Route path="/about" component={AboutUs} />
       
       {/* Legal Pages */}
       <Route path="/terms" component={TermsOfService} />

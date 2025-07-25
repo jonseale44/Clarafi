@@ -16,6 +16,27 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### About Us Page (July 25, 2025 - 2:15 AM) - COMPLETED
+Created a professional About Us page that shares the founder's personal story while maintaining privacy:
+
+1. **Page Design** - Built at `/client/src/pages/about-us.tsx`:
+   - Hero section with "Our Story" title
+   - Founder story section with placeholder for professional headshot
+   - "In Honor of Clara" section explaining the name origin (grandmother who was an RN, lived to 103)
+   - Values section highlighting Family First, Community Care, and Love What You Do
+   - Mission statement and contact section
+
+2. **Personal Story Elements**:
+   - Journey from medical scribe in emergency rooms to physician
+   - Understanding of documentation challenges from firsthand experience
+   - Family-oriented (spouse and 5 children)
+   - Small town practice with genuine love for the work
+
+3. **Navigation Updates**:
+   - Added route `/about` in App.tsx
+   - Updated landing page navigation to link to dedicated About Us page
+   - Added About Us link in footer Company section
+
 ### HIPAA-Compliant Data Archive System (July 25, 2025 - 1:30 AM) - COMPLETED
 Implemented comprehensive data archiving system for HIPAA compliance and user data protection:
 
