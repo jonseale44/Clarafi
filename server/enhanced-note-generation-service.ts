@@ -1476,7 +1476,7 @@ IMPORTANT INSTRUCTIONS:
           firstName: demographics.firstName,
           lastName: demographics.lastName,
           medicalProblemsCount: patientChart.medicalProblems?.length || 0,
-          medicationsCount: patientChart.medications?.length || 0,
+          medicationsCount: patientChart.currentMedications?.length || 0,
           allergiesCount: patientChart.allergies?.length || 0,
           vitalsCount: patientChart.vitals?.length || 0,
           imagingResultsCount: patientChart.imagingResults?.length || 0,
@@ -1494,8 +1494,8 @@ IMPORTANT INSTRUCTIONS:
           : "- No active medical problems documented";
 
       const currentMedications =
-        patientChart.medications?.length > 0
-          ? patientChart.medications
+        patientChart.currentMedications?.length > 0
+          ? patientChart.currentMedications
               .map(
                 (med: any) =>
                   `- ${med.medicationName || "Unknown medication"} ${med.dosage || ""}`,
