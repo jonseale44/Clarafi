@@ -6,11 +6,15 @@ import { desc, eq, gte, and } from "drizzle-orm";
 import { Request, Response, NextFunction } from "express";
 
 // Simple admin middleware
-const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.session?.userId) {
+const requireAdmin = (req: any, res: Response, next: NextFunction) => {
+  console.log("🔍 [AcquisitionRoutes] Auth check - req.user:", req.user);
+  console.log("🔍 [AcquisitionRoutes] Auth check - req.isAuthenticated:", req.isAuthenticated ? req.isAuthenticated() : 'no method');
+  console.log("🔍 [AcquisitionRoutes] Auth check - req.session:", req.session);
+  
+  if (!req.user) {
     return res.status(401).json({ message: "Authentication required" });
   }
-  if (req.session.role !== "system_admin") {
+  if (req.user.role !== "admin" && req.user.role !== "system_admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();

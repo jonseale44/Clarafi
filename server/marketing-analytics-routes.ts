@@ -43,9 +43,9 @@ router.get("/api/analytics/summary", requireAdmin, async (req, res) => {
     const activeUserIds = new Set(events.map(e => e.userId).filter(Boolean));
     const uniqueSessions = new Set(events.map(e => e.sessionId).filter(Boolean));
     
-    // Get total user count from admin stats
-    const adminStats = await storage.getAdminStats(req.user.healthSystemId);
-    const totalUsers = adminStats.totalUsers;
+    // Get total user count from conversion events
+    const totalSignups = events.filter(e => e.eventType === 'conversion_signup');
+    const totalUsers = new Set(totalSignups.map(e => e.userId).filter(Boolean)).size;
     
     // Calculate session durations
     const sessionDurations: { [key: string]: number } = {};
