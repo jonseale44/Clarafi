@@ -22,6 +22,7 @@ Implemented industry-standard EMR navigation patterns following best practices f
 1. **Clickable Logo Navigation**:
    - Created AppHeader component with CLARAFI logo that serves as home button
    - Logo directs authenticated users to /dashboard, unauthenticated to landing page
+   - Fixed logo colors to match brand guidelines: CL (navy), A (gold), R (navy), A (gold), F (navy), I (gold)
    - Consistent branding across all pages
 
 2. **Unified App Layout**:
