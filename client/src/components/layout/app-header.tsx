@@ -76,9 +76,7 @@ export function AppHeader({ className, showSearch = true, onMenuClick }: AppHead
                 {/* CLARAFI Brand */}
                 <div className="flex items-center">
                   <span className="text-2xl font-bold">
-                    <span className="text-[#1e3a8a]">CL</span>
-                    <span className="text-[#fbbf24]">A</span>
-                    <span className="text-[#1e3a8a]">R</span>
+                    <span className="text-[#1e3a8a]">CLAR</span>
                     <span className="text-[#fbbf24]">A</span>
                     <span className="text-[#1e3a8a]">F</span>
                     <span className="text-[#fbbf24]">I</span>
