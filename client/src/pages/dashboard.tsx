@@ -4,16 +4,16 @@ import { QuickStats } from "@/components/patient/quick-stats";
 import { EncountersTab } from "@/components/patient/encounters-tab";
 import { PatientChartView } from "@/components/patient/patient-chart-view";
 import { ProviderDashboard } from "@/components/dashboard/provider-dashboard";
-import { UserProfileMenu } from "@/components/user-profile-menu";
 import { PatientTable } from "@/components/dashboard/patient-table";
 import { PasskeySetupPrompt } from "@/components/passkey-setup-prompt";
+import { AppLayout } from "@/components/layout/app-layout";
 // Legacy PDFViewer import removed - PDFs are now in patient charts only
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Patient, Vitals } from "@shared/schema";
+import { Patient, Vitals, User } from "@shared/schema";
 import { Link, useLocation } from "wouter";
 import { TrialStatusBanner } from "@/components/trial-status-banner";
 import { UserPlus, Trash2, MessageSquare } from "lucide-react";
@@ -40,7 +40,7 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
 
   // Fetch current user data
-  const { data: currentUser } = useQuery({
+  const { data: currentUser } = useQuery<User>({
     queryKey: ["/api/user"],
   });
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
   }, [currentUser, location, setLocation]);
 
   // Fetch all patients to select the first one
-  const { data: allPatients = [] } = useQuery({
+  const { data: allPatients = [] } = useQuery<Patient[]>({
     queryKey: ["/api/patients"],
   });
 
@@ -135,17 +135,6 @@ export default function Dashboard() {
         patientId: encounter.patientId,
         providerId: encounter.providerId,
         source: 'dashboard'
-      });
-      
-      // Track conversion event
-      analytics.trackConversion({
-        eventType: 'encounter_created',
-        eventData: {
-          encounterId: encounter.id,
-          patientId: encounter.patientId,
-          encounterType: encounter.encounterType,
-          source: 'dashboard'
-        }
       });
       
       toast({
@@ -259,182 +248,85 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col">
-      {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3" data-median="mobile-header-wrapper">
-        <div className="flex items-center justify-between" data-median="mobile-header-content">
-          {/* Left side - Brand and Navigation */}
-          <div className="flex items-center space-x-8" data-median="mobile-nav-container">
-            <div className="flex items-center space-x-3" data-median="mobile-brand">
-              <div className="w-8 h-8 bg-navy-blue rounded-lg flex items-center justify-center">
-                <span className="text-gold font-bold text-sm">C</span>
-              </div>
-              <span className="font-bold text-xl" data-median="mobile-brand-text">
-                <span className="text-navy-blue">CLAR</span><span className="text-gold">A</span><span className="text-navy-blue">F</span><span className="text-gold">I</span>
-              </span>
-            </div>
-            
-            {/* Main Navigation */}
-            <nav className="flex items-center space-x-6" data-median="mobile-dashboard-tabs mobile-scrollable-nav">
-              <button
-                onClick={() => setActiveTab("dashboard")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "dashboard" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => setActiveTab("patients")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "patients" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Patients
-              </button>
-              <button
-                onClick={() => setActiveTab("encounters")}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  activeTab === "encounters" 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                Encounters
-              </button>
-              <Link href="/scheduling" data-median="hide-on-mobile-app">
-                <button className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                  Scheduling
-                </button>
-              </Link>
-              <Link href="/blog" data-median="hide-on-mobile-app">
-                <button className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                  Blog
-                </button>
-              </Link>
-              {/* Admin-only navigation items */}
-              {currentUser?.role === 'admin' && (
-                <>
-                  <Link href="/admin/prompts" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Admin Prompts
-                    </button>
-                  </Link>
-                  <Link href="/admin/users" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Admin Users
-                    </button>
-                  </Link>
-                  <Link href="/admin/subscription-config" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Subscription Config
-                    </button>
-                  </Link>
-                  <Link href="/admin/health-system-upgrade" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
-                    }`}>
-                      🚀 Test Upgrade
-                    </button>
-                  </Link>
-                  <Link href="/admin/subscription-keys" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Subscription Keys
-                    </button>
-                  </Link>
-                  <Link href="/admin/clinic-import" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Clinic Import
-                    </button>
-                  </Link>
-                  <Link href="/admin/verification-review" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                    }`}>
-                      🔍 Verification Review
-                    </button>
-                  </Link>
-                  <Link href="/practice-migration" data-median="hide-on-mobile-app">
-                    <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      false // Admin pages don't have active state in dashboard
-                        ? "bg-primary text-white" 
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                    }`}>
-                      Practice Migration
-                    </button>
-                  </Link>
-                </>
-              )}
-              
-              {/* Practice Migration for providers */}
-              {currentUser?.role === 'provider' && (
-                <Link href="/practice-migration" data-median="hide-on-mobile-app">
-                  <button className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    false
+    <AppLayout showBreadcrumb={false}>
+      <div className="flex-1 flex flex-col">
+        {/* Page Header with Tabs */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between py-4">
+              {/* Left side - Tab Navigation */}
+              <nav className="flex items-center space-x-1" data-median="mobile-dashboard-tabs mobile-scrollable-nav">
+                <button
+                  onClick={() => setActiveTab("dashboard")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "dashboard" 
                       ? "bg-primary text-white" 
                       : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                  }`}>
-                    Practice Migration
-                  </button>
+                  }`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => setActiveTab("patients")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "patients" 
+                      ? "bg-primary text-white" 
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  Patients
+                </button>
+                <button
+                  onClick={() => setActiveTab("encounters")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "encounters" 
+                      ? "bg-primary text-white" 
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  Encounters
+                </button>
+              </nav>
+              
+              {/* Right side - Actions */}
+              <div className="flex items-center space-x-4">
+                <Link href="/patients/create">
+                  <Button className="flex items-center gap-2" size="sm" data-median="mobile-compact-button">
+                    <UserPlus className="h-4 w-4" />
+                    <span data-median="hide-on-mobile-app">Create Patient</span>
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            {/* Secondary Navigation - External Links */}
+            <div className="flex items-center space-x-6 pb-2 text-sm">
+              <Link href="/scheduling" data-median="hide-on-mobile-app" className="text-gray-600 hover:text-gray-900">
+                Scheduling
+              </Link>
+              <Link href="/blog" data-median="hide-on-mobile-app" className="text-gray-600 hover:text-gray-900">
+                Blog
+              </Link>
+              {currentUser?.role === 'provider' && (
+                <Link href="/practice-migration" data-median="hide-on-mobile-app" className="text-gray-600 hover:text-gray-900">
+                  Practice Migration
                 </Link>
               )}
-              
-
-            </nav>
-          </div>
-          
-          {/* Right side - User info and actions */}
-          <div className="flex items-center space-x-4" data-median="mobile-header-actions">
-            <Link href="/patients/create">
-              <Button className="flex items-center gap-2" size="sm" data-median="mobile-compact-button">
-                <UserPlus className="h-4 w-4" />
-                <span data-median="hide-on-mobile-app">Create Patient</span>
-              </Button>
-            </Link>
-            <div data-median="mobile-user-menu">
-              <UserProfileMenu />
             </div>
           </div>
         </div>
-      </div>
-      
-      <main className="flex-1 overflow-auto p-6">
-        {/* Trial Status Banner - only show for non-admin users */}
-        {currentUser?.role !== 'admin' && <TrialStatusBanner />}
         
-        {renderTabContent()}
-      </main>
-      
-      {/* Passkey Setup Prompt - shown automatically for users without passkeys */}
-      {currentUser?.id && <PasskeySetupPrompt userId={currentUser.id} />}
-    </div>
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-auto p-6">
+          {/* Trial Status Banner - only show for non-admin users */}
+          {currentUser?.role !== 'admin' && <TrialStatusBanner />}
+          
+          {renderTabContent()}
+        </main>
+        
+        {/* Passkey Setup Prompt - shown automatically for users without passkeys */}
+        {currentUser?.id && <PasskeySetupPrompt userId={currentUser.id} />}
+      </div>
+    </AppLayout>
   );
 }

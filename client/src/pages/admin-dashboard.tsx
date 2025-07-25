@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AppLayout } from "@/components/layout/app-layout";
 import { 
   Users, 
   Key, 
@@ -196,58 +197,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm" className="mr-4">
-                  <Home className="h-4 w-4 mr-2" />
-                  Main Dashboard
-                </Button>
-              </Link>
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-navy-blue rounded-lg flex items-center justify-center mr-3">
-                  <span className="text-gold font-bold text-sm">C</span>
-                </div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                {user?.firstName} {user?.lastName} • Admin
-              </span>
-              <Link href="/account-settings">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Account Settings
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  logoutMutation.mutate(undefined, {
-                    onSuccess: () => {
-                      setLocation("/auth");
-                    }
-                  });
-                }}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <AppLayout>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -371,6 +321,6 @@ export default function AdminDashboard() {
           </div>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }
