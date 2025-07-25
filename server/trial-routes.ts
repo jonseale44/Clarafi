@@ -162,6 +162,69 @@ export function setupTrialRoutes(app: Express) {
   });
 
   /**
+   * Enterprise application submission endpoint
+   */
+  app.post('/api/enterprise-application', async (req, res) => {
+    try {
+      if (!req.user?.healthSystemId) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+
+      const { requestedTier, reason } = req.body;
+      const userId = req.user.id;
+      
+      // Get user details for the application
+      const [user] = await db.select({
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        healthSystemName: healthSystems.name,
+        healthSystemId: healthSystems.id,
+        currentTier: healthSystems.subscriptionTier
+      })
+      .from(users)
+      .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
+      .where(eq(users.id, userId));
+
+      if (!user) {
+        return res.status(400).json({ error: 'User not found' });
+      }
+
+      console.log('📝 [EnterpriseApplication] New application received:', {
+        userId,
+        healthSystemId: user.healthSystemId,
+        requestedTier,
+        currentTier: user.currentTier,
+        email: user.email,
+        reason
+      });
+
+      // In a production system, this would:
+      // 1. Store the application in an 'enterprise_applications' table
+      // 2. Send notification email to admin team
+      // 3. Create a support ticket
+      // 4. Track application status
+      
+      // For now, we'll just log it and return success
+      // This simulates the application being submitted for review
+      
+      res.json({
+        success: true,
+        message: 'Enterprise application submitted successfully',
+        applicationId: `APP-${Date.now()}`,
+        estimatedReviewTime: '24 hours'
+      });
+
+    } catch (error: any) {
+      console.error('❌ [EnterpriseApplication] Error processing application:', error);
+      res.status(500).json({ 
+        error: 'Failed to submit enterprise application',
+        message: error.message 
+      });
+    }
+  });
+
+  /**
    * Data export endpoint for users during grace period
    */
   app.get('/api/export-data', async (req, res) => {
