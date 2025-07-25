@@ -101,20 +101,22 @@ export default function AboutUs() {
             <h2 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-gray-100">
               In Honor of Clara
             </h2>
-            <div className="grid md:grid-cols-2 gap-8 items-center mb-6">
+            <div className="grid md:grid-cols-3 gap-8 items-center mb-6">
               {/* Clara's Photo */}
-              <div className="order-2 md:order-1 flex justify-center">
-                <div className="relative w-72 h-80 rounded-lg overflow-hidden shadow-xl">
-                  <img 
-                    src={claraPhoto} 
-                    alt="Clara - Registered Nurse"
-                    className="absolute inset-0 w-[115%] h-[115%] -top-[7%] -left-[7%] object-cover sepia-[.30] hover:sepia-0 transition-all duration-700"
-                  />
+              <div className="md:col-span-1 flex items-center">
+                <div className="relative w-full">
+                  <div className="w-56 h-56 mx-auto rounded-full overflow-hidden shadow-xl ring-4 ring-purple-50 dark:ring-purple-900">
+                    <img 
+                      src={claraPhoto} 
+                      alt="Clara - Registered Nurse"
+                      className="w-full h-full object-cover object-top sepia-[.30] hover:sepia-0 transition-all duration-700"
+                    />
+                  </div>
                 </div>
               </div>
               
               {/* Text Content */}
-              <div className="order-1 md:order-2 space-y-4">
+              <div className="md:col-span-2 space-y-4">
                 <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
                   <span className="font-semibold text-xl text-purple-600 dark:text-purple-400">Clarafi</span> is named in loving memory 
                   of my grandmother, Clara—a dedicated registered nurse who touched countless lives throughout her remarkable 103 years.
