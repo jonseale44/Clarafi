@@ -446,10 +446,10 @@ Input: "${labText}"`;
             : new Date(),
           resultFinalizedAt: new Date(),
           receivedAt: new Date(),
-          externalLabId: "3", // Hospital Lab for attachment results
+          externalLabId: null, // No external lab for attachment-extracted results
           externalResultId: `ATT_${attachmentId}_${savedCount + 1}`,
           sourceType: sourceType,
-          sourceConfidence: safeConfidence,
+          sourceConfidence: safeConfidence.toString(),
           extractedFromAttachmentId: attachmentId,
           needsReview: labResult.criticalFlag || false,
           reviewStatus: labResult.criticalFlag ? "pending" : "reviewed",

@@ -16,6 +16,19 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Fixed Lab Parser Foreign Key Error (July 25, 2025 - 1:20 PM) - COMPLETED
+Fixed the lab parser error that was preventing lab results from being saved when extracted from attachments:
+
+1. **Root Cause** - The `UnifiedLabParser` was setting `externalLabId` to "3" but:
+   - No external lab with id=3 existed in the database
+   - The field was being set as a string "3" instead of integer
+   
+2. **Solution**:
+   - Changed `externalLabId` from "3" to `null` since attachment-extracted lab results don't come from external labs
+   - Fixed type mismatch by converting `sourceConfidence` to string with `.toString()`
+   
+3. **Result** - Lab results can now be successfully extracted and saved from uploaded attachments without foreign key constraint violations
+
 ### Fixed WebAuthn Passkey Implementation (July 25, 2025 - 1:13 PM) - COMPLETED
 Successfully fixed the failing passkey implementation that was causing "Failed to execute 'atob' on 'Window'" errors:
 
