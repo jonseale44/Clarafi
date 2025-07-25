@@ -16,6 +16,20 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Fixed WebAuthn Passkey Implementation (July 25, 2025 - 1:13 PM) - COMPLETED
+Successfully fixed the failing passkey implementation that was causing "Failed to execute 'atob' on 'Window'" errors:
+
+1. **Root Cause** - Frontend code was manually converting base64 strings using atob/btoa when SimpleWebAuthn library already handles these conversions internally
+2. **Files Updated**:
+   - `passkey-auth.tsx` - Replaced manual base64ToArrayBuffer conversions with SimpleWebAuthn's `startRegistration` method
+   - `passkey-login-form.tsx` - Replaced manual ArrayBuffer conversions with SimpleWebAuthn's `startAuthentication` method
+   - `passkey-setup-prompt.tsx` - Updated to use SimpleWebAuthn for passkey registration prompts
+3. **Technical Solution**:
+   - Removed all manual atob/btoa calls and base64ToArrayBuffer functions
+   - Let SimpleWebAuthn browser library handle all WebAuthn data formatting
+   - Maintained existing backend WebAuthn service infrastructure
+4. **Result** - WebAuthn passkeys now work correctly in web browsers without encoding errors
+
 ### Face ID / Touch ID Authentication for Median App (July 25, 2025 - 12:30 PM) - COMPLETED
 Successfully implemented biometric authentication for the Median mobile app environment:
 

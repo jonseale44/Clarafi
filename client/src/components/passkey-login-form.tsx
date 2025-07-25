@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { KeyRoundIcon } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from 'wouter';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 interface PasskeyLoginFormProps {
   onSuccess?: () => void;
@@ -33,37 +34,8 @@ export function PasskeyLoginForm({ onSuccess }: PasskeyLoginFormProps) {
       
       const options = await optionsResponse.json();
       
-      // Convert base64 strings to ArrayBuffers
-      const publicKeyOptions = {
-        ...options,
-        challenge: Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0)),
-        allowCredentials: options.allowCredentials?.map((cred: any) => ({
-          ...cred,
-          id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0))
-        }))
-      };
-      
-      // 2. Get credential using WebAuthn API
-      const credential = await navigator.credentials.get({
-        publicKey: publicKeyOptions
-      });
-      
-      if (!credential) {
-        throw new Error('Authentication cancelled');
-      }
-      
-      // Convert credential to a format that can be JSON serialized
-      const serializableCredential = {
-        id: credential.id,
-        rawId: btoa(String.fromCharCode(...new Uint8Array((credential as any).rawId))),
-        type: credential.type,
-        response: {
-          authenticatorData: btoa(String.fromCharCode(...new Uint8Array((credential as any).response.authenticatorData))),
-          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array((credential as any).response.clientDataJSON))),
-          signature: btoa(String.fromCharCode(...new Uint8Array((credential as any).response.signature))),
-          userHandle: (credential as any).response.userHandle ? btoa(String.fromCharCode(...new Uint8Array((credential as any).response.userHandle))) : null
-        }
-      };
+      // 2. Use SimpleWebAuthn to authenticate
+      const authenticationResponse = await startAuthentication(options);
       
       // 3. Send credential to server for verification
       const verifyResponse = await fetch('/api/auth/webauthn/authenticate/verify', {
@@ -73,7 +45,7 @@ export function PasskeyLoginForm({ onSuccess }: PasskeyLoginFormProps) {
         },
         credentials: 'include',
         body: JSON.stringify({
-          response: serializableCredential
+          response: authenticationResponse
         })
       });
       

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Shield, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { startRegistration } from '@simplewebauthn/browser';
 
 interface PasskeySetupPromptProps {
   userId: number;
@@ -79,42 +80,9 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
 
       const options = await optionsResponse.json();
       
-      // Convert base64 strings to ArrayBuffers
-      const publicKeyOptions = {
-        ...options,
-        challenge: Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0)),
-        user: {
-          ...options.user,
-          id: Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0))
-        },
-        excludeCredentials: options.excludeCredentials?.map((cred: any) => ({
-          ...cred,
-          id: Uint8Array.from(atob(cred.id), c => c.charCodeAt(0))
-        }))
-      };
-
-      // Create credential
-      const credential = await navigator.credentials.create({
-        publicKey: publicKeyOptions
-      });
-
-      if (!credential) {
-        throw new Error('Registration cancelled');
-      }
-
-      // Convert credential to a format that can be JSON serialized
-      const serializableCredential = {
-        id: credential.id,
-        rawId: btoa(String.fromCharCode(...new Uint8Array((credential as any).rawId))),
-        type: credential.type,
-        response: {
-          attestationObject: btoa(String.fromCharCode(...new Uint8Array((credential as any).response.attestationObject))),
-          clientDataJSON: btoa(String.fromCharCode(...new Uint8Array((credential as any).response.clientDataJSON))),
-          publicKey: (credential as any).response.publicKey ? btoa(String.fromCharCode(...new Uint8Array((credential as any).response.publicKey))) : undefined,
-          publicKeyAlgorithm: (credential as any).response.publicKeyAlgorithm
-        }
-      };
-
+      // Use SimpleWebAuthn to create credential
+      const registrationResponse = await startRegistration(options);
+      
       // Send to server for verification
       const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
         method: 'POST',
@@ -123,8 +91,8 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
         },
         credentials: 'include',
         body: JSON.stringify({
-          response: serializableCredential,
-          name: navigator.userAgent.includes('Mac') ? 'MacBook Pro' : 'Windows PC'
+          response: registrationResponse,
+          displayName: navigator.userAgent.includes('Mac') ? 'MacBook Pro' : 'Windows PC'
         })
       });
 
@@ -147,6 +115,12 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
         toast({
           title: "Registration Cancelled",
           description: "You cancelled the registration or it timed out",
+          variant: "destructive"
+        });
+      } else if (error.name === 'InvalidStateError') {
+        toast({
+          title: "Registration Failed",
+          description: "This authenticator may already be registered. Try a different one.",
           variant: "destructive"
         });
       } else {
