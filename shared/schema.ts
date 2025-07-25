@@ -4823,4 +4823,7 @@ export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaig
 export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
 export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
 
+// Export archive schemas
+export * from './archive-schema';
+
 // Indexes will be created via SQL migration

@@ -608,6 +608,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up trial management routes
   setupTrialRoutes(app);
   
+  // Set up archive management routes
+  const { setupArchiveRoutes } = await import("./archive-routes.js");
+  setupArchiveRoutes(app);
+  
   // Add trial status middleware for authenticated routes
   app.use('/api', trialStatusMiddleware);
   app.use('/api', injectTrialStatus);

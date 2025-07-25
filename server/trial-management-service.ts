@@ -414,16 +414,37 @@ Questions? Reply to this email or contact support.
         )
       );
     
-    // Update health systems that should be deactivated
-    await db
-      .update(healthSystems)
-      .set({ subscriptionStatus: 'deactivated' })
+    // Find health systems that should be deactivated and archive their data
+    const healthSystemsToDeactivate = await db
+      .select()
+      .from(healthSystems)
       .where(
         and(
           eq(healthSystems.subscriptionStatus, 'grace_period'),
           lt(healthSystems.subscriptionStartDate, deactivationDate)
         )
       );
+
+    // Archive data for each system before deactivating
+    for (const hs of healthSystemsToDeactivate) {
+      try {
+        console.log(`📦 [TrialManagement] Archiving data for health system ${hs.id} (${hs.name}) before deactivation`);
+        
+        const { DataArchiveService } = await import('./data-archive-service.js');
+        await DataArchiveService.archiveHealthSystem(hs.id, 'grace_period_ended');
+        
+        // Update to deactivated status after successful archive
+        await db
+          .update(healthSystems)
+          .set({ subscriptionStatus: 'deactivated' })
+          .where(eq(healthSystems.id, hs.id));
+          
+        console.log(`✅ [TrialManagement] Successfully archived and deactivated health system ${hs.id}`);
+      } catch (error) {
+        console.error(`❌ [TrialManagement] Failed to archive health system ${hs.id}:`, error);
+        // Don't deactivate if archiving failed - try again next run
+      }
+    }
     
     console.log('✅ [TrialManagement] Trial processing complete');
   }
@@ -444,5 +465,44 @@ Questions? Reply to this email or contact support.
       .where(eq(healthSystems.id, healthSystemId));
     
     console.log(`🧪 [TrialManagement] Set trial expiry for health system ${healthSystemId} to ${daysFromNow} days from now`);
+  }
+
+  /**
+   * Schedule regular archive maintenance (purging expired archives)
+   * This should run weekly to clean up archives past their retention period
+   */
+  static async scheduleArchiveMaintenance(): Promise<void> {
+    // Run archive purging weekly (every Sunday at 2 AM)
+    const runArchivePurge = async () => {
+      try {
+        console.log('🗑️ [TrialManagement] Running scheduled archive purge...');
+        const { DataArchiveService } = await import('./data-archive-service.js');
+        const purgedCount = await DataArchiveService.purgeExpiredArchives();
+        console.log(`✅ [TrialManagement] Purged ${purgedCount} expired archives`);
+      } catch (error) {
+        console.error('❌ [TrialManagement] Archive purge failed:', error);
+      }
+    };
+
+    // Calculate time until next Sunday 2 AM
+    const now = new Date();
+    const nextSunday = new Date(now);
+    nextSunday.setDate(now.getDate() + (7 - now.getDay()) % 7);
+    nextSunday.setHours(2, 0, 0, 0);
+    
+    if (nextSunday <= now) {
+      nextSunday.setDate(nextSunday.getDate() + 7);
+    }
+    
+    const timeUntilNextRun = nextSunday.getTime() - now.getTime();
+    
+    // Schedule first run
+    setTimeout(() => {
+      runArchivePurge();
+      // Then run weekly
+      setInterval(runArchivePurge, 7 * 24 * 60 * 60 * 1000);
+    }, timeUntilNextRun);
+    
+    console.log(`📅 [TrialManagement] Archive maintenance scheduled for ${nextSunday.toISOString()}`);
   }
 }

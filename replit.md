@@ -16,6 +16,51 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### HIPAA-Compliant Data Archive System (July 25, 2025 - 1:30 AM) - COMPLETED
+Implemented comprehensive data archiving system for HIPAA compliance and user data protection:
+
+1. **Archive Schema** - Created complete archive infrastructure:
+   - `data_archives` - Main archive tracking with retention management
+   - `archive_access_logs` - HIPAA-required audit trail for all access
+   - `archived_health_systems`, `archived_users`, `archived_patients`, `archived_encounters` - Mirror tables
+   - `archived_attachment_metadata` - Attachment references without actual files
+   
+2. **Privacy Features**:
+   - Email addresses hashed for privacy
+   - Names reduced to initials only
+   - Dates of birth stored as year only
+   - Addresses limited to state level
+   - Clinical data de-identified where possible
+   
+3. **Compliance Features**:
+   - 7-year retention period (HIPAA standard)
+   - Legal hold capability to prevent purging
+   - Complete audit trail for all access
+   - Admin-only access with role verification
+   - Automatic purging after retention period
+   
+4. **Integration with Trial System**:
+   - Automatic archiving when grace period ends
+   - Data preserved before account deactivation
+   - Scheduled weekly maintenance for purging
+   - Manual archive capability for special cases
+   
+5. **Admin API Endpoints**:
+   - `GET /api/archives/search` - Search archived data
+   - `GET /api/archives/:id` - View archive details
+   - `GET /api/archives/:id/access-logs` - View access history
+   - `POST /api/archives/restore` - Restore archived data
+   - `POST /api/archives/create` - Manual archive
+   - `POST /api/archives/legal-hold` - Set/remove legal hold
+   - `GET /api/archives/stats` - Archive statistics
+   - `POST /api/archives/purge-expired` - Manual purge trigger
+
+6. **Safety Features**:
+   - Archives created before deactivation
+   - Failed archives prevent deactivation
+   - Restoration requires detailed justification
+   - All actions logged with IP and user agent
+
 ### Simplified Enterprise Upgrade Flow (July 25, 2025 - 1:15 AM) - COMPLETED
 Refactored the enterprise upgrade process to use a simpler, more maintainable approach:
 

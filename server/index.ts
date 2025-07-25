@@ -86,5 +86,10 @@ app.use((req, res, next) => {
     
     // Initialize system data (import real clinics from NPPES)
     await initializeSystemData();
+    
+    // Initialize archive maintenance scheduling
+    const { TrialManagementService } = await import("./trial-management-service.js");
+    await TrialManagementService.scheduleArchiveMaintenance();
+    log("Archive maintenance scheduled for weekly purging of expired archives");
   });
 })();
