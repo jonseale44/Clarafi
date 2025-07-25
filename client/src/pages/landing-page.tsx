@@ -93,7 +93,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section 
         id="hero" 
-        className="relative min-h-screen pt-32 pb-0 px-4 overflow-hidden"
+        className="relative pt-32 pb-0 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 50%, #16213e 100%)'
         }}
@@ -221,7 +221,7 @@ export default function LandingPage() {
       </section>
 
       {/* Section 2 - Problem Agitation */}
-      <section id="problem" className="pt-12 pb-20 px-4 bg-gradient-to-b from-gray-900 to-black relative">
+      <section id="problem" className="pt-0 pb-20 px-4 bg-gradient-to-b from-gray-900 to-black relative">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent"></div>
         <div className="container mx-auto max-w-6xl">
           <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 text-white animate-fadeInUp">
