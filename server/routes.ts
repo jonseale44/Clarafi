@@ -737,22 +737,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const magicLinkRoutes = (await import("./magic-link-routes.js")).default;
   app.use(magicLinkRoutes);
 
-  // Unified medical problems routes (handles both SOAP and attachment processing)
-  // NOTE: Must be registered BEFORE enhanced routes to avoid route conflicts
-  app.use("/api", unifiedMedicalProblemsRoutes);
+  // ROLLBACK POINT: Medical Problems Route Fix - Removed forwarding mechanism
+  // Date: 2025-07-25
+  // Issue: Initial load showed incorrect sorting due to route forwarding
+  // Fix: Register medical problems route directly without forwarding
   
-  // Add compatibility route for frontend that expects different path
-  app.get("/api/patients/:id/medical-problems", async (req, res) => {
-    // Forward to unified medical problems API
-    req.url = `/medical-problems/${req.params.id}`;
-    req.originalUrl = `/api/medical-problems/${req.params.id}`;
-    unifiedMedicalProblemsRoutes.handle(req, res, (err) => {
-      if (err) {
-        console.error("Error forwarding medical problems request:", err);
-        res.status(500).json({ error: "Failed to fetch medical problems" });
-      }
-    });
-  });
+  // Unified medical problems routes (handles both SOAP and attachment processing)
+  app.use("/api", unifiedMedicalProblemsRoutes);
   app.use("/api", unifiedSurgicalHistoryRoutes);
   app.use("/api", unifiedFamilyHistoryRoutes);
   app.use("/api", socialHistoryRoutes);

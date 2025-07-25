@@ -13,16 +13,16 @@ import { calculateBatchRankings, RANKING_CONFIG, type RankingWeights } from "../
 
 const router = Router();
 
-/**
- * GET /api/medical-problems/:patientId
- * Get medical problems for a patient with ranking information
- */
-router.get("/medical-problems/:patientId", async (req, res) => {
+// Shared handler for fetching medical problems
+const getMedicalProblemsHandler = async (req: any, res: any) => {
   try {
-    console.log(`🚀🚀🚀 [MedicalProblemsAPI] UNIFIED ROUTE HIT - ENDPOINT CALLED FOR PATIENT ${req.params.patientId} 🚀🚀🚀`);
+    // Extract patientId from either route parameter
+    const patientId = parseInt(req.params.patientId || req.params.id);
+    
+    console.log(`🚀🚀🚀 [MedicalProblemsAPI] UNIFIED ROUTE HIT - ENDPOINT CALLED FOR PATIENT ${patientId} 🚀🚀🚀`);
     console.log(`🔍 [MedicalProblemsAPI] Full request URL: ${req.originalUrl}`);
     console.log(`🔍 [MedicalProblemsAPI] Request method: ${req.method}`);
-    console.log(`🔍 [MedicalProblemsAPI] GET request for patient ${req.params.patientId}`);
+    console.log(`🔍 [MedicalProblemsAPI] GET request for patient ${patientId}`);
     
     if (!req.isAuthenticated()) {
       console.log(`❌ [MedicalProblemsAPI] Authentication failed`);
@@ -32,13 +32,12 @@ router.get("/medical-problems/:patientId", async (req, res) => {
 
     console.log(`✅ [MedicalProblemsAPI] User authenticated:`, req.user ? `User ID ${req.user.id}` : 'AUTH SUCCESS BUT NO USER OBJECT');
 
-    const patientId = parseInt(req.params.patientId);
-    console.log(`🔍 [MedicalProblemsAPI] Raw patientId param: "${req.params.patientId}"`);
+    console.log(`🔍 [MedicalProblemsAPI] Raw patientId param: "${req.params.patientId || req.params.id}"`);
     console.log(`🔍 [MedicalProblemsAPI] Parsed patientId: ${patientId}`);
     console.log(`🔍 [MedicalProblemsAPI] Fetching problems for patient ID: ${patientId}`);
     
     if (isNaN(patientId)) {
-      console.log(`❌ [MedicalProblemsAPI] Invalid patient ID: ${req.params.patientId}`);
+      console.log(`❌ [MedicalProblemsAPI] Invalid patient ID: ${req.params.patientId || req.params.id}`);
       return res.status(400).json({ error: "Invalid patient ID" });
     }
 
@@ -58,7 +57,6 @@ router.get("/medical-problems/:patientId", async (req, res) => {
       changeLog: problem.changeLog || [],
       lastUpdated: problem.updatedAt,
       // Include ranking information
-
       lastRankedEncounterId: problem.lastRankedEncounterId,
       rankingReason: problem.rankingReason,
       // Include ranking factors for frontend real-time calculation
@@ -75,10 +73,22 @@ router.get("/medical-problems/:patientId", async (req, res) => {
 
     res.json(formattedProblems);
   } catch (error) {
-    console.error(`❌ [MedicalProblemsAPI] Error fetching medical problems for patient ${req.params.patientId}:`, error);
+    console.error(`❌ [MedicalProblemsAPI] Error fetching medical problems:`, error);
     res.status(500).json({ error: "Failed to fetch medical problems" });
   }
-});
+};
+
+/**
+ * GET /api/medical-problems/:patientId
+ * Get medical problems for a patient with ranking information
+ */
+router.get("/medical-problems/:patientId", getMedicalProblemsHandler);
+
+/**
+ * GET /api/patients/:id/medical-problems 
+ * Alternative route pattern expected by frontend
+ */
+router.get("/patients/:id/medical-problems", getMedicalProblemsHandler);
 
 /**
  * POST /api/medical-problems/process-unified
