@@ -71,7 +71,7 @@ export default function Pricing() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-md">
-                <p className="font-semibold">14-Day Free Trial</p>
+                <p className="font-semibold">30-Day Free Trial</p>
                 <p className="text-sm">No credit card required to start</p>
               </div>
 
@@ -408,11 +408,11 @@ export default function Pricing() {
             
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">How does the 14-day trial work?</CardTitle>
+                <CardTitle className="text-lg">How does the 30-day trial work?</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Both plans include a 14-day free trial with full access to all features. 
+                  Both plans include a 30-day free trial with full access to all features. 
                   No credit card is required to start. You can cancel anytime during the trial period.
                 </p>
               </CardContent>
@@ -427,13 +427,8 @@ export default function Pricing() {
           <div className="flex gap-4 justify-center">
             <Link href="/auth?register=true">
               <Button size="lg" className="bg-gold hover:bg-gold-600 text-navy-blue-900">
-                Start Free Trial
+                Start Your 30-Day Free Trial
                 <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-navy-blue">
-                Contact Sales
               </Button>
             </Link>
           </div>
