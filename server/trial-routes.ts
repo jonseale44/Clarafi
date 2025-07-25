@@ -162,7 +162,8 @@ export function setupTrialRoutes(app: Express) {
   });
 
   /**
-   * Enterprise application submission endpoint
+   * Enterprise upgrade application endpoint
+   * Leverages existing AI verification infrastructure for trial users
    */
   app.post('/api/enterprise-application', async (req, res) => {
     try {
@@ -170,55 +171,140 @@ export function setupTrialRoutes(app: Express) {
         return res.status(401).json({ message: 'Not authenticated' });
       }
 
-      const { requestedTier, reason } = req.body;
       const userId = req.user.id;
       
-      // Get user details for the application
-      const [user] = await db.select({
+      // Get current user and health system details
+      const [userDetails] = await db.select({
         email: users.email,
         firstName: users.firstName,
         lastName: users.lastName,
+        role: users.role,
+        healthSystemId: users.healthSystemId,
         healthSystemName: healthSystems.name,
-        healthSystemId: healthSystems.id,
-        currentTier: healthSystems.subscriptionTier
+        currentTier: healthSystems.subscriptionTier,
+        organizationType: healthSystems.organizationType,
+        taxId: healthSystems.taxId,
+        npiNumber: healthSystems.npiNumber,
+        address: healthSystems.address,
+        city: healthSystems.city,
+        state: healthSystems.state,
+        zip: healthSystems.zip,
+        website: healthSystems.website,
+        phone: healthSystems.phone
       })
       .from(users)
       .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
       .where(eq(users.id, userId));
 
-      if (!user) {
+      if (!userDetails) {
         return res.status(400).json({ error: 'User not found' });
       }
 
-      console.log('📝 [EnterpriseApplication] New application received:', {
+      // Only admins can apply for enterprise upgrade
+      if (userDetails.role !== 'admin') {
+        return res.status(403).json({ 
+          error: 'Only system administrators can apply for enterprise upgrade' 
+        });
+      }
+
+      console.log('🚀 [EnterpriseUpgrade] Trial user requesting enterprise upgrade:', {
         userId,
-        healthSystemId: user.healthSystemId,
-        requestedTier,
-        currentTier: user.currentTier,
-        email: user.email,
-        reason
+        healthSystemId: userDetails.healthSystemId,
+        currentTier: userDetails.currentTier,
+        organizationName: userDetails.healthSystemName
       });
 
-      // In a production system, this would:
-      // 1. Store the application in an 'enterprise_applications' table
-      // 2. Send notification email to admin team
-      // 3. Create a support ticket
-      // 4. Track application status
-      
-      // For now, we'll just log it and return success
-      // This simulates the application being submitted for review
-      
+      // Import the verification service
+      const { ClinicAdminVerificationService } = await import('./clinic-admin-verification-service');
+
+      // Prepare verification request using existing health system data
+      const verificationRequest = {
+        // Personal info from current user
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        email: userDetails.email,
+        phone: userDetails.phone || '',
+        title: 'System Administrator', // Default for existing admins
+        
+        // Organization info from existing health system
+        organizationName: userDetails.healthSystemName,
+        organizationType: userDetails.organizationType || 'clinic',
+        taxId: userDetails.taxId || '',
+        npiNumber: userDetails.npiNumber,
+        
+        // Address from health system
+        address: userDetails.address || '',
+        city: userDetails.city || '',
+        state: userDetails.state || '',
+        zip: userDetails.zip || '',
+        website: userDetails.website,
+        
+        // Legal (already accepted during trial)
+        baaAccepted: true,
+        termsAccepted: true,
+        
+        // Upgrade context
+        currentEmr: 'CLARAFI Trial',
+        expectedProviderCount: 5, // Default for enterprise
+        expectedMonthlyPatientVolume: 500,
+        
+        // Flag to indicate this is an upgrade, not new signup
+        isUpgradeRequest: true,
+        existingHealthSystemId: userDetails.healthSystemId
+      };
+
+      // Run through AI verification (without creating new health system)
+      const verificationResult = await ClinicAdminVerificationService.performAutomatedVerification(
+        verificationRequest as any
+      );
+
+      console.log('🤖 [EnterpriseUpgrade] AI verification result:', {
+        riskScore: verificationResult.riskScore,
+        automatedDecision: verificationResult.automatedDecision,
+        requiresManualReview: verificationResult.requiresManualReview
+      });
+
+      // Store the upgrade application
+      const [application] = await db.insert(clinicAdminVerifications).values({
+        ...verificationRequest,
+        status: verificationResult.automatedDecision === 'approve' ? 'auto-approved' : 'pending',
+        verificationScore: verificationResult.verificationScore,
+        riskScore: verificationResult.riskScore,
+        automatedDecisionReason: verificationResult.automatedDecisionReason,
+        reviewerRecommendations: verificationResult.reviewerRecommendations,
+        apiVerificationData: verificationResult.apiVerificationData
+      }).returning();
+
+      // If auto-approved, immediately upgrade the health system
+      if (verificationResult.automatedDecision === 'approve') {
+        await db.update(healthSystems)
+          .set({ 
+            subscriptionTier: 2,
+            subscriptionStatus: 'active' 
+          })
+          .where(eq(healthSystems.id, userDetails.healthSystemId));
+
+        return res.json({
+          success: true,
+          approved: true,
+          message: 'Congratulations! Your enterprise upgrade has been approved.',
+          applicationId: application.id
+        });
+      }
+
+      // Otherwise, requires manual review
       res.json({
         success: true,
-        message: 'Enterprise application submitted successfully',
-        applicationId: `APP-${Date.now()}`,
-        estimatedReviewTime: '24 hours'
+        approved: false,
+        message: 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
+        applicationId: application.id,
+        requiresManualReview: true
       });
 
     } catch (error: any) {
-      console.error('❌ [EnterpriseApplication] Error processing application:', error);
+      console.error('❌ [EnterpriseUpgrade] Error processing upgrade:', error);
       res.status(500).json({ 
-        error: 'Failed to submit enterprise application',
+        error: 'Failed to process enterprise upgrade',
         message: error.message 
       });
     }

@@ -87,12 +87,25 @@ export function TrialUpgrade() {
       return data;
     },
     onSuccess: (data) => {
-      console.log('[TrialUpgrade] Enterprise application submitted:', data);
-      toast({
-        title: 'Application Submitted',
-        description: 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
-        variant: 'default',
-      });
+      console.log('[TrialUpgrade] Enterprise application result:', data);
+      
+      if (data.approved) {
+        // Auto-approved! 
+        toast({
+          title: '🎉 Enterprise Upgrade Approved!',
+          description: 'Your organization has been verified and upgraded to Enterprise tier. Refreshing...',
+          variant: 'default',
+        });
+        // Refresh the page to show new tier status
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        // Requires manual review
+        toast({
+          title: 'Application Submitted',
+          description: data.message || 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
+          variant: 'default',
+        });
+      }
       setIsUpgrading(false);
     },
     onError: (error: any) => {
