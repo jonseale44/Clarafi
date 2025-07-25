@@ -98,62 +98,21 @@ export function TrialUpgrade() {
     },
   });
 
-  // Tier 2 application mutation (requires special approval)
-  const tier2ApplicationMutation = useMutation({
-    mutationFn: async () => {
-      console.log('[TrialUpgrade] Starting tier 2 application process');
-      
-      // This would send an application to admin for review
-      const response = await apiRequest('POST', '/api/enterprise-application', {
-        requestedTier: 2,
-        reason: 'Trial user requesting enterprise features'
-      });
-      const data = await response.json();
-      
-      return data;
-    },
-    onSuccess: (data) => {
-      console.log('[TrialUpgrade] Enterprise application result:', data);
-      
-      if (data.approved) {
-        // Auto-approved! 
-        toast({
-          title: '🎉 Enterprise Upgrade Approved!',
-          description: 'Your organization has been verified and upgraded to Enterprise tier. Refreshing...',
-          variant: 'default',
-        });
-        // Refresh the page to show new tier status
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        // Requires manual review
-        toast({
-          title: 'Application Submitted',
-          description: data.message || 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
-          variant: 'default',
-        });
-      }
-      setIsUpgrading(false);
-    },
-    onError: (error: any) => {
-      console.error('[TrialUpgrade] Enterprise application error:', error);
-      toast({
-        title: 'Application Failed',
-        description: error.message || 'Failed to submit enterprise application',
-        variant: 'destructive',
-      });
-      setIsUpgrading(false);
-    },
-  });
+  // Tier 2 - Redirect to admin verification page
+  const handleEnterpriseApplication = () => {
+    console.log('[TrialUpgrade] Redirecting to enterprise verification page');
+    // Navigate to the admin verification page
+    // Users will go through the standard enterprise verification flow
+    // If approved, we can merge their existing trial data with the new enterprise account
+    window.location.href = '/admin-verification';
+  };
 
   const handleTier1Upgrade = () => {
     setIsUpgrading(true);
     tier1UpgradeMutation.mutate();
   };
 
-  const handleTier2Application = () => {
-    setIsUpgrading(true);
-    tier2ApplicationMutation.mutate();
-  };
+
 
   const trialStatus = trialData?.trialStatus;
   const daysRemaining = trialStatus?.daysRemaining || 0;
@@ -305,11 +264,11 @@ export function TrialUpgrade() {
               size="lg" 
               variant="outline"
               className="w-full border-purple-200 hover:bg-purple-50"
-              onClick={handleTier2Application}
-              disabled={isUpgrading || tier2ApplicationMutation.isPending}
+              onClick={handleEnterpriseApplication}
+              disabled={isUpgrading}
             >
               <Shield className="h-4 w-4 mr-2" />
-              {tier2ApplicationMutation.isPending ? 'Submitting...' : 'Apply for Enterprise'}
+              Apply for Enterprise
             </Button>
           </CardContent>
         </Card>

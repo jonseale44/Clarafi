@@ -14,6 +14,25 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 - Appointment scheduling
 - Comprehensive clinical documentation
 
+## Recent Changes (July 25, 2025)
+
+### Simplified Enterprise Upgrade Flow (July 25, 2025 - 1:15 AM) - COMPLETED
+Refactored the enterprise upgrade process to use a simpler, more maintainable approach:
+
+1. **Removed Complex Endpoint** - Deleted the `/api/enterprise-application` endpoint that was attempting to reuse verification infrastructure
+2. **Simple Redirect Approach** - Enterprise upgrade button now redirects to existing `/admin-verification` page
+3. **Architectural Benefits**:
+   - Avoids code duplication and complexity
+   - Uses the same proven verification flow for all enterprise applications
+   - Eliminates database schema mismatch issues with clinic_admin_verifications table
+   - Simplifies maintenance by having one enterprise verification path
+4. **User Flow**:
+   - Trial users click "Apply for Enterprise" button
+   - Redirected to `/admin-verification` page
+   - Complete standard enterprise verification form
+   - If approved, admin can merge existing trial data with new enterprise account
+5. **Result** - Clean, maintainable architecture that reuses existing infrastructure without complex workarounds
+
 ## Recent Changes (July 24, 2025)
 
 ### Landing Page Implementation (July 24, 2025 - 11:00 PM) - COMPLETED

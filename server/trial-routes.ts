@@ -131,7 +131,7 @@ export function setupTrialRoutes(app: Express) {
       // Create Stripe checkout session for tier 1
       const checkoutResult = await StripeService.createCheckoutSession({
         email: user.email,
-        healthSystemName: user.healthSystemName || `${user.firstName} ${user.lastName}`,
+        name: user.healthSystemName || `${user.firstName} ${user.lastName}`,
         tier: 1,
         billingPeriod: 'monthly',
         healthSystemId: user.healthSystemId,
@@ -162,178 +162,21 @@ export function setupTrialRoutes(app: Express) {
   });
 
   /**
-   * Enterprise upgrade application endpoint
+   * Enterprise upgrade flow
    * 
-   * ARCHITECTURE NOTE: This endpoint intentionally reuses the AI verification
-   * infrastructure from the admin-verification system. This is NOT duplication
-   * by accident - we're leveraging the sophisticated verification logic that
-   * already exists, but adapting it for trial-to-enterprise upgrades.
+   * ARCHITECTURAL DECISION (July 24, 2025):
+   * Enterprise upgrades now redirect to the existing /admin-verification page
+   * rather than maintaining a separate endpoint. This simplifies the architecture
+   * by reusing the comprehensive AI verification infrastructure already in place.
    * 
-   * Key differences from /admin-verification/start:
-   * - Works with EXISTING health systems (doesn't create new ones)
-   * - Requires user to be an admin of their current health system
-   * - Pulls organization data from existing records
-   * - Can result in instant approval for low-risk organizations
-   * - Updates subscription tier rather than creating new accounts
+   * When trial users apply for enterprise:
+   * 1. They are redirected to /admin-verification
+   * 2. They go through the standard enterprise verification flow
+   * 3. If approved, we can merge their existing trial data with the new enterprise account
    * 
-   * The AI verification includes:
-   * - Risk scoring algorithms
-   * - External API validations
-   * - Automated approval for low-risk organizations
-   * - Manual review queue for high-risk applications
+   * This approach avoids code duplication and ensures all enterprise applications
+   * go through the same rigorous verification process.
    */
-  app.post('/api/enterprise-application', async (req, res) => {
-    try {
-      if (!req.user?.healthSystemId) {
-        return res.status(401).json({ message: 'Not authenticated' });
-      }
-
-      const userId = req.user.id;
-      
-      // Get current user and health system details
-      const [userDetails] = await db.select({
-        email: users.email,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        role: users.role,
-        healthSystemId: users.healthSystemId,
-        healthSystemName: healthSystems.name,
-        currentTier: healthSystems.subscriptionTier,
-        systemType: healthSystems.systemType,
-        taxId: healthSystems.taxId,
-        npi: healthSystems.npi,
-        website: healthSystems.website,
-        phone: healthSystems.phone
-      })
-      .from(users)
-      .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
-      .where(eq(users.id, userId));
-
-      if (!userDetails) {
-        return res.status(400).json({ error: 'User not found' });
-      }
-
-      // Any authenticated user can apply for enterprise upgrade
-      // The AI verification system will handle approval/rejection
-      console.log('🔍 [EnterpriseUpgrade] User applying for enterprise:', {
-        userId,
-        role: userDetails.role,
-        healthSystemId: userDetails.healthSystemId
-      });
-
-      console.log('🚀 [EnterpriseUpgrade] Trial user requesting enterprise upgrade:', {
-        userId,
-        healthSystemId: userDetails.healthSystemId,
-        currentTier: userDetails.currentTier,
-        organizationName: userDetails.healthSystemName
-      });
-
-      // Import the verification service
-      const { ClinicAdminVerificationService } = await import('./clinic-admin-verification-service');
-
-      // Map systemType to organizationType
-      const mapSystemTypeToOrgType = (systemType: string) => {
-        switch (systemType) {
-          case 'health_system': return 'health_system';
-          case 'hospital_network': return 'hospital';
-          case 'clinic_group': return 'clinic';
-          case 'individual_provider': return 'private_practice';
-          default: return 'clinic';
-        }
-      };
-
-      // Prepare verification request using existing health system data
-      const verificationRequest = {
-        // Personal info from current user
-        firstName: userDetails.firstName,
-        lastName: userDetails.lastName,
-        email: userDetails.email,
-        phone: userDetails.phone || '',
-        title: 'System Administrator', // Default for existing admins
-        
-        // Organization info from existing health system
-        organizationName: userDetails.healthSystemName,
-        organizationType: mapSystemTypeToOrgType(userDetails.systemType || 'clinic_group'),
-        taxId: userDetails.taxId || '',
-        npiNumber: userDetails.npi,
-        
-        // Address placeholder (health systems don't store addresses directly)
-        address: '123 Healthcare Way',
-        city: 'Austin',
-        state: 'TX',
-        zip: '78701',
-        website: userDetails.website,
-        
-        // Legal (already accepted during trial)
-        baaAccepted: true,
-        termsAccepted: true,
-        
-        // Upgrade context
-        currentEmr: 'CLARAFI Trial',
-        expectedProviderCount: 5, // Default for enterprise
-        expectedMonthlyPatientVolume: 500,
-        
-        // Flag to indicate this is an upgrade, not new signup
-        isUpgradeRequest: true,
-        existingHealthSystemId: userDetails.healthSystemId
-      };
-
-      // Run through AI verification (without creating new health system)
-      const verificationResult = await ClinicAdminVerificationService.performAutomatedVerification(
-        verificationRequest as any
-      );
-
-      console.log('🤖 [EnterpriseUpgrade] AI verification result:', {
-        riskScore: verificationResult.riskScore,
-        automatedDecision: verificationResult.automatedDecision,
-        requiresManualReview: verificationResult.requiresManualReview
-      });
-
-      // Store the upgrade application
-      const [application] = await db.insert(clinicAdminVerifications).values({
-        ...verificationRequest,
-        status: verificationResult.automatedDecision === 'approve' ? 'auto-approved' : 'pending',
-        verificationScore: verificationResult.verificationScore,
-        riskScore: verificationResult.riskScore,
-        automatedDecisionReason: verificationResult.automatedDecisionReason,
-        reviewerRecommendations: verificationResult.reviewerRecommendations,
-        apiVerificationData: verificationResult.apiVerificationData
-      }).returning();
-
-      // If auto-approved, immediately upgrade the health system
-      if (verificationResult.automatedDecision === 'approve') {
-        await db.update(healthSystems)
-          .set({ 
-            subscriptionTier: 2,
-            subscriptionStatus: 'active' 
-          })
-          .where(eq(healthSystems.id, userDetails.healthSystemId));
-
-        return res.json({
-          success: true,
-          approved: true,
-          message: 'Congratulations! Your enterprise upgrade has been approved.',
-          applicationId: application.id
-        });
-      }
-
-      // Otherwise, requires manual review
-      res.json({
-        success: true,
-        approved: false,
-        message: 'Your enterprise application has been submitted for review. We\'ll contact you within 24 hours.',
-        applicationId: application.id,
-        requiresManualReview: true
-      });
-
-    } catch (error: any) {
-      console.error('❌ [EnterpriseUpgrade] Error processing upgrade:', error);
-      res.status(500).json({ 
-        error: 'Failed to process enterprise upgrade',
-        message: error.message 
-      });
-    }
-  });
 
   /**
    * Data export endpoint for users during grace period
