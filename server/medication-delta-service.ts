@@ -2074,12 +2074,28 @@ You have access to the patient's CURRENT medications. Use this to make intellige
 EXISTING MEDICATIONS PROVIDED:
 ${existingMedications.map(med => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status}) - started ${med.startDate}`).join('\n')}
 
+CRITICAL WITHIN-DOCUMENT CONSOLIDATION:
+When processing medications from THIS document, you MUST consolidate them intelligently:
+1. Group all mentions of the same medication (by generic/brand name)
+2. Identify the MOST RECENT entry as the current medication
+3. Mark all older doses/regimens as historical context
+4. Return ONE entry per unique medication with comprehensive history
+
+EXAMPLE - If document contains:
+- 3/8/24: Escitalopram 10mg daily
+- 7/2/24: Escitalopram 10mg daily  
+- 7/19/24: Escitalopram 5mg daily
+- 6/7/25: Escitalopram 5mg daily
+
+RETURN ONLY:
+1. Current: Escitalopram 5mg daily (6/7/25) with visit history showing all dates
+2. Historical: Escitalopram 10mg daily (3/8/24-7/2/24) marked as discontinued
+
 STEP 1 - INTELLIGENT DEDUPLICATION:
-For EACH medication in the document, compare with existing medications:
-- If it matches a current medication but has a DIFFERENT dose/frequency from the past → Create BOTH:
-  1. A "historical" medication entry (e.g., Metformin 500mg from 1/1/24)
-  2. Update the current medication's visit history with this historical information
-- If it matches exactly → Only update visit history, don't create duplicate
+For EACH medication group:
+- If no existing medication matches → Create new with full history from document
+- If existing medication matches current dose → Update visit history only
+- If existing medication has different dose → Create historical entry AND update current
 
 STEP 2 - BRAND/GENERIC MATCHING:
 Recognize these as the SAME medication:
@@ -2192,19 +2208,32 @@ Assign confidence based on information clarity:
       ]
     }
   ]
-}`;
+}
+
+CRITICAL RESPONSE REQUIREMENTS:
+1. You MUST include the "action_type" field for EVERY medication
+2. Valid action_type values: "create_historical", "update_visit_history", or "both"
+3. If no existing medications, still use action_type based on document context
+4. For medications with multiple dates in document, consolidate into ONE entry with comprehensive visit_history array`;
 
     const userPrompt = `PATIENT CONTEXT:
 Age: ${patientContext.age} years
 Gender: ${patientContext.gender}
 
 EXISTING MEDICATIONS (${existingMedications.length}):
-${existingMedications.map((med) => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status})`).join("\n")}
+${existingMedications.length > 0 
+  ? existingMedications.map((med) => `- ID:${med.id} ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status})`).join("\n")
+  : "No existing medications - this is the first attachment being processed"}
 
 DOCUMENT TO ANALYZE:
 ${extractedText}
 
-Extract all medications from this document. For each medication, determine if it should consolidate with existing medications or be created as new entry.
+CRITICAL INSTRUCTIONS:
+1. Group medications by name (same medication = one response entry)
+2. Use the MOST RECENT date as the current medication
+3. Include ALL dates in visit_history array
+4. ALWAYS include "action_type" field - never omit it
+5. If same medication appears with different doses/dates, consolidate intelligently
 
 IMPORTANT: Return ONLY the JSON response with no additional text, explanations, or commentary before or after the JSON.`;
 
