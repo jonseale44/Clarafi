@@ -14,6 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 
 // Visit note structure with DP as the authoritative date
 interface VisitNote {
@@ -263,8 +264,30 @@ export function EnhancedMedicalProblemsDialog({
       if (!response.ok) throw new Error("Failed to save medical problem");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
+      
+      // Track diagnosis management
+      const actionType = problem?.id ? 'updated' : 'created';
+      analytics.trackFeatureUsage('diagnosis_management', actionType, {
+        problemId: problem?.id || data?.id,
+        patientId: patientId,
+        problemTitle: form.getValues('problemTitle'),
+        icd10Code: form.getValues('currentIcd10Code'),
+        status: form.getValues('problemStatus')
+      });
+      
+      // Track conversion event for new diagnoses
+      if (!problem?.id) {
+        analytics.trackConversion({
+          eventType: 'diagnosis_created',
+          eventData: {
+            problemTitle: form.getValues('problemTitle'),
+            hasIcd10Code: !!form.getValues('currentIcd10Code')
+          }
+        });
+      }
+      
       toast({ title: "Success", description: "Medical problem saved successfully" });
       onClose();
     },

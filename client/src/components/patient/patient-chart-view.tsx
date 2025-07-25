@@ -17,6 +17,7 @@ import { EmbeddedPDFViewer } from "./embedded-pdf-viewer";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
+import { analytics } from "@/lib/analytics";
 
 interface PatientChartViewProps {
   patient: Patient;
@@ -258,10 +259,31 @@ export function PatientChartView({ patient, patientId }: PatientChartViewProps) 
       if (!response.ok) throw new Error('Failed to create encounter');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (encounter) => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/pending-encounters"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
+      // Track encounter creation
+      analytics.trackFeatureUsage('encounter_creation', 'created', {
+        encounterType: encounter.encounterType,
+        encounterSubtype: encounter.encounterSubtype,
+        patientId: encounter.patientId,
+        providerId: encounter.providerId,
+        source: 'patient_chart'
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'encounter_created',
+        eventData: {
+          encounterId: encounter.id,
+          patientId: encounter.patientId,
+          encounterType: encounter.encounterType,
+          source: 'patient_chart'
+        }
+      });
+      
       toast({
         title: "Success",
         description: "New encounter created successfully",

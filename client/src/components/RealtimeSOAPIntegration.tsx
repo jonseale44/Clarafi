@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { analytics } from "@/lib/analytics";
 
 interface RealtimeSOAPIntegrationProps {
   patientId: string;
@@ -232,6 +233,31 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       
       if (data.note) {
         console.log(`📝 [RealtimeSOAP] Successfully generated ${noteType.toUpperCase()} note (${data.note.length} chars)`);
+        
+        // Track SOAP note generation success
+        analytics.trackFeatureUsage('soap_generation', 'generated', {
+          noteType: noteType,
+          noteLength: data.note.length,
+          processingTimeMs: data.processingTimeMs,
+          patientId: patientId,
+          encounterId: encounterId,
+          hasTemplate: !!selectedTemplate,
+          templateId: selectedTemplate?.id,
+          isManualGeneration: forceGeneration,
+          isIntelligentStreaming: enableIntelligentStreaming,
+          transcriptionLength: transcription.trim().length
+        });
+        
+        // Track conversion event for SOAP generation
+        analytics.trackConversion({
+          eventType: 'soap_note_generated',
+          eventData: {
+            noteType: noteType,
+            encounterId: encounterId,
+            patientId: patientId,
+            generationMethod: forceGeneration ? 'manual' : 'automatic'
+          }
+        });
         
         // Check edit lock before applying any AI updates
         if (userEditingLock && !forceGeneration) {

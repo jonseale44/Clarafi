@@ -40,6 +40,7 @@ import { formatDistanceToNow } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { analytics } from "@/lib/analytics";
 
 // Enhanced Extracted Content Dialog Component
 interface ExtractedContentDialogProps {
@@ -447,9 +448,31 @@ export function PatientAttachments({
         throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       completeUpload();
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
+      
+      // Track single attachment upload
+      analytics.trackFeatureUsage('attachment_upload', 'uploaded', {
+        uploadType: 'single',
+        fileCount: 1,
+        patientId: patientId,
+        encounterId: encounterId,
+        mode: mode,
+        fileType: uploadFile?.type || 'unknown'
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'attachments_uploaded',
+        eventData: {
+          uploadType: 'single',
+          fileCount: 1,
+          patientId: patientId,
+          encounterId: encounterId
+        }
+      });
+      
       toast({ title: "Upload successful", description: "File has been uploaded successfully." });
       resetUploadForm();
     },
@@ -506,6 +529,27 @@ export function PatientAttachments({
     onSuccess: (data) => {
       completeUpload();
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
+      
+      // Track bulk attachment upload
+      analytics.trackFeatureUsage('attachment_upload', 'uploaded', {
+        uploadType: 'bulk',
+        fileCount: data.count,
+        patientId: patientId,
+        encounterId: encounterId,
+        mode: mode
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'attachments_uploaded',
+        eventData: {
+          uploadType: 'bulk',
+          fileCount: data.count,
+          patientId: patientId,
+          encounterId: encounterId
+        }
+      });
+      
       toast({ 
         title: "Bulk upload successful", 
         description: `Successfully uploaded ${data.count} files.` 

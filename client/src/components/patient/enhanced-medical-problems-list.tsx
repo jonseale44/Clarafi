@@ -18,6 +18,7 @@ import { CompactRankingControls } from "./compact-ranking-controls";
 import { useLocation } from "wouter";
 import { useNavigationContext } from "@/hooks/use-navigation-context";
 import { useDenseView } from "@/hooks/use-dense-view";
+import { analytics } from "@/lib/analytics";
 import { 
   calculateMedicalProblemRanking, 
   assignPriorityLevels,
@@ -473,8 +474,15 @@ export function EnhancedMedicalProblemsList({
       if (!response.ok) throw new Error('Failed to delete problem');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, problemId) => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
+      
+      // Track diagnosis deletion
+      analytics.trackFeatureUsage('diagnosis_management', 'deleted', {
+        problemId: problemId,
+        patientId: patientId
+      });
+      
       toast({ title: "Success", description: "Medical problem deleted successfully" });
     },
     onError: (error: Error) => {
@@ -504,8 +512,15 @@ export function EnhancedMedicalProblemsList({
       if (!response.ok) throw new Error('Failed to resolve problem');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, problemId) => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medical-problems`] });
+      
+      // Track diagnosis resolution
+      analytics.trackFeatureUsage('diagnosis_management', 'resolved', {
+        problemId: problemId,
+        patientId: patientId
+      });
+      
       toast({ title: "Success", description: "Medical problem marked as resolved" });
     },
     onError: (error: Error) => {

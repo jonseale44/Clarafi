@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -8,6 +8,7 @@ import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { analytics } from "@/lib/analytics";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -32,6 +33,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
+
+  // Initialize analytics when user is loaded
+  useEffect(() => {
+    if (user && !isLoading) {
+      // Initialize analytics with user context
+      analytics.initialize(user.id, user.healthSystemId);
+      analytics.setUser(user.id, user.healthSystemId);
+      
+      // Track user session start
+      analytics.trackEvent('session_start', {
+        userRole: user.role,
+        accountStatus: user.accountStatus,
+      });
+    } else if (!user && !isLoading) {
+      // Initialize analytics for anonymous users
+      analytics.initialize();
+    }
+  }, [user, isLoading]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
@@ -58,6 +77,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
+      
+      // Initialize analytics for logged-in user
+      analytics.initialize(user.id, user.healthSystemId);
+      analytics.setUser(user.id, user.healthSystemId);
+      
+      // Track successful login
+      analytics.trackEvent('login_success', {
+        userRole: user.role,
+        accountStatus: user.accountStatus,
+      });
+      
+      // Track trial start if applicable
+      if (user.accountStatus === 'trial') {
+        analytics.trackConversion({
+          eventType: 'trial_start',
+          eventData: {
+            userRole: user.role,
+            healthSystemId: user.healthSystemId
+          }
+        });
+      }
     },
     onError: (error: Error) => {
       if (error.message === "EMAIL_NOT_VERIFIED") {
@@ -145,9 +185,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      // Track logout event before clearing
+      analytics.trackEvent('logout');
+      
       queryClient.setQueryData(["/api/user"], null);
       queryClient.clear();
       setLocation("/auth");
+      
+      // Reinitialize analytics for anonymous user
+      analytics.initialize();
     },
     onError: (error: Error) => {
       toast({

@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import QRCode from 'qrcode';
+import { analytics } from '@/lib/analytics';
 
 // Validation schema for patient form
 const patientFormSchema = z.object({
@@ -675,6 +676,25 @@ export function PatientParser() {
       // Invalidate patient queries to refresh patient lists
       await queryClient.invalidateQueries({ queryKey: ['/api/patients'] });
       
+      // Track patient creation event
+      analytics.trackFeatureUsage('patient_creation', 'created', {
+        method: activeTab, // 'upload' or 'text'
+        hasAIExtraction: !!extractedData,
+        patientId: patient.id,
+        age: patient.dateOfBirth ? new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear() : null,
+        hasInsurance: !!(patient.insurancePrimary || patient.insuranceSecondary)
+      });
+      
+      // Track conversion event for patient creation
+      analytics.trackConversion({
+        eventType: 'patient_created',
+        eventData: {
+          patientId: patient.id,
+          creationMethod: activeTab,
+          aiAssisted: !!extractedData
+        }
+      });
+      
       toast({
         title: "Patient created successfully",
         description: `Created patient record for ${patient.firstName} ${patient.lastName}`,
@@ -766,6 +786,26 @@ export function PatientParser() {
         // Invalidate encounter queries to refresh encounter lists
         await queryClient.invalidateQueries({ queryKey: ['/api/encounters'] });
         await queryClient.invalidateQueries({ queryKey: ['/api/dashboard'] });
+        
+        // Track encounter creation
+        analytics.trackFeatureUsage('encounter_creation', 'created', {
+          encounterType: encounter.encounterType,
+          encounterSubtype: encounter.encounterSubtype,
+          patientId: encounter.patientId,
+          providerId: encounter.providerId,
+          source: 'patient_parser_after_creation'
+        });
+        
+        // Track conversion event
+        analytics.trackConversion({
+          eventType: 'encounter_created',
+          eventData: {
+            encounterId: encounter.id,
+            patientId: encounter.patientId,
+            encounterType: encounter.encounterType,
+            source: 'patient_parser_after_creation'
+          }
+        });
         
         toast({
           title: "Encounter started",

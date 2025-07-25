@@ -7,6 +7,8 @@ import { StandardLabMatrix } from "@/components/labs/standard-lab-matrix";
 import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { analytics } from "@/lib/analytics";
+import { useEffect } from "react";
 
 export function PatientLabResults() {
   const { patientId } = useParams<{ patientId: string }>();
@@ -23,6 +25,26 @@ export function PatientLabResults() {
   });
 
   const patientData = patient as any;
+
+  // Track lab results view
+  useEffect(() => {
+    if (patientId && currentUser) {
+      analytics.trackFeatureUsage('lab_results_view', 'viewed', {
+        patientId: patientId,
+        providerId: currentUser.id,
+        viewType: 'full_page',
+        source: 'patient_chart'
+      });
+      
+      analytics.trackConversion({
+        eventType: 'lab_results_viewed',
+        eventData: {
+          patientId: patientId,
+          viewType: 'full_page'
+        }
+      });
+    }
+  }, [patientId, currentUser]);
 
   if (!patientId) {
     return <div>Patient ID not found</div>;

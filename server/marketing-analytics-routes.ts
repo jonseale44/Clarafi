@@ -105,7 +105,30 @@ router.post("/api/marketing/acquisition", requireAdmin, async (req, res) => {
 // Module 3: Conversion Event Logging
 // ==========================================
 
-// Get conversion events
+// Track conversion event (accessible by authenticated users)
+router.post("/api/marketing/conversions", async (req, res) => {
+  try {
+    // Ensure user is authenticated
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    
+    const conversionData = {
+      ...req.body,
+      userId: req.user.id,
+      healthSystemId: req.user.healthSystemId,
+      timestamp: new Date(),
+    };
+    
+    const validatedData = insertConversionEventSchema.parse(conversionData);
+    const event = await storage.createConversionEvent(validatedData);
+    res.json(event);
+  } catch (error) {
+    APIResponseHandler.error(res, error);
+  }
+});
+
+// Get conversion events (admin only)
 router.get("/api/marketing/conversions", requireAdmin, async (req, res) => {
   try {
     const { userId, eventType, startDate, endDate } = req.query;

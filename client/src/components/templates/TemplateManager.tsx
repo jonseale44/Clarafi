@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Star, Eye, Share, Copy, MessageSquare } from "lucide-react";
 import { TwoPhaseTemplateEditor } from './TwoPhaseTemplateEditor';
+import { analytics } from "@/lib/analytics";
 
 interface Template {
   id: number | string;
@@ -83,8 +84,14 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
       const response = await apiRequest('DELETE', `/api/templates/${templateId}`, {});
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, templateId) => {
       queryClient.invalidateQueries({ queryKey: ['/api/templates/by-type', selectedNoteType] });
+      
+      // Track template deletion
+      analytics.trackFeatureUsage('template_management', 'deleted', {
+        templateId: templateId
+      });
+      
       toast({
         title: "Template deleted",
         description: "Template has been deleted successfully."
@@ -130,9 +137,26 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/templates/user'] });
       queryClient.invalidateQueries({ queryKey: ['/api/templates/by-type'] });
+      
+      // Track template creation
+      analytics.trackFeatureUsage('template_management', 'created', {
+        templateName: newTemplateName,
+        displayName: newTemplateDisplayName,
+        noteType: newTemplateNoteType
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'template_created',
+        eventData: {
+          templateName: newTemplateName,
+          noteType: newTemplateNoteType
+        }
+      });
+      
       setIsCreateDialogOpen(false);
       setNewTemplateName("");
       setNewTemplateDisplayName("");
@@ -460,7 +484,27 @@ export const TemplateManager: React.FC<TemplateManagerProps> = ({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => onTemplateSelect(template)}
+                      onClick={() => {
+                        // Track template usage
+                        analytics.trackFeatureUsage('template_usage', 'selected', {
+                          templateId: template.id,
+                          templateName: template.templateName,
+                          noteType: template.baseNoteType,
+                          isBaseTemplate: template.isBaseTemplate || false,
+                          isDefault: template.isDefault
+                        });
+                        
+                        // Track conversion event
+                        analytics.trackConversion({
+                          eventType: 'template_selected',
+                          eventData: {
+                            templateName: template.templateName,
+                            noteType: template.baseNoteType
+                          }
+                        });
+                        
+                        onTemplateSelect(template);
+                      }}
                     >
                       Select
                     </Button>

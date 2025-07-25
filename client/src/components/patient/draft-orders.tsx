@@ -16,6 +16,7 @@ import { FastMedicationIntelligence } from "./fast-medication-intelligence";
 import { OrderPreferencesDialog } from "./order-preferences-dialog";
 import { OrderPreferencesIndicator } from "./order-preferences-indicator";
 import { PrescriptionTransmissionDialog } from "@/components/eprescribing/prescription-transmission-dialog";
+import { analytics } from "@/lib/analytics";
 
 interface Order {
   id: number;
@@ -187,10 +188,35 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       if (!response.ok) throw new Error("Failed to create order");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       setShowNewOrderDialog(false);
+      
+      // Track order creation
+      analytics.trackFeatureUsage('order_creation', 'created', {
+        orderType: order.orderType,
+        orderStatus: order.orderStatus,
+        patientId: order.patientId,
+        encounterId: order.encounterId,
+        providerId: order.orderedBy,
+        medicationName: order.medicationName,
+        labName: order.labName || order.testName,
+        studyType: order.studyType,
+        specialtyType: order.specialtyType
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'order_created',
+        eventData: {
+          orderId: order.id,
+          orderType: order.orderType,
+          encounterId: order.encounterId,
+          patientId: order.patientId
+        }
+      });
+      
       toast({ title: "Order created successfully" });
     },
     onError: (error: any) => {
@@ -216,13 +242,40 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       }
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, orderId) => {
       // Invalidate multiple related queries to ensure UI consistency
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/medications-enhanced`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
+      
+      // Find the order details for analytics
+      const signedOrder = orders.find((order: Order) => order.id === orderId);
+      if (signedOrder) {
+        // Track medication prescription
+        if (signedOrder.orderType === 'medication') {
+          analytics.trackFeatureUsage('medication_prescription', 'signed', {
+            orderId: orderId,
+            patientId: patientId,
+            encounterId: encounterId,
+            medicationName: signedOrder.medicationName,
+            strength: signedOrder.strength,
+            dosageForm: signedOrder.dosageForm,
+            quantity: signedOrder.quantity,
+            refills: signedOrder.refills
+          });
+          
+          // Track conversion event
+          analytics.trackConversion({
+            eventType: 'medication_prescribed',
+            eventData: {
+              medicationName: signedOrder.medicationName,
+              patientId: patientId
+            }
+          });
+        }
+      }
       
       // Dispatch custom event to trigger immediate validation refresh
       window.dispatchEvent(new CustomEvent('orderSigned'));
@@ -267,6 +320,49 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}/validation`] });
       queryClient.invalidateQueries({ queryKey: [`/api/encounters/${encounterId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/encounters`] });
+      
+      // Track bulk signing analytics
+      const signedOrders = orderType 
+        ? orders.filter((order: Order) => order.orderType === orderType && order.orderStatus === 'draft')
+        : orders.filter((order: Order) => order.orderStatus === 'draft');
+      
+      // Count by type
+      const orderCounts = signedOrders.reduce((acc: any, order: Order) => {
+        acc[order.orderType] = (acc[order.orderType] || 0) + 1;
+        return acc;
+      }, {});
+      
+      // Track bulk signing event
+      analytics.trackFeatureUsage('bulk_order_signing', 'signed', {
+        totalOrders: signedOrders.length,
+        orderType: orderType || 'all',
+        orderCounts: orderCounts,
+        patientId: patientId,
+        encounterId: encounterId
+      });
+      
+      // Track specific medication prescriptions
+      const medicationOrders = signedOrders.filter((order: Order) => order.orderType === 'medication');
+      if (medicationOrders.length > 0) {
+        analytics.trackFeatureUsage('medication_prescription', 'bulk_signed', {
+          count: medicationOrders.length,
+          medications: medicationOrders.map((order: Order) => ({
+            name: order.medicationName,
+            strength: order.strength
+          })),
+          patientId: patientId,
+          encounterId: encounterId
+        });
+        
+        // Track conversion event
+        analytics.trackConversion({
+          eventType: 'bulk_medications_prescribed',
+          eventData: {
+            count: medicationOrders.length,
+            patientId: patientId
+          }
+        });
+      }
       
       // Dispatch custom event to trigger immediate validation refresh
       window.dispatchEvent(new CustomEvent('orderSigned'));

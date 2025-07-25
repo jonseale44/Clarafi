@@ -29,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { apiRequest } from "@/lib/queryClient";
+import { analytics } from "@/lib/analytics";
 
 export default function Dashboard() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
@@ -123,9 +124,30 @@ export default function Dashboard() {
       if (!response.ok) throw new Error('Failed to create encounter');
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (encounter) => {
       // Refresh encounters data
       queryClient.invalidateQueries({ queryKey: ["/api/patients", selectedPatientId, "encounters"] });
+      
+      // Track encounter creation
+      analytics.trackFeatureUsage('encounter_creation', 'created', {
+        encounterType: encounter.encounterType,
+        encounterSubtype: encounter.encounterSubtype,
+        patientId: encounter.patientId,
+        providerId: encounter.providerId,
+        source: 'dashboard'
+      });
+      
+      // Track conversion event
+      analytics.trackConversion({
+        eventType: 'encounter_created',
+        eventData: {
+          encounterId: encounter.id,
+          patientId: encounter.patientId,
+          encounterType: encounter.encounterType,
+          source: 'dashboard'
+        }
+      });
+      
       toast({
         title: "Success",
         description: "New encounter created successfully",
