@@ -69,6 +69,39 @@ export function EncounterView() {
       {/* Navigation breadcrumb for hyperlink navigation */}
       <NavigationBreadcrumb />
       
+      {/* Mobile-only Fixed Header with Patient Name */}
+      <div 
+        className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50 md:hidden" 
+        data-median="mobile-patient-header-encounter"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBackToChart}
+              data-median="mobile-back-button-encounter"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-lg font-semibold text-gray-900 truncate">
+                {patient.firstName} {patient.lastName}
+              </h1>
+              {encounter?.chiefComplaint && (
+                <span className="text-sm text-gray-500 truncate max-w-32">
+                  • {encounter.chiefComplaint}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="text-xs text-gray-500">
+            #{encounterId}
+          </div>
+        </div>
+      </div>
+      
       <div className="flex-1" data-median="mobile-encounter-main">
         <RoleBasedEncounterView 
           patient={patient} 
