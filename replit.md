@@ -16,6 +16,27 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Background Audio Support for Median App (July 25, 2025 - 3:53 PM) - COMPLETED
+Successfully implemented background audio functionality for iOS devices in the Median mobile app:
+
+1. **Median Background Audio Service** - Created `/client/src/lib/median-background-audio.ts`:
+   - Complete integration with Median JavaScript Bridge for background audio
+   - Functions to start/stop background audio service on iOS
+   - Allows audio to continue playing when app is backgrounded or screen is locked
+   - Only activates when running in Median app environment
+
+2. **Voice Recording Integration** - Updated `/client/src/components/RealtimeSOAPIntegration.tsx`:
+   - Calls `startBackgroundAudio()` when voice recording begins
+   - Calls `stopBackgroundAudio()` when voice recording stops
+   - Ensures voice transcription continues even when app is minimized
+   - Properly releases background audio resources when done
+
+3. **Key Features**:
+   - Essential for medical professionals who need continuous voice recording
+   - Prevents iOS from stopping audio when app is backgrounded
+   - No impact on Android or web browser experience
+   - Seamless integration with existing voice recording workflow
+
 ### Lab Component Consolidation (July 25, 2025 - 2:38 PM) - COMPLETED
 Successfully consolidated lab reporting system to eliminate technical debt:
 - Removed redundant `StandardLabMatrix` component and standardized on `LabResultsMatrix`

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "re
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { analytics } from "@/lib/analytics";
+import { startBackgroundAudio, stopBackgroundAudio } from "@/lib/median-background-audio";
 
 interface RealtimeSOAPIntegrationProps {
   patientId: string;
@@ -313,6 +314,9 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       setInternalIsRecording(true);
       onRecordingStateChange?.(true);
       
+      // Start background audio for iOS devices in Median app
+      startBackgroundAudio();
+      
       // WebSocket connection for transcription
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?patientId=${patientId}&encounterId=${encounterId}&userId=${patientId}`;
@@ -494,6 +498,9 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
     try {
       setInternalIsRecording(false);
       onRecordingStateChange?.(false);
+      
+      // Stop background audio for iOS devices in Median app
+      stopBackgroundAudio();
 
       // Cleanup audio processing components
       if (mediaRecorderRef.current) {
