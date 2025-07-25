@@ -42,7 +42,15 @@ Implemented industry-standard EMR navigation patterns following best practices f
    - `/client/src/components/layout/app-layout.tsx` - Consistent page wrapper for all authenticated views
    - `/client/src/lib/navigation-config.ts` - Centralized navigation configuration
 
-5. **Future Considerations**:
+5. **Public Pages Updated** (July 25, 2025 - 10:30 PM):
+   - Privacy Policy - Added CLARAFI header with correct colors
+   - Terms of Service - Added CLARAFI header with correct colors
+   - Blog - Added CLARAFI header with correct colors
+   - Business Associate Agreement - Added CLARAFI header with correct colors
+   - Legal Terms of Service - Added CLARAFI header with correct colors
+   - All public pages now have consistent branding and navigation
+
+6. **Future Considerations**:
    - Breadcrumb navigation for deep linking support
    - Mobile-specific navigation optimizations for Median app
    - Active state indicators for current page location

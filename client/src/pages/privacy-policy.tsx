@@ -11,9 +11,18 @@ export default function PrivacyPolicy() {
   const isFromRegistration = returnTo === '/auth?tab=register';
   
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto max-w-4xl px-4">
-        <div className="mb-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/">
+            <h1 className="text-3xl font-bold cursor-pointer">
+              <span className="text-[#1e3a8a]">CLAR</span>
+              <span className="text-[#fbbf24]">A</span>
+              <span className="text-[#1e3a8a]">F</span>
+              <span className="text-[#fbbf24]">I</span>
+            </h1>
+          </Link>
           <Link href={returnTo}>
             <Button variant="ghost" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
@@ -21,6 +30,9 @@ export default function PrivacyPolicy() {
             </Button>
           </Link>
         </div>
+      </div>
+      
+      <div className="container mx-auto max-w-4xl px-4 py-8">
 
         <Card>
           <CardHeader>

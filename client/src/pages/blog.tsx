@@ -90,31 +90,22 @@ export default function BlogPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back to Home</span>
-                </Button>
-              </Link>
-              <div className="h-6 w-px bg-gray-300" />
-              <span className="text-sm font-medium text-gray-900">Blog</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <Home className="h-4 w-4" />
-                  <span className="hidden sm:inline">Home</span>
-                </Button>
-              </Link>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/">
+            <h1 className="text-3xl font-bold cursor-pointer">
+              <span className="text-[#1e3a8a]">CLAR</span>
+              <span className="text-[#fbbf24]">A</span>
+              <span className="text-[#1e3a8a]">F</span>
+              <span className="text-[#fbbf24]">I</span>
+            </h1>
+          </Link>
+          <Link href="/">
+            <Button variant="ghost">Back to Home</Button>
+          </Link>
         </div>
-      </nav>
+      </div>
 
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-[#003366] to-[#004080] text-white py-16">
