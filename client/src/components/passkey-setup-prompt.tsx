@@ -46,8 +46,10 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
   useEffect(() => {
     // Don't show prompt in Replit environment as passkeys don't work there
     const isReplitEnvironment = window.location.hostname.includes('replit');
+    // Also hide in Median app - use Face ID instead
+    const isMedianApp = typeof (window as any).median !== 'undefined';
     
-    if (!isLoading && passkeys && passkeys.length === 0 && !isDismissed && !isReplitEnvironment) {
+    if (!isLoading && passkeys && passkeys.length === 0 && !isDismissed && !isReplitEnvironment && !isMedianApp) {
       // Small delay to let the page settle
       setTimeout(() => setIsOpen(true), 1500);
     }

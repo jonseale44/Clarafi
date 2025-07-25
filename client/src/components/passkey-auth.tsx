@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { KeyRoundIcon, ShieldCheck, AlertCircle, Trash2, Smartphone } from 'lucide-react';
+import { KeyRoundIcon, ShieldCheck, AlertCircle, Trash2, Smartphone, Fingerprint } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -94,6 +94,8 @@ export function PasskeyAuth() {
   
   // Check if we're in Replit environment
   const isReplitEnvironment = window.location.hostname.includes('replit');
+  // Check if we're in Median app
+  const isMedianApp = typeof (window as any).median !== 'undefined';
 
   useEffect(() => {
     // Check WebAuthn support
@@ -533,14 +535,36 @@ export function PasskeyAuth() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
-            Passkeys
+            {isMedianApp ? 'Biometric Authentication' : 'Passkeys'}
           </CardTitle>
           <CardDescription>
-            Manage your passkeys for secure, passwordless authentication
+            {isMedianApp 
+              ? 'Secure authentication using your device biometrics'
+              : 'Manage your passkeys for secure, passwordless authentication'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!window.PublicKeyCredential ? (
+          {isMedianApp ? (
+            <div className="space-y-4">
+              <Alert className="border-blue-200 bg-blue-50">
+                <Fingerprint className="h-4 w-4 text-blue-600" />
+                <AlertTitle className="text-blue-800">Face ID / Touch ID Enabled</AlertTitle>
+                <AlertDescription className="text-blue-700">
+                  Your CLARAFI app uses Face ID or Touch ID for secure authentication. 
+                  Biometric credentials are managed automatically when you sign in.
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-3 text-sm">
+                <p className="font-medium">How it works:</p>
+                <ul className="space-y-2 ml-6 list-disc">
+                  <li>Your credentials are securely saved after signing in with your password</li>
+                  <li>Next time, just use Face ID or Touch ID to sign in instantly</li>
+                  <li>Your biometric data never leaves your device</li>
+                </ul>
+              </div>
+            </div>
+          ) : !window.PublicKeyCredential ? (
             <div className="space-y-4">
               <Alert className="border-yellow-200 bg-yellow-50">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />

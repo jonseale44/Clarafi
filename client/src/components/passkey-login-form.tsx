@@ -127,8 +127,11 @@ export function PasskeyLoginForm({ onSuccess }: PasskeyLoginFormProps) {
     }
   };
 
-  // Check if WebAuthn is supported
-  if (!window.PublicKeyCredential) {
+  // Hide passkeys in Median app - use Face ID instead
+  const isMedianApp = typeof (window as any).median !== 'undefined';
+  
+  // Check if WebAuthn is supported and we're not in Median app
+  if (!window.PublicKeyCredential || isMedianApp) {
     return null;
   }
 
