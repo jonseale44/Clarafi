@@ -1,7 +1,24 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useMemo, useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Edit, MoreVertical } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface StandardLabMatrixProps {
   patientId: number;
@@ -19,13 +36,90 @@ interface LabResult {
   encounterId?: number;
   resultAvailableAt: string;
   referenceRange?: string;
+  providerNotes?: string;
+  sourceType?: string;
 }
 
 export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }: StandardLabMatrixProps) {
+  const { toast } = useToast();
+  const [editingResult, setEditingResult] = useState<LabResult | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    resultValue: '',
+    resultUnits: '',
+    referenceRange: '',
+    abnormalFlag: '',
+    criticalFlag: false,
+    providerNotes: ''
+  });
+
   const { data: labResults = [], isLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-results`],
     enabled: !!patientId
   });
+
+  // Delete lab result mutation
+  const deleteLabResultMutation = useMutation({
+    mutationFn: async (resultId: number) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to delete lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete lab result", variant: "destructive" });
+    }
+  });
+
+  // Update lab result mutation
+  const updateLabResultMutation = useMutation({
+    mutationFn: async ({ resultId, updates }: { resultId: number, updates: typeof editFormData }) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result updated successfully" });
+      setEditingResult(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to update lab result", variant: "destructive" });
+    }
+  });
+
+  const handleEditResult = (result: LabResult) => {
+    setEditingResult(result);
+    setEditFormData({
+      resultValue: result.resultValue || "",
+      resultUnits: result.resultUnits || "",
+      referenceRange: result.referenceRange || "",
+      abnormalFlag: result.abnormalFlag || "",
+      criticalFlag: result.criticalFlag || false,
+      providerNotes: result.providerNotes || ""
+    });
+  };
+
+  const handleUpdateResult = () => {
+    if (!editingResult) return;
+    const updates = {
+      ...editFormData,
+      abnormalFlag: editFormData.abnormalFlag === 'normal' ? '' : editFormData.abnormalFlag
+    };
+    updateLabResultMutation.mutate({
+      resultId: editingResult.id,
+      updates
+    });
+  };
 
   // Define standard lab panel structure
   const labPanels = {
@@ -75,8 +169,8 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [labResults]);
 
-  // Get value for specific test in specific date
-  const getTestValue = (testKey: string, dateKey: string) => {
+  // Get result for specific test in specific date
+  const getTestResult = (testKey: string, dateKey: string) => {
     const dateData = dateColumns.find(d => d.dateKey === dateKey);
     if (!dateData) return null;
     
@@ -94,7 +188,7 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
       return normalizedResult === normalizedKey;
     });
     
-    return result ? result.resultValue : null;
+    return result || null;
   };
 
   const getCellClass = (value: string | null, testKey: string, dateKey: string) => {
@@ -191,13 +285,58 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
                           </div>
                         </td>
                         {displayDates.map((dateCol, index) => {
-                          const value = getTestValue(test.key, dateCol.dateKey);
+                          const result = getTestResult(test.key, dateCol.dateKey);
+                          const value = result?.resultValue;
                           return (
                             <td 
                               key={`test-${index}`}
                               className={getCellClass(value, test.key, dateCol.dateKey)}
                             >
-                              {value || '—'}
+                              {result ? (
+                                <div className="flex items-center justify-between">
+                                  <span className="flex-1">
+                                    {value}
+                                    {result.sourceType === 'user_entered' && (
+                                      <Badge variant="outline" className="ml-1 text-xs text-navy-blue-600">
+                                        User Entered
+                                      </Badge>
+                                    )}
+                                  </span>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 hover:bg-gray-100"
+                                      >
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        className="cursor-pointer text-navy-blue-600"
+                                        onClick={() => handleEditResult(result)}
+                                      >
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer text-red-600"
+                                        onClick={() => {
+                                          if (confirm('Are you sure you want to delete this lab result?')) {
+                                            deleteLabResultMutation.mutate(result.id);
+                                          }
+                                        }}
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              ) : (
+                                '—'
+                              )}
                             </td>
                           );
                         })}
@@ -218,6 +357,120 @@ export function StandardLabMatrix({ patientId, mode = 'full', showTitle = true }
           </div>
         )}
       </CardContent>
+      
+      {/* Edit Dialog */}
+      <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Lab Result</DialogTitle>
+            <DialogDescription>
+              Update the lab result values and flags
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="testName">Test Name</Label>
+              <Input 
+                id="testName" 
+                value={editingResult?.testName || ''} 
+                disabled 
+                className="bg-gray-50"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="resultValue">Result Value</Label>
+                <Input 
+                  id="resultValue" 
+                  value={editFormData.resultValue}
+                  onChange={(e) => setEditFormData({...editFormData, resultValue: e.target.value})}
+                  placeholder="Enter result value"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="resultUnits">Units</Label>
+                <Input 
+                  id="resultUnits" 
+                  value={editFormData.resultUnits}
+                  onChange={(e) => setEditFormData({...editFormData, resultUnits: e.target.value})}
+                  placeholder="e.g., mg/dL"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="referenceRange">Reference Range</Label>
+              <Input 
+                id="referenceRange" 
+                value={editFormData.referenceRange}
+                onChange={(e) => setEditFormData({...editFormData, referenceRange: e.target.value})}
+                placeholder="e.g., 70-100"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="abnormalFlag">Abnormal Flag</Label>
+              <Select 
+                value={editFormData.abnormalFlag || 'normal'}
+                onValueChange={(value) => setEditFormData({...editFormData, abnormalFlag: value})}
+              >
+                <SelectTrigger id="abnormalFlag">
+                  <SelectValue placeholder="Select abnormal flag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="L">Low</SelectItem>
+                  <SelectItem value="H">High</SelectItem>
+                  <SelectItem value="LL">Critical Low</SelectItem>
+                  <SelectItem value="HH">Critical High</SelectItem>
+                  <SelectItem value="A">Abnormal</SelectItem>
+                  <SelectItem value="AA">Critical Abnormal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="criticalFlag"
+                checked={editFormData.criticalFlag}
+                onCheckedChange={(checked) => setEditFormData({...editFormData, criticalFlag: checked as boolean})}
+              />
+              <Label htmlFor="criticalFlag" className="cursor-pointer">
+                Mark as Critical
+              </Label>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="providerNotes">Provider Notes</Label>
+              <Textarea 
+                id="providerNotes" 
+                value={editFormData.providerNotes}
+                onChange={(e) => setEditFormData({...editFormData, providerNotes: e.target.value})}
+                placeholder="Add any additional notes..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setEditingResult(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateResult}
+                disabled={updateLabResultMutation.isPending}
+              >
+                {updateLabResultMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

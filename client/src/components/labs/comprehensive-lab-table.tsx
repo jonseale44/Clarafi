@@ -240,9 +240,13 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
   const handleUpdateResult = () => {
     if (!editingResult) return;
+    const updates = {
+      ...editFormData,
+      abnormalFlag: editFormData.abnormalFlag === 'normal' ? '' : editFormData.abnormalFlag
+    };
     updateLabResultMutation.mutate({
       resultId: editingResult.id,
-      updates: editFormData
+      updates
     });
   };
 
@@ -510,7 +514,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
 
                     <TableCell>
                       <div className="text-xs text-muted-foreground">
-                        {result.orderedByName || 'Unknown'}
+                        {result.providerName || 'Unknown'}
                       </div>
                     </TableCell>
 
@@ -656,7 +660,7 @@ export function ComprehensiveLabTable({ patientId, patientName }: ComprehensiveL
                     <SelectValue placeholder="Select abnormal flag" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Normal</SelectItem>
+                    <SelectItem value="normal">Normal</SelectItem>
                     <SelectItem value="L">Low</SelectItem>
                     <SelectItem value="H">High</SelectItem>
                     <SelectItem value="LL">Critical Low</SelectItem>

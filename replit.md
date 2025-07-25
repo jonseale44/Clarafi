@@ -16,6 +16,22 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Added Delete/Edit Functionality to Lab Results Matrix View (July 25, 2025 - 2:16 PM) - COMPLETED
+Implemented comprehensive manual management capabilities in the Lab Results Matrix view:
+- Added dropdown menu with edit/delete options to each lab result cell
+- Uses three-dot menu icon to save space in compact matrix format
+- Edit dialog allows modifying all lab result attributes
+- Delete action includes confirmation dialog
+- User-entered values show blue badge in matrix cells
+- Both table and matrix views now have complete CRUD functionality
+
+### Fixed Lab Results Table Edit Errors (July 25, 2025 - 2:13 PM) - COMPLETED
+Fixed critical errors in the comprehensive lab table edit functionality:
+- Resolved Select component error by changing empty string value to "normal"
+- Added conversion logic in save handler to convert "normal" back to empty string for database
+- Fixed property reference error by changing `orderedByName` to `providerName`
+- Edit dialog now properly saves all changes including abnormal flags
+
 ### Added "Back to Home" Button to About Page (July 25, 2025 - 2:07 PM) - COMPLETED
 Added a prominent "Back to Home" navigation button to the About Us page:
 - Placed at the top of the hero section for visibility
