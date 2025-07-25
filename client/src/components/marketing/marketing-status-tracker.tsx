@@ -12,40 +12,40 @@ interface ModuleStatus {
 
 const moduleStatuses: ModuleStatus[] = [
   {
-    module: "Acquisition Tracking",
+    module: "Backend Analytics Tracking",
     status: "DONE",
     hasRealData: true,
-    nextAction: "—"
+    nextAction: "Conversion events are being tracked in database"
   },
   {
-    module: "Conversion Tracking",
-    status: "STUB",
-    hasRealData: false,
-    nextAction: "Track and display all funnel events"
+    module: "Backend Analytics APIs",
+    status: "DONE",
+    hasRealData: true,
+    nextAction: "Endpoints return real data from analytics_events table"
   },
   {
-    module: "Dashboard Metrics",
-    status: "STUB",
+    module: "Frontend Dashboard (Metrics)",
+    status: "IN PROGRESS",
     hasRealData: false,
-    nextAction: "Plug in real conversion math"
+    nextAction: "Partially connected - still shows hardcoded numbers"
   },
   {
-    module: "AI Insights",
-    status: "STUB",
+    module: "Frontend Dashboard (Conversions)",
+    status: "IN PROGRESS",
     hasRealData: false,
-    nextAction: "Plug in GPT/rule analytics"
+    nextAction: "Updating to use real conversion funnel data"
   },
   {
-    module: "Automations",
-    status: "STUB",
+    module: "AI Insights & Automations",
+    status: "TODO",
     hasRealData: false,
-    nextAction: "Add rule execution tied to real triggers"
+    nextAction: "Not implemented - requires GPT integration"
   },
   {
-    module: "Campaigns/ROI",
-    status: "STUB",
+    module: "Campaigns/ROI Tracking",
+    status: "TODO",
     hasRealData: false,
-    nextAction: "Integrate spend/conversion, compute ROI"
+    nextAction: "Not implemented - requires spend tracking"
   }
 ];
 

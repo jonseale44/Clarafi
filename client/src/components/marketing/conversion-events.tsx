@@ -10,14 +10,17 @@ import { Target, Clock, Smartphone, Monitor, Tablet } from "lucide-react";
 export default function ConversionEvents() {
   const [eventTypeFilter, setEventTypeFilter] = useState("all");
 
-  const { data: events, isLoading } = useQuery({
-    queryKey: [
-      "/api/marketing/conversions",
-      eventTypeFilter !== "all" ? { eventType: eventTypeFilter } : {},
-    ],
+  // Get real conversion funnel data
+  const { data: conversionData, isLoading } = useQuery({
+    queryKey: ["/api/analytics/conversions"],
   });
 
-  if (isLoading) {
+  // Get real conversion events
+  const { data: events, isLoading: eventsLoading } = useQuery({
+    queryKey: ["/api/conversion-events"],
+  });
+
+  if (isLoading || eventsLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-32" />
@@ -26,15 +29,13 @@ export default function ConversionEvents() {
     );
   }
 
-  // Stub conversion funnel data
-  const funnelData = [
-    { stage: "Page Visit", count: 10000, percentage: 100 },
-    { stage: "Signup Started", count: 3500, percentage: 35 },
-    { stage: "Account Created", count: 2100, percentage: 21 },
-    { stage: "Trial Started", count: 1680, percentage: 16.8 },
-    { stage: "Onboarding Complete", count: 1260, percentage: 12.6 },
-    { stage: "First Chart Note", count: 945, percentage: 9.45 },
-    { stage: "Subscription Upgrade", count: 378, percentage: 3.78 },
+  // Use real conversion funnel data from the API
+  const funnelData = conversionData?.funnel || [
+    { stage: "Page Visit", count: 0, percentage: 100 },
+    { stage: "Sign Up", count: 0, percentage: 0 },
+    { stage: "First Patient", count: 0, percentage: 0 },
+    { stage: "First SOAP Note", count: 0, percentage: 0 },
+    { stage: "Paid Conversion", count: 0, percentage: 0 },
   ];
 
   const eventTypes = [
@@ -115,57 +116,70 @@ export default function ConversionEvents() {
               <TableRow>
                 <TableHead>Event Type</TableHead>
                 <TableHead>User</TableHead>
-                <TableHead>Device</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Value</TableHead>
+                <TableHead>Metadata</TableHead>
                 <TableHead>Timestamp</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell className="text-muted-foreground text-center" colSpan={6}>
-                  No conversion events recorded yet. Events will appear as users interact with the platform.
-                </TableCell>
-              </TableRow>
+              {events && events.length > 0 ? (
+                events.slice(0, 10).map((event: any, index: number) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Badge variant="outline">{event.eventType}</Badge>
+                    </TableCell>
+                    <TableCell>{event.userEmail || 'Anonymous'}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {event.metadata ? JSON.stringify(event.metadata).substring(0, 50) + '...' : '-'}
+                    </TableCell>
+                    <TableCell>{new Date(event.createdAt).toLocaleString()}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell className="text-muted-foreground text-center" colSpan={4}>
+                    No conversion events recorded yet. Events will appear as users interact with the platform.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
 
-      {/* Event Statistics */}
+      {/* Event Statistics - Using Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg. Time to First Note</p>
-                <p className="text-2xl font-bold">3.2 days</p>
+                <p className="text-sm text-muted-foreground">Total Conversions</p>
+                <p className="text-2xl font-bold">{conversionData?.totalConversions || 0}</p>
+              </div>
+              <Target className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Overall Conversion Rate</p>
+                <p className="text-2xl font-bold">{conversionData?.conversionRate || 0}%</p>
+              </div>
+              <Target className="h-8 w-8 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Time Period</p>
+                <p className="text-xl font-semibold">{conversionData?.period || 'Last 30 days'}</p>
               </div>
               <Clock className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Trial Conversion Rate</p>
-                <p className="text-2xl font-bold">22.5%</p>
-              </div>
-              <Target className="h-8 w-8 text-muted-foreground" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Customer Value</p>
-                <p className="text-2xl font-bold">$1,247</p>
-              </div>
-              <Target className="h-8 w-8 text-muted-foreground" />
             </div>
           </CardContent>
         </Card>

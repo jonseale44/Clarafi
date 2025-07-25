@@ -13,15 +13,9 @@ export default function MarketingMetricsDashboard() {
   });
   const [metricType, setMetricType] = useState("daily");
 
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: [
-      "/api/marketing/metrics",
-      {
-        startDate: dateRange.start.toISOString(),
-        endDate: dateRange.end.toISOString(),
-        metricType,
-      },
-    ],
+  // Get real analytics summary data
+  const { data: analyticsData, isLoading } = useQuery({
+    queryKey: [`/api/analytics/summary?from=${dateRange.start.toISOString()}&to=${dateRange.end.toISOString()}`],
   });
 
   if (isLoading) {
@@ -37,12 +31,12 @@ export default function MarketingMetricsDashboard() {
     );
   }
 
-  // Stub data for demonstration
+  // Use real data from analytics endpoint
   const summaryData = {
-    totalVisits: 12543,
-    uniqueVisitors: 8765,
-    signups: 234,
-    conversionRate: 2.67,
+    totalVisits: analyticsData?.keyMetrics?.totalEncounters || 0,
+    uniqueVisitors: analyticsData?.keyMetrics?.activeUsers || 0,
+    signups: analyticsData?.keyMetrics?.totalUsers || 0,
+    conversionRate: analyticsData?.keyMetrics?.conversionRate || 0,
   };
 
   return (
@@ -128,24 +122,51 @@ export default function MarketingMetricsDashboard() {
         </Card>
       </div>
 
-      {/* Placeholder for charts */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="h-64 flex items-center justify-center text-muted-foreground">
-            <p>Traffic and conversion charts will be displayed here</p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Real Analytics Data Display */}
+      {analyticsData && (
+        <>
+          {/* Key Metrics */}
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Clinical Efficiency Metrics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Avg SOAP Time</p>
+                  <p className="text-xl font-semibold">{analyticsData.clinicalEfficiency?.avgSOAPTime || 0} min</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Documents/Day</p>
+                  <p className="text-xl font-semibold">{analyticsData.clinicalEfficiency?.documentsProcessedPerDay || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Orders/Encounter</p>
+                  <p className="text-xl font-semibold">{analyticsData.clinicalEfficiency?.ordersPerEncounter || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* User Flow Data */}
-      <Card>
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold mb-4">User Flow Analysis</h3>
-          <div className="h-48 flex items-center justify-center text-muted-foreground">
-            <p>User flow visualization and drop-off points will be displayed here</p>
-          </div>
-        </CardContent>
-      </Card>
+          {/* Marketing Opportunities */}
+          {analyticsData.opportunities && analyticsData.opportunities.length > 0 && (
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Marketing Opportunities</h3>
+                <div className="space-y-2">
+                  {analyticsData.opportunities.map((opportunity: any, index: number) => (
+                    <div key={index} className={`p-3 rounded-lg ${
+                      opportunity.priority === 'urgent' ? 'bg-red-50' : 
+                      opportunity.priority === 'high' ? 'bg-yellow-50' : 'bg-blue-50'
+                    }`}>
+                      <p className="text-sm font-medium">{opportunity.message}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Type: {opportunity.type}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -20,7 +20,9 @@ export default function MarketingInsights() {
   const [filter, setFilter] = useState<string | undefined>();
 
   const { data: insights, isLoading } = useQuery({
-    queryKey: ["/api/marketing/insights", filter ? { status: filter } : {}],
+    queryKey: filter 
+      ? [`/api/marketing/insights?status=${filter}`]
+      : ["/api/marketing/insights"],
   });
 
   const updateInsight = useMutation({
@@ -52,87 +54,29 @@ export default function MarketingInsights() {
     );
   }
 
-  // Stub insights for demonstration
-  const stubInsights = [
-    {
-      id: 1,
-      insightType: "campaign_performance",
-      insightCategory: "warning",
-      title: "Google Ads CPC Rising Above Target",
-      description: "Your Google Ads cost-per-click has increased 23% over the past week, now averaging $3.45 compared to your target of $2.80.",
-      priority: 8,
-      status: "active",
-      recommendations: [
-        {
-          action: "Review and refine keyword targeting",
-          impact: "high",
-          effort: "medium",
-          details: "Remove underperforming keywords and add negative keywords to reduce wasted spend"
-        },
-        {
-          action: "Adjust bidding strategy",
-          impact: "medium",
-          effort: "low",
-          details: "Switch from manual CPC to target CPA bidding to optimize for conversions"
-        }
-      ],
-      analysisData: {
-        metrics: { currentCPC: 3.45, targetCPC: 2.80, weeklyChange: 0.23 }
-      }
-    },
-    {
-      id: 2,
-      insightType: "feature_adoption",
-      insightCategory: "opportunity",
-      title: "High-Value Users Not Using Advanced Features",
-      description: "67% of users on paid plans haven't used the AI-powered diagnosis suggestions feature, which has a strong correlation with retention.",
-      priority: 9,
-      status: "active",
-      recommendations: [
-        {
-          action: "Create in-app tutorial for AI features",
-          impact: "high",
-          effort: "medium",
-          details: "Build an interactive walkthrough highlighting the benefits of AI diagnosis suggestions"
-        },
-        {
-          action: "Send targeted email campaign",
-          impact: "medium",
-          effort: "low",
-          details: "Email inactive users with case studies showing time savings from AI features"
-        }
-      ],
-      analysisData: {
-        metrics: { featureAdoptionRate: 0.33, paidUsersTotal: 234, activeFeatureUsers: 77 }
-      }
-    },
-    {
-      id: 3,
-      insightType: "conversion_optimization",
-      insightCategory: "success",
-      title: "Landing Page A Variant Outperforming",
-      description: "Your new landing page design is converting at 4.2%, a 56% improvement over the control version at 2.7%.",
-      priority: 7,
-      status: "active",
-      recommendations: [
-        {
-          action: "Scale winning variant to 100% traffic",
-          impact: "high",
-          effort: "low",
-          details: "Route all traffic to the winning variant to maximize conversions"
-        },
-        {
-          action: "Apply learnings to other pages",
-          impact: "medium",
-          effort: "high",
-          details: "Implement the successful design elements across other landing pages"
-        }
-      ],
-      analysisData: {
-        metrics: { variantAConversion: 0.042, controlConversion: 0.027, improvement: 0.56 }
-      }
-    }
-  ];
+  // Check if we have real insights from the API
+  const realInsights = insights || [];
+  
+  // If no real insights exist, show placeholder message
+  if (realInsights.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <Brain className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+          <h3 className="text-lg font-semibold mb-2">AI Insights Not Yet Implemented</h3>
+          <p className="text-muted-foreground mb-4">
+            The AI-powered marketing insights engine is planned but not yet built.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            This feature will analyze your marketing data and provide actionable recommendations
+            based on conversion patterns, user behavior, and campaign performance.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -192,7 +136,7 @@ export default function MarketingInsights() {
 
       {/* Insights List */}
       <div className="space-y-4">
-        {stubInsights.map((insight) => (
+        {realInsights.map((insight: any) => (
           <Card key={insight.id}>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -261,7 +205,7 @@ export default function MarketingInsights() {
         ))}
       </div>
 
-      {(!stubInsights || stubInsights.length === 0) && (
+      {(!realInsights || realInsights.length === 0) && (
         <Card>
           <CardContent className="p-12 text-center">
             <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />

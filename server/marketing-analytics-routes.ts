@@ -39,10 +39,13 @@ router.get("/api/analytics/summary", requireAdmin, async (req, res) => {
       endDate,
     });
     
-    // Get user stats
-    const users = await storage.getUsersByHealthSystem(req.user.healthSystemId);
+    // Get user stats from events
     const activeUserIds = new Set(events.map(e => e.userId).filter(Boolean));
     const uniqueSessions = new Set(events.map(e => e.sessionId).filter(Boolean));
+    
+    // Get total user count from admin stats
+    const adminStats = await storage.getAdminStats(req.user.healthSystemId);
+    const totalUsers = adminStats.totalUsers;
     
     // Calculate session durations
     const sessionDurations: { [key: string]: number } = {};
@@ -135,24 +138,23 @@ router.get("/api/analytics/summary", requireAdmin, async (req, res) => {
       }
     });
     
-    const highEngagementUsers = Object.entries(userEventCounts)
+    const highEngagementUserIds = Object.entries(userEventCounts)
       .filter(([_, count]) => count > 100)
-      .map(([userId, _]) => users.find(u => u.id === parseInt(userId)));
+      .map(([userId, _]) => parseInt(userId));
     
-    if (highEngagementUsers.length > 0) {
+    if (highEngagementUserIds.length > 0) {
       opportunities.push({
         type: "high_usage",
-        message: `${highEngagementUsers[0]?.name || 'A provider'} has high engagement - perfect for case study`,
+        message: `${highEngagementUserIds.length} provider(s) have high engagement - perfect for case study`,
         priority: "high"
       });
     }
     
-    // Check for inactive users
-    const inactiveUsers = users.filter(u => !activeUserIds.has(u.id));
-    if (inactiveUsers.length > 0) {
+    // Check for low activity - if we have users but few active ones
+    if (totalUsers > 0 && activeUserIds.size < totalUsers * 0.5) {
       opportunities.push({
         type: "churn_risk",
-        message: `${inactiveUsers.length} providers haven't logged in during this period`,
+        message: `Only ${activeUserIds.size} of ${totalUsers} providers were active during this period`,
         priority: "urgent"
       });
     }
@@ -177,7 +179,7 @@ router.get("/api/analytics/summary", requireAdmin, async (req, res) => {
     // Build response with real data
     const analyticsData = {
       keyMetrics: {
-        totalUsers: users.length,
+        totalUsers: totalUsers,
         activeUsers: activeUserIds.size,
         newPatients: patientCreations.length,
         totalEncounters: encounterCreations.length,

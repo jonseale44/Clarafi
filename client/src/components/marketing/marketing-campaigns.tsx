@@ -23,10 +23,9 @@ export default function MarketingCampaigns() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
 
   const { data: campaigns, isLoading } = useQuery({
-    queryKey: [
-      "/api/marketing/campaigns",
-      statusFilter ? { status: statusFilter } : {},
-    ],
+    queryKey: statusFilter 
+      ? [`/api/marketing/campaigns?status=${statusFilter}`]
+      : ["/api/marketing/campaigns"],
   });
 
   const updateCampaign = useMutation({
@@ -58,7 +57,24 @@ export default function MarketingCampaigns() {
     );
   }
 
-  // Stub campaigns for demonstration
+  // Marketing campaigns are not yet implemented
+  return (
+    <Card>
+      <CardContent className="p-8 text-center">
+        <BarChart className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+        <h3 className="text-lg font-semibold mb-2">Campaign Management Not Yet Implemented</h3>
+        <p className="text-muted-foreground mb-4">
+          Campaign tracking and management is planned but not yet built.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          This feature will allow you to track and manage campaigns across Google Ads,
+          social media, email marketing, and other channels with real-time performance metrics.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+  // Original stub campaigns code (not used)
   const stubCampaigns = [
     {
       id: 1,

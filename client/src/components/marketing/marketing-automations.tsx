@@ -21,10 +21,9 @@ export default function MarketingAutomations() {
   const [showEnabled, setShowEnabled] = useState<boolean | undefined>(undefined);
 
   const { data: automations, isLoading } = useQuery({
-    queryKey: [
-      "/api/marketing/automations",
-      showEnabled !== undefined ? { enabled: showEnabled } : {},
-    ],
+    queryKey: showEnabled !== undefined 
+      ? [`/api/marketing/automations?enabled=${showEnabled}`]
+      : ["/api/marketing/automations"],
   });
 
   const updateAutomation = useMutation({
@@ -56,7 +55,24 @@ export default function MarketingAutomations() {
     );
   }
 
-  // Stub automations for demonstration
+  // Marketing automations are not yet implemented
+  return (
+    <Card>
+      <CardContent className="p-8 text-center">
+        <Zap className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+        <h3 className="text-lg font-semibold mb-2">Marketing Automations Not Yet Implemented</h3>
+        <p className="text-muted-foreground mb-4">
+          The marketing automation engine is planned but not yet built.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          This feature will allow you to set up automated rules for pausing campaigns,
+          adjusting budgets, running A/B tests, and responding to performance changes.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
+  // Original stub automations code (not used)
   const stubAutomations = [
     {
       id: 1,
