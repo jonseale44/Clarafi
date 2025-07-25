@@ -1011,7 +1011,7 @@ REQUIRED JSON RESPONSE FORMAT:
       visitDate = new Date().toISOString().split("T")[0];
     }
 
-    // Filter out duplicate visits using surgical history pattern
+    // Enhanced visit history deduplication with date-based consolidation
     const filteredVisitHistory = this.filterDuplicateVisitEntries(
       visitHistory,
       encounterId,
@@ -1019,7 +1019,14 @@ REQUIRED JSON RESPONSE FORMAT:
       change.source_type === "encounter" ? "encounter" : "attachment"
     );
 
-    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = filteredVisitHistory;
+    // Additional check for same-date visit consolidation
+    const finalVisitHistory = this.consolidateSameDateVisits(
+      filteredVisitHistory,
+      visitDate,
+      change.source_type === "encounter" ? "encounter" : "attachment"
+    );
+
+    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = finalVisitHistory;
 
     // Add new visit ONLY if GPT provided actual visit notes
     const visitNotes = change.visit_notes?.trim() || "";
