@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, Stethoscope, Users, Home, BookOpen, Award } from 'lucide-react';
+import founderHeadshot from '@assets/Favorite-Aragon-Photo-1_1753409906439.jpeg';
 
 export default function AboutUs() {
   useEffect(() => {
@@ -29,15 +30,14 @@ export default function AboutUs() {
         <div className="container mx-auto max-w-4xl">
           <Card className="p-8 md:p-12 shadow-xl border-0 bg-white dark:bg-gray-800">
             <div className="grid md:grid-cols-3 gap-8 items-start">
-              {/* Headshot placeholder */}
+              {/* Professional headshot */}
               <div className="md:col-span-1">
                 <div className="relative">
-                  <div className="w-48 h-48 mx-auto rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center">
-                    <Stethoscope className="w-20 h-20 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <p className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400 italic">
-                    [Your professional headshot here]
-                  </p>
+                  <img 
+                    src={founderHeadshot} 
+                    alt="Clarafi Founder"
+                    className="w-48 h-48 mx-auto rounded-full object-cover shadow-xl ring-4 ring-blue-50 dark:ring-blue-900"
+                  />
                 </div>
               </div>
 
