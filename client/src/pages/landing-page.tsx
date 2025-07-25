@@ -942,9 +942,13 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-white mb-2">No Lock-In</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 mb-3">
                   Export your data anytime. Cancel anytime. Your practice, your control.
                 </p>
+                <div className="flex justify-center gap-2">
+                  <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Flexible</span>
+                  <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-1 rounded">Open</span>
+                </div>
               </div>
             </div>
             
@@ -958,9 +962,13 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <h3 className="font-bold text-white mb-2">Regular Updates</h3>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 mb-3">
                   Continuous improvements. AI gets smarter. Your feedback drives development.
                 </p>
+                <div className="flex justify-center gap-2">
+                  <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">AI 4.0</span>
+                  <span className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded">Weekly</span>
+                </div>
               </div>
             </div>
           </div>
