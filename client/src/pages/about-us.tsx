@@ -48,31 +48,23 @@ export default function AboutUs() {
                     From ER to Innovation
                   </h2>
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    My journey in medicine began on the front lines—as a college student scribbling through endless emergency 
-                    department shifts, capturing every detail of each patient's story. This experience not only paid my way through 
-                    school and opened the door to medical school, but also ingrained in me the vital importance of accurate, 
-                    meaningful documentation in patient care.
+                    My journey in medicine began in the bustling emergency rooms where I worked as a medical scribe during college. 
+                    Documenting every moment of patient care—from initial triage to discharge—I witnessed firsthand the critical 
+                    importance of accurate, efficient medical documentation.
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    After years in practice, I can truthfully say that documentation is the most frustrating part of being a 
-                    physician. Too often, it steals time from patients, family, and the practice of medicine itself. Traditional 
-                    EMRs remain clunky, outdated, and designed for insurance companies, not clinicians or patients.
+                    This experience shaped my understanding of what physicians truly need: a documentation system that works 
+                    <span className="font-semibold"> with</span> them, not against them. After years of working with various EMR systems 
+                    and understanding their limitations, I set out to create something better.
                   </p>
                   
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    Everything changed when modern AI tools like Otter and Freed arrived. Voice recognition and advanced 
-                    summarization drastically increased my efficiency and, for the first time, let me focus on my patients 
-                    without losing track of documentation. But I saw the gap: <span className="font-semibold">nobody had built 
-                    an EMR from the ground up, around modern AI.</span>
-                  </p>
-                  
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    I believe the heart of medicine is the human connection—something no EMR should ever get in the way of. 
-                    That's why I built Clarafi: to restore the best of medicine by letting your EMR do the heavy lifting, 
-                    so you can focus on what matters most.
+                    Today, as a practicing physician in a small town I love, I experience the same documentation challenges 
+                    you face every day. That's why Clarafi isn't just another EMR—it's built by someone who truly understands 
+                    the daily realities of medical practice.
                   </p>
                 </div>
               </div>
@@ -94,8 +86,7 @@ export default function AboutUs() {
             <div className="max-w-3xl mx-auto space-y-4">
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">
                 <span className="font-semibold text-xl text-purple-600 dark:text-purple-400">Clarafi</span> is named in loving memory 
-                of my grandmother, Clara—a proud member of the greatest generation and a dedicated registered nurse who touched 
-                countless lives throughout her remarkable 103 years.
+                of my grandmother, Clara—a dedicated registered nurse who touched countless lives throughout her remarkable 103 years.
               </p>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-center">
                 She passed away just months ago, during the creation of this EMR. As the matriarch of our family and a healthcare 
