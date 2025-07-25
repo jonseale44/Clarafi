@@ -16,6 +16,30 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### GPT-Driven Visit History Consolidation (July 25, 2025 - 5:30 PM) - COMPLETED
+Implemented intelligent visit history consolidation to prevent duplicate entries when multiple attachments from the same date are uploaded:
+
+1. **Problem Addressed**: When uploading multiple attachments from the same medical date (e.g., 12/12/2018), each attachment was creating separate visit history entries instead of consolidating information.
+
+2. **Solution Approach - GPT-Driven Consolidation**:
+   - Enhanced GPT prompt to receive full visit history details (dates, notes, sources) for all existing problems
+   - Added explicit consolidation rules for GPT to intelligently handle same-date visits
+   - GPT now decides whether to consolidate same-date visits or keep them separate based on medical context
+   - Maintains GPT's exclusive authority over all medical decisions
+
+3. **Key Features**:
+   - No automatic date-based filtering - GPT has full control
+   - Handles attachments uploaded days or weeks apart that have the same medical date
+   - Creates rich, comprehensive visit notes when consolidating
+   - Keeps visits separate when they represent distinct medical events (e.g., morning ER visit + evening admission)
+
+4. **Technical Implementation**:
+   - Modified `unified-medical-problems-parser.ts` to pass full visit history to GPT
+   - Added consolidation rules to GPT prompt for intelligent decision-making
+   - Follows the same pattern as medical problems consolidation
+
+5. **Result**: Visit history now intelligently consolidates same-date information while maintaining medical accuracy and GPT's decision-making authority.
+
 ### Background Audio Support for Median App (July 25, 2025 - 3:53 PM) - COMPLETED
 Successfully implemented background audio functionality for iOS devices in the Median mobile app:
 

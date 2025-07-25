@@ -211,7 +211,7 @@ export class UnifiedMedicalProblemsParser {
 UNIFIED MEDICAL PROBLEMS PROCESSING
 You are an expert medical AI that intelligently consolidates medical problems from multiple sources while avoiding duplication.
 
-EXISTING MEDICAL PROBLEMS:
+EXISTING MEDICAL PROBLEMS WITH FULL VISIT HISTORY:
 ${
   existingProblems.length === 0
     ? "NONE - This is a new patient with no existing medical problems"
@@ -221,9 +221,15 @@ ${
           title: p.problemTitle,
           current_icd10: p.currentIcd10Code,
           status: p.problemStatus,
-          visit_history_count: Array.isArray(p.visitHistory)
-            ? p.visitHistory.length
-            : 0,
+          visit_history: Array.isArray(p.visitHistory)
+            ? p.visitHistory.map((v: any) => ({
+                date: v.date,
+                notes: v.notes,
+                source: v.source,
+                attachmentId: v.attachmentId,
+                encounterId: v.encounterId
+              }))
+            : [],
         })),
       )
 }
@@ -455,6 +461,22 @@ ENHANCED EXAMPLES WITH RANKING AND CONFIDENCE:
 
 9. Document vaguely mentions "that breathing problem from last year seems better now":
    {"action": "ADD_VISIT", "problem_id": 5, "visit_notes": "Breathing problem seems better", "confidence": 0.45, "source_type": "attachment", "consolidation_reasoning": "Vague reference to improvement but unclear if fully resolved - low confidence", "ranking_reason": "Possibly improving respiratory condition", "ranking_factors": {"clinical_severity": 10, "treatment_complexity": 5, "patient_frequency": 3, "clinical_relevance": 5}}
+
+VISIT HISTORY CONSOLIDATION RULES - CRITICAL:
+1. ALWAYS check existing visit history for same-date entries before creating new visits
+2. When you find existing visits on the SAME DATE as the current document/encounter:
+   - CONSOLIDATE information into a single comprehensive visit entry
+   - Combine clinical details from both sources into enriched notes
+   - Preserve the most complete information from each source
+   - DO NOT create duplicate same-date visits unless they represent truly distinct medical events
+3. Examples of when to CONSOLIDATE same-date visits:
+   - Multiple lab results from same date → Single visit with all lab values
+   - Progress note + lab results from same date → Single visit with exam findings AND lab values
+   - Multiple documents from same clinic visit → Single comprehensive visit entry
+4. Examples of when to KEEP SEPARATE same-date visits:
+   - Morning ER visit + evening admission → Two distinct medical events
+   - Different specialties on same day → May warrant separate entries if clinically distinct
+5. When consolidating, create rich, comprehensive visit notes that include ALL relevant information
 
 VISIT HISTORY CREATION RULE - CRITICAL:
 ONLY create visit history entries when the medical problem was ACTUALLY DISCUSSED, EVALUATED, or MANAGED during this encounter/document. 
@@ -1011,7 +1033,7 @@ REQUIRED JSON RESPONSE FORMAT:
       visitDate = new Date().toISOString().split("T")[0];
     }
 
-    // Enhanced visit history deduplication with date-based consolidation
+    // Filter out duplicate visits using surgical history pattern
     const filteredVisitHistory = this.filterDuplicateVisitEntries(
       visitHistory,
       encounterId,
@@ -1019,14 +1041,7 @@ REQUIRED JSON RESPONSE FORMAT:
       change.source_type === "encounter" ? "encounter" : "attachment"
     );
 
-    // Additional check for same-date visit consolidation
-    const finalVisitHistory = this.consolidateSameDateVisits(
-      filteredVisitHistory,
-      visitDate,
-      change.source_type === "encounter" ? "encounter" : "attachment"
-    );
-
-    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = finalVisitHistory;
+    let updatedVisitHistory: UnifiedVisitHistoryEntry[] = filteredVisitHistory;
 
     // Add new visit ONLY if GPT provided actual visit notes
     const visitNotes = change.visit_notes?.trim() || "";
