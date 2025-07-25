@@ -38,10 +38,10 @@ export default function AboutUs() {
       <section className="py-16 px-4">
         <div className="container mx-auto max-w-4xl">
           <Card className="p-8 md:p-12 shadow-xl border-0 bg-white dark:bg-gray-800">
-            <div className="grid md:grid-cols-3 gap-8 items-start">
+            <div className="grid md:grid-cols-3 gap-8 items-center">
               {/* Professional headshot */}
-              <div className="md:col-span-1">
-                <div className="relative">
+              <div className="md:col-span-1 flex items-center">
+                <div className="relative w-full">
                   <img 
                     src={founderHeadshot} 
                     alt="Clarafi Founder"
