@@ -5,6 +5,7 @@ import { Patient } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { NavigationBreadcrumb } from "@/components/ui/navigation-breadcrumb";
+import { useEffect } from "react";
 
 export function PatientView() {
   const { id } = useParams();
@@ -15,6 +16,24 @@ export function PatientView() {
     queryKey: ["/api/patients", patientId],
     enabled: !!patientId,
   });
+
+  // Track patient chart access
+  useEffect(() => {
+    if (patient && patientId) {
+      const trackAccess = async () => {
+        try {
+          await fetch(`/api/patients/${patientId}/track-access`, {
+            method: 'POST',
+          });
+          console.log(`📊 [PatientView] Tracked access for patient ${patientId}`);
+        } catch (error) {
+          console.error(`❌ [PatientView] Failed to track access for patient ${patientId}:`, error);
+        }
+      };
+      
+      trackAccess();
+    }
+  }, [patient, patientId]);
 
   if (isLoading) {
     return (

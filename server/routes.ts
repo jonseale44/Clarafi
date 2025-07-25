@@ -1219,6 +1219,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track patient chart access
+  app.post("/api/patients/:id/track-access", tenantIsolation, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+
+      const patientId = parseInt(req.params.id);
+      const userId = req.user.id;
+      const healthSystemId = req.userHealthSystemId!;
+
+      if (!patientId) {
+        return res.status(400).json({ message: "Invalid patient ID" });
+      }
+
+      // Update patient's last accessed information
+      await storage.updatePatientAccess(patientId, userId, healthSystemId);
+      res.status(200).json({ message: "Patient access tracked successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Removed duplicate - using main lab results endpoint
 
   // Lab orders endpoint for compatibility

@@ -546,6 +546,11 @@ export const patients = pgTable("patients", {
   }>().default({ consentGiven: false }),
   
   profilePhotoFilename: text("profile_photo_filename"),
+  
+  // Patient chart access tracking
+  lastAccessedAt: timestamp("last_accessed_at"),
+  lastAccessedBy: integer("last_accessed_by").references(() => users.id),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

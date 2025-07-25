@@ -31,7 +31,7 @@ interface PatientTableProps {
   patients: Patient[];
 }
 
-type SortKey = 'name' | 'mrn' | 'dob' | 'address' | 'location';
+type SortKey = 'name' | 'mrn' | 'dob' | 'address' | 'location' | 'lastAccessed';
 type SortDirection = 'asc' | 'desc';
 
 // Helper function to format dates without timezone conversion
@@ -40,6 +40,12 @@ const formatDate = (dateString: string): string => {
   const [year, month, day] = dateString.split('-').map(Number);
   const date = new Date(year, month - 1, day); // month is 0-indexed
   return format(date, 'MM/dd/yyyy');
+};
+
+// Helper function to format datetime
+const formatDateTime = (dateTimeString: string): string => {
+  const date = new Date(dateTimeString);
+  return format(date, 'MM/dd/yyyy h:mm a');
 };
 
 export function PatientTable({ patients }: PatientTableProps) {
@@ -113,6 +119,10 @@ export function PatientTable({ patients }: PatientTableProps) {
         case 'location':
           aValue = getLocationName(a.preferredLocationId).toLowerCase();
           bValue = getLocationName(b.preferredLocationId).toLowerCase();
+          break;
+        case 'lastAccessed':
+          aValue = a.lastAccessedAt ? new Date(a.lastAccessedAt) : new Date(0);
+          bValue = b.lastAccessedAt ? new Date(b.lastAccessedAt) : new Date(0);
           break;
       }
 
@@ -194,6 +204,16 @@ export function PatientTable({ patients }: PatientTableProps) {
                 <SortIcon column="location" />
               </Button>
             </TableHead>
+            <TableHead data-median="hide-on-mobile-app">
+              <Button
+                variant="ghost"
+                onClick={() => handleSort('lastAccessed')}
+                className="h-auto p-0 font-semibold hover:bg-transparent"
+              >
+                Last Accessed
+                <SortIcon column="lastAccessed" />
+              </Button>
+            </TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -213,6 +233,11 @@ export function PatientTable({ patients }: PatientTableProps) {
               <TableCell data-median="hide-on-mobile-app">
                 <span className={patient.preferredLocationId ? '' : 'text-gray-500 italic'}>
                   {getLocationName(patient.preferredLocationId)}
+                </span>
+              </TableCell>
+              <TableCell data-median="hide-on-mobile-app">
+                <span className={patient.lastAccessedAt ? '' : 'text-gray-500 italic'}>
+                  {patient.lastAccessedAt ? formatDateTime(patient.lastAccessedAt) : 'Never'}
                 </span>
               </TableCell>
               <TableCell className="text-right">

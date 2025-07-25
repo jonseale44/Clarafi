@@ -70,6 +70,7 @@ export interface IStorage {
   getAllPatients(healthSystemId: number): Promise<Patient[]>;
   searchPatients(query: string, healthSystemId: number): Promise<Patient[]>;
   deletePatient(id: number, healthSystemId: number): Promise<void>;
+  updatePatientAccess(patientId: number, userId: number, healthSystemId: number): Promise<void>;
   
   // Encounter management
   getEncounter(id: number): Promise<Encounter | undefined>;
@@ -740,6 +741,33 @@ export class DatabaseStorage implements IStorage {
       
     } catch (error) {
       console.error(`❌ [Storage] Failed to delete patient ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async updatePatientAccess(patientId: number, userId: number, healthSystemId: number): Promise<void> {
+    console.log(`📊 [Storage] Updating last access for patient ${patientId} by user ${userId}`);
+    
+    try {
+      // Verify the patient exists and belongs to this health system
+      const patient = await this.getPatient(patientId, healthSystemId);
+      if (!patient) {
+        throw new Error(`Patient ${patientId} not found in health system ${healthSystemId}`);
+      }
+
+      // Update the patient's lastAccessedAt timestamp and lastAccessedBy user
+      await db
+        .update(patients)
+        .set({
+          lastAccessedAt: new Date(),
+          lastAccessedBy: userId,
+          updatedAt: new Date()
+        })
+        .where(and(eq(patients.id, patientId), eq(patients.healthSystemId, healthSystemId)));
+
+      console.log(`✅ [Storage] Updated patient ${patientId} last access timestamp`);
+    } catch (error) {
+      console.error(`❌ [Storage] Failed to update patient access for ${patientId}:`, error);
       throw error;
     }
   }
