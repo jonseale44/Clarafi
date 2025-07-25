@@ -9,8 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw, User, MessageSquare, Phone, Mail, Send, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronRight, ExternalLink, AlertTriangle, FileText, Calendar, TestTube, Check, FlaskConical, RotateCcw, User, MessageSquare, Phone, Mail, Send, ChevronUp, MoreVertical, Edit, Trash2 } from 'lucide-react';
 import { useNavigationContext } from '@/hooks/use-navigation-context';
 
 interface LabResultsMatrixProps {
@@ -114,6 +122,17 @@ export function LabResultsMatrix({
   const [editableNurseMessage, setEditableNurseMessage] = useState('');
   const [reviewSaveStatus, setReviewSaveStatus] = useState<'saved' | 'saving' | 'editing'>('saved');
   const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // Edit/Delete lab result states
+  const [editingResult, setEditingResult] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState({
+    resultValue: '',
+    resultUnits: '',
+    referenceRange: '',
+    abnormalFlag: '',
+    criticalFlag: false,
+    providerNotes: ''
+  });
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -444,7 +463,44 @@ export function LabResultsMatrix({
     }
   });
 
+  // Update lab result mutation
+  const updateLabResultMutation = useMutation({
+    mutationFn: async ({ resultId, updates }: { resultId: number, updates: typeof editFormData }) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result updated successfully" });
+      setEditingResult(null);
+    },
+    onError: () => {
+      toast({ title: "Failed to update lab result", variant: "destructive" });
+    }
+  });
 
+  // Delete lab result mutation
+  const deleteLabResultMutation = useMutation({
+    mutationFn: async (resultId: number) => {
+      const response = await fetch(`/api/patients/${patientId}/lab-results/${resultId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete lab result');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
+      toast({ title: "Lab result deleted successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete lab result", variant: "destructive" });
+    }
+  });
 
   // Permission check for unreview functionality
   const canUnreview = (result: any) => {
@@ -454,6 +510,25 @@ export function LabResultsMatrix({
     // 2. Current user is the ordering provider, OR  
     // 3. Current user is admin/provider (role-based check would be ideal but not implemented here)
     return result.reviewedBy === currentUserId || result.orderedBy === currentUserId;
+  };
+
+  // Handlers for edit/delete
+  const handleEditResult = (result: any) => {
+    setEditingResult(result);
+    setEditFormData({
+      resultValue: result.resultValue || "",
+      resultUnits: result.resultUnits || "",
+      referenceRange: result.referenceRange || "",
+      abnormalFlag: result.abnormalFlag || "normal",
+      criticalFlag: result.criticalFlag || false,
+      providerNotes: result.providerNotes || ""
+    });
+  };
+
+  const handleDeleteResult = async (resultId: number) => {
+    if (window.confirm('Are you sure you want to delete this lab result?')) {
+      deleteLabResultMutation.mutate(resultId);
+    }
   };
 
   const { data: labResults, isLoading: resultsLoading } = useQuery({
@@ -965,8 +1040,9 @@ export function LabResultsMatrix({
   }
 
   return (
-    <Card>
-      {showTitle && mode !== 'encounter' && (
+    <>
+      <Card>
+        {showTitle && mode !== 'encounter' && (
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Lab Results Matrix</CardTitle>
@@ -1064,44 +1140,72 @@ export function LabResultsMatrix({
                         return (
                           <td key={`test-${index}`} className={cellClass}>
                             {result ? (
-                              <div 
-                                className={`px-2 py-1 rounded text-sm font-medium transition-all ${
-                                  result.isPending 
-                                    ? 'bg-navy-blue-100 text-navy-blue-800 border border-navy-blue-300' 
-                                    : result.criticalFlag
-                                    ? 'bg-red-100 text-red-800 border border-red-300'
-                                    : result.abnormalFlag && result.abnormalFlag !== 'N'
-                                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                                    : result.needsReview
-                                    ? 'bg-orange-100 text-orange-800 border border-orange-300 font-bold'
-                                    : result.isReviewed
-                                    ? 'bg-green-100 text-green-800 border border-green-300'
-                                    : 'text-gray-900'
-                                } ${result.needsReview ? 'cursor-pointer hover:scale-105 hover:shadow-md' : ''}`}
-                                onClick={() => {
-                                  if (!result.isPending) {
-                                    if (result.needsReview) {
-                                      onReviewSpecific?.(test.testName, dateCol.date, result.id);
-                                    } else if (result.isReviewed && canUnreview(result)) {
-                                      onUnreviewSpecific?.(test.testName, dateCol.date, result.id);
+                              <div className="relative group">
+                                <div 
+                                  className={`px-2 py-1 rounded text-sm font-medium transition-all ${
+                                    result.isPending 
+                                      ? 'bg-navy-blue-100 text-navy-blue-800 border border-navy-blue-300' 
+                                      : result.criticalFlag
+                                      ? 'bg-red-100 text-red-800 border border-red-300'
+                                      : result.abnormalFlag && result.abnormalFlag !== 'N'
+                                      ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                                      : result.needsReview
+                                      ? 'bg-orange-100 text-orange-800 border border-orange-300 font-bold'
+                                      : result.isReviewed
+                                      ? 'bg-green-100 text-green-800 border border-green-300'
+                                      : 'text-gray-900'
+                                  } ${result.needsReview ? 'cursor-pointer hover:scale-105 hover:shadow-md' : ''}`}
+                                  onClick={() => {
+                                    if (!result.isPending) {
+                                      if (result.needsReview) {
+                                        onReviewSpecific?.(test.testName, dateCol.date, result.id);
+                                      } else if (result.isReviewed && canUnreview(result)) {
+                                        onUnreviewSpecific?.(test.testName, dateCol.date, result.id);
+                                      }
                                     }
-                                  }
-                                }}
-                                title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
-                              >
-                                {result.value}
-                                {getSourceBadge(result)}
-                                {result.isPending && (
-                                  <span className="inline-block w-2 h-2 bg-navy-blue-500 rounded-full ml-1 animate-pulse" />
-                                )}
-                                {!result.isPending && result.criticalFlag && (
-                                  <AlertTriangle className="inline h-3 w-3 ml-1" />
-                                )}
-                                {!result.isPending && result.needsReview && (
-                                  <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
-                                )}
-                                {!result.isPending && result.isReviewed && canUnreview(result) && (
-                                  <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
+                                  }}
+                                  title={result.isPending ? `Order placed. External ID: ${result.externalOrderId || 'N/A'}` : undefined}
+                                >
+                                  {result.value}
+                                  {getSourceBadge(result)}
+                                  {result.isPending && (
+                                    <span className="inline-block w-2 h-2 bg-navy-blue-500 rounded-full ml-1 animate-pulse" />
+                                  )}
+                                  {!result.isPending && result.criticalFlag && (
+                                    <AlertTriangle className="inline h-3 w-3 ml-1" />
+                                  )}
+                                  {!result.isPending && result.needsReview && (
+                                    <span className="inline-block w-2 h-2 bg-yellow-500 rounded-full ml-1" />
+                                  )}
+                                  {!result.isPending && result.isReviewed && canUnreview(result) && (
+                                    <span className="inline-block w-2 h-2 bg-green-500 rounded-full ml-1" title="Click to unreview" />
+                                  )}
+                                </div>
+                                {!result.isPending && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute -top-1 -right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <MoreVertical className="h-3 w-3" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditResult(result)}>
+                                        <Edit className="h-3 w-3 mr-2" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        className="text-red-600 focus:text-red-700"
+                                        onClick={() => handleDeleteResult(result.id)}
+                                      >
+                                        <Trash2 className="h-3 w-3 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 )}
                               </div>
                             ) : (
@@ -1633,5 +1737,101 @@ export function LabResultsMatrix({
         )}
       </CardContent>
     </Card>
+
+    {/* Edit Lab Result Dialog */}
+    <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Lab Result</DialogTitle>
+          <DialogDescription>
+            Modify the lab result values. User-entered values will be marked with a badge.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="resultValue">Result Value</Label>
+            <Input
+              id="resultValue"
+              value={editFormData.resultValue}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, resultValue: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="resultUnits">Units</Label>
+            <Input
+              id="resultUnits"
+              value={editFormData.resultUnits}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, resultUnits: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="referenceRange">Reference Range</Label>
+            <Input
+              id="referenceRange"
+              value={editFormData.referenceRange}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, referenceRange: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="abnormalFlag">Abnormal Flag</Label>
+            <Select
+              value={editFormData.abnormalFlag}
+              onValueChange={(value) => setEditFormData(prev => ({ ...prev, abnormalFlag: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">Normal</SelectItem>
+                <SelectItem value="L">Low</SelectItem>
+                <SelectItem value="H">High</SelectItem>
+                <SelectItem value="LL">Critical Low</SelectItem>
+                <SelectItem value="HH">Critical High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="criticalFlag"
+              checked={editFormData.criticalFlag}
+              onCheckedChange={(checked) => setEditFormData(prev => ({ ...prev, criticalFlag: !!checked }))}
+            />
+            <Label htmlFor="criticalFlag">Critical Result</Label>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="providerNotes">Provider Notes</Label>
+            <Textarea
+              id="providerNotes"
+              value={editFormData.providerNotes}
+              onChange={(e) => setEditFormData(prev => ({ ...prev, providerNotes: e.target.value }))}
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditingResult(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (editingResult) {
+                  // Convert "normal" back to empty string for database
+                  const updates = {
+                    ...editFormData,
+                    abnormalFlag: editFormData.abnormalFlag === "normal" ? "" : editFormData.abnormalFlag
+                  };
+                  updateLabResultMutation.mutate({ 
+                    resultId: editingResult.id, 
+                    updates 
+                  });
+                }
+              }}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

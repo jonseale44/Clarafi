@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { StandardLabMatrix } from "@/components/labs/standard-lab-matrix";
+import { LabResultsMatrix } from "@/components/labs/lab-results-matrix";
 import { ComprehensiveLabTable } from "@/components/labs/comprehensive-lab-table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,10 +80,11 @@ export function PatientLabResults() {
         </TabsList>
         
         <TabsContent value="matrix">
-          <StandardLabMatrix 
+          <LabResultsMatrix 
             patientId={parseInt(patientId)} 
             mode="full"
             showTitle={false}
+            currentUserId={currentUser?.id}
           />
         </TabsContent>
         
