@@ -1708,39 +1708,48 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         break;
 
       case "both":
-        // Create historical entry AND update current medication's visit history
-        console.log(`💊 [AttachmentMed] Dual action: creating historical AND updating current`);
+        // Update existing medication with comprehensive visit history (do NOT create new entry)
+        console.log(`💊 [AttachmentMed] Updating existing medication with comprehensive history`);
         
-        // First create the historical entry
-        const historicalEntry = await this.createMedicationFromAttachment(
-          medicationData,
-          patientId,
-          encounterId,
-          attachmentId,
-          providerId,
-          effectiveDate,
-        );
-        results.push(historicalEntry);
-
-        // Then update the current medication's visit history
         if (medicationData.matched_current_med_id) {
           const currentMed = existingMedications.find(
             m => m.id === medicationData.matched_current_med_id
           );
           if (currentMed) {
-            const visitUpdate = await this.addAttachmentVisitHistory(
+            // Update medication with comprehensive visit history from GPT
+            const visitUpdate = await this.updateMedicationWithFullHistory(
               currentMed,
-              {
-                ...medicationData,
-                notes: medicationData.visit_history_note || 
-                       `Previously on ${medicationData.dosage} as of ${effectiveDate}`
-              },
+              medicationData,
               attachmentId,
               encounterId,
               effectiveDate,
             );
             results.push(visitUpdate);
+          } else {
+            // If no existing medication found, create new one with full history
+            console.log(`💊 [AttachmentMed] No existing medication found, creating new with full history`);
+            const newMed = await this.createMedicationFromAttachment(
+              medicationData,
+              patientId,
+              encounterId,
+              attachmentId,
+              providerId,
+              effectiveDate,
+            );
+            results.push(newMed);
           }
+        } else {
+          // No matched medication, create new with full history
+          console.log(`💊 [AttachmentMed] No matched medication ID, creating new with full history`);
+          const newMed = await this.createMedicationFromAttachment(
+            medicationData,
+            patientId,
+            encounterId,
+            attachmentId,
+            providerId,
+            effectiveDate,
+          );
+          results.push(newMed);
         }
         break;
 
@@ -1834,6 +1843,62 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
+   * Update medication with comprehensive visit history from GPT
+   */
+  private async updateMedicationWithFullHistory(
+    existingMedication: any,
+    medicationData: any,
+    attachmentId: number,
+    encounterId: number,
+    extractedDate: string | null,
+  ): Promise<any> {
+    console.log(
+      `💊 [UpdateFullHistory] Updating medication ${existingMedication.id} with comprehensive history`,
+    );
+
+    // Get current visit history
+    const currentVisitHistory = (existingMedication.visitHistory as any[]) || [];
+    
+    // If GPT provided comprehensive visit history, use it
+    let updatedVisitHistory = currentVisitHistory;
+    if (medicationData.visit_history && Array.isArray(medicationData.visit_history) && medicationData.visit_history.length > 0) {
+      console.log(`💊 [UpdateFullHistory] Using GPT-provided comprehensive history with ${medicationData.visit_history.length} entries`);
+      
+      // Convert GPT visit history to database format and merge with existing
+      const newEntries = medicationData.visit_history.map((visit: any) => ({
+        date: visit.date,
+        notes: visit.notes || "Documented in attachment",
+        source: "attachment" as const,
+        encounterId: encounterId,
+        attachmentId: attachmentId
+      }));
+      
+      // Merge with existing history, avoiding duplicates by date
+      const existingDates = new Set(currentVisitHistory.map(v => v.date));
+      const uniqueNewEntries = newEntries.filter((entry: any) => !existingDates.has(entry.date));
+      
+      updatedVisitHistory = [...currentVisitHistory, ...uniqueNewEntries].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+    }
+
+    // Update medication with new visit history and current dosage info
+    await storage.updateMedication(existingMedication.id, {
+      dosage: medicationData.dosage || existingMedication.dosage,
+      frequency: medicationData.frequency || existingMedication.frequency,
+      visitHistory: updatedVisitHistory,
+      lastUpdatedEncounterId: encounterId,
+    });
+
+    return {
+      action: "COMPREHENSIVE_HISTORY_UPDATE",
+      medicationId: existingMedication.id,
+      medicationName: existingMedication.medicationName,
+      visitHistoryCount: updatedVisitHistory.length,
+    };
+  }
+
+  /**
    * Add visit history entry from attachment to existing medication
    */
   private async addAttachmentVisitHistory(
@@ -1915,13 +1980,15 @@ Please analyze this SOAP note and identify medication changes that occurred duri
         medicationData.route,
       );
 
-    // Create initial visit history entry
-    const initialVisitHistory = [
-      {
-        encounterDate: extractedDate || new Date().toISOString().split("T")[0],
-        changes: ["Extracted from document"],
-        notes:
-          medicationData.notes || `Medication extracted from uploaded document`,
+    // Use GPT-extracted visit history if available, otherwise create initial entry
+    let initialVisitHistory;
+    if (medicationData.visit_history && Array.isArray(medicationData.visit_history) && medicationData.visit_history.length > 0) {
+      // Transform GPT visit history to database format
+      console.log(`💊 [AttachmentCreate] Using GPT-extracted visit history with ${medicationData.visit_history.length} entries`);
+      initialVisitHistory = medicationData.visit_history.map((visit: any) => ({
+        encounterDate: visit.date,
+        changes: [visit.change_type || "documented"],
+        notes: visit.notes || visit.change_type || "Documented in attachment",
         source: "attachment",
         sourceId: attachmentId,
         encounterId: encounterId,
@@ -1932,8 +1999,29 @@ Please analyze this SOAP note and identify medication changes that occurred duri
           indication: medicationData.indication,
           status: medicationData.status,
         },
-      },
-    ];
+      }));
+    } else {
+      // Fallback to simple entry if no visit history from GPT
+      console.log(`💊 [AttachmentCreate] No GPT visit history found, using simple entry`);
+      initialVisitHistory = [
+        {
+          encounterDate: extractedDate || new Date().toISOString().split("T")[0],
+          changes: ["Extracted from document"],
+          notes:
+            medicationData.notes || `Medication extracted from uploaded document`,
+          source: "attachment",
+          sourceId: attachmentId,
+          encounterId: encounterId,
+          confidence: medicationData.confidence || 0.85,
+          extractedData: {
+            dosage: medicationData.dosage,
+            frequency: medicationData.frequency,
+            indication: medicationData.indication,
+            status: medicationData.status,
+          },
+        },
+      ];
+    }
 
     // Create medication record with attachment source attribution
     const medicationRecord = {
@@ -1961,15 +2049,23 @@ Please analyze this SOAP note and identify medication changes that occurred duri
       sourceConfidence: medicationData.confidence || 0.85,
       extractedFromAttachmentId: attachmentId,
       sourceNotes: `Extracted from uploaded document`,
-      visitHistory: [
-        {
-          date: extractedDate || new Date().toISOString().split("T")[0],
-          notes: `Extracted from uploaded document`,
-          source: "attachment" as const,
-          encounterId: encounterId,
-          attachmentId: attachmentId
-        }
-      ],
+      visitHistory: medicationData.visit_history && Array.isArray(medicationData.visit_history) && medicationData.visit_history.length > 0
+        ? medicationData.visit_history.map((visit: any) => ({
+            date: visit.date,
+            notes: visit.notes || "Documented in attachment",
+            source: "attachment" as const,
+            encounterId: encounterId,
+            attachmentId: attachmentId
+          }))
+        : [
+            {
+              date: extractedDate || new Date().toISOString().split("T")[0],
+              notes: `Extracted from uploaded document`,
+              source: "attachment" as const,
+              encounterId: encounterId,
+              attachmentId: attachmentId
+            }
+          ],
       medicationHistory: [
         {
           date: extractedDate || new Date().toISOString().split("T")[0],
@@ -2064,9 +2160,9 @@ CRITICAL: Each medication can have its OWN date based on the document content:
 
 STEP 3 - HISTORICAL PRESERVATION:
 When you find medications with past dates:
-- Mark them as "historical" if they represent past doses/regimens
-- These will be preserved as separate historical entries
-- Also flag them to update the visit history of current medications
+- Include them in the visit_history array of the SINGLE medication entry
+- DO NOT create separate historical entries
+- Consolidate all doses/dates into ONE comprehensive medication record
 
 === ENHANCED MEDICATION CONSOLIDATION INTELLIGENCE ===
 You have access to the patient's CURRENT medications. Use this to make intelligent decisions:
@@ -2078,8 +2174,8 @@ CRITICAL WITHIN-DOCUMENT CONSOLIDATION:
 When processing medications from THIS document, you MUST consolidate them intelligently:
 1. Group all mentions of the same medication (by generic/brand name)
 2. Identify the MOST RECENT entry as the current medication
-3. Mark all older doses/regimens as historical context
-4. Return ONE entry per unique medication with comprehensive history
+3. Include ALL historical doses/dates in the visit_history array
+4. Return ONE entry per unique medication name - NEVER create separate entries for different doses
 
 EXAMPLE - If document contains:
 - 3/8/24: Escitalopram 10mg daily
@@ -2087,9 +2183,20 @@ EXAMPLE - If document contains:
 - 7/19/24: Escitalopram 5mg daily
 - 6/7/25: Escitalopram 5mg daily
 
-RETURN ONLY:
-1. Current: Escitalopram 5mg daily (6/7/25) with visit history showing all dates
-2. Historical: Escitalopram 10mg daily (3/8/24-7/2/24) marked as discontinued
+RETURN EXACTLY ONE ENTRY:
+{
+  "medication_name": "Escitalopram",
+  "dosage": "5mg",
+  "frequency": "daily",
+  "medication_date": "2025-06-07",
+  "action_type": "both",
+  "visit_history": [
+    {"date": "2024-03-08", "notes": "Started 10mg QD"},
+    {"date": "2024-07-02", "notes": "Continued 10mg QD"},
+    {"date": "2024-07-19", "notes": "↓ 5mg QD"},
+    {"date": "2025-06-07", "notes": "Current 5mg QD"}
+  ]
+}
 
 STEP 1 - INTELLIGENT DEDUPLICATION:
 For EACH medication group:
@@ -2112,11 +2219,11 @@ Recognize these as the SAME medication:
 - Toprol XL = metoprolol succinate
 - Lopressor = metoprolol tartrate
 
-STEP 3 - HISTORICAL MEDICATION CREATION:
-Create a "historical" medication when:
-- Document shows a past dose that differs from current (e.g., was on 500mg, now on 1000mg)
-- Medication was discontinued in the past
-- It represents a significant historical regimen worth preserving
+STEP 3 - AVOID HISTORICAL DUPLICATES:
+DO NOT create separate "historical" medications. Instead:
+- When dose differs from current, include it in visit_history array
+- When medication was discontinued, note it in visit_history
+- Always consolidate into ONE entry per medication name
 
 STEP 4 - VISIT HISTORY UPDATES:
 ALWAYS update the current medication's visit history when you find:
@@ -2125,13 +2232,12 @@ ALWAYS update the current medication's visit history when you find:
 - Dose changes over time
 - Any relevant historical context
 
-EXAMPLE DUAL ACTION:
+EXAMPLE CONSOLIDATION:
 Document shows: "1/1/24: Metformin 500mg BID"
 Current medication: Metformin 1000mg BID (started 3/3/25)
-ACTIONS:
-1. Create historical medication: Metformin 500mg BID, status="historical", date=1/1/24
-2. Update current med's visit history: Add entry "Previously on 500mg BID as of 1/1/24"
-Result: Full historical context preserved with clean current medication list
+ACTION:
+Update current medication's visit history to include: "1/1/24: Started 500mg BID"
+Result: ONE Metformin entry with complete dosing history
 
 === VISIT HISTORY FORMATTING (ULTRA-CONCISE) ===
 Create brief, standardized entries following this exact format:
@@ -2212,9 +2318,12 @@ Assign confidence based on information clarity:
 
 CRITICAL RESPONSE REQUIREMENTS:
 1. You MUST include the "action_type" field for EVERY medication
-2. Valid action_type values: "create_historical", "update_visit_history", or "both"
-3. If no existing medications, still use action_type based on document context
-4. For medications with multiple dates in document, consolidate into ONE entry with comprehensive visit_history array`;
+2. MANDATORY RULE: If you populate the "visit_history" array with ANY entries, you MUST use action_type: "both"
+3. Only use action_type: "update_visit_history" when there's NO historical data (empty visit_history array)
+4. NEVER use action_type: "create_historical" alone - always consolidate into ONE entry per medication name
+5. If the document shows dose changes over time (e.g., "3/8/24: 10mg" → "7/19/24: 5mg"), you MUST:
+   - Include ALL dates in visit_history array
+   - Set action_type: "both" to preserve this rich history`;
 
     const userPrompt = `PATIENT CONTEXT:
 Age: ${patientContext.age} years
