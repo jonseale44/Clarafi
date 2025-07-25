@@ -45,7 +45,7 @@ export default function AboutUs() {
                   <img 
                     src={founderHeadshot} 
                     alt="Clarafi Founder"
-                    className="w-48 h-48 mx-auto rounded-full object-cover object-top shadow-xl ring-4 ring-blue-50 dark:ring-blue-900"
+                    className="w-56 h-56 mx-auto rounded-full object-cover object-top shadow-xl ring-4 ring-blue-50 dark:ring-blue-900"
                   />
                 </div>
               </div>
@@ -100,7 +100,7 @@ export default function AboutUs() {
                   <img 
                     src={claraPhoto} 
                     alt="Clara - Registered Nurse"
-                    className="relative w-full max-w-sm mx-auto rounded-lg shadow-2xl object-cover sepia-[.30] hover:sepia-0 transition-all duration-700"
+                    className="relative w-72 h-auto mx-auto rounded-lg shadow-2xl object-cover sepia-[.30] hover:sepia-0 transition-all duration-700 border-0"
                   />
                   <div className="text-center mt-4">
                     <p className="text-sm text-gray-500 dark:text-gray-400 italic">Clara - A dedicated nurse who served with compassion</p>
