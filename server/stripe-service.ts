@@ -4,7 +4,7 @@
 import Stripe from 'stripe';
 import { subscriptionConfig } from './subscription-config';
 import { db } from './db.js';
-import { healthSystems, users } from '@shared/schema';
+import { healthSystems, users, conversionEvents } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { PER_USER_PRICING } from '@shared/feature-gates';
 

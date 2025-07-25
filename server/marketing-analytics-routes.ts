@@ -381,19 +381,82 @@ router.get("/api/analytics/feature-usage", requireAdmin, async (req, res) => {
 // Get acquisition analytics
 router.get("/api/analytics/acquisition", requireAdmin, async (req, res) => {
   try {
+    const { from, to } = req.query;
+    const startDate = from ? new Date(from as string) : new Date(new Date().setDate(new Date().getDate() - 30));
+    const endDate = to ? new Date(to as string) : new Date();
+    
+    // Get real acquisition data from the database
+    const acquisitions = await storage.getUserAcquisitionByHealthSystem(req.user.healthSystemId);
+    
+    // Get conversion events for the same period
+    const conversionEvents = await storage.getConversionEvents({
+      healthSystemId: req.user.healthSystemId,
+      startDate,
+      endDate,
+    });
+    
+    // Group acquisitions by channel
+    const channelStats: { [key: string]: { users: number, conversions: number } } = {};
+    let totalUsers = 0;
+    
+    acquisitions.forEach(acq => {
+      const channel = acq.channel || 'Direct';
+      if (!channelStats[channel]) {
+        channelStats[channel] = { users: 0, conversions: 0 };
+      }
+      channelStats[channel].users++;
+      totalUsers++;
+      
+      // Check if this user has conversion events
+      const userConversions = conversionEvents.filter(e => e.userId === acq.userId);
+      if (userConversions.length > 0) {
+        channelStats[channel].conversions++;
+      }
+    });
+    
+    // Format channel data with percentages
+    const channels = Object.entries(channelStats).map(([channel, stats]) => ({
+      channel,
+      users: stats.users,
+      percentage: totalUsers > 0 ? Math.round((stats.users / totalUsers) * 100) : 0,
+      conversions: stats.conversions,
+      conversionRate: stats.users > 0 ? Math.round((stats.conversions / stats.users) * 1000) / 10 : 0
+    })).sort((a, b) => b.users - a.users);
+    
+    // Generate trends data by date
+    const trendsByDate: { [key: string]: { signups: number, trials: number, conversions: number } } = {};
+    
+    // Count signups (acquisitions) by date
+    acquisitions.forEach(acq => {
+      const dateKey = new Date(acq.acquisitionDate).toISOString().split('T')[0];
+      if (!trendsByDate[dateKey]) {
+        trendsByDate[dateKey] = { signups: 0, trials: 0, conversions: 0 };
+      }
+      trendsByDate[dateKey].signups++;
+    });
+    
+    // Count conversions by date
+    conversionEvents.forEach(event => {
+      const dateKey = new Date(event.eventTimestamp).toISOString().split('T')[0];
+      if (!trendsByDate[dateKey]) {
+        trendsByDate[dateKey] = { signups: 0, trials: 0, conversions: 0 };
+      }
+      
+      if (event.eventType === 'conversion_trial_start') {
+        trendsByDate[dateKey].trials++;
+      } else if (event.eventType === 'conversion_subscription_upgrade') {
+        trendsByDate[dateKey].conversions++;
+      }
+    });
+    
+    // Format trends as array sorted by date
+    const trends = Object.entries(trendsByDate)
+      .map(([date, data]) => ({ date, ...data }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+    
     const acquisitionData = {
-      channels: [
-        { channel: "Direct", users: 450, percentage: 45 },
-        { channel: "Google Search", users: 250, percentage: 25 },
-        { channel: "Referral", users: 150, percentage: 15 },
-        { channel: "Social Media", users: 100, percentage: 10 },
-        { channel: "Email Campaign", users: 50, percentage: 5 }
-      ],
-      trends: generateDateRangeData(req.query.from as string, req.query.to as string, [
-        { signups: 25, trials: 15, conversions: 3 },
-        { signups: 32, trials: 20, conversions: 5 },
-        { signups: 28, trials: 18, conversions: 4 }
-      ])
+      channels,
+      trends
     };
     
     res.json(acquisitionData);
@@ -402,25 +465,7 @@ router.get("/api/analytics/acquisition", requireAdmin, async (req, res) => {
   }
 });
 
-// Helper function to generate date range data
-function generateDateRangeData(from: string | undefined, to: string | undefined, sampleData: any[]) {
-  const days = 7; // Generate 7 days of data
-  const result = [];
-  const startDate = from ? new Date(from) : new Date();
-  
-  for (let i = 0; i < days; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    
-    const dataIndex = i % sampleData.length;
-    result.push({
-      date: date.toISOString().split('T')[0],
-      ...sampleData[dataIndex]
-    });
-  }
-  
-  return result;
-}
+
 
 // ==========================================
 // Module 1: Marketing Metrics Dashboard
