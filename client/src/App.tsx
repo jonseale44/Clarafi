@@ -55,6 +55,7 @@ import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing-page";
 import AboutUs from "@/pages/about-us";
+import MedianDemoPage from "@/pages/median-demo";
 
 function Router() {
   return (
@@ -96,6 +97,7 @@ function Router() {
       <ProtectedRoute path="/admin/marketing-analytics" component={MarketingAnalyticsDashboard} />
       <ProtectedRoute path="/dev/test" component={DevTestPage} />
       <ProtectedRoute path="/dev/stripe-test" component={StripeTest} />
+      <ProtectedRoute path="/dev/median-demo" component={MedianDemoPage} />
       <ProtectedRoute path="/test-migration" component={TestMigration} />
       <ProtectedRoute path="/practice-migration" component={PracticeMigration} />
       <ProtectedRoute path="/password-change-required" component={PasswordChangeRequired} />

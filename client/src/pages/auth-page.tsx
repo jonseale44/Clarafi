@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Loader2, Building2, Shield, Activity, Users, Check, X, AlertCircle, Info, Eye, EyeOff, CheckCircle2, Smartphone } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LocationSelector } from "@/components/location-selector";
 import SearchableHealthSystemSelector from "@/components/searchable-health-system-selector";
@@ -28,6 +28,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail } from "lucide-react";
 import { PasskeyLoginForm } from "@/components/passkey-login-form";
 import { SimplifiedBAA } from "@/components/simplified-baa";
+import { 
+  isMedianAvailable, 
+  checkMedianAuthStatus, 
+  saveMedianCredentials, 
+  getMedianCredentials,
+  getBiometryTypeName,
+  deleteMedianCredentials
+} from "@/lib/median-auth";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -111,6 +119,97 @@ function useDebouncedValidation(value: string, delay: number = 500) {
   }, [value, delay]);
 
   return { debouncedValue, isValidating };
+}
+
+// Face ID Login Component for Median App
+function FaceIDLoginForm({ onLoginSuccess }: { onLoginSuccess: (username: string, password: string) => void }) {
+  const [biometryStatus, setBiometryStatus] = useState<{ available: boolean; hasSecret: boolean; biometryType: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    checkBiometryAvailability();
+  }, []);
+
+  const checkBiometryAvailability = async () => {
+    if (!isMedianAvailable()) {
+      console.log('[FaceIDLogin] Not in Median app environment');
+      return;
+    }
+
+    const status = await checkMedianAuthStatus();
+    if (status) {
+      setBiometryStatus({
+        available: status.hasTouchId,
+        hasSecret: status.hasSecret,
+        biometryType: getBiometryTypeName(status)
+      });
+    }
+  };
+
+  const handleFaceIDLogin = async () => {
+    setIsLoading(true);
+    try {
+      const credentials = await getMedianCredentials();
+      if (credentials) {
+        // Use the retrieved credentials to log in
+        onLoginSuccess(credentials.username, credentials.password);
+      } else {
+        toast({
+          title: "Authentication Failed",
+          description: "Unable to retrieve credentials. Please sign in manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('[FaceIDLogin] Error:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred during authentication. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Only show if we're in Median app and biometrics are available with saved credentials
+  if (!biometryStatus?.available || !biometryStatus?.hasSecret) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">Or</span>
+        </div>
+      </div>
+      
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={handleFaceIDLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Authenticating...
+          </>
+        ) : (
+          <>
+            <Smartphone className="mr-2 h-4 w-4" />
+            Sign in with {biometryStatus.biometryType}
+          </>
+        )}
+      </Button>
+    </div>
+  );
 }
 
 // Magic Link Form Component
@@ -466,6 +565,21 @@ export default function AuthPage() {
       password: data.password,
     }, {
       onSuccess: async (userData) => {
+        // Save credentials for Face ID if available (Median app only)
+        if (isMedianAvailable()) {
+          try {
+            const saved = await saveMedianCredentials({
+              username: data.username,
+              password: data.password
+            });
+            if (saved) {
+              console.log('[AuthPage] Credentials saved for Face ID');
+            }
+          } catch (error) {
+            console.error('[AuthPage] Failed to save credentials for Face ID:', error);
+          }
+        }
+
         // Admin users don't need to select location - they have access to all locations in their health system
         if (userData.role === 'admin') {
           setLocationSelected(true);
@@ -515,6 +629,13 @@ export default function AuthPage() {
         }
       }
     });
+  };
+
+  // Handle Face ID login
+  const handleFaceIDLogin = (username: string, password: string) => {
+    loginForm.setValue('username', username);
+    loginForm.setValue('password', password);
+    onLogin({ username, password });
   };
 
   const handleLocationSelected = (location: any) => {
@@ -705,6 +826,8 @@ export default function AuthPage() {
                   </div>
                   
                   <MagicLinkForm />
+                  
+                  <FaceIDLoginForm onLoginSuccess={handleFaceIDLogin} />
                   
                   <PasskeyLoginForm />
                 </CardContent>

@@ -16,6 +16,34 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Face ID / Touch ID Authentication for Median App (July 25, 2025 - 12:30 PM) - COMPLETED
+Successfully implemented biometric authentication for the Median mobile app environment:
+
+1. **Median Authentication Service** - Created `/client/src/lib/median-auth.ts`:
+   - Complete integration with Median JavaScript Bridge API
+   - Support for both Face ID and Touch ID detection
+   - Secure credential storage using device Keychain
+   - Functions for checking availability, saving, retrieving, and deleting credentials
+
+2. **Login Page Integration** - Updated `/client/src/pages/auth-page.tsx`:
+   - Added Face ID login component that appears when biometrics are available
+   - Automatically saves credentials after successful password login
+   - Shows biometric login option when saved credentials exist
+   - Seamless fallback to manual login if biometric auth fails
+
+3. **Demo Page** - Created `/client/src/pages/median-demo.tsx`:
+   - Comprehensive testing interface for Face ID functionality
+   - Shows environment status (Median app detection, biometric availability)
+   - Allows testing save/retrieve/delete credential operations
+   - Accessible at `/dev/median-demo` when logged in
+
+4. **Key Features**:
+   - Only activates when running in Median mobile app
+   - Supports both iOS Face ID and Touch ID
+   - Credentials stored securely in iOS Keychain
+   - No impact on regular web browser experience
+   - User-friendly biometric prompts with appropriate icons
+
 ### Real-Time Analytics Data Integration (July 25, 2025 - 12:20 PM) - COMPLETED
 Successfully connected marketing analytics dashboard to real analytics data:
 
