@@ -26,14 +26,11 @@ export function TrialStatusBanner() {
     staleTime: 0, // Always fetch fresh trial status
   });
 
-  console.log('🎯 [TrialStatusBanner] Render:', { isLoading, trialData });
-
   if (isLoading || !trialData) {
     return null;
   }
 
   const { trialStatus, upgradeUrl } = trialData;
-  console.log('🎯 [TrialStatusBanner] Trial Status:', trialStatus);
 
   // Don't show banner for active paid accounts
   if (trialStatus.status === 'active' && trialStatus.daysRemaining === -1) {
