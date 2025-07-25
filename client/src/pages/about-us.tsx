@@ -97,11 +97,13 @@ export default function AboutUs() {
               <div className="order-2 md:order-1">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-purple-200 to-blue-200 dark:from-purple-800 dark:to-blue-800 rounded-lg blur-2xl opacity-30"></div>
-                  <img 
-                    src={claraPhoto} 
-                    alt="Clara - Registered Nurse"
-                    className="relative w-72 h-auto mx-auto rounded-lg shadow-2xl object-cover sepia-[.30] hover:sepia-0 transition-all duration-700 border-0"
-                  />
+                  <div className="relative w-72 h-80 mx-auto rounded-lg overflow-hidden shadow-2xl">
+                    <img 
+                      src={claraPhoto} 
+                      alt="Clara - Registered Nurse"
+                      className="absolute inset-0 w-[110%] h-[110%] -top-[5%] -left-[5%] object-cover sepia-[.30] hover:sepia-0 transition-all duration-700"
+                    />
+                  </div>
                   <div className="text-center mt-4">
                     <p className="text-sm text-gray-500 dark:text-gray-400 italic">Clara - A dedicated nurse who served with compassion</p>
                   </div>
