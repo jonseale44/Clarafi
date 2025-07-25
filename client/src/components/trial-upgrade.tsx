@@ -42,7 +42,8 @@ export function TrialUpgrade() {
     mutationFn: async () => {
       console.log('[TrialUpgrade] Starting trial to tier 1 upgrade');
       
-      const data = await apiRequest('POST', '/api/trial-upgrade-tier1', {});
+      const response = await apiRequest('POST', '/api/trial-upgrade-tier1', {});
+      const data = await response.json();
       
       return data;
     },
@@ -77,10 +78,11 @@ export function TrialUpgrade() {
       console.log('[TrialUpgrade] Starting tier 2 application process');
       
       // This would send an application to admin for review
-      const data = await apiRequest('POST', '/api/enterprise-application', {
+      const response = await apiRequest('POST', '/api/enterprise-application', {
         requestedTier: 2,
         reason: 'Trial user requesting enterprise features'
       });
+      const data = await response.json();
       
       return data;
     },
