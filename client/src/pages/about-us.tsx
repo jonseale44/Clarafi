@@ -36,7 +36,7 @@ export default function AboutUs() {
                   <img 
                     src={founderHeadshot} 
                     alt="Clarafi Founder"
-                    className="w-48 h-48 mx-auto rounded-full object-cover shadow-xl ring-4 ring-blue-50 dark:ring-blue-900"
+                    className="w-48 h-48 mx-auto rounded-full object-cover object-top shadow-xl ring-4 ring-blue-50 dark:ring-blue-900"
                   />
                 </div>
               </div>
