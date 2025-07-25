@@ -1,0 +1,445 @@
+Welcome
+Welcome to Median.co
+Architecture
+Security
+
+Reporting A Problematic App
+App Licenses
+App Updates
+App Studio
+Support
+Getting Started
+Quickstart Guide
+Branding
+Branding Overview
+App Icon
+Splash Screen
+
+Animated Splash Screen
+Free Splash Screen
+Theme Colors
+Status Bar
+Interface
+App Interface Overview
+Device Screen Control
+
+Screen Brightness
+Keep Screen On
+Full Screen
+Screen Orientation
+Dark Mode
+Pull-to-Refresh
+Swipe Gestures
+Font Scaling
+Maximum Windows
+Offline Page
+
+Service Workers
+Native Datastore Offline
+iOS Split View Support
+Localization
+Link Handling
+Link Handling Overview
+Link Behavior
+Deep Linking
+
+Deep Linking Validator
+Testing Deep Links
+URL Scheme Protocol
+Context Menu
+Permissions
+Permissions Overview
+
+Permission Prompt Localization
+Apple App Tracking Transparency
+Background Audio
+Camera and File Uploads
+
+Android Camera Capture Configuration
+Downloads Directory
+Location Services
+WebRTC Audio & Video
+Web Overrides
+Web Overrides Overview
+Custom User Agent
+Custom Headers
+Custom CSS
+Custom JavaScript
+Cookie Persistence
+Native Navigation
+Native Navigation Overview
+Top Navigation Bar
+
+Dynamic Titles
+Auto New Windows
+Search Form
+Refresh Button
+Share Button
+Custom Buttons
+Top Nav Bar Demo App
+Sidebar Navigation
+
+Sidebar Visual Editor
+Dynamic Menu Items
+Sidebar Demo App
+Bottom Tab Bar
+
+Selecting Tabs
+Bottom Tab Bar Visual Editor
+Dynamic Tab Menu
+Localized Tab Menu
+Bottom Tab Demo App
+Custom Icons
+iOS Contextual Navigation Toolbar
+Push Notifications
+Push Notifications Overview
+OneSignal
+
+User & Consent Management
+
+Push Registration and Privacy Consent
+iOS Soft Prompt
+User Management
+Data Tags (Subscription Management)
+OneSignal Info
+OneSignal Push Notifications
+
+Notification Icons
+Custom Notification Sounds
+Notification Badges
+Open URL in App
+Send Data to App via Push Notification
+Programmatic Notifications
+Foreground Notifications
+In-App Messages
+Legacy Mode
+
+Personalized Push (Legacy)
+Braze
+Bloomreach
+Cordial
+Intercom
+Iterable
+Klaviyo
+Microsoft Dynamics
+MoEngage
+Optimizely
+Sendbird
+Median JavaScript Bridge
+JavaScript Bridge Overview
+Detecting App Usage
+NPM Package
+
+Basic Usage
+Using Listeners
+SPA Navigation
+Device Info
+Clipboard
+Prompt Share Dialogue
+App Resumed Callback
+Keyboard State Tracking
+Download File
+Clear Webview Cache
+Accessing callbacks in an iframe
+Native Plugins
+Native Plugins Overview
+Adjust
+AdMob Native Ads
+App Review
+AppsFlyer
+Auth0
+Background Location
+Branch.io
+Bubble Plugin
+Calendar
+Card.io
+Document Scanner
+Enterprise Plugin
+Face ID & Touch ID Android Biometric
+
+Apple Face ID & Touch ID
+Android Biometric
+Google Firebase Analytics
+Google Firebase Crashlytics
+Haptics
+Health Bridge
+iBeacon
+In-App Purchases
+
+Apple In-App Purchases
+Google In-App Purchases
+Google In-App Purchases (Legacy)
+Jailbreak/Root Detection
+Kaltura Media Player
+Meta App Events
+Microsoft Intune
+Native Contacts
+Native Datastore
+Native Media Player
+NFC Tag Scanner
+RevenueCat
+Offline Download Manager
+QR / Barcode Scanner
+Share into app
+Scandit QR / Barcode
+Secure Modal
+Reader Modal
+Social Login
+
+Facebook Login Configuration
+Google Sign-in Configuration
+Sign In with Apple Configuration
+Website Configuration
+Server-side Redirects
+JavaScript Callbacks
+Social Share
+
+Instagram
+Snapchat
+Twilio Video
+Web Screenshot
+Zoom
+Build & Test
+Build & Test Overview
+Median App Studio
+Development Tools
+iOS Build & Deployment
+
+Building an iOS Binary (IPA)
+
+Connecting Median with App Store Connect
+Registering Testing Devices
+Configure Signing for Your App
+Install iOS IPA
+Build iOS from Source
+Common Xcode Issues
+Upload iOS to TestFlight
+Android Build & Deployment
+
+Install Android APK
+Build Android from Source
+Connect Android Studio Simulators to Localhost Websites
+Android App Bundle (AAB)
+App Configuration & Management
+
+App Identifiers
+App Configuration
+Google Services
+Backup Management
+Multiple App Instances
+CI/CD Integration
+Publishing
+Publishing Overview
+Publishing Guide
+Publishing Service - Process
+Apple App Store
+Google Play Store
+Publishing FAQ
+Release Notes
+Median.co Release Notes
+App Studio Release Notes
+
+App Studio Release Notes - Archive
+iOS Release Notes
+
+iOS Release Notes - Archive
+Android Release Notes
+
+Android Release Notes - Archive
+Powered by 
+
+Apple Face ID & Touch ID
+Authenticate Instantly with iOS Biometrics
+
+Fingerprint authentication has been available on iOS since the iPhone 5s (iOS 9.0). This plugin enables your app to use this secure and convenient method of user authentication via Touch ID or Face ID.
+
+The Median Face ID / Touch ID plugin uses the Median JavaScript Bridge to securely store and retrieve user credentials. The plugin communicates between the web page and the native app by opening a specific URL with query parameters. Responses from the native app are returned via a callback function in the JavaScript context.
+
+The plugin allows you to store a secret string, defined by the website developer. This could include a JSON object with a username and password, an authentication token, or any other data used for login.
+
+How it works
+Check Biometric Availability
+First, check whether biometric authentication data is available and biometrics are supported for the device (older models or MDM configurations may disable the support). If no fingerprints or Face ID are set up, do not display the biometric login prompt.
+Save Login Secret
+After a user logs in and biometric authentication is available, the website can save a secret using the plugin. The secret is stored in the iOS Keychain, which uses cryptographic hardware to ensure it cannot be retrieved without biometric authentication. Saving the secret does not require user interaction.
+Retrieve Saved Secret
+On future visits, if a saved secret is available, the site can prompt the user to authenticate via fingerprint (Touch ID) or Face ID. If authentication succeeds, the secret is returned via the JavaScript callback. If it fails, an error is returned.
+Use Secret to Log In
+Once the secret is recovered, you can either use it to directly login the user or populate the login form on you web app.
+👍
+Developer Demo
+
+Display our demo page in your app with the Face ID / Touch ID Native Plugin active to test during development https://median.dev/auth/
+
+Implementation Guide
+This guide assumes a working publicly-accessible website (or test site) with a username and password login system.
+
+Save secret on successful login
+After a user successfully logs in to your website with their username and password, check to see if Touch ID is available. If it is, save a secret for future retrieval. The secret must be a single string and can be a combination of the username and password, or an authentication token.
+
+↔️Median JavaScript Bridge
+
+For example, you may embed this JavaScript into your post-login page:
+
+JavaScript
+
+var username = 'andy'
+var password = 'password';
+
+median.auth.status({'callbackFunction': median_status_afterlogin});
+
+function median_status_afterlogin(data) {
+    if (data && data.hasTouchId) {
+    	var secret = JSON.stringify({
+            username: username,
+            password: password
+        });
+        
+        median.auth.save({'secret': secret});
+    }
+}
+
+// Promise method
+median.auth.status().then(function (result) {
+    if (result && result.hasTouchId) {
+    	var secret = JSON.stringify({
+            username: username,
+            password: password
+        });
+        
+        median.auth.save({'secret': secret});
+    }
+}
+Learn more about using promises and the Median JavaScript Bridge.
+
+In this example, we have saved the username and password as the secret. You may choose to save an authentication token instead.
+
+Check for secret on login page
+↔️Median JavaScript Bridge
+
+On the login page, you will need to know whether or not to prompt for TouchID credentials. Start by getting the status:
+
+JavaScript
+
+median.auth.status({'callbackFunction': median_status_beforelogin});
+
+function median_status_beforelogin(data) {
+   if (data && data.hasTouchId && data.hasSecret) {
+       // Prompt the user to use the fingerprint to log in
+       median.auth.get({'callbackFunction': median_secret_callback});
+   }
+}
+
+function median_secret_callback(data) {
+    if (data && data.success && data.secret) {
+        var credentials = JSON.parse(data.secret);
+        var username = credentials.username;
+        var password = credentials.password;
+        
+        // Use username and password to do login here,
+        // e.g. an http post or ajax request
+    } else {
+       // Fall back to manual login
+    }
+}
+
+// Promise method
+median.auth.status().then(function (result) {
+   if (result && result.hasTouchId && result.hasSecret) {
+       // Prompt the user to use the fingerprint to log in
+       median.auth.get({'callbackFunction': median_secret_callback});
+   }
+}
+Once the median_secret_callback function is called with the previously saved secret, it should perform a request to log in the user. If the credentials are incorrect, you should delete the secret and allow manual login by running the function:
+
+JavaScript
+
+// delete secret if credentials are incorrect
+median.auth.delete({'callbackFunction': CALLBACK});
+Median JavaScript Bridge Reference
+Retrieving FaceID / Touch ID availability
+↔️Median JavaScript Bridge
+
+Run the JavaScript function:
+
+JavaScript
+
+median.auth.status({'callbackFunction': CALLBACK});
+Callback is required. The app will execute CALLBACK with an object parameter containing the fields:
+
+hasTouchId: true or false. Indicates if the device is running iOS 9+ and there are fingerprints enrolled, or FaceID is enabled.
+biometryType: ‘touchId’, ‘faceId’, or ‘none’. This field is populated on iOS only to differentiate between TouchID and FaceID.
+hasSecret: true or false
+Saving a Secret
+Typically you will want to first check that Face ID / Touch ID is available via the status function above and then save the secret.
+
+↔️Median JavaScript Bridge
+
+Run the JavaScript function:
+
+JavaScript
+
+median.auth.save({'secret': secret});
+callbackFunction is optional and will be called after the save operation with a success parameter.
+
+Retrieving a Secret
+↔️Median JavaScript Bridge
+
+Run the JavaScript function:
+
+JavaScript
+
+median.auth.get({'callbackFunction': CALLBACK, 'prompt': 'PROMPT'});
+Callback is required. Prompt is optional, and provides a message that can be displayed when iOS requests the user touch the fingerprint sensor. The app will execute CALLBACK with an object parameter containing the fields:
+
+success: true or false
+error: provided success is false (see error codes below)
+secret: the previously stored secret
+Another optional query parameter is callbackOnCancel. If set to 1 and the user cancels the authentication, the callback will be run with success=false, error=userCanceled. If callbackOnCancel is not set (or set to 0), the callback will not be run.
+Delete a Secret
+↔️Median JavaScript Bridge
+
+Run the JavaScript function:
+
+JavaScript
+
+median.auth.delete({'callbackFunction': CALLBACK});
+Callback is optional. The app will execute CALLBACK with an object parameter containing the fields:
+
+success: true or false
+error: provided if success is false
+Possible error values
+In general, you will only need to handle authenticationFailed in the "get secret" request.
+
+duplicateItem: Secret already exists
+itemNotFound: No secret saved
+authenticationFailed: Biometric check failed
+genericError: Unexpected failure
+userCanceled: User canceled the auth prompt
+unimplemented: Plugin not supported
+Testing Face ID / Touch ID Integration
+We recommend testing on physical devices to confirm the flow is working as expected for devices with Face ID / Touch ID support, as well as older models or more restricted device configurations.
+
+Additionally, you can also test the integration using the Appetize Simulators.
+
+Open the demo page in the simulator
+Click the Face ID Button (as shown below) to enable biometrics support in the simulator
+Log in with credentials
+Return to the demo page and use the Login with Face ID or Login with Touch ID button without having to provide username and password again
+Appetize - Face ID Button
+Appetize - Face ID Button
+
+Whitelist Domains for Plugin Access
+By default, any page loaded in your app will be able to use Median JavaScript Bridge to retrieve secrets. If you are allowing any domains you do not control to be loaded within your app (see Link Handling), we strongly recommend whitelisting only certain domains.
+
+To do so, go to the Native Plugins tab in the Median App Studio, click Settings for the Face ID/TouchID Android Biometrics plugin and add your whitelisted URLs as shown below.
+
+Regular expressions are supported to allow wildcards in the URL.
+
+Whitelisting URLs for Access
+Whitelisting URLs for Access
+
+Updated 10 days ago
+
+Face ID & Touch ID Android Biometric
+Android Biometric
