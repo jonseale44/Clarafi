@@ -1617,7 +1617,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
             attachmentId,
             providerId,
             existingMedications,
-            gptResponse.extracted_date, // Pass the extracted date from GPT
+            gptResponse.document_date, // Pass the document date from GPT
           );
           if (change) {
             changes.push(change);
@@ -1643,7 +1643,7 @@ Please analyze this SOAP note and identify medication changes that occurred duri
   }
 
   /**
-   * Process individual medication from attachment
+   * Process individual medication from attachment with enhanced dual-action capability
    */
   private async processAttachmentMedication(
     medicationData: any,
@@ -1652,40 +1652,132 @@ Please analyze this SOAP note and identify medication changes that occurred duri
     attachmentId: number,
     providerId: number,
     existingMedications: any[],
-    extractedDate: string | null,
+    documentDate: string | null,
   ): Promise<any> {
     console.log(
       `💊 [AttachmentMed] Processing medication: ${medicationData.medication_name}`,
     );
-
-    // Check for existing medication to consolidate with
-    const existingMedication = this.findMatchingMedicationForAttachment(
-      medicationData,
-      existingMedications,
+    console.log(
+      `💊 [AttachmentMed] Action type: ${medicationData.action_type}`,
+    );
+    console.log(
+      `💊 [AttachmentMed] Individual medication date: ${medicationData.medication_date}`,
     );
 
-    if (existingMedication && medicationData.should_consolidate) {
-      console.log(
-        `💊 [AttachmentMed] Consolidating with existing medication ID ${existingMedication.id}`,
-      );
-      return this.addAttachmentVisitHistory(
-        existingMedication,
-        medicationData,
-        attachmentId,
-        encounterId,
-        extractedDate,
-      );
-    } else {
-      console.log(`💊 [AttachmentMed] Creating new medication from attachment`);
-      return this.createMedicationFromAttachment(
-        medicationData,
-        patientId,
-        encounterId,
-        attachmentId,
-        providerId,
-        extractedDate,
-      );
+    const results = [];
+
+    // Use individual medication date if available, fallback to document date
+    const effectiveDate = medicationData.medication_date || documentDate;
+
+    // Handle based on GPT's intelligent decision
+    switch (medicationData.action_type) {
+      case "create_historical":
+        // Create only a historical medication entry
+        console.log(`💊 [AttachmentMed] Creating historical medication entry`);
+        const historical = await this.createMedicationFromAttachment(
+          medicationData,
+          patientId,
+          encounterId,
+          attachmentId,
+          providerId,
+          effectiveDate,
+        );
+        results.push(historical);
+        break;
+
+      case "update_visit_history":
+        // Only update existing medication's visit history
+        if (medicationData.matched_current_med_id) {
+          const currentMed = existingMedications.find(
+            m => m.id === medicationData.matched_current_med_id
+          );
+          if (currentMed) {
+            console.log(
+              `💊 [AttachmentMed] Updating visit history for medication ID ${currentMed.id}`,
+            );
+            const visitUpdate = await this.addAttachmentVisitHistory(
+              currentMed,
+              medicationData,
+              attachmentId,
+              encounterId,
+              effectiveDate,
+            );
+            results.push(visitUpdate);
+          }
+        }
+        break;
+
+      case "both":
+        // Create historical entry AND update current medication's visit history
+        console.log(`💊 [AttachmentMed] Dual action: creating historical AND updating current`);
+        
+        // First create the historical entry
+        const historicalEntry = await this.createMedicationFromAttachment(
+          medicationData,
+          patientId,
+          encounterId,
+          attachmentId,
+          providerId,
+          effectiveDate,
+        );
+        results.push(historicalEntry);
+
+        // Then update the current medication's visit history
+        if (medicationData.matched_current_med_id) {
+          const currentMed = existingMedications.find(
+            m => m.id === medicationData.matched_current_med_id
+          );
+          if (currentMed) {
+            const visitUpdate = await this.addAttachmentVisitHistory(
+              currentMed,
+              {
+                ...medicationData,
+                notes: medicationData.visit_history_note || 
+                       `Previously on ${medicationData.dosage} as of ${effectiveDate}`
+              },
+              attachmentId,
+              encounterId,
+              effectiveDate,
+            );
+            results.push(visitUpdate);
+          }
+        }
+        break;
+
+      default:
+        // Fallback to legacy behavior for backward compatibility
+        const existingMedication = this.findMatchingMedicationForAttachment(
+          medicationData,
+          existingMedications,
+        );
+
+        if (existingMedication && medicationData.should_consolidate) {
+          console.log(
+            `💊 [AttachmentMed] Legacy consolidation with existing medication ID ${existingMedication.id}`,
+          );
+          const result = await this.addAttachmentVisitHistory(
+            existingMedication,
+            medicationData,
+            attachmentId,
+            encounterId,
+            effectiveDate,
+          );
+          results.push(result);
+        } else {
+          console.log(`💊 [AttachmentMed] Legacy creation of new medication`);
+          const result = await this.createMedicationFromAttachment(
+            medicationData,
+            patientId,
+            encounterId,
+            attachmentId,
+            providerId,
+            effectiveDate,
+          );
+          results.push(result);
+        }
     }
+
+    return results.length === 1 ? results[0] : results;
   }
 
   /**
@@ -1950,44 +2042,47 @@ Please analyze this SOAP note and identify medication changes that occurred duri
 
     const systemPrompt = `UNIFIED MEDICATION PROCESSING - ATTACHMENT EXTRACTION
 You are an expert clinical pharmacist with 20+ years of experience analyzing medical documents.
-Your PRIMARY RESPONSIBILITY is to extract medications with intelligent consolidation and superior date extraction.
+Your PRIMARY RESPONSIBILITY is to extract medications with intelligent consolidation and historical preservation.
 
-=== CRITICAL DATE EXTRACTION INTELLIGENCE (MAJOR PRIORITY) ===
-This is the MOST IMPORTANT aspect of medication extraction from attachments:
+=== INTELLIGENT DATE EXTRACTION (ENHANCED) ===
+Extract INDIVIDUAL dates for each medication to preserve historical context:
 
 STEP 1 - DOCUMENT DATE IDENTIFICATION:
-MANDATORY: Extract the PRIMARY document date that applies to ALL medications in this attachment
-- FIRST PRIORITY: Look for explicit dates in headers/footers
-  • "Date of Service: MM/DD/YYYY"
-  • "Date: MM/DD/YYYY" 
-  • "Visit Date: MM/DD/YYYY"
-  • "Date/Time: MM/DD/YYYY HH:MM"
-- SECOND PRIORITY: Provider signature dates
-  • "Signed by Dr. X on MM/DD/YYYY"
-  • Electronic signature timestamps
-- THIRD PRIORITY: Document metadata
-  • Report generation dates
-  • Print dates (use cautiously)
-- CRITICAL RULE: ALL medications from this single document MUST share the SAME extracted date
-- If NO date found: Return null (system will default appropriately)
+First, identify the overall document date for context:
+- Headers/footers: "Date of Service: MM/DD/YYYY", "Visit Date: MM/DD/YYYY"
+- Provider signatures: "Signed by Dr. X on MM/DD/YYYY"
+- Document metadata: Report generation dates (use as fallback)
 
-STEP 2 - MEDICATION-SPECIFIC DATE EXTRACTION:
-Beyond the document date, look for medication-specific temporal information:
-- Start dates: "Started lisinopril on 2/20/24"
-- Change dates: "Increased metformin to 1000mg on 5/15/24"
-- Discontinuation dates: "Stopped atorvastatin 6/1/24 due to myalgia"
-- Duration patterns: "Has been on this dose for 3 months"
+STEP 2 - INDIVIDUAL MEDICATION DATE EXTRACTION:
+CRITICAL: Each medication can have its OWN date based on the document content:
+- Medication lists with dates: "03/08/24  Escitalopram 10mg  Take 1 daily"
+- Historical entries: "Started metformin 500mg on 1/1/24"
+- Change dates: "Increased to 1000mg on 5/15/24"
+- Discontinuation dates: "Stopped atorvastatin 6/1/24"
+- If a medication has no specific date, use the document date
+- If neither exists, return null for that medication's date
 
-=== MEDICATION CONSOLIDATION INTELLIGENCE ===
-Apply this systematic decision tree for EVERY medication found:
+STEP 3 - HISTORICAL PRESERVATION:
+When you find medications with past dates:
+- Mark them as "historical" if they represent past doses/regimens
+- These will be preserved as separate historical entries
+- Also flag them to update the visit history of current medications
 
-STEP 1 - EXACT MATCH CHECK:
-- Same medication name (case-insensitive)
-- Include common abbreviations: HCTZ = hydrochlorothiazide, ASA = aspirin
-- Example: "Lisinopril" = "lisinopril" = "LISINOPRIL"
+=== ENHANCED MEDICATION CONSOLIDATION INTELLIGENCE ===
+You have access to the patient's CURRENT medications. Use this to make intelligent decisions:
+
+EXISTING MEDICATIONS PROVIDED:
+${existingMedications.map(med => `- ${med.medicationName} ${med.dosage} ${med.frequency} (${med.status}) - started ${med.startDate}`).join('\n')}
+
+STEP 1 - INTELLIGENT DEDUPLICATION:
+For EACH medication in the document, compare with existing medications:
+- If it matches a current medication but has a DIFFERENT dose/frequency from the past → Create BOTH:
+  1. A "historical" medication entry (e.g., Metformin 500mg from 1/1/24)
+  2. Update the current medication's visit history with this historical information
+- If it matches exactly → Only update visit history, don't create duplicate
 
 STEP 2 - BRAND/GENERIC MATCHING:
-You MUST recognize and consolidate these common pairs:
+Recognize these as the SAME medication:
 - Synthroid = levothyroxine
 - Glucophage = metformin
 - Zestril/Prinivil = lisinopril
@@ -2001,17 +2096,26 @@ You MUST recognize and consolidate these common pairs:
 - Toprol XL = metoprolol succinate
 - Lopressor = metoprolol tartrate
 
-STEP 3 - FORMULATION VARIATIONS:
-Recognize as SAME medication requiring consolidation:
-- Metoprolol tartrate vs metoprolol succinate (different salts, same drug)
-- Diltiazem vs Diltiazem CD/ER/XR (different release mechanisms)
-- Combination products: Extract components if listed separately elsewhere
+STEP 3 - HISTORICAL MEDICATION CREATION:
+Create a "historical" medication when:
+- Document shows a past dose that differs from current (e.g., was on 500mg, now on 1000mg)
+- Medication was discontinued in the past
+- It represents a significant historical regimen worth preserving
 
-CONSOLIDATION DECISION RULES:
-- ALWAYS CONSOLIDATE if Steps 1-3 match existing medication
-- CREATE NEW only if genuinely different medication
-- When consolidating, UPDATE with most recent information from this document
-- Track ALL dose/frequency changes in visit history
+STEP 4 - VISIT HISTORY UPDATES:
+ALWAYS update the current medication's visit history when you find:
+- Historical doses or regimens
+- Start/stop dates
+- Dose changes over time
+- Any relevant historical context
+
+EXAMPLE DUAL ACTION:
+Document shows: "1/1/24: Metformin 500mg BID"
+Current medication: Metformin 1000mg BID (started 3/3/25)
+ACTIONS:
+1. Create historical medication: Metformin 500mg BID, status="historical", date=1/1/24
+2. Update current med's visit history: Add entry "Previously on 500mg BID as of 1/1/24"
+Result: Full historical context preserved with clean current medication list
 
 === VISIT HISTORY FORMATTING (ULTRA-CONCISE) ===
 Create brief, standardized entries following this exact format:
@@ -2054,7 +2158,7 @@ Assign confidence based on information clarity:
 
 === RESPONSE FORMAT ===
 {
-  "extracted_date": "YYYY-MM-DD" or null,
+  "document_date": "YYYY-MM-DD" or null,  // Overall document date if found
   "date_extraction_source": "header|signature|metadata|not_found",
   "medications": [
     {
@@ -2066,10 +2170,14 @@ Assign confidence based on information clarity:
       "route": "PO/IV/IM/SC/topical/inhalation/etc",
       "indication": "concise reason (HTN/DM/etc)",
       "status": "active/discontinued/historical",
+      "medication_date": "YYYY-MM-DD",  // Individual date for this medication
       "confidence": 0.95,
       "should_consolidate": true/false,
       "consolidation_reasoning": "Exact match with existing lisinopril entry",
       "extraction_location": "medication list page 2",
+      "action_type": "create_historical|update_visit_history|both",  // What to do with this entry
+      "matched_current_med_id": 31,  // If updating visit history, which current med to update
+      "visit_history_note": "Previously on 500mg BID as of 1/1/24",  // Note to add to current med
       "visit_history": [
         {
           "date": "2024-02-20",

@@ -16,6 +16,29 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 25, 2025)
 
+### Enhanced Medication Parsing with Individual Date Extraction (July 25, 2025 - 7:48 PM) - IN PROGRESS
+Restructured medication parsing to remove restrictive single-date extraction logic and implement intelligent dual-action capability:
+
+1. **Problem Addressed**: Previous system forced all medications in a document to share the same date, losing rich historical context that was successfully captured by medical problems parser.
+
+2. **Solution Implementation**:
+   - Removed "CRITICAL RULE: ALL medications from this single document MUST share the SAME extracted date" from GPT prompt
+   - Added support for individual medication dates - each medication can have its own extracted date
+   - Implemented dual-action capability allowing GPT to both create historical medications AND update visit history
+
+3. **Key Features**:
+   - GPT now receives full list of existing medications for intelligent deduplication
+   - New `action_type` field: "create_historical", "update_visit_history", or "both"
+   - Example: Document shows "1/1/24: Metformin 500mg BID", current is 1000mg BID → Creates historical entry AND updates current med's visit history
+   - Individual `medication_date` field allows different dates per medication in same document
+
+4. **Technical Changes**:
+   - Modified `medication-delta-service.ts` GPT prompts for enhanced intelligence
+   - Updated `processAttachmentMedication` to handle dual actions
+   - Changed response format from single `extracted_date` to `document_date` plus individual `medication_date` per med
+
+5. **Result**: Medication parser now matches medical problems parser's capability to preserve full historical context while maintaining clean current medication lists.
+
 ### GPT-Driven Visit History Consolidation (July 25, 2025 - 5:30 PM) - COMPLETED
 ### Updated Visit History Consolidation Rules (July 25, 2025 - 6:46 PM) - COMPLETED
 Implemented and refined visit history consolidation to prevent duplicate entries when multiple attachments from the same date are uploaded:
