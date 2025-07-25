@@ -163,7 +163,24 @@ export function setupTrialRoutes(app: Express) {
 
   /**
    * Enterprise upgrade application endpoint
-   * Leverages existing AI verification infrastructure for trial users
+   * 
+   * ARCHITECTURE NOTE: This endpoint intentionally reuses the AI verification
+   * infrastructure from the admin-verification system. This is NOT duplication
+   * by accident - we're leveraging the sophisticated verification logic that
+   * already exists, but adapting it for trial-to-enterprise upgrades.
+   * 
+   * Key differences from /admin-verification/start:
+   * - Works with EXISTING health systems (doesn't create new ones)
+   * - Requires user to be an admin of their current health system
+   * - Pulls organization data from existing records
+   * - Can result in instant approval for low-risk organizations
+   * - Updates subscription tier rather than creating new accounts
+   * 
+   * The AI verification includes:
+   * - Risk scoring algorithms
+   * - External API validations
+   * - Automated approval for low-risk organizations
+   * - Manual review queue for high-risk applications
    */
   app.post('/api/enterprise-application', async (req, res) => {
     try {

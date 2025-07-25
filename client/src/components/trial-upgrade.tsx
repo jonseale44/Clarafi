@@ -22,6 +22,32 @@ import {
   Zap,
 } from 'lucide-react';
 
+/**
+ * ARCHITECTURE NOTE: Enterprise Upgrade Flow
+ * 
+ * This component handles the upgrade process from trial to paid tiers.
+ * It leverages the existing AI-powered verification infrastructure from
+ * the admin-verification system, but adapted for existing trial users.
+ * 
+ * Key differences from new organization signup (/admin-verification):
+ * - This upgrades an EXISTING health system rather than creating new
+ * - Pulls organization data from the existing health system record
+ * - Reuses the same AI verification logic (ClinicAdminVerificationService)
+ * - Can result in instant approval for low-risk organizations
+ * 
+ * Tier 1: Direct upgrade via Stripe (no approval needed)
+ * Tier 2: Requires application and AI/manual review
+ */
+
+interface TrialStatusResponse {
+  trialStatus: {
+    status: 'trial' | 'warning' | 'expired' | 'grace';
+    daysRemaining: number;
+    trialEndDate: string;
+    gracePeriodEndDate?: string;
+  };
+}
+
 export function TrialUpgrade() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -33,7 +59,7 @@ export function TrialUpgrade() {
     queryKey: ["/api/user"],
   });
 
-  const { data: trialData } = useQuery({
+  const { data: trialData } = useQuery<TrialStatusResponse>({
     queryKey: ["/api/trial-status"],
   });
 
