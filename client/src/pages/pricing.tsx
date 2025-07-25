@@ -27,9 +27,12 @@ export default function Pricing() {
       {/* Header */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/auth">
+          <Link href="/">
             <h1 className="text-3xl font-bold cursor-pointer">
-              <span className="text-navy-blue">CLAR</span><span className="text-gold">AFI</span>
+              <span className="text-navy-blue">CLAR</span>
+              <span className="text-gold">A</span>
+              <span className="text-navy-blue">F</span>
+              <span className="text-gold">I</span>
             </h1>
           </Link>
           <Link href="/auth">
