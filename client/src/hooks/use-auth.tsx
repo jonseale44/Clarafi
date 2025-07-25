@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Store user data but don't log them in yet
       queryClient.setQueryData(["/api/user"], null); // Keep them logged out
       
-      // Check if payment is required (individual provider registration)
+      // Check if payment is required (joining existing systems might still require payment)
       if (data.requiresPayment && data.paymentUrl) {
         // Store registration data for after payment
         sessionStorage.setItem('pendingRegistration', JSON.stringify({
@@ -113,10 +113,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.href = data.paymentUrl;
         }, 2000);
       } else if (data.emailVerificationRequired) {
-        // For users who need to verify email
+        // For users who need to verify email (individual providers with 30-day trial)
         toast({
           title: "Registration successful", 
-          description: data.message || "Please check your email to verify your account. You'll need to verify your email before you can log in.",
+          description: data.message || "Please check your email to verify your account. Your 30-day free trial will begin once you verify your email and log in.",
           variant: "default",
           duration: 7000,
         });

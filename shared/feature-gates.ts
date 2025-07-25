@@ -16,16 +16,16 @@ export const TIER_PRICING = {
   tier1: {
     monthly: 149,
     annual: 1490, // 2 months free
-    name: 'Personal EMR',
-    description: 'Full documentation features for individual providers',
-    trialDays: 14,
+    name: 'Professional EMR',
+    description: 'Complete documentation features for individual providers',
+    trialDays: 30, // 30-day free trial
   },
   tier2: {
     monthly: 'custom', // Contact sales
     annual: 'custom',
     name: 'Enterprise EMR',
     description: 'Complete EMR with all integrations',
-    trialDays: 14,
+    trialDays: 30,
   }
 } as const;
 
@@ -156,7 +156,7 @@ export const FEATURE_GATES = {
     category: 'ai'
   },
   
-  // Integration Features - Only available to tier 2
+  // Integration Features - Only available to tier 2 (external connectivity)
   ePrescribing: { 
     tier1: false, tier2: true,
     description: 'Electronic prescribing to pharmacies',
@@ -170,6 +170,16 @@ export const FEATURE_GATES = {
   imagingOrdering: { 
     tier1: false, tier2: true,
     description: 'Direct imaging order transmission',
+    category: 'integration'
+  },
+  referralManagement: {
+    tier1: false, tier2: true,
+    description: 'Electronic referral transmission to other providers',
+    category: 'integration'
+  },
+  chartSharing: {
+    tier1: false, tier2: true,
+    description: 'Share charts with other providers and health systems',
     category: 'integration'
   },
   billingIntegration: { 

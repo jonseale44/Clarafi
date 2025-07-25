@@ -68,6 +68,11 @@ export const healthSystems = pgTable("health_systems", {
     lastUpdated: new Date().toISOString()
   }),
   
+  // Trial Management Fields
+  trialEndDate: timestamp("trial_end_date"),
+  gracePeriodEndDate: timestamp("grace_period_end_date"),
+  stripeCustomerId: text("stripe_customer_id"),
+  
   billingDetails: jsonb("billing_details").$type<{
     monthlyTotal: number;
     providerRate: number;

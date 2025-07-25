@@ -116,7 +116,7 @@ export class RegistrationService {
             shortName: `Dr. ${data.lastName}`,
             systemType: 'individual_provider',
             subscriptionTier: 1, // Individual tier
-            subscriptionStatus: 'trial', // Start with trial status until payment
+            subscriptionStatus: 'trial', // 30-day free trial
             subscriptionStartDate: new Date(),
             primaryContact: `${data.firstName} ${data.lastName}`,
             email: data.email,
@@ -176,9 +176,9 @@ export class RegistrationService {
         primaryLocationId = newLocation.id;
         console.log(`✅ [RegistrationService] Created location ID: ${primaryLocationId}`);
         
-        // Individual providers (create_new) always require payment
-        requiresPayment = true;
-        console.log(`💳 [RegistrationService] Individual provider registration - payment required`);
+        // Individual providers start with 30-day free trial (no payment required)
+        requiresPayment = false;
+        console.log(`🎁 [RegistrationService] Individual provider registration - starting 30-day free trial`);
 
       } else {
         // Join existing health system (default behavior)

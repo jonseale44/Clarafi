@@ -23,6 +23,8 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { tenantIsolation } from "./tenant-isolation";
 import { APIResponseHandler } from "./api-response-handler.js";
+import { trialStatusMiddleware, injectTrialStatus } from "./trial-middleware.js";
+import { setupTrialRoutes } from "./trial-routes.js";
 import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
   insertPatientSchema,
@@ -602,6 +604,13 @@ const upload = multer({ storage: multer.memoryStorage() });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Sets up /api/register, /api/login, /api/logout, /api/user
   setupAuth(app);
+  
+  // Set up trial management routes
+  setupTrialRoutes(app);
+  
+  // Add trial status middleware for authenticated routes
+  app.use('/api', trialStatusMiddleware);
+  app.use('/api', injectTrialStatus);
   
   // Serve static files from uploads directory with proper MIME types
   const uploadsPath = path.join(process.cwd(), 'uploads');

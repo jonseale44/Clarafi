@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Patient, Vitals } from "@shared/schema";
 import { Link, useLocation } from "wouter";
+import { TrialStatusBanner } from "@/components/trial-status-banner";
 import { UserPlus, Trash2, MessageSquare } from "lucide-react";
 import {
   AlertDialog,
@@ -404,6 +405,9 @@ export default function Dashboard() {
       </div>
       
       <main className="flex-1 overflow-auto p-6">
+        {/* Trial Status Banner - only show for non-admin users */}
+        {currentUser?.role !== 'admin' && <TrialStatusBanner />}
+        
         {renderTabContent()}
       </main>
       
