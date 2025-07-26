@@ -10,6 +10,7 @@ import { db } from "./db.js";
 import { orders } from "@shared/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { LabOrderProcessor } from "./lab-order-processor.js";
+import { PatientNotificationService } from "./patient-notification-service.js";
 
 export class LabOrderBackgroundProcessor {
   private static isRunning = false;
@@ -120,6 +121,9 @@ export class LabOrderBackgroundProcessor {
       // Step 2: Process transmitted lab orders that are ready for results (simulate lab processing delay)
       await this.processTransmittedOrders();
       
+      // Step 3: Check for critical results requiring immediate notification
+      await this.checkCriticalResults();
+      
     } catch (error) {
       console.error(`❌ [LabBackground] Error in background processor:`, error);
     }
@@ -151,8 +155,23 @@ export class LabOrderBackgroundProcessor {
         for (const labOrder of transmittedOrders) {
           try {
             console.log(`📊 [LabBackground] Generating results for ${labOrder.testName} (ID: ${labOrder.id})`);
-            await LabOrderProcessor.generateLabResultsForOrder(labOrder);
+            const generatedResultIds = await LabOrderProcessor.generateLabResultsForOrder(labOrder);
             console.log(`✅ [LabBackground] Successfully generated results for ${labOrder.testName}`);
+            
+            // Step 3: Send patient notifications for generated results
+            if (generatedResultIds && generatedResultIds.length > 0) {
+              console.log(`📧 [LabBackground] Triggering patient notifications for ${generatedResultIds.length} results`);
+              try {
+                await PatientNotificationService.processNewResults(generatedResultIds, {
+                  urgency: 'routine',
+                  includeEducation: true
+                });
+                console.log(`✅ [LabBackground] Patient notifications sent successfully`);
+              } catch (notificationError) {
+                console.error(`❌ [LabBackground] Failed to send patient notifications:`, notificationError);
+                // Don't fail the whole process if notifications fail
+              }
+            }
           } catch (error) {
             console.error(`❌ [LabBackground] Failed to generate results for order ${labOrder.id}:`, error);
           }
@@ -160,6 +179,17 @@ export class LabOrderBackgroundProcessor {
       }
     } catch (error) {
       console.error(`❌ [LabBackground] Error processing transmitted orders:`, error);
+    }
+  }
+  
+  /**
+   * Check for critical lab results and send immediate notifications
+   */
+  private static async checkCriticalResults() {
+    try {
+      await PatientNotificationService.checkCriticalResults();
+    } catch (error) {
+      console.error(`❌ [LabBackground] Error checking critical results:`, error);
     }
   }
 }

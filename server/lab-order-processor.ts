@@ -124,16 +124,19 @@ export class LabOrderProcessor {
 
   /**
    * Generate realistic lab results for a lab order
+   * @returns Array of generated result IDs
    */
-  private static async generateLabResults(labOrder: any) {
+  private static async generateLabResults(labOrder: any): Promise<number[]> {
     console.log(`📊 [LabProcessor] Generating results for ${labOrder.testName}`);
+    
+    const generatedResultIds: number[] = [];
     
     try {
       const testResults = await this.getTestResultTemplate(labOrder.testName);
       
       // Generate results for each component
       for (const result of testResults) {
-        await db.insert(labResults).values({
+        const [insertedResult] = await db.insert(labResults).values({
           labOrderId: labOrder.id,
           patientId: labOrder.patientId,
           loincCode: result.loincCode || labOrder.loincCode,
@@ -172,7 +175,12 @@ export class LabOrderProcessor {
           }),
           createdAt: new Date(),
           updatedAt: new Date()
-        });
+        }).returning();
+        
+        // Add the generated result ID to our array
+        if (insertedResult && insertedResult.id) {
+          generatedResultIds.push(insertedResult.id);
+        }
       }
       
       // Update lab order status
@@ -183,10 +191,13 @@ export class LabOrderProcessor {
         })
         .where(eq(labOrders.id, labOrder.id));
       
-      console.log(`✅ [LabProcessor] Generated ${testResults.length} results for ${labOrder.testName}`);
+      console.log(`✅ [LabProcessor] Generated ${testResults.length} results for ${labOrder.testName}, returning ${generatedResultIds.length} result IDs`);
+      
+      return generatedResultIds;
       
     } catch (error) {
       console.error(`❌ [LabProcessor] Failed to generate results:`, error);
+      return [];
     }
   }
   
