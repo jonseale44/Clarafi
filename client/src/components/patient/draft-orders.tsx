@@ -17,6 +17,7 @@ import { OrderPreferencesDialog } from "./order-preferences-dialog";
 import { OrderPreferencesIndicator } from "./order-preferences-indicator";
 import { PrescriptionTransmissionDialog } from "@/components/eprescribing/prescription-transmission-dialog";
 import { analytics } from "@/lib/analytics";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Order {
   id: number;
@@ -81,6 +82,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   const [selectedMedicationOrder, setSelectedMedicationOrder] = useState<Order | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   // Fetch draft orders
   const { data: orders = [], isLoading, refetch } = useQuery({
@@ -175,15 +177,22 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: Partial<Order>) => {
-      const response = await fetch("/api/orders", {
+      // Route lab orders to the consolidated lab orders endpoint
+      const endpoint = orderData.orderType === 'lab' ? '/api/lab-orders/create' : '/api/orders';
+      
+      // Include orderedBy for lab orders
+      const requestData = {
+        ...orderData,
+        patientId,
+        encounterId,
+        orderStatus: "draft",
+        ...(orderData.orderType === 'lab' && { orderedBy: user?.id })
+      };
+      
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...orderData,
-          patientId,
-          encounterId,
-          orderStatus: "draft",
-        }),
+        body: JSON.stringify(requestData),
       });
       if (!response.ok) throw new Error("Failed to create order");
       return response.json();

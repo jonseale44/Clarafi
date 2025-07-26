@@ -37,6 +37,19 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### Fixed Lab Order Creation API Integration (July 26, 2025 - 8:02 PM) - COMPLETED
+Fixed critical issue where lab orders were failing to create due to missing required fields and incorrect API routing:
+
+1. **Issue**: Lab orders were being sent to general orders endpoint instead of consolidated lab orders endpoint
+2. **Root Cause**: 
+   - Frontend was routing to `/api/orders` for all order types
+   - Consolidated lab endpoint required `orderedBy` field but frontend wasn't sending it
+3. **Solution**:
+   - Updated `draft-orders.tsx` to route lab orders to `/api/lab-orders/create`
+   - Added `useAuth` hook to get current user ID
+   - Now includes `orderedBy: user?.id` when creating lab orders
+4. **Result**: Lab orders now create successfully through the consolidated lab endpoint with proper user tracking
+
 ### Fixed "Approve & Send" Button in Lab Results Matrix (July 26, 2025 - 5:48 PM) - COMPLETED
 Fixed critical UI bug where the "Approve & Send" button in the GPT lab review section was unresponsive:
 
