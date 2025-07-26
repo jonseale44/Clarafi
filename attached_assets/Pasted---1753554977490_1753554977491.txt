@@ -1,0 +1,64 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════╗
+║                            PATIENT: John Doe   |   LAB REVIEW DASHBOARD                 ║
+╠════════════════════════════════════════════════════════════════════════════════════════════╣
+
+┌──────────────────────────── LAB RESULTS TABLE (most recent ← left) ──────────────────────┐
+│                                                                                          │
+│      ┌──────┬──────┬──────┬──────┬──────┬──────┬─────→ (scroll)                         │
+│      │2025  │2024  │2023  │2022  │2021  │2020  │ ...                                    │
+│      ├──────┼──────┼──────┼──────┼──────┼──────┤                                         │
+│ CBC  │ 7.8  │ 8.0  │ 7.5  │ 7.6  │ 8.1  │ 7.9  │ ...                                    │
+│   WBC│ 6.2  │ 5.9  │ 6.3  │ 6.8  │ 7.0  │ 6.5  │                                        │
+│   Hgb│14.3  │14.2  │14.6  │14.5  │14.1  │14.0  │                                        │
+│   ...│ ...  │ ...  │ ...  │ ...  │ ...  │ ...  │                                        │
+│ CMP  │ ...  │ ...  │ ...  │ ...  │ ...  │ ...  │ ...                                    │
+│ Lipids │... │ ...  │ ...  │ ...  │ ...  │ ...  │ ...                                    │
+│                                                                                          │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+    ↑ LATEST         ◀──────────    SCROLLS RIGHTWARD    ──────────▶      OLDER
+
+ ZOOM:  [ Dec ][ Yr ][ Qt ][ Mo ][ Visit ]    [ <-- controls columns & reviews shown ]
+
+────────────────────────────────────────────────────────────────────────────────────────────
+
+┌───────────────────────────── REVIEW NOTES PANEL (most recent on top) ────────────────────┐
+│                                                                                          │
+│ 2025 | Labs stable, A1c at goal. Advise to continue regimen.                             │
+│      | Dr. Patel - Jan 1, 2025  [Edit] [Delete] [History]                                │
+│──────────────────────────────────────────────────────────────────────────────────────────│
+│ 2024 | CBC WBC mild low, not clinically significant. Recheck next year.                  │
+│      | Dr. Lee - Feb 10, 2024 [Edit] [History]                                           │
+│──────────────────────────────────────────────────────────────────────────────────────────│
+│ 2023 | LFTs borderline high. Counsel re: NSAID/acetaminophen intake.                         │
+│      | Dr. Kim - Sep 4, 2023 [Edited Jan 5, 2024] [History]                              │
+│──────────────────────────────────────────────────────────────────────────────────────────│
+│ ...                                                                                      │
+│                                                                                          │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+     ↑
+     |
+     DESCENDING ORDER: top = most recent year (matches left-most lab column);
+     bottom = oldest year (matches right-most lab column).
+
+[Interactivity: Hover/highlight on any lab column--review for same date is scrolled into top view/highlighted.
+Hover review--lab table scrolls horizontally so that matching date is visible & highlighted]
+
+─────────────────────────────── LEGEND & INSTRUCTIONS ─────────────────────────────────────
+• Lab columns: Most recent date is always at far LEFT, older dates extend to the RIGHT
+• Review notes: Most recent date is always at the TOP, older reviews run downward
+• ZOOM: Choose time slices; review pane always updates to display only reviews matching shown date columns
+• Edits/Deletes: All actions timestamped/audited, visible via [History] button or inline as notes
+• Colors: Use soft blues for current selections/highlights, badges for abnormal, gray for deleted, timestamps clear
+
+────────────────────────────────────────────────────────────────────────────────────────────
+
+Key UX:  
+- Click/hover on lab column: review pane auto-scrolls to matching date's review note and highlights it  
+- Click/hover on review: lab table scrolls horizontally to matching column and highlights it  
+- Both panes always align—leftmost column matches top review note  
+- Highest/lowest zoom both work—when zoomed out (years/decades), reviews are grouped/summarized as needed
+
+────────────────────────────────────────────────────────────────────────────────────────────
+
+[ADD NOTE] [EXPORT DATA] [HISTORY] [USER PROFILE]
+

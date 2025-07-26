@@ -1,0 +1,44 @@
+Yes but it’s going to need to be incredibly sophisticated.   Lab Data Table & Review Ul
+1. Unified Table Layout:
+• Display all lab results in a single table: labs/panels on
+rows, dates horizontally as columns. The system must
+scale to decades of data.
+• Each lab result may have a linked review note-some
+reviews may be for an entire lab visit, a specific panel, or a
+single test result (whichever linkage is encoded in the
+underlying data).
+2. Synced & Bidirectional Review Notes:
+• Beneath the table, display corresponding review notes.
+• If the user scrolls horizontally or vertically in the table, the
+review pane automatically syncs/highlights the note (s)
+corresponding to the visible data.
+• If the user clicks or hovers over a review note, the lab table
+scrolls to and highlights the associated panel/column/test
+(bidirectional).
+• Mappings between labs and notes must be robust (e.g.,
+via unique identifiers/dates in data structures).
+3. Zoom/Focus Interaction:
+• User can "zoom out" to display large time-chunks (e.g., 10
+years and see all review notes for that interval.
+• User can "zoom in" to see a single visit, day, or test panel
+—and only the review(s) specific to that.
+• Ul updates both table and review pane to reflect the
+current zoom focus level.
+4. Review Note Management:
+• Users can add, edit, or (soft-) delete review notes.
+• All edits, appends, or deletes must be timestamped/audit-
+trailed and displayed inline (to meet HIPAA compliance).
+• Deleted notes should remain visible as struck-through or
+archived, with user ID/timestamp.
+5. Performance & Extendability:
+• Use virtualization, chunk loading, or other best practices
+to maintain smooth UX even with decades of data.
+• Design for desktop, with an eventual goal to refactor for
+mobile/tablet.
+• Use styling, CSS, or a Ul library for clear hover/click
+highlighting across both panes (labs and notes).
+Ensure accessibility best practices are observed.
+
+NOTES: Do not build a new lab results matrix. I want you to improve our existing lab results matrix with the above vision. 
+
+This is highly complex and I want to make sure you understand my vision before you implement. Ask me any clarifying questions you need and then create a mockup and clear explanation of what you intend to produce BEFORE BEGINNING ANY ACTUAL WORK. Also please consider scaffolding this project so that we can approach one feature at a time (if necessary). 
