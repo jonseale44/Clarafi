@@ -1680,12 +1680,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPatientDraftOrders(patientId: number): Promise<Order[]> {
-    return await db.select().from(orders)
+    // Get draft orders from orders table (for medications, imaging, referrals)
+    const regularOrders = await db.select().from(orders)
       .where(and(
         eq(orders.patientId, patientId),
         sql`${orders.orderStatus} IN ('draft', 'pending')`
       ))
       .orderBy(desc(orders.createdAt));
+    
+    // Get draft lab orders from labOrders table
+    const draftLabOrders = await db.select().from(labOrders)
+      .where(and(
+        eq(labOrders.patientId, patientId),
+        sql`${labOrders.orderStatus} IN ('draft', 'pending')`
+      ))
+      .orderBy(desc(labOrders.orderedAt));
+    
+    // Convert lab orders to match Order interface
+    const labOrdersAsOrders: Order[] = draftLabOrders.map(labOrder => ({
+      id: labOrder.id,
+      patientId: labOrder.patientId,
+      encounterId: labOrder.encounterId,
+      orderType: 'lab' as const,
+      orderStatus: labOrder.orderStatus as "draft" | "pending" | "signed" | "completed" | "cancelled",
+      labName: labOrder.testName,
+      testName: labOrder.testName,
+      testCode: labOrder.testCode,
+      loincCode: labOrder.loincCode,
+      priority: labOrder.priority,
+      clinicalIndication: labOrder.clinicalIndication,
+      specimenType: labOrder.specimenType,
+      fastingRequired: labOrder.fastingRequired,
+      orderedBy: labOrder.orderedBy,
+      providerId: labOrder.orderedBy,
+      orderDate: labOrder.orderedAt,
+      createdAt: labOrder.orderedAt,
+      updatedAt: labOrder.updatedAt,
+      // Set other Order fields to null/undefined
+      medicationName: null,
+      strength: null,
+      dosageForm: null,
+      dosage: null,
+      route: null,
+      frequency: null,
+      duration: null,
+      quantity: null,
+      quantityUnit: null,
+      refills: null,
+      genericSubstitution: null,
+      instructions: null,
+      indicationsForUse: null,
+      studyType: null,
+      studyLocation: null,
+      urgency: null,
+      contrast: null,
+      specialInstructions: null,
+      specialtyType: null,
+      consultantName: null,
+      referralReason: null,
+      attachedDocuments: null,
+      diagnosisCode: labOrder.icd10Codes ? labOrder.icd10Codes[0] : null,
+      deliveryMethod: null,
+      pharmacy: null,
+      pharmacyFax: null,
+      signedBy: null,
+      signedAt: labOrder.acknowledgedAt,
+      sureScriptsData: null,
+      rxcui: null,
+      scheduledDate: null,
+      preferredLab: null,
+      externalOrderId: labOrder.externalOrderId,
+      externalLabOrderId: labOrder.externalOrderId,
+      electronicSignature: null,
+      electronicSignatureDate: null,
+      orderNotes: null,
+      resultAvailable: labOrder.resultsReceivedAt ? true : false,
+      labOrderId: labOrder.id  // Reference to the actual lab order ID
+    }));
+    
+    // Combine and sort all orders by creation date
+    const allOrders = [...regularOrders, ...labOrdersAsOrders];
+    return allOrders.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA; // Descending order
+    });
   }
 
 

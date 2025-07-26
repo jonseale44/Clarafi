@@ -50,6 +50,21 @@ Fixed critical issue where lab orders were failing to create due to missing requ
    - Now includes `orderedBy: user?.id` when creating lab orders
 4. **Result**: Lab orders now create successfully through the consolidated lab endpoint with proper user tracking
 
+### Fixed Lab Order Signing API Integration (July 26, 2025 - 8:15 PM) - COMPLETED
+Fixed critical issue where lab orders were failing to sign due to incorrect API routing:
+
+1. **Issue**: Lab orders couldn't be signed - frontend was trying to sign them using `/api/orders/:orderId/sign` endpoint
+2. **Root Cause**: 
+   - Lab orders are stored in `labOrders` table, not `orders` table
+   - The regular orders sign endpoint only queries the `orders` table
+   - Consolidated lab system has its own sign endpoint at `/api/lab-orders/:orderId/sign`
+3. **Solution**:
+   - Updated `signOrderMutation` in `draft-orders.tsx` to check order type
+   - Lab orders now route to `/api/lab-orders/:orderId/sign`
+   - Non-lab orders continue using `/api/orders/:orderId/sign`
+   - Updated bulk sign mutation to handle lab orders separately (signs them individually)
+4. **Result**: Both individual and bulk signing of lab orders now work correctly through the consolidated lab endpoints
+
 ### Fixed "Approve & Send" Button in Lab Results Matrix (July 26, 2025 - 5:48 PM) - COMPLETED
 Fixed critical UI bug where the "Approve & Send" button in the GPT lab review section was unresponsive:
 

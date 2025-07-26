@@ -240,7 +240,13 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   // Sign individual order mutation
   const signOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      const response = await fetch(`/api/orders/${orderId}/sign`, {
+      // Find the order to determine its type
+      const order = orders.find((o: Order) => o.id === orderId);
+      const endpoint = order?.orderType === 'lab' 
+        ? `/api/lab-orders/${orderId}/sign`
+        : `/api/orders/${orderId}/sign`;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
@@ -307,20 +313,60 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
         ? orders.filter((order: Order) => order.orderType === orderType && order.orderStatus === 'draft')
         : orders.filter((order: Order) => order.orderStatus === 'draft');
       
-      const orderIds = ordersToSign.map((order: Order) => order.id);
-      
-      const response = await fetch('/api/orders/bulk-sign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds })
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to bulk sign orders');
+      // If signing lab orders only, use individual sign endpoint for each
+      if (orderType === 'lab') {
+        const signPromises = ordersToSign.map((order: Order) => 
+          fetch(`/api/lab-orders/${order.id}/sign`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          }).then(res => {
+            if (!res.ok) throw new Error('Failed to sign lab order');
+            return res.json();
+          })
+        );
+        
+        return Promise.all(signPromises);
       }
       
-      return response.json();
+      // For non-lab orders or mixed types, filter out lab orders and use bulk sign
+      const nonLabOrderIds = ordersToSign
+        .filter((order: Order) => order.orderType !== 'lab')
+        .map((order: Order) => order.id);
+      
+      // Sign lab orders individually
+      const labOrders = ordersToSign.filter((order: Order) => order.orderType === 'lab');
+      const labSignPromises = labOrders.map((order: Order) => 
+        fetch(`/api/lab-orders/${order.id}/sign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        }).then(res => {
+          if (!res.ok) throw new Error('Failed to sign lab order');
+          return res.json();
+        })
+      );
+      
+      // Sign non-lab orders in bulk if any
+      let bulkSignPromise = Promise.resolve([]);
+      if (nonLabOrderIds.length > 0) {
+        bulkSignPromise = fetch('/api/orders/bulk-sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderIds: nonLabOrderIds })
+        }).then(res => {
+          if (!res.ok) throw new Error('Failed to bulk sign orders');
+          return res.json();
+        });
+      }
+      
+      // Combine results
+      const [labResults, bulkResults] = await Promise.all([
+        Promise.all(labSignPromises),
+        bulkSignPromise
+      ]);
+      
+      return [...labResults, ...bulkResults];
     },
     onSuccess: (data, orderType) => {
       // Invalidate multiple related queries to ensure UI consistency
