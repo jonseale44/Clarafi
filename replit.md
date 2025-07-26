@@ -37,6 +37,35 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### SOAP Note Generation Safety Enhancement (July 26, 2025 - 3:45 PM) - COMPLETED
+Implemented critical clinical safety feature to prevent AI from creating new treatment plans not explicitly mentioned in encounter transcriptions:
+
+1. **Enhanced Note Generation Service** (`/server/enhanced-note-generation-service.ts`):
+   - Created `getTranscriptionConstraints()` helper method to standardize constraints across all templates
+   - AI can NO LONGER create new medications, labs, imaging, or referrals unless explicitly mentioned in transcription
+   - AI CAN still: continue existing medications, add patient education, provide lifestyle recommendations
+   - Applied to ALL 6 SOAP note templates:
+     - Standard SOAP
+     - SOAP Narrative
+     - SOAP Pediatric
+     - SOAP Psychiatric
+     - SOAP OB/GYN
+     - APSO
+
+2. **Constraint Implementation**:
+   - Added to both Assessment/Plan sections and Orders sections in all templates
+   - Clear instructions with [ONLY if mentioned in transcription] tags in examples
+   - Prevents AI from being overly helpful by suggesting treatments providers didn't intend
+
+3. **Clinical Safety Impact**:
+   - Prevents unintended medication orders
+   - Prevents unnecessary diagnostic tests
+   - Maintains provider control over treatment plans
+   - Reduces liability from AI-generated orders
+   - Ensures SOAP notes accurately reflect actual encounter discussions
+
+4. **User Requirement**: This was a critical safety requirement to ensure AI-generated notes don't add medical orders beyond what was actually discussed in the patient encounter.
+
 ### Production-Ready Lab System with Complete Patient Notification Cycle (July 26, 2025 - 3:12 PM) - COMPLETED
 Implemented the missing patient notification service to complete the lab cycle from provider order to patient communication:
 

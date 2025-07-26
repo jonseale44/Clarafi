@@ -18,6 +18,14 @@ const openai = new OpenAI({
 export class EnhancedNoteGenerationService {
   // CONSOLIDATED NOTE TYPE PROMPTS - All note types now use full patient context
 
+  private static getTranscriptionConstraints(): string {
+    return `TRANSCRIPTION-BASED CONSTRAINTS:
+- NEW medications, labs, imaging, or referrals MUST ONLY be included if explicitly mentioned in the transcription
+- You MAY continue existing medications without changes (e.g., "Continue lisinopril 10mg daily")  
+- You MAY add patient education, lifestyle recommendations, and general instructions
+- DO NOT add new diagnostic tests, medication changes, or referrals unless specifically discussed`;
+  }
+
   private static buildSOAPPrompt(
     //////// SOAP ////////////
     medicalContext: string,
@@ -86,6 +94,8 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -96,7 +106,7 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-- Trial low-dose inhaler therapy to address potential airway constriction.
+- Trial low-dose inhaler therapy to address potential airway constriction. [ONLY if mentioned in transcription]
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
@@ -108,13 +118,15 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
+
 For all orders, follow this highly-structured format:
 
 Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
 
@@ -132,11 +144,11 @@ Dispense: 1 inhaler (200 metered doses)
 
 Refills: 1
 
-Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "CBC, BMP, TSH"). Do not include labs unless specifically mentioned.
 
-Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+Imaging: Specify the modality and purpose ONLY if explicitly ordered in the transcription (e.g., "Chest X-ray to assess for structural causes of chest tightness").
 
-Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to pulmonologist for abnormal lung function testing").
 
 Patient Education: Summarize key educational topics discussed with the patient.
 
@@ -215,6 +227,8 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -225,7 +239,7 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-- Trial low-dose inhaler therapy to address potential airway constriction.
+- Trial low-dose inhaler therapy to address potential airway constriction. [ONLY if mentioned in transcription]
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
@@ -237,6 +251,7 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
 
 For all orders, follow this highly-structured format:
 
@@ -244,7 +259,7 @@ Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
 
@@ -262,11 +277,11 @@ Dispense: 1 inhaler (200 metered doses)
 
 Refills: 1
 
-Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "CBC, BMP, TSH"). Do not include labs unless specifically mentioned.
 
-Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+Imaging: Specify the modality and purpose ONLY if explicitly ordered in the transcription (e.g., "Chest X-ray to assess for structural causes of chest tightness").
 
-Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to pulmonologist for abnormal lung function testing").
 
 Patient Education: Summarize key educational topics discussed with the patient.
 
@@ -351,6 +366,8 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -361,7 +378,7 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-- Trial low-dose inhaler therapy to address potential airway constriction.
+- Trial low-dose inhaler therapy to address potential airway constriction. [ONLY if mentioned in transcription]
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
@@ -373,13 +390,15 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
+
 For all orders, follow this highly-structured format:
 
 Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
 
@@ -397,11 +416,11 @@ Dispense: 1 inhaler (200 metered doses)
 
 Refills: 1
 
-Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "CBC, BMP, TSH"). Do not include labs unless specifically mentioned.
 
-Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+Imaging: Specify the modality and purpose ONLY if explicitly ordered in the transcription (e.g., "Chest X-ray to assess for structural causes of chest tightness").
 
-Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to pulmonologist for abnormal lung function testing").
 
 Patient Education: Summarize key educational topics discussed with the patient.
 
@@ -514,6 +533,8 @@ Mental Status Examination:
 **Appearance/Behavior: Manic presentation.**
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Psychiatric Diagnosis (DSM-5 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -524,22 +545,23 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Major Depressive Disorder, Moderate, Single Episode (F32.1):
-- Continue sertraline 100mg daily, good response with minimal side effects.
-- Increase frequency of therapy sessions to weekly.
+- Continue sertraline 100mg daily, good response with minimal side effects. [ONLY if medication continuation mentioned]
+- Increase frequency of therapy sessions to weekly. [ONLY if discussed in transcription]
 - Sleep hygiene education provided.
 - PHQ-9 score: 15 (moderate severity).
 
 Generalized Anxiety Disorder (F41.1):
-- Start buspirone 5mg BID, titrate as tolerated.
+- Start buspirone 5mg BID, titrate as tolerated. [ONLY if new medication discussed in transcription]
 - Continue CBT techniques for anxiety management.
-- Referred to anxiety support group.
+- Referred to anxiety support group. [ONLY if referral mentioned]
 
 Alcohol Use Disorder, Mild (F10.10):
 - Discussed harm reduction strategies.
-- Offered naltrexone for craving reduction.
+- Offered naltrexone for craving reduction. [ONLY if medication offered in transcription]
 - CAGE score: 2/4.
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
 
 For all orders, follow this highly-structured format:
 
@@ -547,7 +569,7 @@ Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., with food, at bedtime)]
 
@@ -573,11 +595,11 @@ Dispense: 30 tablets
 
 Refills: 2
 
-Labs: List specific tests ONLY. Be concise (e.g., "TSH, CBC, CMP, B12, folate" for new psych eval). Include drug levels when applicable (e.g., "Lithium level, TSH, Cr").
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "TSH, CBC, CMP, B12, folate" for new psych eval). Do not include labs unless specifically mentioned.
 
-Imaging: Rarely needed in psychiatry. If indicated, specify clearly (e.g., "MRI brain without contrast to rule out organic causes").
+Imaging: Rarely needed in psychiatry. If indicated, specify ONLY if explicitly ordered in the transcription (e.g., "MRI brain without contrast to rule out organic causes").
 
-Referrals: Clearly indicate the specialty and purpose (e.g., "Refer to neuropsychology for cognitive testing", "Refer to addiction medicine for substance use treatment").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to neuropsychology for cognitive testing", "Refer to addiction medicine for substance use treatment").
 
 Therapy/Counseling: Specify type and frequency (e.g., "Weekly individual psychotherapy focusing on CBT for depression", "Biweekly family therapy").
 
@@ -673,6 +695,8 @@ Breast: **Right breast 2 o'clock position with 2 cm firm, mobile, non-tender mas
 Breast: Fibroadenoma right breast.
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -683,30 +707,32 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Abnormal Uterine Bleeding (N93.9):
-- Transvaginal ultrasound ordered to evaluate uterine anatomy.
-- Endometrial biopsy if indicated based on age/risk factors.
-- CBC to assess for anemia.
+- Transvaginal ultrasound ordered to evaluate uterine anatomy. [ONLY if mentioned in transcription]
+- Endometrial biopsy if indicated based on age/risk factors. [ONLY if discussed]
+- CBC to assess for anemia. [ONLY if ordered in transcription]
 - Consider hormonal management options.
 
 Dysmenorrhea (N94.6):
 - NSAIDs starting 1-2 days before menses.
-- Consider hormonal contraception for cycle suppression.
-- Pelvic ultrasound if symptoms severe or refractory.
+- Consider hormonal contraception for cycle suppression. [ONLY if discussed]
+- Pelvic ultrasound if symptoms severe or refractory. [ONLY if ordered]
 
 Routine Gynecologic Exam (Z01.411):
 - Pap smear collected per guidelines.
 - HPV co-testing if indicated.
-- STI screening based on risk factors.
+- STI screening based on risk factors. [ONLY if ordered]
 - Breast exam performed.
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
+
 For all orders, follow this highly-structured format:
 
 Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., with food, take continuously)]
 
@@ -732,13 +758,13 @@ Dispense: 14 tablets
 
 Refills: 0
 
-Labs: List specific tests ONLY. Be concise (e.g., "Urine pregnancy test, CBC, TSH" or "Pap smear with HPV co-testing, GC/CT NAAT").
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "Urine pregnancy test, CBC, TSH"). Do not include labs unless specifically mentioned.
 
-Imaging: Specify the modality and purpose clearly (e.g., "Transvaginal ultrasound to evaluate uterine fibroids", "Pelvic MRI for endometriosis staging").
+Imaging: Specify the modality and purpose ONLY if explicitly ordered in the transcription (e.g., "Transvaginal ultrasound to evaluate uterine fibroids", "Pelvic MRI for endometriosis staging").
 
-Procedures: Document any procedures planned (e.g., "IUD insertion scheduled", "Colposcopy for abnormal Pap", "Endometrial biopsy").
+Procedures: Document any procedures ONLY if explicitly planned in the transcription (e.g., "IUD insertion scheduled", "Colposcopy for abnormal Pap", "Endometrial biopsy").
 
-Referrals: Clearly indicate the specialty and purpose (e.g., "Refer to maternal-fetal medicine for high-risk pregnancy", "Refer to gynecologic oncology for complex ovarian mass").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to maternal-fetal medicine for high-risk pregnancy", "Refer to gynecologic oncology for complex ovarian mass").
 
 Contraception Counseling: Document method chosen and counseling provided (e.g., "Comprehensive contraception counseling provided. Patient chose Mirena IUD. Risks, benefits, and alternatives discussed.").
 
@@ -771,6 +797,8 @@ ${transcription}
 Generate a complete, professional APSO note with the following sections:
 
 **ASSESSMENT/PLAN:**
+${this.getTranscriptionConstraints()}
+
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
 [Condition (ICD-10 Code)]: Provide a concise, bullet-pointed plan for the condition.
@@ -781,7 +809,7 @@ CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and
 Example format (notice the blank lines between conditions):
 
 Chest Tightness, Suspected Airway Constriction (R06.4):
-- Trial low-dose inhaler therapy to address potential airway constriction.
+- Trial low-dose inhaler therapy to address potential airway constriction. [ONLY if mentioned in transcription]
 - Monitor response to inhaler and reassess in 2 weeks.
 - Patient education on environmental triggers (e.g., dust exposure).
 
@@ -843,13 +871,15 @@ Skin: Cellulitis on the left lower leg.
 <!--insert FOUR blank lines)-->
 
 **ORDERS:** 
+${this.getTranscriptionConstraints()}
+
 For all orders, follow this highly-structured format:
 
 Medications:
 
 Each medication order must follow this exact template:
 
-Medication: [name, include specific formulation and strength]
+Medication: [name, include specific formulation and strength] [ONLY if NEW medication was discussed in transcription]
 
 Sig: [detailed instructions for use, including route, frequency, specific indications, or restrictions (e.g., before/after meals, PRN for specific symptoms)]
 
@@ -867,11 +897,11 @@ Dispense: 1 inhaler (200 metered doses)
 
 Refills: 1
 
-Labs: List specific tests ONLY. Be concise (e.g., "CBC, BMP, TSH"). Do not include reasons or justification for labs. 
+Labs: List specific tests ONLY if explicitly ordered in the transcription. Be concise (e.g., "CBC, BMP, TSH"). Do not include labs unless specifically mentioned.
 
-Imaging: Specify the modality and purpose in clear terms (e.g., "Chest X-ray to assess for structural causes of chest tightness").
+Imaging: Specify the modality and purpose ONLY if explicitly ordered in the transcription (e.g., "Chest X-ray to assess for structural causes of chest tightness").
 
-Referrals: Clearly indicate the specialty and purpose of the referral (e.g., "Refer to pulmonologist for abnormal lung function testing").
+Referrals: Clearly indicate the specialty and purpose ONLY if explicitly discussed in the transcription (e.g., "Refer to pulmonologist for abnormal lung function testing").
 
 Patient Education: Summarize key educational topics discussed with the patient.
 
