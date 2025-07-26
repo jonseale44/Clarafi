@@ -152,6 +152,11 @@ export function LabResultsMatrix({
     providerNotes: ''
   });
   
+  // Review Notes Panel state
+  const [isReviewNotesPanelOpen, setIsReviewNotesPanelOpen] = useState(true);
+  const matrixScrollRef = React.useRef<HTMLDivElement>(null);
+  const reviewScrollRef = React.useRef<HTMLDivElement>(null);
+  
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { navigateWithContext } = useNavigationContext();
@@ -556,6 +561,12 @@ export function LabResultsMatrix({
 
   const { data: labOrders, isLoading: ordersLoading } = useQuery({
     queryKey: [`/api/patients/${patientId}/lab-orders`],
+    enabled: !!patientId
+  });
+
+  // Fetch GPT lab review notes for this patient
+  const { data: gptReviewNotes = [] } = useQuery({
+    queryKey: [`/api/patients/${patientId}/gpt-lab-reviews`],
     enabled: !!patientId
   });
 
@@ -1077,7 +1088,15 @@ export function LabResultsMatrix({
       )}
       
       <CardContent className="p-0">
-        <div className="overflow-x-auto max-h-[70vh]">
+        <div 
+          ref={matrixScrollRef}
+          className="overflow-x-auto max-h-[70vh] matrix-scroll-container"
+          onScroll={(e) => {
+            if (reviewScrollRef.current) {
+              reviewScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+            }
+          }}
+        >
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-gray-300 bg-gray-50">
@@ -1764,6 +1783,200 @@ export function LabResultsMatrix({
         )}
       </CardContent>
     </Card>
+
+    {/* Phase 2: Review Notes Panel */}
+    {gptReviewNotes.length > 0 && (
+      <Card className="mt-4">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold">Lab Review Notes</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsReviewNotesPanelOpen(!isReviewNotesPanelOpen)}
+            >
+              {isReviewNotesPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
+        </CardHeader>
+        {isReviewNotesPanelOpen && (
+          <CardContent className="pt-0">
+            <div 
+              ref={reviewScrollRef}
+              className="overflow-x-auto" 
+              onScroll={(e) => {
+                if (matrixScrollRef.current) {
+                  matrixScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                }
+              }}
+            >
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="sticky left-0 z-20 bg-white border-r p-2 text-left min-w-[200px]">
+                      <div className="font-medium text-sm">Review Type</div>
+                    </th>
+                    {/* Generate columns to match the matrix date columns */}
+                    {dateColumns.map((dateCol) => (
+                      <th key={dateCol.displayDate} className="border-r p-2 text-center min-w-[100px]">
+                        <div className="font-medium text-xs">{dateCol.displayDate}</div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Provider Notes Row */}
+                  <tr className="border-t">
+                    <td className="sticky left-0 z-10 bg-white border-r p-2">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-navy-blue-600" />
+                        <span className="text-sm font-medium">Provider Notes</span>
+                      </div>
+                    </td>
+                    {dateColumns.map((dateCol) => {
+                      // Find manual review notes for this date
+                      const manualNotes = results.filter((result: any) => {
+                        const resultDate = format(new Date(result.specimenCollectedAt || result.resultAvailableAt), 'MM/dd/yy');
+                        return resultDate === dateCol.displayDate && result.providerNotes;
+                      });
+
+                      return (
+                        <td key={dateCol.displayDate} className="border-r p-2 align-top">
+                          {manualNotes.length > 0 ? (
+                            <div className="space-y-2">
+                              {manualNotes.map((note: any, idx: number) => (
+                                <div key={idx} className="text-xs bg-blue-50 p-2 rounded">
+                                  <div className="font-medium text-blue-900 mb-1">{note.testName}</div>
+                                  <div className="text-gray-700">{note.providerNotes}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {/* GPT Clinical Review Row */}
+                  <tr className="border-t">
+                    <td className="sticky left-0 z-10 bg-white border-r p-2">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium">Clinical Review</span>
+                      </div>
+                    </td>
+                    {dateColumns.map((dateCol) => {
+                      // Find GPT reviews that include results from this date
+                      const relevantReviews = gptReviewNotes.filter((review: any) => {
+                        return review.resultIds?.some((resultId: number) => {
+                          const result = results.find((r: any) => r.id === resultId);
+                          if (!result) return false;
+                          const resultDate = format(new Date(result.specimenCollectedAt || result.resultAvailableAt), 'MM/dd/yy');
+                          return resultDate === dateCol.displayDate;
+                        });
+                      });
+
+                      return (
+                        <td key={dateCol.displayDate} className="border-r p-2 align-top">
+                          {relevantReviews.length > 0 ? (
+                            <div className="space-y-2">
+                              {relevantReviews.map((review: any, idx: number) => (
+                                <div key={idx} className="text-xs bg-purple-50 p-2 rounded">
+                                  <div className="text-gray-700">{review.clinicalReview}</div>
+                                  {review.generatedBy && (
+                                    <div className="text-gray-500 mt-1">— Dr. {review.generatedByName}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {/* Patient Message Row */}
+                  <tr className="border-t">
+                    <td className="sticky left-0 z-10 bg-white border-r p-2">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium">Patient Message</span>
+                      </div>
+                    </td>
+                    {dateColumns.map((dateCol) => {
+                      const relevantReviews = gptReviewNotes.filter((review: any) => {
+                        return review.resultIds?.some((resultId: number) => {
+                          const result = results.find((r: any) => r.id === resultId);
+                          if (!result) return false;
+                          const resultDate = format(new Date(result.specimenCollectedAt || result.resultAvailableAt), 'MM/dd/yy');
+                          return resultDate === dateCol.displayDate;
+                        });
+                      });
+
+                      return (
+                        <td key={dateCol.displayDate} className="border-r p-2 align-top">
+                          {relevantReviews.length > 0 ? (
+                            <div className="space-y-2">
+                              {relevantReviews.map((review: any, idx: number) => (
+                                <div key={idx} className="text-xs bg-green-50 p-2 rounded">
+                                  <div className="text-gray-700">{review.patientMessage}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {/* Nurse Message Row */}
+                  <tr className="border-t">
+                    <td className="sticky left-0 z-10 bg-white border-r p-2">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-orange-600" />
+                        <span className="text-sm font-medium">Nurse Message</span>
+                      </div>
+                    </td>
+                    {dateColumns.map((dateCol) => {
+                      const relevantReviews = gptReviewNotes.filter((review: any) => {
+                        return review.resultIds?.some((resultId: number) => {
+                          const result = results.find((r: any) => r.id === resultId);
+                          if (!result) return false;
+                          const resultDate = format(new Date(result.specimenCollectedAt || result.resultAvailableAt), 'MM/dd/yy');
+                          return resultDate === dateCol.displayDate;
+                        });
+                      });
+
+                      return (
+                        <td key={dateCol.displayDate} className="border-r p-2 align-top">
+                          {relevantReviews.length > 0 ? (
+                            <div className="space-y-2">
+                              {relevantReviews.map((review: any, idx: number) => (
+                                <div key={idx} className="text-xs bg-orange-50 p-2 rounded">
+                                  <div className="text-gray-700">{review.nurseMessage}</div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    )}
 
     {/* Edit Lab Result Dialog */}
     <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>
