@@ -44,6 +44,11 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
     queryKey: ['/api/user/preferences']
   });
 
+  // Get user note preferences for AI mode
+  const { data: userNotePreferences } = useQuery<any>({
+    queryKey: ['/api/user-preferences/notes']
+  });
+
   // Mutation to update user preferences
   const updatePreferencesMutation = useMutation({
     mutationFn: async (updates: any) => {
@@ -51,6 +56,22 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
+    }
+  });
+
+  // Mutation to update note preferences (AI mode)
+  const updateNotePreferencesMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      console.log('🔧 [NoteTypeSelector] Updating AI mode:', updates);
+      return await apiRequest('PUT', '/api/user-preferences/notes', updates);
+    },
+    onSuccess: (data) => {
+      console.log('✅ [NoteTypeSelector] AI mode updated successfully:', data);
+      queryClient.invalidateQueries({ queryKey: ['/api/user-preferences/notes'] });
+    },
+    onError: (error: any) => {
+      console.error('❌ [NoteTypeSelector] Failed to update AI mode:', error);
+      console.error('Error details:', error.response?.data || error.message);
     }
   });
 
@@ -148,11 +169,19 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
     return noteType;
   };
 
-  const isFlexibleMode = userPreferences?.aiAssistanceMode === 'flexible';
+  const isFlexibleMode = userNotePreferences?.aiAssistanceMode === 'flexible';
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 [NoteTypeSelector] User note preferences:', userNotePreferences);
+    console.log('🔍 [NoteTypeSelector] Current AI mode:', userNotePreferences?.aiAssistanceMode);
+    console.log('🔍 [NoteTypeSelector] isFlexibleMode:', isFlexibleMode);
+  }, [userNotePreferences, isFlexibleMode]);
 
   const handleAIModeToggle = (checked: boolean) => {
     const mode = checked ? 'flexible' : 'strict';
-    updatePreferencesMutation.mutate({ aiAssistanceMode: mode });
+    console.log('🎯 [NoteTypeSelector] Toggle clicked:', { checked, mode });
+    updateNotePreferencesMutation.mutate({ aiAssistanceMode: mode });
   };
 
   return (
