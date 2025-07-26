@@ -2,11 +2,62 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, Users, Eye, Target, DollarSign, Activity, Clock, FileText } from "lucide-react";
 import { roiTracker } from "@/lib/roi-tracking-service";
 import { behaviorAnalytics } from "@/lib/behavior-analytics-service";
+
+// Define types for API responses
+interface AnalyticsData {
+  keyMetrics: {
+    totalUsers: number;
+    activeUsers: number;
+    newPatients: number;
+    totalEncounters: number;
+    conversionRate: number;
+    avgSessionDuration: number;
+    customerLifetimeValue: number;
+    patientAcquisitionCost: number;
+  };
+  userEngagement: Array<{
+    date: string;
+    activeUsers: number;
+    newUsers: number;
+    avgSessionDuration: number;
+  }>;
+  clinicalEfficiency: {
+    avgSOAPTime: number;
+    avgEncounterDuration: number;
+    documentsProcessedPerDay: number;
+    ordersPerEncounter: number;
+  };
+  opportunities: Array<{
+    type: string;
+    message: string;
+    priority: string;
+  }>;
+}
+
+interface ComprehensiveData {
+  current: AnalyticsData;
+  previous: AnalyticsData;
+  kpis: {
+    cpa: number;
+    ltv: number;
+    ltvCacRatio: number;
+    churnRate: number;
+    retentionRate: number;
+    avgRevenuePerUser: number;
+  };
+}
+
+interface PredictiveData {
+  churnRisk: any[];
+  highValueOpportunities: any[];
+  revenueProjection: number;
+}
 
 export default function MarketingMetricsDashboard() {
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
@@ -16,17 +67,17 @@ export default function MarketingMetricsDashboard() {
   const [metricType, setMetricType] = useState("daily");
 
   // Get real analytics summary data
-  const { data: analyticsData, isLoading } = useQuery({
+  const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: [`/api/analytics/summary?from=${dateRange.start.toISOString()}&to=${dateRange.end.toISOString()}`],
   });
 
   // Get comprehensive analytics data
-  const { data: comprehensiveData } = useQuery({
+  const { data: comprehensiveData } = useQuery<ComprehensiveData>({
     queryKey: [`/api/analytics/comprehensive?range=30d`],
   });
 
   // Get predictive analytics
-  const { data: predictiveData } = useQuery({
+  const { data: predictiveData } = useQuery<PredictiveData>({
     queryKey: ["/api/analytics/predictive"],
   });
 
