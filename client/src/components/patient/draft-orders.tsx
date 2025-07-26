@@ -137,7 +137,13 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   // Delete order mutation
   const deleteOrderMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/orders/${id}`, { method: "DELETE" });
+      // Find the order to determine its type
+      const order = orders.find((o: Order) => o.id === id);
+      const endpoint = order?.orderType === 'lab' 
+        ? `/api/lab-orders/${id}`
+        : `/api/orders/${id}`;
+      
+      const response = await fetch(endpoint, { method: "DELETE" });
       if (!response.ok) throw new Error("Failed to delete order");
     },
     onSuccess: () => {
@@ -157,8 +163,31 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
   // Delete all orders mutation
   const deleteAllOrdersMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/patients/${patientId}/draft-orders`, { method: "DELETE" });
-      if (!response.ok) throw new Error("Failed to delete all orders");
+      // Get all lab orders
+      const labOrders = orders.filter((order: Order) => order.orderType === 'lab');
+      const nonLabOrders = orders.filter((order: Order) => order.orderType !== 'lab');
+      
+      // Delete lab orders individually
+      const labDeletePromises = labOrders.map((order: Order) => 
+        fetch(`/api/lab-orders/${order.id}`, { method: "DELETE" }).then(res => {
+          if (!res.ok) throw new Error('Failed to delete lab order');
+          return res;
+        })
+      );
+      
+      // Delete non-lab orders using bulk delete endpoint
+      let bulkDeletePromise = Promise.resolve();
+      if (nonLabOrders.length > 0) {
+        bulkDeletePromise = fetch(`/api/patients/${patientId}/draft-orders`, { 
+          method: "DELETE" 
+        }).then(res => {
+          if (!res.ok) throw new Error('Failed to delete orders');
+          return res;
+        });
+      }
+      
+      // Execute all deletions
+      await Promise.all([...labDeletePromises, bulkDeletePromise]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/draft-orders`] });

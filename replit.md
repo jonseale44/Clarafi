@@ -37,6 +37,30 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### Complete Lab Order CRUD Operations Fix (July 26, 2025 - 8:20 PM) - COMPLETED
+Fixed all remaining lab order operations to properly handle the dual-table architecture (orders vs labOrders):
+
+1. **Individual Lab Order Deletion**:
+   - **Issue**: Delete was failing with "Order not found" because it was using `/api/orders/:id`
+   - **Solution**: Updated `deleteOrderMutation` to route lab orders to `/api/lab-orders/:id`
+   - **Implementation**: Checks order type and routes to appropriate endpoint
+
+2. **Delete All Orders**:
+   - **Issue**: "Delete All" only deleted regular orders, not lab orders
+   - **Solution**: Updated `deleteAllOrdersMutation` to:
+     - Filter lab orders and delete them individually via `/api/lab-orders/:id`
+     - Delete non-lab orders using the bulk endpoint `/api/patients/:patientId/draft-orders`
+     - Execute all deletions in parallel using Promise.all
+   - **Result**: All order types now properly deleted with single button click
+
+3. **Complete Lab Order API Routing**:
+   - Create: `/api/lab-orders/create` (with `orderedBy` field)
+   - Sign: `/api/lab-orders/:id/sign`
+   - Delete: `/api/lab-orders/:id`
+   - Bulk operations: Lab orders handled individually due to separate table
+
+4. **Technical Architecture**: The system maintains dual tables (orders for medications/imaging/referrals, labOrders for lab tests) requiring careful endpoint routing based on order type
+
 ### Fixed Lab Order Creation API Integration (July 26, 2025 - 8:02 PM) - COMPLETED
 Fixed critical issue where lab orders were failing to create due to missing required fields and incorrect API routing:
 
