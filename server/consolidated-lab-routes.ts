@@ -233,9 +233,10 @@ router.delete("/:orderId", async (req: Request, res: Response) => {
   }
 });
 
-// Helper function to get test mapping
+// Helper function to get test mapping with comprehensive LOINC codes
 function getTestMapping(testName: string) {
   const testMappings: Record<string, any> = {
+    // Hematology
     'Complete Blood Count': {
       testCode: 'CBC',
       loincCode: '58410-2',
@@ -243,6 +244,15 @@ function getTestMapping(testName: string) {
       category: 'hematology',
       specimenType: 'whole_blood',
     },
+    'Complete Blood Count with differential': {
+      testCode: 'CBCDIFF',
+      loincCode: '57021-8',
+      cptCode: '85025',
+      category: 'hematology',
+      specimenType: 'whole_blood',
+    },
+    
+    // Chemistry - Basic Panels
     'Comprehensive Metabolic Panel': {
       testCode: 'CMP',
       loincCode: '24323-8',
@@ -250,10 +260,28 @@ function getTestMapping(testName: string) {
       category: 'chemistry',
       specimenType: 'serum',
     },
+    'Basic Metabolic Panel': {
+      testCode: 'BMP',
+      loincCode: '24320-4',
+      cptCode: '80048',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    
+    // Lipids
     'Lipid Panel': {
       testCode: 'LIPID',
       loincCode: '24331-1',
       cptCode: '80061',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    
+    // Liver Function
+    'Liver Function Panel': {
+      testCode: 'LFT',
+      loincCode: '24325-3',
+      cptCode: '80076',
       category: 'chemistry',
       specimenType: 'serum',
     },
@@ -264,21 +292,196 @@ function getTestMapping(testName: string) {
       category: 'chemistry',
       specimenType: 'serum',
     },
+    
+    // Endocrinology
     'Thyroid Stimulating Hormone': {
       testCode: 'TSH',
       loincCode: '3016-3',
       cptCode: '84443',
       category: 'endocrinology',
       specimenType: 'serum',
+    },
+    'Thyroid Stimulating Hormone (TSH)': {
+      testCode: 'TSH',
+      loincCode: '3016-3',
+      cptCode: '84443',
+      category: 'endocrinology',
+      specimenType: 'serum',
+    },
+    'Free T4': {
+      testCode: 'FT4',
+      loincCode: '3024-7',
+      cptCode: '84439',
+      category: 'endocrinology',
+      specimenType: 'serum',
+    },
+    'Hemoglobin A1c': {
+      testCode: 'HBA1C',
+      loincCode: '4548-4',
+      cptCode: '83036',
+      category: 'endocrinology',
+      specimenType: 'whole_blood',
+    },
+    
+    // Electrolytes & Minerals
+    'Serum Magnesium Level': {
+      testCode: 'MG',
+      loincCode: '2601-3',
+      cptCode: '83735',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    'Serum Calcium Level': {
+      testCode: 'CA',
+      loincCode: '17861-6',
+      cptCode: '82310',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    'Serum Phosphorus Level': {
+      testCode: 'PHOS',
+      loincCode: '2777-1',
+      cptCode: '84100',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    
+    // Cardiac Markers
+    'Troponin I': {
+      testCode: 'TROP',
+      loincCode: '10839-9',
+      cptCode: '84484',
+      category: 'cardiac',
+      specimenType: 'serum',
+    },
+    'B-type Natriuretic Peptide': {
+      testCode: 'BNP',
+      loincCode: '30934-4',
+      cptCode: '83880',
+      category: 'cardiac',
+      specimenType: 'plasma',
+    },
+    
+    // Renal Function
+    'Creatinine': {
+      testCode: 'CREAT',
+      loincCode: '2160-0',
+      cptCode: '82565',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    'Blood Urea Nitrogen': {
+      testCode: 'BUN',
+      loincCode: '3094-0',
+      cptCode: '84520',
+      category: 'chemistry',
+      specimenType: 'serum',
+    },
+    
+    // Urinalysis
+    'Urinalysis': {
+      testCode: 'UA',
+      loincCode: '24356-8',
+      cptCode: '81003',
+      category: 'urinalysis',
+      specimenType: 'urine',
+    },
+    'Urine Culture': {
+      testCode: 'UCULT',
+      loincCode: '630-4',
+      cptCode: '87086',
+      category: 'microbiology',
+      specimenType: 'urine',
+    },
+    
+    // Infectious Disease
+    'HIV Screen': {
+      testCode: 'HIV',
+      loincCode: '75622-1',
+      cptCode: '86703',
+      category: 'infectious_disease',
+      specimenType: 'serum',
+    },
+    'Hepatitis C Antibody': {
+      testCode: 'HEPC',
+      loincCode: '16128-1',
+      cptCode: '86803',
+      category: 'infectious_disease',
+      specimenType: 'serum',
+    },
+    
+    // Coagulation
+    'Prothrombin Time': {
+      testCode: 'PT',
+      loincCode: '5902-2',
+      cptCode: '85610',
+      category: 'coagulation',
+      specimenType: 'plasma',
+    },
+    'INR': {
+      testCode: 'INR',
+      loincCode: '34714-6',
+      cptCode: '85610',
+      category: 'coagulation',
+      specimenType: 'plasma',
     }
   };
   
-  return testMappings[testName] || {
-    testCode: testName.replace(/\s+/g, '_').toUpperCase().substring(0, 20),
-    loincCode: `CUSTOM_${Date.now()}`,
-    cptCode: '99999',
+  // Check for case-insensitive match
+  const normalizedTestName = testName.trim();
+  const mapping = testMappings[normalizedTestName] || 
+    Object.entries(testMappings).find(([key, _]) => 
+      key.toLowerCase() === normalizedTestName.toLowerCase()
+    )?.[1];
+  
+  if (mapping) {
+    return mapping;
+  }
+  
+  // For unmapped tests, return a structure that clearly indicates LOINC code is needed
+  console.warn(`⚠️ [ConsolidatedLab] No LOINC mapping found for test: "${testName}". Provider should specify LOINC code.`);
+  
+  return {
+    testCode: null, // Don't generate fake codes
+    loincCode: null, // Require provider to specify
+    cptCode: null,
     category: 'other',
-    specimenType: 'serum',
+    specimenType: 'blood', // Default to most common
+  };
+}
+      cptCode: '85610',
+      category: 'coagulation',
+      specimenType: 'plasma',
+    },
+    'INR': {
+      testCode: 'INR',
+      loincCode: '34714-6',
+      cptCode: '85610',
+      category: 'coagulation',
+      specimenType: 'plasma',
+    }
+  };
+  
+  // Check for case-insensitive match
+  const normalizedTestName = testName.trim();
+  const mapping = testMappings[normalizedTestName] || 
+    Object.entries(testMappings).find(([key, _]) => 
+      key.toLowerCase() === normalizedTestName.toLowerCase()
+    )?.[1];
+  
+  if (mapping) {
+    return mapping;
+  }
+  
+  // For unmapped tests, return a structure that clearly indicates LOINC code is needed
+  console.warn(`⚠️ [ConsolidatedLab] No LOINC mapping found for test: "${testName}". Provider should specify LOINC code.`);
+  
+  return {
+    testCode: null, // Don't generate fake codes
+    loincCode: null, // Require provider to specify
+    cptCode: null,
+    category: 'other',
+    specimenType: 'blood', // Default to most common
   };
 }
 
