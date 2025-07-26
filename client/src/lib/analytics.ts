@@ -432,6 +432,10 @@ declare global {
 // Initialize Google Analytics
 export const initGA = () => {
   const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+  
+  // Debug logging
+  console.log('GA Debug - Environment variables:', import.meta.env);
+  console.log('GA Debug - Measurement ID:', measurementId);
 
   if (!measurementId) {
     console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
@@ -453,6 +457,8 @@ export const initGA = () => {
     gtag('config', '${measurementId}');
   `;
   document.head.appendChild(script2);
+  
+  console.log('Google Analytics initialized with ID:', measurementId);
 };
 
 // Track page views - useful for single-page applications
