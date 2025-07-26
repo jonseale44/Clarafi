@@ -2,12 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { storage } from "./storage";
 import { APIResponseHandler } from "./api-response-handler";
+import { User, AnalyticsEvent } from "@shared/schema";
 
 const router = Router();
 
 // Middleware to ensure admin access
 const requireAdmin = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated() || (req.user.role !== 'admin' && req.user.role !== 'system_admin')) {
+  if (!req.isAuthenticated() || !req.user || (req.user.role !== 'admin' && req.user.role !== 'system_admin')) {
     return res.status(403).json({ error: "Admin access required for advanced analytics" });
   }
   next();
@@ -16,7 +17,7 @@ const requireAdmin = (req: any, res: any, next: any) => {
 // ==========================================
 // Comprehensive Analytics Endpoint
 // ==========================================
-router.get("/api/analytics/comprehensive", requireAdmin, async (req, res) => {
+router.get("/api/analytics/comprehensive", requireAdmin, async (req: any, res: any) => {
   try {
     const { range = '30d', channel = 'all' } = req.query;
     const healthSystemId = req.user.healthSystemId;
@@ -55,19 +56,20 @@ router.get("/api/analytics/comprehensive", requireAdmin, async (req, res) => {
       period: { start: startDate, end: now, days: daysBack }
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
 // ==========================================
 // Predictive Analytics Endpoint
 // ==========================================
-router.get("/api/analytics/predictive", requireAdmin, async (req, res) => {
+router.get("/api/analytics/predictive", requireAdmin, async (req: any, res: any) => {
   try {
     const healthSystemId = req.user.healthSystemId;
     
     // Get user activity data for predictions
-    const users = await storage.getUsersByHealthSystem(healthSystemId);
+    const allUsers = await storage.getAllUsers();
+    const users = allUsers.filter(u => u.healthSystemId === healthSystemId);
     const events = await storage.getAnalyticsEvents({
       healthSystemId,
       startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), // Last 90 days
@@ -103,14 +105,14 @@ router.get("/api/analytics/predictive", requireAdmin, async (req, res) => {
       analysisDate: new Date()
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
 // ==========================================
 // Patient Journey Analytics
 // ==========================================
-router.get("/api/analytics/patient-journey", requireAdmin, async (req, res) => {
+router.get("/api/analytics/patient-journey", requireAdmin, async (req: any, res: any) => {
   try {
     const { startDate, endDate } = req.query;
     const healthSystemId = req.user.healthSystemId;
@@ -149,14 +151,14 @@ router.get("/api/analytics/patient-journey", requireAdmin, async (req, res) => {
       period: { start, end }
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
 // ==========================================
 // Channel Attribution Analytics
 // ==========================================
-router.get("/api/analytics/channel-attribution", requireAdmin, async (req, res) => {
+router.get("/api/analytics/channel-attribution", requireAdmin, async (req: any, res: any) => {
   try {
     const healthSystemId = req.user.healthSystemId;
     const { days = 30 } = req.query;
@@ -209,14 +211,14 @@ router.get("/api/analytics/channel-attribution", requireAdmin, async (req, res) 
       period: { start: startDate, end: endDate }
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
 // ==========================================
 // A/B Test Management
 // ==========================================
-router.post("/api/analytics/ab-tests", requireAdmin, async (req, res) => {
+router.post("/api/analytics/ab-tests", requireAdmin, async (req: any, res: any) => {
   try {
     const testData = {
       ...req.body,
@@ -237,14 +239,14 @@ router.post("/api/analytics/ab-tests", requireAdmin, async (req, res) => {
       ]
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
 // ==========================================
 // Marketing Alerts Configuration
 // ==========================================
-router.post("/api/analytics/alerts", requireAdmin, async (req, res) => {
+router.post("/api/analytics/alerts", requireAdmin, async (req: any, res: any) => {
   try {
     const alertConfig = {
       ...req.body,
@@ -262,7 +264,7 @@ router.post("/api/analytics/alerts", requireAdmin, async (req, res) => {
       triggerCount: 0
     });
   } catch (error) {
-    APIResponseHandler.error(res, error);
+    APIResponseHandler.error(res, error as Error);
   }
 });
 
@@ -454,7 +456,7 @@ function generateCampaignOptimizations(events: any[]) {
     return acc;
   }, {} as { [key: number]: number });
   
-  const peakHour = Object.entries(hourlyDistribution).sort(([,a], [,b]) => b - a)[0];
+  const peakHour = Object.entries(hourlyDistribution).sort(([,a], [,b]) => (b as number) - (a as number))[0];
   if (peakHour) {
     optimizations.push({
       suggestion: `Schedule campaigns for ${peakHour[0]}:00 when engagement peaks`,
