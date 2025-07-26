@@ -89,6 +89,22 @@ Fixed critical issue where lab orders were failing to sign due to incorrect API 
    - Updated bulk sign mutation to handle lab orders separately (signs them individually)
 4. **Result**: Both individual and bulk signing of lab orders now work correctly through the consolidated lab endpoints
 
+### Reconnected Mock Lab System to Consolidated Lab Orders (July 26, 2025 - 8:36 PM) - COMPLETED
+Fixed critical issue where mock lab results weren't being generated for consolidated lab orders:
+
+1. **Issue**: Mock lab system wasn't generating results for lab orders created through the consolidated system
+2. **Root Cause**: 
+   - Lab order background processor was only checking the legacy `orders` table
+   - Consolidated lab system creates orders directly in `labOrders` table
+   - Background processor never found the new orders to process
+3. **Solution**:
+   - Updated `LabOrderBackgroundProcessor` to check both tables:
+     - Legacy orders: `orders` table with orderType='lab' and orderStatus='approved'
+     - Consolidated orders: `labOrders` table with orderStatus='signed'
+   - When consolidated orders are found, processor marks them as 'transmitted'
+   - After 30 seconds, generates mock results using existing lab simulator
+4. **Result**: Mock lab system now works with both legacy and consolidated lab orders, generating results within 30 seconds of signing
+
 ### Fixed "Approve & Send" Button in Lab Results Matrix (July 26, 2025 - 5:48 PM) - COMPLETED
 Fixed critical UI bug where the "Approve & Send" button in the GPT lab review section was unresponsive:
 
