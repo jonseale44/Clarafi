@@ -153,7 +153,7 @@ export class LabOrderProcessor {
           verificationStatus: 'verified',
           resultAvailableAt: new Date(),
           resultFinalizedAt: new Date(),
-          externalLabId: '1',
+          externalLabId: null, // No external lab for mock results
           externalResultId: `RES_${labOrder.externalOrderId}_${result.testCode}`,
           sourceType: 'external_lab',
           specimenCollectedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
