@@ -5092,6 +5092,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/lab-status", labStatusDashboardRoutes);
   app.use("/api/fhir", fhirLabRoutes);
   app.use("/api/specimen-tracking", specimenTrackingRoutes);
+  
+  // GPT-powered lab intelligence routes
+  const { gptLabAPIRoutes } = await import("./gpt-lab-api-routes.js");
+  app.use("/api/gpt-lab", gptLabAPIRoutes);
 
   // PDF download routes (for accessing generated PDFs)
   const pdfDownloadRoutes = await import("./pdf-download-routes.js");
