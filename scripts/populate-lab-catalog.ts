@@ -170,7 +170,7 @@ async function populateLabCatalog() {
         isObsolete: false
       }));
       
-      const response = await fetch('http://localhost:5173/api/lab-catalog/import', {
+      const response = await fetch('http://localhost:5000/api/lab-catalog/import', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

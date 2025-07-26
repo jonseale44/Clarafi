@@ -10,6 +10,7 @@ import { eq, and, desc, isNull } from "drizzle-orm";
 import { APIResponseHandler } from "./api-response-handler";
 import { InsertLabOrder } from "@shared/schema";
 import { z } from "zod";
+import { storage } from "./storage.js";
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post("/create", async (req: Request, res: Response) => {
     const validatedData = createLabOrderSchema.parse(req.body);
 
     // Generate standardized codes if not provided
-    const testMapping = getTestMapping(validatedData.testName);
+    const testMapping = await getTestMapping(validatedData.testName);
     
     const labOrderData: InsertLabOrder = {
       patientId: validatedData.patientId,
@@ -234,7 +235,7 @@ router.delete("/:orderId", async (req: Request, res: Response) => {
 });
 
 // Helper function to get test mapping with comprehensive LOINC codes
-function getTestMapping(testName: string) {
+async function getTestMapping(testName: string) {
   const testMappings: Record<string, any> = {
     // Hematology
     'Complete Blood Count': {
@@ -438,39 +439,26 @@ function getTestMapping(testName: string) {
     return mapping;
   }
   
-  // For unmapped tests, return a structure that clearly indicates LOINC code is needed
-  console.warn(`⚠️ [ConsolidatedLab] No LOINC mapping found for test: "${testName}". Provider should specify LOINC code.`);
-  
-  return {
-    testCode: null, // Don't generate fake codes
-    loincCode: null, // Require provider to specify
-    cptCode: null,
-    category: 'other',
-    specimenType: 'blood', // Default to most common
-  };
-}
-      cptCode: '85610',
-      category: 'coagulation',
-      specimenType: 'plasma',
-    },
-    'INR': {
-      testCode: 'INR',
-      loincCode: '34714-6',
-      cptCode: '85610',
-      category: 'coagulation',
-      specimenType: 'plasma',
+  // Try to find in lab catalog database for unmapped tests
+  try {
+    const catalogTest = await storage.searchLabTests({ 
+      searchTerm: normalizedTestName,
+      includeObsolete: false 
+    });
+    
+    if (catalogTest && catalogTest.length > 0) {
+      const match = catalogTest[0];
+      console.log(`✅ [ConsolidatedLab] Found LOINC mapping in catalog for "${testName}": ${match.loincCode}`);
+      return {
+        testCode: match.testCode || match.testName.replace(/\s+/g, '_').toUpperCase().substring(0, 10),
+        loincCode: match.loincCode,
+        cptCode: match.cptCode,
+        category: match.category || 'other',
+        specimenType: match.specimenType || 'serum',
+      };
     }
-  };
-  
-  // Check for case-insensitive match
-  const normalizedTestName = testName.trim();
-  const mapping = testMappings[normalizedTestName] || 
-    Object.entries(testMappings).find(([key, _]) => 
-      key.toLowerCase() === normalizedTestName.toLowerCase()
-    )?.[1];
-  
-  if (mapping) {
-    return mapping;
+  } catch (error) {
+    console.warn(`⚠️ [ConsolidatedLab] Error searching lab catalog:`, error);
   }
   
   // For unmapped tests, return a structure that clearly indicates LOINC code is needed
