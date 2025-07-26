@@ -90,10 +90,6 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     font-size: 13px; /* EMR industry standard base font size */
     line-height: 1.4; /* Tighter line height for density */
-    transform: scale(0.9);
-    transform-origin: top left;
-    width: 111.11%; /* Compensate for scale to fill viewport */
-    height: 111.11%; /* Compensate for scale to fill viewport */
   }
 
   h1, h2, h3, h4, h5, h6 {
