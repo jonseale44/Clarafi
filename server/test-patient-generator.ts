@@ -16,13 +16,14 @@ import {
   patientSchedulingPatterns,
   appointmentDurationHistory,
   diagnoses,
+  gptLabReviewNotes,
+  labOrders,
   InsertPatient,
   InsertEncounter,
   InsertMedicalProblem,
   InsertMedication,
   InsertAllergy,
   InsertVital,
-  InsertLabResult,
   InsertImagingResult,
   InsertFamilyHistory,
   InsertSocialHistory,
@@ -518,21 +519,103 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
 
       // Add lab results for some encounters
       if (config.includeLabResults && index % 2 === 0) {
-        const labData: InsertLabResult = {
+        // First, create a lab order for this result
+        const labOrderData = {
           patientId,
           encounterId: encounter.id,
-          orderDate: encounterDate.toISOString().split('T')[0],
-          resultDate: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          orderedBy: config.providerId,
+          orderDate: encounterDate,
+          testCode: hasDiabetes ? "HBA1C" : "CMP",
           testName: hasDiabetes ? "Hemoglobin A1C" : "Comprehensive Metabolic Panel",
-          loincCode: hasDiabetes ? "4548-4" : "24323-8", // LOINC codes for HbA1c and CMP
-          testCode: hasDiabetes ? "HBA1C" : "CMP", // Required field - internal test code
-          resultValue: hasDiabetes ? String((Math.random() * 4 + 6).toFixed(1)) : "Normal",
-          referenceRange: hasDiabetes ? "< 7.0%" : "See report",
-          abnormalFlag: hasDiabetes && Math.random() > 0.5 ? "H" : undefined,
-          status: "final",
-          performingLab: "Test Laboratory",
+          loincCode: hasDiabetes ? "4548-4" : "24323-8",
+          cptCode: hasDiabetes ? "83036" : "80053",
+          testCategory: hasDiabetes ? "chemistry" : "chemistry",
+          specimenType: "blood",
+          orderStatus: "signed",
+          requisitionNumber: `REQ-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          externalOrderId: `EXT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         };
-        await db.insert(labResults).values(labData);
+        
+        const [labOrder] = await db.insert(labOrders).values(labOrderData).returning();
+        
+        // Create the lab result
+        const labResultValue = hasDiabetes ? (Math.random() * 4 + 6).toFixed(1) : "Normal";
+        const isAbnormal = hasDiabetes && parseFloat(labResultValue) > 7.0;
+        
+        const labData = {
+          patientId,
+          labOrderId: labOrder.id,
+          loincCode: hasDiabetes ? "4548-4" : "24323-8",
+          testCode: hasDiabetes ? "HBA1C" : "CMP",
+          testName: hasDiabetes ? "Hemoglobin A1C" : "Comprehensive Metabolic Panel",
+          testCategory: "chemistry",
+          resultValue: labResultValue,
+          resultNumeric: hasDiabetes ? labResultValue : null,
+          resultUnits: hasDiabetes ? "%" : null,
+          referenceRange: hasDiabetes ? "< 7.0%" : "See report",
+          abnormalFlag: isAbnormal ? "H" : null,
+          criticalFlag: false,
+          specimenCollectedAt: encounterDate,
+          resultAvailableAt: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000),
+          resultFinalizedAt: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000),
+          resultStatus: "final",
+          verificationStatus: "verified",
+          needsReview: true,
+          reviewStatus: "pending",
+          orderedBy: config.providerId,
+        };
+        
+        const [insertedLabResult] = await db.insert(labResults).values(labData).returning();
+        
+        // Generate doctor review for the lab result
+        const clinicalReview = hasDiabetes 
+          ? isAbnormal 
+            ? `The patient's HbA1c is ${labResultValue}%, which is above the target of <7.0%. This indicates suboptimal glycemic control over the past 3 months. Consider intensifying diabetes management with lifestyle modifications and/or medication adjustment.`
+            : `The patient's HbA1c is ${labResultValue}%, which is within the target range. This indicates good glycemic control. Continue current diabetes management plan.`
+          : `Comprehensive Metabolic Panel results are within normal limits. Kidney function, liver function, and electrolytes are all normal.`;
+          
+        const patientMessage = hasDiabetes
+          ? isAbnormal
+            ? `Your recent HbA1c test result is ${labResultValue}%. This is slightly higher than the target of less than 7%. This test shows your average blood sugar over the past 3 months. We recommend discussing ways to improve your blood sugar control at your next visit.`
+            : `Good news! Your HbA1c test result is ${labResultValue}%, which is within the healthy range. This shows your diabetes is well-controlled. Keep up the great work with your current management plan!`
+          : `Your metabolic panel test results look good. All values are within normal ranges, including kidney function, liver function, and electrolyte levels.`;
+          
+        const nurseMessage = hasDiabetes
+          ? isAbnormal
+            ? `Patient's HbA1c is elevated at ${labResultValue}%. Please schedule follow-up to discuss diabetes management. Consider referral to diabetes educator if not already established.`
+            : `HbA1c is at goal (${labResultValue}%). Continue current monitoring schedule.`
+          : `CMP results normal. No nursing interventions required.`;
+        
+        // Create GPT lab review note
+        const gptReviewData = {
+          labResultIds: [insertedLabResult.id],
+          patientId,
+          providerId: config.providerId,
+          reviewType: "standard",
+          clinicalReview,
+          patientMessage,
+          nurseMessage,
+          patientContext: hasDiabetes 
+            ? `Patient has Type 2 Diabetes Mellitus. Current medications include metformin. Patient reports good medication adherence.`
+            : `Patient has no significant medical history. Routine health maintenance labs ordered.`,
+          interpretationNotes: hasDiabetes
+            ? `HbA1c reflects 3-month average glucose control. Target <7% for most diabetic patients.`
+            : `All metabolic panel components within normal limits.`,
+          followUpRecommendations: hasDiabetes && isAbnormal
+            ? `1. Review current diabetes medications\n2. Assess diet and exercise habits\n3. Consider continuous glucose monitoring\n4. Recheck HbA1c in 3 months`
+            : `Continue routine monitoring`,
+          criticalFindings: null,
+          additionalComments: `Test performed by ${labData.testName} at Test Laboratory`,
+          reviewStatus: "pending",
+          confidenceScore: 0.95,
+          aiModel: "gpt-4",
+          aiModelVersion: "2024-01",
+          templateUsed: "standard_lab_review",
+        };
+        
+        await db.insert(gptLabReviewNotes).values(gptReviewData);
+        
+        console.log(`[TestPatientGenerator] Created lab result and doctor review for patient ${patientId}`);
       }
     }
 
@@ -574,15 +657,15 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
     if (config.includeFamilyHistory) {
       await db.insert(familyHistory).values({
         patientId,
-        familyMember: "father",
-        medicalHistory: "Type 2 Diabetes, Myocardial Infarction at age 65",
+        relationship: "father",
+        condition: "Type 2 Diabetes, Myocardial Infarction at age 65",
         visitHistory: [],
       });
       
       await db.insert(familyHistory).values({
         patientId,
-        familyMember: "mother",
-        medicalHistory: "Breast cancer at age 58, Hypertension",
+        relationship: "mother",
+        condition: "Breast cancer at age 58, Hypertension",
         visitHistory: [],
       });
     }
@@ -592,13 +675,15 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
       await db.insert(socialHistory).values({
         patientId,
         category: "smoking",
-        currentStatus: config.patientComplexity === "extreme" ? "Current smoker - 1 PPD" : "Former smoker, quit 5 years ago",
+        details: config.patientComplexity === "extreme" ? "Smokes 1 pack per day" : "Former smoker, quit 5 years ago",
+        currentStatus: config.patientComplexity === "extreme" ? "Current smoker - 1 PPD" : "Former smoker",
         visitHistory: [],
       });
       
       await db.insert(socialHistory).values({
         patientId,
         category: "alcohol",
+        details: "Drinks socially on weekends",
         currentStatus: "Occasional social drinking",
         visitHistory: [],
       });
