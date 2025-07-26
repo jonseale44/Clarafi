@@ -35,6 +35,7 @@ import { AbTestingDashboard } from "@/components/marketing/ab-testing-dashboard"
 import { AdPlatformDashboard } from "@/components/marketing/ad-platform-dashboard";
 import { CohortAnalysisDashboard } from "@/components/marketing/cohort-analysis-dashboard";
 import { HealthcareMarketingIntelligence } from "@/components/marketing/healthcare-marketing-intelligence";
+import CampaignsROITracker from "@/components/marketing/campaigns-roi-tracker";
 
 export default function AdminMarketingDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -241,13 +242,13 @@ export default function AdminMarketingDashboard() {
         <TabsContent value="campaigns" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Marketing Campaigns</CardTitle>
+              <CardTitle>Campaign Performance & ROI Tracking</CardTitle>
               <CardDescription>
-                Manage and track marketing campaigns across channels
+                Manage campaigns, track ROI, and monitor marketing spend across all channels
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MarketingCampaigns />
+              <CampaignsROITracker />
             </CardContent>
           </Card>
         </TabsContent>
