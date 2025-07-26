@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,16 @@ export default function MarketingMetricsDashboard() {
   // Get real analytics summary data
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: [`/api/analytics/summary?from=${dateRange.start.toISOString()}&to=${dateRange.end.toISOString()}`],
+  });
+
+  // Get comprehensive analytics data
+  const { data: comprehensiveData } = useQuery({
+    queryKey: [`/api/analytics/comprehensive?range=30d`],
+  });
+
+  // Get predictive analytics
+  const { data: predictiveData } = useQuery({
+    queryKey: ["/api/analytics/predictive"],
   });
 
   if (isLoading) {
@@ -39,6 +49,16 @@ export default function MarketingMetricsDashboard() {
     conversionRate: analyticsData?.keyMetrics?.conversionRate || 0,
   };
 
+  // Calculate advanced metrics from comprehensive data
+  const advancedMetrics = comprehensiveData ? {
+    cpa: comprehensiveData.kpis?.cpa || 0,
+    ltv: comprehensiveData.kpis?.ltv || 0,
+    ltvCacRatio: comprehensiveData.kpis?.ltvCacRatio || 0,
+    churnRate: comprehensiveData.kpis?.churnRate || 0,
+    retentionRate: comprehensiveData.kpis?.retentionRate || 0,
+    avgRevenuePerUser: comprehensiveData.kpis?.avgRevenuePerUser || 0,
+  } : null;
+
   return (
     <div className="space-y-6" data-median="marketing-metrics-dashboard">
       {/* Controls */}
@@ -54,6 +74,43 @@ export default function MarketingMetricsDashboard() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Advanced Financial Metrics */}
+      {advancedMetrics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-median="advanced-metrics-grid">
+          <Card data-median="cpa-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Patient Acquisition Cost</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">${advancedMetrics.cpa.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Per new patient</p>
+            </CardContent>
+          </Card>
+          
+          <Card data-median="ltv-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Patient Lifetime Value</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">${advancedMetrics.ltv.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Average per patient</p>
+            </CardContent>
+          </Card>
+          
+          <Card data-median="ltv-cac-ratio-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">LTV:CAC Ratio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{advancedMetrics.ltvCacRatio.toFixed(1)}:1</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {advancedMetrics.ltvCacRatio >= 3 ? "Healthy" : "Needs improvement"}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4" data-median="metrics-summary-grid">

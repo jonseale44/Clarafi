@@ -12,7 +12,10 @@ import {
   DollarSign,
   BarChart3,
   Activity,
-  Calendar
+  Calendar,
+  LineChart,
+  Search,
+  Globe
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import MarketingMetricsDashboard from "@/components/marketing/marketing-metrics-dashboard";
@@ -22,9 +25,11 @@ import MarketingInsights from "@/components/marketing/marketing-insights";
 import MarketingAutomations from "@/components/marketing/marketing-automations";
 import MarketingCampaigns from "@/components/marketing/marketing-campaigns";
 import MarketingStatusTracker from "@/components/marketing/marketing-status-tracker";
+import AdvancedAnalyticsDashboard from "@/components/marketing/advanced-analytics-dashboard";
+import SEODashboard from "@/components/marketing/seo-dashboard";
 
 export default function AdminMarketingDashboard() {
-  const [activeTab, setActiveTab] = useState("metrics");
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Check if user has admin access
   const { data: user } = useQuery({ queryKey: ["/api/user"] });
@@ -58,10 +63,18 @@ export default function AdminMarketingDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="metrics" className="flex items-center gap-2">
+        <TabsList className="grid grid-cols-8 w-full">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            <span className="hidden lg:inline">Dashboard</span>
+            <span className="hidden lg:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="flex items-center gap-2">
+            <LineChart className="h-4 w-4" />
+            <span className="hidden lg:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="seo" className="flex items-center gap-2">
+            <Search className="h-4 w-4" />
+            <span className="hidden lg:inline">SEO</span>
           </TabsTrigger>
           <TabsTrigger value="acquisition" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -85,17 +98,37 @@ export default function AdminMarketingDashboard() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Module 1: Marketing Metrics Dashboard */}
-        <TabsContent value="metrics" className="space-y-6">
+        {/* Overview Dashboard */}
+        <TabsContent value="overview" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Marketing Analytics Dashboard</CardTitle>
+              <CardTitle>Marketing Overview Dashboard</CardTitle>
               <CardDescription>
-                Aggregate data visualization for traffic, conversions, and user behaviors
+                Real-time metrics and KPIs for your marketing performance
               </CardDescription>
             </CardHeader>
             <CardContent>
               <MarketingMetricsDashboard />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Advanced Analytics */}
+        <TabsContent value="advanced" className="space-y-6">
+          <AdvancedAnalyticsDashboard />
+        </TabsContent>
+
+        {/* SEO Dashboard */}
+        <TabsContent value="seo" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO Performance & Management</CardTitle>
+              <CardDescription>
+                Search engine optimization metrics, rankings, and technical SEO health
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SEODashboard />
             </CardContent>
           </Card>
         </TabsContent>

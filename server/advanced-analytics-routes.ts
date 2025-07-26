@@ -283,8 +283,9 @@ async function getAnalyticsForPeriod(
     endDate
   });
   
-  // Get user data
-  const users = await storage.getUsersByHealthSystem(healthSystemId);
+  // Get user data - filter by health system
+  const allUsers = await storage.getAllUsers();
+  const users = allUsers.filter(u => u.healthSystemId === healthSystemId);
   const newUsers = users.filter(u => 
     u.createdAt && new Date(u.createdAt) >= startDate && new Date(u.createdAt) <= endDate
   );
