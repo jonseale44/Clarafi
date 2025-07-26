@@ -377,7 +377,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       );
       
       // Sign non-lab orders in bulk if any
-      let bulkSignPromise = Promise.resolve([]);
+      let bulkSignPromise = Promise.resolve({ signedOrders: [] });
       if (nonLabOrderIds.length > 0) {
         bulkSignPromise = fetch('/api/orders/bulk-sign', {
           method: 'POST',
@@ -395,7 +395,9 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
         bulkSignPromise
       ]);
       
-      return [...labResults, ...bulkResults];
+      // Extract signedOrders array from bulk results object
+      const bulkResultsArray = bulkResults?.signedOrders || [];
+      return [...labResults, ...bulkResultsArray];
     },
     onSuccess: (data, orderType) => {
       // Invalidate multiple related queries to ensure UI consistency
