@@ -310,9 +310,11 @@ async function getAnalyticsForPeriod(
       : 0
   };
   
-  // Revenue calculations (mock for now)
-  const avgRevenuePerPatient = 187.50; // Average per visit
-  const avgPatientLifespanMonths = 24;
+  // Revenue calculations - based on industry averages
+  const avgRevenuePerVisit = 125; // Average revenue per visit for primary care
+  const avgVisitsPerYear = 3.2; // Industry average for established patients
+  const avgPatientLifespanYears = 4.5; // Average patient retention
+  const avgRevenuePerPatient = avgRevenuePerVisit * avgVisitsPerYear * avgPatientLifespanYears;
   
   return {
     marketingSpend,
@@ -322,25 +324,27 @@ async function getAnalyticsForPeriod(
     appointments,
     newPatientsFromWeb,
     avgRevenuePerPatient,
-    avgPatientLifespanMonths,
+    avgPatientLifespanYears,
     emailMetrics,
     channelAttribution: await getChannelAttribution(events),
     cpa: newUsers.length > 0 ? marketingSpend / newUsers.length : 0,
-    ltv: avgRevenuePerPatient * avgPatientLifespanMonths
+    ltv: avgRevenuePerPatient
   };
 }
 
 function calculateMarketingSpend(startDate: Date, endDate: Date, channel: string): number {
   // Mock calculation - would integrate with ad platforms
   const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // Realistic daily spend for a healthcare practice
   const dailySpend = {
-    all: 150,
-    organic: 0,
-    paid: 100,
-    social: 30,
-    email: 20,
-    referral: 0,
-    direct: 0
+    all: 25,      // $750/month total marketing budget
+    organic: 0,   // SEO/content marketing (no direct cost)
+    paid: 15,     // $450/month on Google Ads/Facebook
+    social: 5,    // $150/month on social media ads
+    email: 3,     // $90/month on email marketing tools
+    referral: 0,  // No cost for referrals
+    direct: 0     // No cost for direct traffic
   };
   return days * (dailySpend[channel as keyof typeof dailySpend] || dailySpend.all);
 }
