@@ -37,6 +37,17 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### Fixed "Approve & Send" Button in Lab Results Matrix (July 26, 2025 - 5:48 PM) - COMPLETED
+Fixed critical UI bug where the "Approve & Send" button in the GPT lab review section was unresponsive:
+
+1. **Issue**: Button at line 1604 in lab-results-matrix.tsx had no onClick handler
+2. **Solution**: Added proper onClick handler that calls `handleApproveGPTReview(generatedGPTReview.id)`
+3. **Features Added**:
+   - Loading state with spinner and "Approving..." text during API call
+   - Proper disabled state to prevent double-clicks
+   - Uses existing `isApprovingGPTReview` state variable
+4. **Result**: "Approve & Send" button now properly approves GPT-generated lab reviews and sends them to patients/nurses
+
 ### User-Controllable AI Assistance Modes for SOAP Notes (July 26, 2025 - 4:05 PM) - COMPLETED
 Implemented user-controllable AI assistance modes allowing providers to toggle between strict transcription-only mode and flexible AI-assisted mode:
 

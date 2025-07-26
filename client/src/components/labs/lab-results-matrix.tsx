@@ -1600,8 +1600,17 @@ export function LabResultsMatrix({
                               variant="default"
                               size="sm"
                               className="bg-navy-blue-600 hover:bg-navy-blue-700 text-white"
+                              onClick={() => handleApproveGPTReview(generatedGPTReview.id)}
+                              disabled={isApprovingGPTReview}
                             >
-                              Approve & Send
+                              {isApprovingGPTReview ? (
+                                <>
+                                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                  Approving...
+                                </>
+                              ) : (
+                                'Approve & Send'
+                              )}
                             </Button>
                             <Button
                               variant="outline"
