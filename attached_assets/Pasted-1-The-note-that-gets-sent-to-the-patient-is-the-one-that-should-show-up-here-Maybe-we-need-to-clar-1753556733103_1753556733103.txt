@@ -1,0 +1,26 @@
+1. The note that gets sent to the patient is the one that should show up here. Maybe we need to clarify
+this first. Since the Ul doesn't display this yet, it's not entirely clear to me what happens if the user
+let's GPT create a review of the lab, but then the user ignores it. and just sends a message saying
+"normal".
+1. We also need to clarify EXACTLY how our system is set up in terms of granularity. How do most
+EMRs do it? As a physician, I'm used to ordering a lab while in some kind of encounter (clinic
+visit, telephone encounter, or just orders-only encounter). So, in a sense, all review notes are
+linked to an encounter. But in our system, there are many times that labs show up as parsed
+from attachments, which do not always have an encounter associated with them. In those cases,
+are they linked with the date they were uploaded? the day they were collected (as parsed by
+GPT)? What about if we order a lab through the system, are those linked to the date of the order,
+the collection, or the result? We need to make this abundantly clear before we work on the
+review process.
+2. I don't understand this question at all. Why would we "aggregate" lab values? No. NO aggregating
+lab values. Zooming out just means the data gets smaller. That's it. No loss of granularity whatsoever.
+3. For the review notes panel, show only the doctor's note as the main note then, upon expansion, the
+entire chronological history (usually doctors note -> nurse response -> patient response -just an
+example). Again I'm really not sure how best to group reviews. By encounter? by date? I think date
+would be much simpler but what if two providers order two sets of labs on the same day? If we do
+date, is it by the result date? the order date? the collection date? Again, how do most EMRs handle
+this??
+4. I am really not sure. I think this is similar to the conundrum I have been sharing so far.
+5. What is virtualization? I don't know what that means.
+6. REview note permission: we should do whatever most EMRs do in this regard. This is a production
+level EMR after all, we need to match them in this regard. Also maintain HIPAA compliance.
+7. Visual indicators: we already have visual indicators for reviewed labs, I believe. It turns green It think.
