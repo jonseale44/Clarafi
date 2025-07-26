@@ -1,0 +1,14 @@
+First create a clear document to guide you and future AI agents through this multiphase approach. I want you to really focus on just phase 1 and then you can hand off the other phases to a future AI agent. I don’t want them to get lost along the way though, so document our plan clearly, for future ereference. Start with phase 1 but then STOP. I will evaluate before you (or any other future AI agent) starts phase 2. 
+
+Phase 2
+-The panel needs to show any notes, whether they are patient-facing or not. I changed my mind a little bit though. I want to create a GPT summary to use as the primary display here. Then, if the user expands it, they can see the chronological details of the note. The GPT summary can function in a similar way that our analyzewithGPT method functions in the DocumentAnalysisService (creates a summary of the uploaded attachment). We can have GPT summarize the notes and conclusions and display that to the user. If the user wants more detail, they just have to click on that note and see all the notes form the physician or the nurse or the patient. Be sure to maintain HIPAA compliance. 
+
+Phase 3: 
+-Hovering the column should highlight the column and the review note. Clicking the column should move the page to the review note. Hovering the review note should highlight the lab. Clicking the review note should open the review note. Honestly with all this don’t let me micromanage you too much. Do what you think is best. 
+
+Phase 4: zoom controls
+-If it’s feasible, I’d really prefer as much detail in the granularity as possible. Suppose someone has a very large screen and can easily see 18 months of data all together. But someone else is looking at the same patient and can only see 6 months because their screen is smaller. THAT’S FINE! I would prefer the didn’t have discrete levels of granularity like a calendar does. I think it should be more flexible and smooth than that. In this example, the person with the smaller computer would just have to zoom out to say 80% (as an example) in order to see all the available data. Alternatively, they could just scroll to the side and be able to see the data with more detail. Scrolling to the right (toward older data), would also cause the system to scroll the reviews DOWN simultaneously. 
+
+That reminds me, there should be a toggle to be able to “freeze” one scroll from being influenced by the other scroll, so that users can review old labs while looking at newer reviews, if desired. 
+
+First create a clear document to guide you and future AI agents through this multiphase approach. I want you to really focus on just phase 1 and then you can hand off the other phases to a future AI agent. I don’t want them to get lost along the way though, so document our plan clearly, for future ereference. Start with phase 1 but then STOP. I will evaluate before you (or any other future AI agent) starts phase 2. 

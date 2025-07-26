@@ -1,3 +1,21 @@
+/**
+ * Lab Results Matrix Component
+ * 
+ * IMPLEMENTATION STATUS: Phase 1 of 6 Complete
+ * - Phase 1 ✓: Enhanced table structure using specimen collection dates as columns
+ * - Phase 2: Review notes panel with GPT summaries (pending)
+ * - Phase 3: Bidirectional sync & navigation (pending)
+ * - Phase 4: Flexible zoom controls (pending)
+ * - Phase 5: Review note management (pending)
+ * - Phase 6: Performance optimization (pending)
+ * 
+ * Key Features (Phase 1):
+ * - Columns are specimen collection dates (most recent on LEFT)
+ * - Preserves all existing functionality (badges, source tracking, edit/delete)
+ * - Falls back to result available date if specimen date not available
+ * 
+ * See: docs/LAB_RESULTS_MATRIX_IMPLEMENTATION_GUIDE.md for full details
+ */
 import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -603,8 +621,8 @@ export function LabResultsMatrix({
       }
 
       const testGroup = testGroups.get(key)!;
-      // Safely handle date parsing
-      let resultDate = result.resultAvailableAt;
+      // Safely handle date parsing - Use specimen collection date as primary grouping
+      let resultDate = result.specimenCollectedAt || result.resultAvailableAt;
       try {
         if (resultDate) {
           const parsedDate = new Date(resultDate);
