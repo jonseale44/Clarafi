@@ -79,6 +79,8 @@ import consolidatedLabRoutes from "./consolidated-lab-routes";
 import { externalLabMockRouter } from "./external-lab-mock-service";
 import hl7Routes from "./hl7-routes";
 import labCatalogRoutes from "./lab-catalog-routes";
+import fhirLabRoutes from "./fhir-lab-routes";
+import specimenTrackingRoutes from "./specimen-tracking-routes";
 import subscriptionKeyRoutes from "./subscription-key-routes";
 import blogRoutes from "./blog-routes";
 import multer from "multer";
@@ -5088,6 +5090,8 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/hl7", hl7Routes);
   app.use("/api/lab-catalog", labCatalogRoutes);
   app.use("/api/lab-status", labStatusDashboardRoutes);
+  app.use("/api/fhir", fhirLabRoutes);
+  app.use("/api/specimen-tracking", specimenTrackingRoutes);
 
   // PDF download routes (for accessing generated PDFs)
   const pdfDownloadRoutes = await import("./pdf-download-routes.js");
