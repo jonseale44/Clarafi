@@ -588,16 +588,28 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
         
         // Create GPT lab review note
         const gptReviewData = {
-          labResultIds: [insertedLabResult.id],
+          resultIds: [insertedLabResult.id],
           patientId,
-          providerId: config.providerId,
-          reviewType: "standard",
+          encounterId: encounter.id,
           clinicalReview,
           patientMessage,
           nurseMessage,
-          patientContext: hasDiabetes 
-            ? `Patient has Type 2 Diabetes Mellitus. Current medications include metformin. Patient reports good medication adherence.`
-            : `Patient has no significant medical history. Routine health maintenance labs ordered.`,
+          patientContext: {
+            demographics: {
+              age: Math.floor(Math.random() * 40) + 30,
+              gender: Math.random() > 0.5 ? "Male" : "Female",
+              mrn: `ZTEST${Date.now()}`
+            },
+            activeProblems: hasDiabetes ? ["Type 2 Diabetes Mellitus"] : [],
+            currentMedications: hasDiabetes ? [{ name: "Metformin", dosage: "500mg", frequency: "BID" }] : [],
+            allergies: [],
+            recentSOAP: chiefComplaint,
+            priorLabResults: []
+          },
+          gptModel: "gpt-4",
+          promptVersion: "v1.0",
+          gptCompletionTokens: Math.floor(Math.random() * 200) + 100,
+          gptPromptTokens: Math.floor(Math.random() * 500) + 300,
           interpretationNotes: hasDiabetes
             ? `HbA1c reflects 3-month average glucose control. Target <7% for most diabetic patients.`
             : `All metabolic panel components within normal limits.`,
@@ -605,11 +617,10 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
             ? `1. Review current diabetes medications\n2. Assess diet and exercise habits\n3. Consider continuous glucose monitoring\n4. Recheck HbA1c in 3 months`
             : `Continue routine monitoring`,
           criticalFindings: null,
-          additionalComments: `Test performed by ${labData.testName} at Test Laboratory`,
+          additionalComments: `Test performed at Test Laboratory`,
           reviewStatus: "pending",
           confidenceScore: 0.95,
-          aiModel: "gpt-4",
-          aiModelVersion: "2024-01",
+          generatedBy: config.providerId,
           templateUsed: "standard_lab_review",
         };
         
