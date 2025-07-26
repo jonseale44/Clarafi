@@ -32,6 +32,11 @@ import {
   type ConversionEvent, type InsertConversionEvent, type MarketingInsight, type InsertMarketingInsight,
   type MarketingAutomation, type InsertMarketingAutomation, type MarketingCampaign, type InsertMarketingCampaign,
   type AnalyticsEvent, type InsertAnalyticsEvent, type FeatureUsageStats, type InsertFeatureUsageStats,
+  // Advanced Marketing Analytics
+  abTests, abTestAssignments, adPlatformAccounts, adCampaignPerformance, userCohorts, healthcareMarketingIntelligence,
+  type AbTest, type InsertAbTest, type AbTestAssignment, type InsertAbTestAssignment,
+  type AdPlatformAccount, type InsertAdPlatformAccount, type AdCampaignPerformance, type InsertAdCampaignPerformance,
+  type UserCohort, type InsertUserCohort, type HealthcareMarketingIntelligence, type InsertHealthcareMarketingIntelligence,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db.js";
@@ -284,6 +289,49 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
   }): Promise<FeatureUsageStats[]>;
+  
+  // A/B Testing
+  getAbTests(healthSystemId: number, status?: string): Promise<AbTest[]>;
+  getAbTest(id: number): Promise<AbTest | undefined>;
+  createAbTest(test: InsertAbTest): Promise<AbTest>;
+  updateAbTest(id: number, updates: Partial<AbTest>): Promise<AbTest>;
+  deleteAbTest(id: number): Promise<void>;
+  
+  // A/B Test Assignments
+  getAbTestAssignment(testId: number, userId?: number, sessionId?: string): Promise<AbTestAssignment | undefined>;
+  createAbTestAssignment(assignment: InsertAbTestAssignment): Promise<AbTestAssignment>;
+  updateAbTestAssignment(id: number, updates: Partial<AbTestAssignment>): Promise<AbTestAssignment>;
+  getTestAssignmentStats(testId: number): Promise<any>;
+  
+  // Ad Platform Integrations
+  getAdPlatformAccounts(healthSystemId: number): Promise<AdPlatformAccount[]>;
+  getAdPlatformAccount(id: number): Promise<AdPlatformAccount | undefined>;
+  createAdPlatformAccount(account: InsertAdPlatformAccount): Promise<AdPlatformAccount>;
+  updateAdPlatformAccount(id: number, updates: Partial<AdPlatformAccount>): Promise<AdPlatformAccount>;
+  deleteAdPlatformAccount(id: number): Promise<void>;
+  
+  // Ad Campaign Performance
+  getAdCampaignPerformance(params: {
+    accountId?: number;
+    healthSystemId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AdCampaignPerformance[]>;
+  createAdCampaignPerformance(performance: InsertAdCampaignPerformance): Promise<AdCampaignPerformance>;
+  batchCreateAdCampaignPerformance(performances: InsertAdCampaignPerformance[]): Promise<AdCampaignPerformance[]>;
+  
+  // User Cohorts
+  getUserCohorts(healthSystemId: number): Promise<UserCohort[]>;
+  getUserCohort(id: number): Promise<UserCohort | undefined>;
+  createUserCohort(cohort: InsertUserCohort): Promise<UserCohort>;
+  updateUserCohort(id: number, updates: Partial<UserCohort>): Promise<UserCohort>;
+  deleteUserCohort(id: number): Promise<void>;
+  
+  // Healthcare Marketing Intelligence
+  getHealthcareMarketingIntelligence(healthSystemId: number, marketSegment?: string): Promise<HealthcareMarketingIntelligence[]>;
+  getHealthcareMarketingIntelligenceById(id: number): Promise<HealthcareMarketingIntelligence | undefined>;
+  createHealthcareMarketingIntelligence(intelligence: InsertHealthcareMarketingIntelligence): Promise<HealthcareMarketingIntelligence>;
+  updateHealthcareMarketingIntelligence(id: number, updates: Partial<HealthcareMarketingIntelligence>): Promise<HealthcareMarketingIntelligence>;
   
   sessionStore: any;
 }
@@ -4054,6 +4102,290 @@ export class DatabaseStorage implements IStorage {
       .from(featureUsageStats)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(featureUsageStats.usageDate));
+  }
+
+  // A/B Testing Implementation
+  async getAbTests(healthSystemId: number, status?: string): Promise<AbTest[]> {
+    const conditions: any[] = [eq(abTests.healthSystemId, healthSystemId)];
+    
+    if (status) {
+      conditions.push(eq(abTests.status, status));
+    }
+    
+    return await db
+      .select()
+      .from(abTests)
+      .where(and(...conditions))
+      .orderBy(desc(abTests.createdAt));
+  }
+
+  async getAbTest(id: number): Promise<AbTest | undefined> {
+    const [test] = await db
+      .select()
+      .from(abTests)
+      .where(eq(abTests.id, id));
+    
+    return test || undefined;
+  }
+
+  async createAbTest(test: InsertAbTest): Promise<AbTest> {
+    const [newTest] = await db
+      .insert(abTests)
+      .values([test])
+      .returning();
+    
+    return newTest;
+  }
+
+  async updateAbTest(id: number, updates: Partial<AbTest>): Promise<AbTest> {
+    const [updated] = await db
+      .update(abTests)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(abTests.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteAbTest(id: number): Promise<void> {
+    await db.delete(abTests).where(eq(abTests.id, id));
+  }
+
+  // A/B Test Assignments
+  async getAbTestAssignment(testId: number, userId?: number, sessionId?: string): Promise<AbTestAssignment | undefined> {
+    const conditions: any[] = [eq(abTestAssignments.testId, testId)];
+    
+    if (userId) {
+      conditions.push(eq(abTestAssignments.userId, userId));
+    }
+    if (sessionId) {
+      conditions.push(eq(abTestAssignments.sessionId, sessionId));
+    }
+    
+    const [assignment] = await db
+      .select()
+      .from(abTestAssignments)
+      .where(and(...conditions))
+      .orderBy(desc(abTestAssignments.assignedAt))
+      .limit(1);
+    
+    return assignment || undefined;
+  }
+
+  async createAbTestAssignment(assignment: InsertAbTestAssignment): Promise<AbTestAssignment> {
+    const [newAssignment] = await db
+      .insert(abTestAssignments)
+      .values([assignment])
+      .returning();
+    
+    return newAssignment;
+  }
+
+  async updateAbTestAssignment(id: number, updates: Partial<AbTestAssignment>): Promise<AbTestAssignment> {
+    const [updated] = await db
+      .update(abTestAssignments)
+      .set(updates)
+      .where(eq(abTestAssignments.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async getTestAssignmentStats(testId: number): Promise<any> {
+    const result = await db
+      .select({
+        variant: abTestAssignments.variant,
+        count: sql<number>`count(*)::int`,
+        conversions: sql<number>`count(*) filter (where ${abTestAssignments.converted} = true)::int`,
+        totalValue: sql<number>`coalesce(sum(${abTestAssignments.conversionValue}), 0)`,
+      })
+      .from(abTestAssignments)
+      .where(eq(abTestAssignments.testId, testId))
+      .groupBy(abTestAssignments.variant);
+    
+    return result;
+  }
+
+  // Ad Platform Integrations
+  async getAdPlatformAccounts(healthSystemId: number): Promise<AdPlatformAccount[]> {
+    return await db
+      .select()
+      .from(adPlatformAccounts)
+      .where(eq(adPlatformAccounts.healthSystemId, healthSystemId))
+      .orderBy(adPlatformAccounts.platform);
+  }
+
+  async getAdPlatformAccount(id: number): Promise<AdPlatformAccount | undefined> {
+    const [account] = await db
+      .select()
+      .from(adPlatformAccounts)
+      .where(eq(adPlatformAccounts.id, id));
+    
+    return account || undefined;
+  }
+
+  async createAdPlatformAccount(account: InsertAdPlatformAccount): Promise<AdPlatformAccount> {
+    const [newAccount] = await db
+      .insert(adPlatformAccounts)
+      .values([account])
+      .returning();
+    
+    return newAccount;
+  }
+
+  async updateAdPlatformAccount(id: number, updates: Partial<AdPlatformAccount>): Promise<AdPlatformAccount> {
+    const [updated] = await db
+      .update(adPlatformAccounts)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(adPlatformAccounts.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteAdPlatformAccount(id: number): Promise<void> {
+    await db.delete(adPlatformAccounts).where(eq(adPlatformAccounts.id, id));
+  }
+
+  // Ad Campaign Performance
+  async getAdCampaignPerformance(params: {
+    accountId?: number;
+    healthSystemId?: number;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AdCampaignPerformance[]> {
+    const conditions: any[] = [];
+    
+    if (params.accountId) {
+      conditions.push(eq(adCampaignPerformance.accountId, params.accountId));
+    }
+    if (params.healthSystemId) {
+      conditions.push(eq(adCampaignPerformance.healthSystemId, params.healthSystemId));
+    }
+    if (params.startDate) {
+      conditions.push(gte(adCampaignPerformance.date, params.startDate.toISOString().split('T')[0]));
+    }
+    if (params.endDate) {
+      conditions.push(lte(adCampaignPerformance.date, params.endDate.toISOString().split('T')[0]));
+    }
+    
+    return await db
+      .select()
+      .from(adCampaignPerformance)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(adCampaignPerformance.date));
+  }
+
+  async createAdCampaignPerformance(performance: InsertAdCampaignPerformance): Promise<AdCampaignPerformance> {
+    const [newPerformance] = await db
+      .insert(adCampaignPerformance)
+      .values([performance])
+      .returning();
+    
+    return newPerformance;
+  }
+
+  async batchCreateAdCampaignPerformance(performances: InsertAdCampaignPerformance[]): Promise<AdCampaignPerformance[]> {
+    return await db
+      .insert(adCampaignPerformance)
+      .values(performances)
+      .returning();
+  }
+
+  // User Cohorts
+  async getUserCohorts(healthSystemId: number): Promise<UserCohort[]> {
+    return await db
+      .select()
+      .from(userCohorts)
+      .where(eq(userCohorts.healthSystemId, healthSystemId))
+      .orderBy(desc(userCohorts.cohortDate));
+  }
+
+  async getUserCohort(id: number): Promise<UserCohort | undefined> {
+    const [cohort] = await db
+      .select()
+      .from(userCohorts)
+      .where(eq(userCohorts.id, id));
+    
+    return cohort || undefined;
+  }
+
+  async createUserCohort(cohort: InsertUserCohort): Promise<UserCohort> {
+    const [newCohort] = await db
+      .insert(userCohorts)
+      .values([cohort])
+      .returning();
+    
+    return newCohort;
+  }
+
+  async updateUserCohort(id: number, updates: Partial<UserCohort>): Promise<UserCohort> {
+    const [updated] = await db
+      .update(userCohorts)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(userCohorts.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteUserCohort(id: number): Promise<void> {
+    await db.delete(userCohorts).where(eq(userCohorts.id, id));
+  }
+
+  // Healthcare Marketing Intelligence
+  async getHealthcareMarketingIntelligence(healthSystemId: number, marketSegment?: string): Promise<HealthcareMarketingIntelligence[]> {
+    const conditions: any[] = [eq(healthcareMarketingIntelligence.healthSystemId, healthSystemId)];
+    
+    if (marketSegment) {
+      conditions.push(eq(healthcareMarketingIntelligence.marketSegment, marketSegment));
+    }
+    
+    return await db
+      .select()
+      .from(healthcareMarketingIntelligence)
+      .where(and(...conditions))
+      .orderBy(desc(healthcareMarketingIntelligence.analysisDate));
+  }
+
+  async getHealthcareMarketingIntelligenceById(id: number): Promise<HealthcareMarketingIntelligence | undefined> {
+    const [intelligence] = await db
+      .select()
+      .from(healthcareMarketingIntelligence)
+      .where(eq(healthcareMarketingIntelligence.id, id));
+    
+    return intelligence || undefined;
+  }
+
+  async createHealthcareMarketingIntelligence(intelligence: InsertHealthcareMarketingIntelligence): Promise<HealthcareMarketingIntelligence> {
+    const [newIntelligence] = await db
+      .insert(healthcareMarketingIntelligence)
+      .values([intelligence])
+      .returning();
+    
+    return newIntelligence;
+  }
+
+  async updateHealthcareMarketingIntelligence(id: number, updates: Partial<HealthcareMarketingIntelligence>): Promise<HealthcareMarketingIntelligence> {
+    const [updated] = await db
+      .update(healthcareMarketingIntelligence)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(healthcareMarketingIntelligence.id, id))
+      .returning();
+    
+    return updated;
   }
 }
 

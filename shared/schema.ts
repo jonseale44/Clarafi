@@ -4918,6 +4918,345 @@ export const insertMarketingCampaignSchema = createInsertSchema(marketingCampaig
 export type MarketingCampaign = typeof marketingCampaigns.$inferSelect;
 export type InsertMarketingCampaign = z.infer<typeof insertMarketingCampaignSchema>;
 
+// A/B Testing Infrastructure
+export const abTests = pgTable("ab_tests", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Test configuration
+  name: text("name").notNull(),
+  description: text("description"),
+  hypothesis: text("hypothesis"),
+  status: text("status").default('draft'), // 'draft', 'running', 'paused', 'completed'
+  
+  // Test variants
+  variants: jsonb("variants").$type<{
+    control: {
+      name: string;
+      description?: string;
+      config?: Record<string, any>;
+    };
+    treatments: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      config?: Record<string, any>;
+      trafficAllocation: number; // percentage
+    }>;
+  }>().notNull(),
+  
+  // Targeting
+  targetingCriteria: jsonb("targeting_criteria").$type<{
+    userSegments?: string[];
+    locations?: string[];
+    devices?: string[];
+    features?: string[];
+    customRules?: Record<string, any>;
+  }>(),
+  
+  // Metrics
+  primaryMetric: text("primary_metric").notNull(), // 'conversion_rate', 'engagement_time', etc.
+  secondaryMetrics: text("secondary_metrics").array(),
+  
+  // Results
+  results: jsonb("results").$type<{
+    control?: {
+      users: number;
+      conversions: number;
+      conversionRate: number;
+      averageValue?: number;
+      confidence?: number;
+    };
+    treatments?: Record<string, {
+      users: number;
+      conversions: number;
+      conversionRate: number;
+      averageValue?: number;
+      confidence?: number;
+      improvement?: number;
+      pValue?: number;
+    }>;
+    winner?: string;
+    significanceLevel?: number;
+  }>(),
+  
+  // Scheduling
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  completedAt: timestamp("completed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// A/B Test Assignments - Track which users are in which variant
+export const abTestAssignments = pgTable("ab_test_assignments", {
+  id: serial("id").primaryKey(),
+  testId: integer("test_id").references(() => abTests.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  sessionId: text("session_id"), // For anonymous users
+  
+  variant: text("variant").notNull(), // 'control' or treatment ID
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  
+  // Track conversions
+  converted: boolean("converted").default(false),
+  convertedAt: timestamp("converted_at"),
+  conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }),
+  
+  // Additional tracking
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+});
+
+// Ad Platform Integrations
+export const adPlatformAccounts = pgTable("ad_platform_accounts", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id).notNull(),
+  
+  platform: text("platform").notNull(), // 'google_ads', 'facebook', 'linkedin', 'bing'
+  accountId: text("account_id").notNull(),
+  accountName: text("account_name"),
+  
+  // Authentication
+  credentials: jsonb("credentials").$type<{
+    accessToken?: string;
+    refreshToken?: string;
+    clientId?: string;
+    clientSecret?: string;
+    apiKey?: string;
+    scope?: string[];
+    expiresAt?: string;
+  }>(),
+  
+  // Sync status
+  lastSyncAt: timestamp("last_sync_at"),
+  syncStatus: text("sync_status").default('pending'), // 'pending', 'syncing', 'success', 'error'
+  syncError: text("sync_error"),
+  
+  // Account metrics
+  accountMetrics: jsonb("account_metrics").$type<{
+    totalSpend?: number;
+    totalImpressions?: number;
+    totalClicks?: number;
+    totalConversions?: number;
+    lastUpdated?: string;
+  }>(),
+  
+  active: boolean("active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Ad Campaign Performance - Synced from platforms
+export const adCampaignPerformance = pgTable("ad_campaign_performance", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id").references(() => adPlatformAccounts.id).notNull(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Campaign identifiers
+  externalCampaignId: text("external_campaign_id").notNull(),
+  campaignName: text("campaign_name"),
+  campaignType: text("campaign_type"), // 'search', 'display', 'video', 'shopping'
+  
+  // Date range
+  date: date("date").notNull(),
+  
+  // Performance metrics
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
+  cost: decimal("cost", { precision: 10, scale: 2 }).default('0'),
+  conversions: decimal("conversions", { precision: 10, scale: 2 }).default('0'),
+  conversionValue: decimal("conversion_value", { precision: 10, scale: 2 }).default('0'),
+  
+  // Calculated metrics
+  ctr: decimal("ctr", { precision: 5, scale: 2 }), // Click-through rate
+  cpc: decimal("cpc", { precision: 10, scale: 2 }), // Cost per click
+  cpa: decimal("cpa", { precision: 10, scale: 2 }), // Cost per acquisition
+  roas: decimal("roas", { precision: 10, scale: 2 }), // Return on ad spend
+  
+  // Additional data
+  adGroupData: jsonb("ad_group_data").$type<Array<{
+    id: string;
+    name: string;
+    impressions: number;
+    clicks: number;
+    cost: number;
+    conversions: number;
+  }>>(),
+  
+  keywordData: jsonb("keyword_data").$type<Array<{
+    keyword: string;
+    matchType: string;
+    impressions: number;
+    clicks: number;
+    cost: number;
+    avgPosition?: number;
+  }>>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Cohort Analysis
+export const userCohorts = pgTable("user_cohorts", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Cohort definition
+  name: text("name").notNull(),
+  description: text("description"),
+  cohortType: text("cohort_type").notNull(), // 'acquisition', 'behavior', 'revenue', 'clinical'
+  
+  // Cohort period
+  cohortDate: date("cohort_date").notNull(), // The date that defines this cohort
+  cohortPeriod: text("cohort_period"), // 'daily', 'weekly', 'monthly'
+  
+  // User segments
+  segmentCriteria: jsonb("segment_criteria").$type<{
+    acquisitionSource?: string;
+    userType?: string;
+    specialties?: string[];
+    organizationSize?: string;
+    trialStatus?: string;
+    customAttributes?: Record<string, any>;
+  }>(),
+  
+  // Cohort metrics
+  metrics: jsonb("metrics").$type<{
+    totalUsers: number;
+    activeUsers: Record<string, number>; // period -> count
+    retentionRate: Record<string, number>; // period -> percentage
+    revenue: Record<string, number>; // period -> amount
+    avgRevenuePerUser: Record<string, number>; // period -> amount
+    churnRate: Record<string, number>; // period -> percentage
+    ltv: number; // lifetime value
+  }>(),
+  
+  // User list (for smaller cohorts)
+  userIds: integer("user_ids").array(),
+  userCount: integer("user_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Healthcare Marketing Intelligence
+export const healthcareMarketingIntelligence = pgTable("healthcare_marketing_intelligence", {
+  id: serial("id").primaryKey(),
+  healthSystemId: integer("health_system_id").references(() => healthSystems.id),
+  
+  // Market analysis
+  marketSegment: text("market_segment").notNull(), // 'primary_care', 'specialty', 'hospital', 'clinic'
+  competitorAnalysis: jsonb("competitor_analysis").$type<{
+    competitors: Array<{
+      name: string;
+      marketShare?: number;
+      pricing?: Record<string, number>;
+      features?: string[];
+      strengths?: string[];
+      weaknesses?: string[];
+    }>;
+    marketPosition?: string;
+    differentiators?: string[];
+  }>(),
+  
+  // Payer mix analysis
+  payerMixAnalysis: jsonb("payer_mix_analysis").$type<{
+    medicare?: number;
+    medicaid?: number;
+    commercial?: number;
+    selfPay?: number;
+    other?: number;
+    topPayers?: Array<{
+      name: string;
+      percentage: number;
+      avgReimbursement?: number;
+    }>;
+  }>(),
+  
+  // Referral patterns
+  referralAnalysis: jsonb("referral_analysis").$type<{
+    inboundReferrals: Array<{
+      source: string;
+      volume: number;
+      specialties: string[];
+      conversionRate?: number;
+    }>;
+    outboundReferrals: Array<{
+      destination: string;
+      volume: number;
+      specialties: string[];
+      revenue_impact?: number;
+    }>;
+    networkEffects?: {
+      hubScore: number;
+      authorityScore: number;
+      connections: number;
+    };
+  }>(),
+  
+  // Procedure profitability
+  procedureProfitability: jsonb("procedure_profitability").$type<Array<{
+    procedureCode: string;
+    procedureName: string;
+    volume: number;
+    avgReimbursement: number;
+    avgCost: number;
+    profitMargin: number;
+    growthRate?: number;
+  }>>(),
+  
+  // Clinical outcomes marketing
+  clinicalOutcomes: jsonb("clinical_outcomes").$type<{
+    qualityScores?: Record<string, number>;
+    patientSatisfaction?: number;
+    readmissionRates?: Record<string, number>;
+    clinicalEfficiency?: Record<string, any>;
+    certifications?: string[];
+    awards?: string[];
+  }>(),
+  
+  // Geographic analysis
+  geographicAnalysis: jsonb("geographic_analysis").$type<{
+    serviceAreas: Array<{
+      zipCode: string;
+      population: number;
+      marketPenetration: number;
+      demographics: Record<string, any>;
+    }>;
+    competitorDensity?: Record<string, number>;
+    growthOpportunities?: string[];
+  }>(),
+  
+  analysisDate: date("analysis_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert Schemas for new tables
+export const insertAbTestSchema = createInsertSchema(abTests);
+export type AbTest = typeof abTests.$inferSelect;
+export type InsertAbTest = z.infer<typeof insertAbTestSchema>;
+
+export const insertAbTestAssignmentSchema = createInsertSchema(abTestAssignments);
+export type AbTestAssignment = typeof abTestAssignments.$inferSelect;
+export type InsertAbTestAssignment = z.infer<typeof insertAbTestAssignmentSchema>;
+
+export const insertAdPlatformAccountSchema = createInsertSchema(adPlatformAccounts);
+export type AdPlatformAccount = typeof adPlatformAccounts.$inferSelect;
+export type InsertAdPlatformAccount = z.infer<typeof insertAdPlatformAccountSchema>;
+
+export const insertAdCampaignPerformanceSchema = createInsertSchema(adCampaignPerformance);
+export type AdCampaignPerformance = typeof adCampaignPerformance.$inferSelect;
+export type InsertAdCampaignPerformance = z.infer<typeof insertAdCampaignPerformanceSchema>;
+
+export const insertUserCohortSchema = createInsertSchema(userCohorts);
+export type UserCohort = typeof userCohorts.$inferSelect;
+export type InsertUserCohort = z.infer<typeof insertUserCohortSchema>;
+
+export const insertHealthcareMarketingIntelligenceSchema = createInsertSchema(healthcareMarketingIntelligence);
+export type HealthcareMarketingIntelligence = typeof healthcareMarketingIntelligence.$inferSelect;
+export type InsertHealthcareMarketingIntelligence = z.infer<typeof insertHealthcareMarketingIntelligenceSchema>;
+
 // Export archive schemas
 export * from './archive-schema';
 

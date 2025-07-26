@@ -6319,6 +6319,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   const advancedAnalyticsRoutes = await import("./advanced-analytics-routes");
   app.use(advancedAnalyticsRoutes.default);
   console.log("📈 [AdvancedAnalytics] Advanced analytics routes registered");
+  
+  // Import and register advanced marketing routes
+  const advancedMarketingRoutes = await import("./advanced-marketing-routes");
+  app.use(advancedMarketingRoutes.default);
+  console.log("🚀 [AdvancedMarketing] Advanced marketing routes registered");
 
   return httpServer;
 }

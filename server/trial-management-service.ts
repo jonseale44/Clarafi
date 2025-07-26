@@ -271,9 +271,8 @@ export class TrialManagementService {
       throw new Error('Email service not configured');
     }
 
-    const { MailService } = await import('@sendgrid/mail');
-    const mailService = new MailService();
-    mailService.setApiKey(process.env.SENDGRID_API_KEY);
+    const sgMail = await import('@sendgrid/mail');
+    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
 
     const baseUrl = process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
@@ -386,7 +385,7 @@ Questions? Reply to this email or contact support.
       `
     };
 
-    await mailService.send(emailContent);
+    await sgMail.default.send(emailContent);
   }
 
   /**

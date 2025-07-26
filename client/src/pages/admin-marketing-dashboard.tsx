@@ -15,7 +15,11 @@ import {
   Calendar,
   LineChart,
   Search,
-  Globe
+  Globe,
+  FlaskConical,
+  Megaphone,
+  Users2,
+  Heart
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import MarketingMetricsDashboard from "@/components/marketing/marketing-metrics-dashboard";
@@ -27,6 +31,10 @@ import MarketingCampaigns from "@/components/marketing/marketing-campaigns";
 import MarketingStatusTracker from "@/components/marketing/marketing-status-tracker";
 import AdvancedAnalyticsDashboard from "@/components/marketing/advanced-analytics-dashboard";
 import SEODashboard from "@/components/marketing/seo-dashboard";
+import { AbTestingDashboard } from "@/components/marketing/ab-testing-dashboard";
+import { AdPlatformDashboard } from "@/components/marketing/ad-platform-dashboard";
+import { CohortAnalysisDashboard } from "@/components/marketing/cohort-analysis-dashboard";
+import { HealthcareMarketingIntelligence } from "@/components/marketing/healthcare-marketing-intelligence";
 
 export default function AdminMarketingDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -63,7 +71,7 @@ export default function AdminMarketingDashboard() {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-12 w-full">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             <span className="hidden lg:inline">Overview</span>
@@ -75,6 +83,22 @@ export default function AdminMarketingDashboard() {
           <TabsTrigger value="seo" className="flex items-center gap-2">
             <Search className="h-4 w-4" />
             <span className="hidden lg:inline">SEO</span>
+          </TabsTrigger>
+          <TabsTrigger value="ab-testing" className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4" />
+            <span className="hidden lg:inline">A/B Tests</span>
+          </TabsTrigger>
+          <TabsTrigger value="ad-platforms" className="flex items-center gap-2">
+            <Megaphone className="h-4 w-4" />
+            <span className="hidden lg:inline">Ad Platforms</span>
+          </TabsTrigger>
+          <TabsTrigger value="cohorts" className="flex items-center gap-2">
+            <Users2 className="h-4 w-4" />
+            <span className="hidden lg:inline">Cohorts</span>
+          </TabsTrigger>
+          <TabsTrigger value="healthcare" className="flex items-center gap-2">
+            <Heart className="h-4 w-4" />
+            <span className="hidden lg:inline">Healthcare</span>
           </TabsTrigger>
           <TabsTrigger value="acquisition" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -131,6 +155,26 @@ export default function AdminMarketingDashboard() {
               <SEODashboard />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* A/B Testing Dashboard */}
+        <TabsContent value="ab-testing" className="space-y-6">
+          <AbTestingDashboard />
+        </TabsContent>
+
+        {/* Ad Platform Dashboard */}
+        <TabsContent value="ad-platforms" className="space-y-6">
+          <AdPlatformDashboard />
+        </TabsContent>
+
+        {/* Cohort Analysis Dashboard */}
+        <TabsContent value="cohorts" className="space-y-6">
+          <CohortAnalysisDashboard />
+        </TabsContent>
+
+        {/* Healthcare Marketing Intelligence */}
+        <TabsContent value="healthcare" className="space-y-6">
+          <HealthcareMarketingIntelligence />
         </TabsContent>
 
         {/* Module 2: Acquisition Source Tracking */}
