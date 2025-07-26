@@ -276,7 +276,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
         : `/api/orders/${orderId}/sign`;
       
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: order.orderType === 'lab' ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})
       });
@@ -346,7 +346,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       if (orderType === 'lab') {
         const signPromises = ordersToSign.map((order: Order) => 
           fetch(`/api/lab-orders/${order.id}/sign`, {
-            method: 'POST',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({})
           }).then(res => {
@@ -367,7 +367,7 @@ export function DraftOrders({ patientId, encounterId, isAutoGenerating = false, 
       const labOrders = ordersToSign.filter((order: Order) => order.orderType === 'lab');
       const labSignPromises = labOrders.map((order: Order) => 
         fetch(`/api/lab-orders/${order.id}/sign`, {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({})
         }).then(res => {
