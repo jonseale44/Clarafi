@@ -198,28 +198,12 @@ router.put("/:orderId/sign", async (req: Request, res: Response) => {
             // Get external lab fax number from preferences or use default
             const labFaxNumber = patientPrefs?.labServiceProvider || process.env.DEFAULT_LAB_FAX_NUMBER || '+1-555-LAB-RESULTS';
             
-            const faxResult = await efaxService.sendFax({
-              to: labFaxNumber,
-              from: process.env.PRACTICE_FAX_NUMBER || '+1-555-PRACTICE',
-              subject: `Lab Requisition - ${requisitionNumber}`,
-              body: `Please process the attached lab requisition and return results to the ordering provider.`,
-              attachments: [{
-                filename: `lab-requisition-${requisitionNumber}.pdf`,
-                content: pdfBuffer,
-                contentType: 'application/pdf'
-              }]
-            });
+            const faxResult = await efaxService.sendLabOrder(orderId, labFaxNumber);
             
             // Update order with transmission details
             await db.update(labOrders)
               .set({
                 transmittedAt: new Date(),
-                transmissionMethod: 'efax',
-                transmissionDetails: {
-                  faxSid: faxResult.sid,
-                  faxNumber: labFaxNumber,
-                  status: 'sent'
-                },
                 updatedAt: new Date()
               })
               .where(eq(labOrders.id, orderId));
@@ -228,14 +212,12 @@ router.put("/:orderId/sign", async (req: Request, res: Response) => {
           } catch (error) {
             console.error(`❌ [ConsolidatedLab] Failed to send e-fax:`, error);
             // Update order with error
-            await db.update(labOrders)
-              .set({
-                transmissionDetails: {
-                  error: error.message,
-                  attemptedAt: new Date()
-                }
-              })
-              .where(eq(labOrders.id, orderId));
+            // Log error but don't store in non-existent field
+            console.error(`❌ [ConsolidatedLab] E-fax transmission error details:`, {
+              orderId,
+              error: error.message,
+              attemptedAt: new Date()
+            });
           }
         });
         break;
@@ -294,9 +276,6 @@ router.delete("/:orderId", async (req: Request, res: Response) => {
       .update(labOrders)
       .set({
         orderStatus: "cancelled",
-        discontinuedAt: new Date(),
-        discontinuedBy: userId,
-        discontinuedReason: req.body.reason || "Cancelled by provider",
         updatedAt: new Date()
       })
       .where(
