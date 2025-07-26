@@ -37,6 +37,39 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### User-Controllable AI Assistance Modes for SOAP Notes (July 26, 2025 - 4:05 PM) - COMPLETED
+Implemented user-controllable AI assistance modes allowing providers to toggle between strict transcription-only mode and flexible AI-assisted mode:
+
+1. **Frontend AI Assistance Toggle** (`/client/src/components/NoteTypeSelector.tsx`):
+   - Added toggle switch next to SOAP Note template dropdown
+   - Toggle only enabled when recording is stopped
+   - Options: "Strict" (default) vs "Flexible" mode
+   - Clear explanatory tooltips for each mode
+   - Persists user preference via API
+
+2. **User Preferences API Integration**:
+   - Added `aiAssistanceMode` field to userNotePreferences table
+   - Created `/api/user-preferences/notes` endpoints for getting/updating preferences
+   - Preferences persist across sessions
+
+3. **Backend Dynamic Constraint System** (`/server/enhanced-note-generation-service.ts`):
+   - Updated `getTranscriptionConstraints()` to accept `isFlexibleMode` parameter
+   - Strict mode: AI can ONLY document what was explicitly mentioned in transcription
+   - Flexible mode: AI can suggest additional orders based on clinical context
+   - Applied to ALL 6 SOAP note templates (Standard, Narrative, Pediatric, Psychiatric, OB/GYN, APSO)
+
+4. **Complete Integration**:
+   - `generateNote()` method retrieves user's AI assistance preference
+   - All prompt builder methods updated to accept `isFlexibleMode` parameter
+   - `getPromptForNoteType()` passes mode through entire prompt generation chain
+   - System defaults to strict mode for safety if preferences not found
+
+5. **Clinical Safety Impact**:
+   - Gives providers control over AI assistance level
+   - Maintains safety by defaulting to strict mode
+   - Allows experienced users to leverage AI suggestions when desired
+   - Clear mode indicators prevent confusion about AI behavior
+
 ### SOAP Note Generation Safety Enhancement (July 26, 2025 - 3:45 PM) - COMPLETED
 Implemented critical clinical safety feature to prevent AI from creating new treatment plans not explicitly mentioned in encounter transcriptions:
 

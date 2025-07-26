@@ -18,8 +18,17 @@ const openai = new OpenAI({
 export class EnhancedNoteGenerationService {
   // CONSOLIDATED NOTE TYPE PROMPTS - All note types now use full patient context
 
-  private static getTranscriptionConstraints(): string {
-    return `TRANSCRIPTION-BASED CONSTRAINTS:
+  private static getTranscriptionConstraints(isFlexibleMode: boolean = false): string {
+    if (isFlexibleMode) {
+      return `AI ASSISTANCE MODE: FLEXIBLE
+- You MAY suggest appropriate new medications, labs, imaging, or referrals based on clinical context
+- Consider the patient's presentation and standard of care when making recommendations
+- Clearly indicate any AI-suggested items with phrases like "Consider..." or "May benefit from..."
+- Continue existing medications unless contraindicated
+- Add relevant patient education and lifestyle recommendations`;
+    }
+    
+    return `AI ASSISTANCE MODE: STRICT
 - NEW medications, labs, imaging, or referrals MUST ONLY be included if explicitly mentioned in the transcription
 - You MAY continue existing medications without changes (e.g., "Continue lisinopril 10mg daily")  
 - You MAY add patient education, lifestyle recommendations, and general instructions
@@ -30,6 +39,7 @@ export class EnhancedNoteGenerationService {
     //////// SOAP ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
@@ -94,7 +104,7 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -118,7 +128,7 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -166,6 +176,7 @@ IMPORTANT INSTRUCTIONS:
     //////// SOAP (Narrative) ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
@@ -227,7 +238,7 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -251,7 +262,7 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -299,6 +310,7 @@ IMPORTANT INSTRUCTIONS:
     //////// SOAP (Peds) ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert physician creating a comprehensive SOAP note with integrated orders from a patient encounter transcription.
 
@@ -366,7 +378,7 @@ Skin: **Left lower leg with erythema, warmth, and mild swelling**, without bulla
 Skin: Cellulitis on the left lower leg.
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -390,7 +402,7 @@ Family History of Cardiovascular Disease (Z82.49):
 - Document family history and assess cardiovascular risk factors as part of ongoing care.
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -438,6 +450,7 @@ IMPORTANT INSTRUCTIONS:
     //////// SOAP (Psychiatric) ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert psychiatrist creating a comprehensive psychiatric SOAP note with integrated orders from a patient encounter transcription.
 
@@ -533,7 +546,7 @@ Mental Status Examination:
 **Appearance/Behavior: Manic presentation.**
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -561,7 +574,7 @@ Alcohol Use Disorder, Mild (F10.10):
 - CAGE score: 2/4.
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -622,6 +635,7 @@ IMPORTANT INSTRUCTIONS:
     //////// SOAP (OB/GYN) ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert OB/GYN physician creating a comprehensive OB/GYN SOAP note with integrated orders from a patient encounter transcription.
 
@@ -695,7 +709,7 @@ Breast: **Right breast 2 o'clock position with 2 cm firm, mobile, non-tender mas
 Breast: Fibroadenoma right breast.
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -724,7 +738,7 @@ Routine Gynecologic Exam (Z01.411):
 - Breast exam performed.
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -785,6 +799,7 @@ IMPORTANT INSTRUCTIONS:
     //////// APSO ////////////
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     return `You are an expert physician creating a comprehensive APSO note (Assessment, Plan, Subjective, Objective) with integrated orders from a patient encounter transcription.
 
@@ -797,7 +812,7 @@ ${transcription}
 Generate a complete, professional APSO note with the following sections:
 
 **ASSESSMENT/PLAN:**
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 CRITICAL FORMATTING RULE: Leave one blank line between each condition's plan and the next condition's diagnosis.
 
@@ -871,7 +886,7 @@ Skin: Cellulitis on the left lower leg.
 <!--insert FOUR blank lines)-->
 
 **ORDERS:** 
-${this.getTranscriptionConstraints()}
+${this.getTranscriptionConstraints(isFlexibleMode)}
 
 For all orders, follow this highly-structured format:
 
@@ -1150,18 +1165,19 @@ IMPORTANT INSTRUCTIONS:
     noteType: string,
     medicalContext: string,
     transcription: string,
+    isFlexibleMode: boolean = false,
   ): string {
     switch (noteType) {
       case "soap":
-        return this.buildSOAPPrompt(medicalContext, transcription);
+        return this.buildSOAPPrompt(medicalContext, transcription, isFlexibleMode);
       case "soapNarrative":
-        return this.buildSOAPNarrativePrompt(medicalContext, transcription);
+        return this.buildSOAPNarrativePrompt(medicalContext, transcription, isFlexibleMode);
       case "soapPsychiatric":
-        return this.buildSOAPPsychiatricPrompt(medicalContext, transcription);
+        return this.buildSOAPPsychiatricPrompt(medicalContext, transcription, isFlexibleMode);
       case "soapPediatric":
-        return this.buildSOAPPediatricPrompt(medicalContext, transcription);
+        return this.buildSOAPPediatricPrompt(medicalContext, transcription, isFlexibleMode);
       case "soapObGyn":
-        return this.buildSOAPObGynPrompt(medicalContext, transcription);
+        return this.buildSOAPObGynPrompt(medicalContext, transcription, isFlexibleMode);
       case "apso":
         return this.buildAPSOPrompt(medicalContext, transcription);
       case "progress":
@@ -1179,7 +1195,7 @@ IMPORTANT INSTRUCTIONS:
         console.warn(
           `⚠️ [EnhancedNotes] Unknown note type: ${noteType}, defaulting to SOAP`,
         );
-        return this.buildSOAPPrompt(medicalContext, transcription);
+        return this.buildSOAPPrompt(medicalContext, transcription, isFlexibleMode);
     }
   }
 
@@ -1204,6 +1220,22 @@ IMPORTANT INSTRUCTIONS:
     });
 
     try {
+      // Get user preferences to check AI assistance mode
+      let isFlexibleMode = false; // Default to strict mode
+      if (userId) {
+        try {
+          const userPreferences = await storage.getUserNotePreferences(userId);
+          isFlexibleMode = userPreferences?.aiAssistanceMode === 'flexible';
+          console.log(`🤖 [EnhancedNotes] AI Assistance Mode:`, {
+            userId,
+            mode: isFlexibleMode ? 'flexible' : 'strict',
+            hasPreferences: !!userPreferences
+          });
+        } catch (error) {
+          console.warn(`⚠️ [EnhancedNotes] Failed to fetch user preferences, defaulting to strict mode:`, error);
+        }
+      }
+
       // Get patient chart data
       console.log(
         `📊 [EnhancedNotes] Fetching patient chart data for patient ${patientId}`,
@@ -1277,6 +1309,7 @@ IMPORTANT INSTRUCTIONS:
             noteType,
             medicalContext,
             transcription,
+            isFlexibleMode,
           );
         }
       } else if (userId) {
@@ -1345,6 +1378,7 @@ IMPORTANT INSTRUCTIONS:
               noteType,
               medicalContext,
               transcription,
+              isFlexibleMode,
             );
           }
         } catch (templateError: any) {
@@ -1360,6 +1394,7 @@ IMPORTANT INSTRUCTIONS:
             noteType,
             medicalContext,
             transcription,
+            isFlexibleMode,
           );
         }
       } else {
@@ -1370,6 +1405,7 @@ IMPORTANT INSTRUCTIONS:
           noteType,
           medicalContext,
           transcription,
+          isFlexibleMode,
         );
       }
 

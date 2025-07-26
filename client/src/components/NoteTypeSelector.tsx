@@ -1,5 +1,8 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface Template {
   id: number | string;
@@ -145,6 +148,13 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
     return noteType;
   };
 
+  const isFlexibleMode = userPreferences?.aiAssistanceMode === 'flexible';
+
+  const handleAIModeToggle = (checked: boolean) => {
+    const mode = checked ? 'flexible' : 'strict';
+    updatePreferencesMutation.mutate({ aiAssistanceMode: mode });
+  };
+
   return (
     <div className="flex items-center space-x-2">
       <Label htmlFor="note-type-select" className="text-sm font-medium whitespace-nowrap">
@@ -201,6 +211,44 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
           />
         </DialogContent>
       </Dialog>
+
+      {/* AI Assistance Mode Toggle */}
+      <div className="flex items-center space-x-2 border-l pl-4 ml-2">
+        <Label htmlFor="ai-mode-toggle" className="text-sm font-medium whitespace-nowrap">
+          AI Mode:
+        </Label>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="ai-mode-toggle"
+                  checked={isFlexibleMode}
+                  onCheckedChange={handleAIModeToggle}
+                  disabled={disabled}
+                />
+                <span className="text-sm font-medium">
+                  {isFlexibleMode ? 'Flexible' : 'Strict'}
+                </span>
+                <Info className="h-4 w-4 text-gray-400" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-sm">
+              <div className="space-y-2">
+                <p className="font-semibold">AI Assistance Mode</p>
+                <div>
+                  <p className="font-medium">Strict Mode (Default):</p>
+                  <p className="text-sm">AI will only document what you explicitly say. No additional orders or recommendations will be added unless you mention them.</p>
+                </div>
+                <div>
+                  <p className="font-medium">Flexible Mode:</p>
+                  <p className="text-sm">AI can suggest helpful orders and recommendations based on the clinical context, even if not explicitly mentioned.</p>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 };
