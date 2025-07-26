@@ -2605,6 +2605,146 @@ export const labReferenceRanges = pgTable("lab_reference_ranges", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Lab Test Catalog - Production EMR Standard Test Compendium
+export const labTestCatalog = pgTable("lab_test_catalog", {
+  id: serial("id").primaryKey(),
+  
+  // Primary identifiers
+  loincCode: text("loinc_code").notNull().unique(),
+  loincName: text("loinc_name").notNull(),
+  loincShortName: text("loinc_short_name"),
+  
+  // Lab-specific mappings
+  questCode: text("quest_code"),
+  questName: text("quest_name"),
+  labcorpCode: text("labcorp_code"),
+  labcorpName: text("labcorp_name"),
+  hospitalCode: text("hospital_code"),
+  
+  // Test classification
+  category: text("category").notNull(), // 'chemistry', 'hematology', 'microbiology', 'molecular', 'pathology'
+  subcategory: text("subcategory"), // 'routine', 'special', 'sendout'
+  panelComponents: jsonb("panel_components").$type<string[]>(), // LOINC codes for panel components
+  
+  // Clinical information
+  commonName: text("common_name").notNull(), // Display name for providers
+  synonyms: text("synonyms").array(), // Alternative names
+  clinicalUtility: text("clinical_utility"), // When to order this test
+  expectedTurnaround: integer("expected_turnaround"), // Hours
+  
+  // Specimen requirements
+  primarySpecimenType: text("primary_specimen_type").notNull(),
+  alternateSpecimenTypes: text("alternate_specimen_types").array(),
+  minimumVolume: text("minimum_volume"),
+  containerType: text("container_type"),
+  storageRequirements: text("storage_requirements"),
+  
+  // Pre-analytics
+  patientPreparation: text("patient_preparation"), // Fasting, timing requirements
+  collectionInstructions: text("collection_instructions"),
+  transportInstructions: text("transport_instructions"),
+  stabilityInfo: jsonb("stability_info").$type<{
+    roomTemp?: string;
+    refrigerated?: string;
+    frozen?: string;
+  }>(),
+  
+  // Billing and compliance
+  cptCode: text("cpt_code"),
+  medicareFeeSchedule: decimal("medicare_fee_schedule", { precision: 10, scale: 2 }),
+  requiresPriorAuth: boolean("requires_prior_auth").default(false),
+  ncdLcdCoverage: text("ncd_lcd_coverage"), // Medicare coverage determinations
+  
+  // Availability
+  availableAt: jsonb("available_at").$type<{
+    quest?: boolean;
+    labcorp?: boolean;
+    hospitalLab?: boolean;
+    referenceLabOnly?: boolean;
+  }>(),
+  orderable: boolean("orderable").default(true),
+  obsolete: boolean("obsolete").default(false),
+  replacedBy: text("replaced_by"), // LOINC code of replacement test
+  
+  // Metadata
+  lastValidated: timestamp("last_validated"),
+  validatedBy: integer("validated_by").references(() => users.id),
+  source: text("source").default("manual"), // 'loinc_import', 'vendor_catalog', 'manual'
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Lab Interface Mappings - Maps internal codes to external lab codes
+export const labInterfaceMappings = pgTable("lab_interface_mappings", {
+  id: serial("id").primaryKey(),
+  
+  // Mapping identification
+  externalLabId: integer("external_lab_id").references(() => externalLabs.id).notNull(),
+  direction: text("direction").notNull(), // 'outbound' (order) or 'inbound' (result)
+  
+  // Code mappings
+  internalCode: text("internal_code").notNull(), // Our LOINC or internal code
+  externalCode: text("external_code").notNull(), // Lab's code
+  externalName: text("external_name"),
+  
+  // Mapping metadata
+  mappingType: text("mapping_type").notNull(), // 'test', 'specimen', 'priority', 'status'
+  mappingNotes: text("mapping_notes"),
+  
+  // Transformation rules
+  transformRules: jsonb("transform_rules").$type<{
+    unitConversion?: {
+      from: string;
+      to: string;
+      factor: number;
+    };
+    valueMapping?: Record<string, string>;
+    specialHandling?: string[];
+  }>(),
+  
+  // Validation
+  validFrom: date("valid_from"),
+  validTo: date("valid_to"),
+  active: boolean("active").default(true),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Lab Order Sets - Predefined groups of tests commonly ordered together
+export const labOrderSets = pgTable("lab_order_sets", {
+  id: serial("id").primaryKey(),
+  
+  // Set identification
+  setCode: text("set_code").notNull().unique(),
+  setName: text("set_name").notNull(),
+  category: text("category"), // 'admission', 'preop', 'routine', 'specialty'
+  
+  // Components
+  testComponents: jsonb("test_components").notNull().$type<Array<{
+    loincCode: string;
+    testName: string;
+    mandatory: boolean;
+    defaultPriority: string;
+  }>>(),
+  
+  // Clinical context
+  clinicalIndications: text("clinical_indications").array(),
+  department: text("department"), // 'emergency', 'surgery', 'medicine'
+  
+  // Usage tracking
+  usageCount: integer("usage_count").default(0),
+  lastUsed: timestamp("last_used"),
+  
+  // Status
+  active: boolean("active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Zod schemas for template system
 export const insertUserNoteTemplateSchema = createInsertSchema(userNoteTemplates).omit({ 
   id: true, 
@@ -2718,6 +2858,27 @@ export const labResultsRelations = relations(labResults, ({ one }) => ({
 
 export const labReferenceRangesRelations = relations(labReferenceRanges, ({ many }) => ({
   // No direct relations - this is a lookup table queried by LOINC code
+}));
+
+export const labTestCatalogRelations = relations(labTestCatalog, ({ one }) => ({
+  validatedByUser: one(users, {
+    fields: [labTestCatalog.validatedBy],
+    references: [users.id],
+  }),
+}));
+
+export const labInterfaceMappingsRelations = relations(labInterfaceMappings, ({ one }) => ({
+  externalLab: one(externalLabs, {
+    fields: [labInterfaceMappings.externalLabId],
+    references: [externalLabs.id],
+  }),
+}));
+
+export const labOrderSetsRelations = relations(labOrderSets, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [labOrderSets.createdBy],
+    references: [users.id],
+  }),
 }));
 
 export const imagingOrdersRelations = relations(imagingOrders, ({ one, many }) => ({
@@ -3150,6 +3311,9 @@ export type Medication = typeof medications.$inferSelect;
 export type LabOrder = typeof labOrders.$inferSelect;
 export type LabResult = typeof labResults.$inferSelect;
 export type LabReferenceRange = typeof labReferenceRanges.$inferSelect;
+export type LabTestCatalog = typeof labTestCatalog.$inferSelect;
+export type LabInterfaceMapping = typeof labInterfaceMappings.$inferSelect;
+export type LabOrderSet = typeof labOrderSets.$inferSelect;
 export type ImagingOrder = typeof imagingOrders.$inferSelect;
 export type ImagingResult = typeof imagingResults.$inferSelect;
 export type FamilyHistory = typeof familyHistory.$inferSelect;
@@ -3255,6 +3419,77 @@ export const insertPharmacySchema = createInsertSchema(pharmacies).pick({
 
 export type Pharmacy = typeof pharmacies.$inferSelect;
 export type InsertPharmacy = z.infer<typeof insertPharmacySchema>;
+
+// Lab Test Catalog schema and types
+export const insertLabTestCatalogSchema = createInsertSchema(labTestCatalog).pick({
+  loincCode: true,
+  loincName: true,
+  loincShortName: true,
+  questCode: true,
+  questName: true,
+  labcorpCode: true,
+  labcorpName: true,
+  hospitalCode: true,
+  category: true,
+  subcategory: true,
+  panelComponents: true,
+  commonName: true,
+  synonyms: true,
+  clinicalUtility: true,
+  expectedTurnaround: true,
+  primarySpecimenType: true,
+  alternateSpecimenTypes: true,
+  minimumVolume: true,
+  containerType: true,
+  storageRequirements: true,
+  patientPreparation: true,
+  collectionInstructions: true,
+  transportInstructions: true,
+  stabilityInfo: true,
+  cptCode: true,
+  medicareFeeSchedule: true,
+  requiresPriorAuth: true,
+  ncdLcdCoverage: true,
+  availableAt: true,
+  orderable: true,
+  obsolete: true,
+  replacedBy: true,
+  validatedBy: true,
+  source: true,
+});
+
+export type InsertLabTestCatalog = z.infer<typeof insertLabTestCatalogSchema>;
+
+// Lab Interface Mappings schema and types
+export const insertLabInterfaceMappingSchema = createInsertSchema(labInterfaceMappings).pick({
+  externalLabId: true,
+  direction: true,
+  internalCode: true,
+  externalCode: true,
+  externalName: true,
+  mappingType: true,
+  mappingNotes: true,
+  transformRules: true,
+  validFrom: true,
+  validTo: true,
+  active: true,
+});
+
+export type InsertLabInterfaceMapping = z.infer<typeof insertLabInterfaceMappingSchema>;
+
+// Lab Order Sets schema and types
+export const insertLabOrderSetSchema = createInsertSchema(labOrderSets).pick({
+  setCode: true,
+  setName: true,
+  category: true,
+  testComponents: true,
+  clinicalIndications: true,
+  department: true,
+  active: true,
+  createdBy: true,
+});
+
+export type InsertLabOrderSet = z.infer<typeof insertLabOrderSetSchema>;
 
 // Prescription Transmission schema and types
 export const insertPrescriptionTransmissionSchema = createInsertSchema(prescriptionTransmissions).pick({

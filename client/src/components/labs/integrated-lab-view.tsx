@@ -1,453 +1,321 @@
-/**
- * Integrated Lab Management View
- * Single interface for all lab-related activities in patient chart
- */
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { Search, ShoppingCart, FileText, CheckCircle } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from "date-fns";
-import {
-  TestTube, AlertTriangle, Clock, Eye, CheckCircle2,
-  MessageSquare, Send, Plus, FileText, Activity
-} from "lucide-react";
-
-interface LabResult {
+interface LabTest {
   id: number;
-  labOrderId: number;
-  testName: string;
-  resultValue: string;
-  resultUnits?: string;
-  referenceRange?: string;
-  abnormalFlag?: string;
-  criticalFlag?: boolean;
-  resultStatus: string;
-  resultAvailableAt: string;
-  reviewedBy?: number;
-  reviewedAt?: string;
-  sourceType: string;
-  sourceConfidence: number;
-  providerId?: number;
+  loincCode: string;
+  loincName: string;
+  commonName: string;
+  category: string;
+  specimen: string;
+  units?: string;
+  questCode?: string;
+  labcorpCode?: string;
+  availableAt: {
+    quest: boolean;
+    labcorp: boolean;
+    hospital: boolean;
+  };
 }
 
-interface IntegratedLabViewProps {
-  patientId: number;
-  patientName: string;
+interface OrderSet {
+  id: number;
+  setCode: string;
+  setName: string;
+  description?: string;
+  tests: string[];
+  department?: string;
+  usageCount: number;
 }
 
-export function IntegratedLabView({ patientId, patientName }: IntegratedLabViewProps) {
-  const [selectedResults, setSelectedResults] = useState<LabResult[]>([]);
-  const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const [reviewNote, setReviewNote] = useState("");
-  const [generatedMessage, setGeneratedMessage] = useState("");
-  const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
-
+export function IntegratedLabView({ patientId }: { patientId: number }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLab, setSelectedLab] = useState<'all' | 'quest' | 'labcorp' | 'hospital'>('all');
+  const [cart, setCart] = useState<LabTest[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch lab results
-  const { data: labResults = [], isLoading: resultsLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/lab-results`],
-    enabled: !!patientId
+  // Search lab tests
+  const { data: searchResults = [], isLoading: isSearching } = useQuery({
+    queryKey: ['/api/lab-catalog/search', searchTerm, selectedLab],
+    enabled: searchTerm.length > 2,
   });
 
-  // Fetch lab orders
-  const { data: labOrders = [], isLoading: ordersLoading } = useQuery({
-    queryKey: [`/api/patients/${patientId}/lab-orders`],
-    enabled: !!patientId
+  // Get order sets
+  const { data: orderSets = [] } = useQuery<OrderSet[]>({
+    queryKey: ['/api/lab-catalog/order-sets'],
   });
 
-  // Group results by order/panel for better organization
-  const groupedResults = labResults.reduce((acc: any, result: LabResult) => {
-    const orderKey = result.labOrderId || 'standalone';
-    if (!acc[orderKey]) {
-      acc[orderKey] = [];
-    }
-    acc[orderKey].push(result);
-    return acc;
-  }, {});
+  // Create lab order mutation
+  const createLabOrder = useMutation({
+    mutationFn: async (tests: LabTest[]) => {
+      const orders = tests.map(test => ({
+        testCode: test.loincCode,
+        testName: test.loincName,
+        priority: 'routine',
+        notes: `Ordered from catalog: ${test.commonName}`,
+      }));
 
-  // Filter for actionable results
-  const pendingReview = labResults.filter((r: LabResult) => !r.reviewedBy);
-  const criticalResults = labResults.filter((r: LabResult) => r.criticalFlag);
-  const abnormalResults = labResults.filter((r: LabResult) => 
-    r.abnormalFlag && r.abnormalFlag !== 'N'
-  );
-
-  const handleReviewResults = (results: LabResult[]) => {
-    setSelectedResults(results);
-    setReviewNote("");
-    setGeneratedMessage("");
-    setShowReviewDialog(true);
-  };
-
-  const handleGenerateMessage = async () => {
-    if (selectedResults.length === 0) return;
-    
-    setIsGeneratingMessage(true);
-    try {
-      const response = await fetch('/api/lab-communication/generate-message', {
+      return apiRequest('/api/lab-orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientId,
-          encounterId: 305, // Current encounter
-          resultIds: selectedResults.map(r => r.id),
-          messageType: criticalResults.length > 0 ? 'critical_results' : 
-                      abnormalResults.length > 0 ? 'abnormal_results' : 'normal_results',
-          preferredChannel: 'portal',
-          forceGenerate: true
+          orders,
+          source: 'lab_catalog',
         }),
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setGeneratedMessage(data.message || "Message generated and queued for approval");
-        toast({
-          title: "Message Generated",
-          description: "Patient communication created successfully",
-        });
-      }
-    } catch (error) {
+    },
+    onSuccess: () => {
       toast({
-        variant: "destructive",
-        title: "Generation Failed",
-        description: "Could not generate patient message",
+        title: 'Lab Orders Created',
+        description: `Successfully ordered ${cart.length} tests`,
       });
-    } finally {
-      setIsGeneratingMessage(false);
+      setCart([]);
+      queryClient.invalidateQueries({ queryKey: ['/api/patients', patientId, 'lab-results'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Order Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Add test to cart
+  const addToCart = (test: LabTest) => {
+    if (!cart.find(t => t.id === test.id)) {
+      setCart([...cart, test]);
+      toast({
+        title: 'Added to Cart',
+        description: `${test.commonName} added to order cart`,
+      });
     }
   };
 
-  const handleCompleteReview = async () => {
-    // Mark results as reviewed and optionally send message
+  // Add order set to cart
+  const addOrderSetToCart = async (orderSet: OrderSet) => {
     try {
-      for (const result of selectedResults) {
-        await fetch(`/api/dashboard/review-lab-result/${result.id}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reviewNote }),
-        });
-      }
+      // Fetch tests for the order set
+      const tests = await Promise.all(
+        orderSet.tests.map(async (loincCode) => {
+          const response = await fetch(`/api/lab-catalog/tests/loinc/${loincCode}`);
+          if (response.ok) {
+            return response.json();
+          }
+          return null;
+        })
+      );
+
+      const validTests = tests.filter(Boolean);
+      const newTests = validTests.filter(test => !cart.find(t => t.id === test.id));
       
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/lab-results`] });
-      setShowReviewDialog(false);
+      setCart([...cart, ...newTests]);
+      
+      // Track order set usage
+      await apiRequest(`/api/lab-catalog/order-sets/${orderSet.setCode}/track-usage`, {
+        method: 'POST',
+      });
+
       toast({
-        title: "Review Complete",
-        description: `${selectedResults.length} result(s) marked as reviewed`,
+        title: 'Order Set Added',
+        description: `Added ${newTests.length} tests from ${orderSet.setName}`,
       });
     } catch (error) {
       toast({
-        variant: "destructive",
-        title: "Review Failed",
-        description: "Could not complete review",
+        title: 'Failed to Add Order Set',
+        description: error.message,
+        variant: 'destructive',
       });
     }
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.95) return "bg-green-100 text-green-800";
-    if (confidence >= 0.85) return "bg-yellow-100 text-yellow-800";
-    return "bg-orange-100 text-orange-800";
-  };
-
-  const getAbnormalColor = (flag?: string) => {
-    if (!flag || flag === 'N') return "";
-    return flag.includes('H') ? "text-red-600 font-semibold" : "text-navy-blue-600 font-semibold";
   };
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Laboratory Results</h2>
-          <p className="text-muted-foreground">{patientName}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Order Labs
-          </Button>
-          {pendingReview.length > 0 && (
-            <Button 
-              onClick={() => handleReviewResults(pendingReview)}
-              variant="default"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              Review {pendingReview.length} Results
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Critical Alerts */}
-      {criticalResults.length > 0 && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <CardTitle className="text-red-900">Critical Results Requiring Immediate Attention</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {criticalResults.map((result: LabResult) => (
-                <div key={result.id} className="flex items-center justify-between p-3 bg-white rounded border border-red-200">
-                  <div>
-                    <span className="font-semibold">{result.testName}: </span>
-                    <span className="text-red-600 font-bold">{result.resultValue} {result.resultUnits}</span>
-                    <span className="text-sm text-gray-600 ml-2">({result.referenceRange})</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleReviewResults([result])}
-                  >
-                    Review Now
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="recent" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="recent">Recent Results</TabsTrigger>
-          <TabsTrigger value="pending">
-            Pending Review ({pendingReview.length})
-          </TabsTrigger>
-          <TabsTrigger value="orders">Active Orders</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+      <Tabs defaultValue="search" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="search">Test Search</TabsTrigger>
+          <TabsTrigger value="order-sets">Order Sets</TabsTrigger>
+          <TabsTrigger value="cart">Cart ({cart.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recent" className="space-y-4">
-          {resultsLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            </div>
-          ) : (
-            <ScrollArea className="h-[600px]">
-              <div className="space-y-4">
-                {Object.entries(groupedResults).map(([orderKey, results]: [string, any]) => {
-                  const orderInfo = labOrders.find((o: any) => o.id === parseInt(orderKey));
-                  const panelName = orderInfo?.testName || 'Standalone Results';
-                  
-                  return (
-                    <Card key={orderKey}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <TestTube className="h-5 w-5" />
-                            <div>
-                              <CardTitle className="text-lg">{panelName}</CardTitle>
-                              <p className="text-sm text-muted-foreground">
-                                {results[0]?.resultAvailableAt && 
-                                  format(parseISO(results[0].resultAvailableAt), 'MMM dd, yyyy HH:mm')
-                                }
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getConfidenceColor(results[0]?.sourceConfidence || 0.85)}>
-                              {Math.round((results[0]?.sourceConfidence || 0.85) * 100)}% confidence
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReviewResults(results)}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Review & Communicate
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid gap-3">
-                          {results.map((result: LabResult) => (
-                            <div key={result.id} className="flex items-center justify-between p-3 border rounded">
-                              <div className="flex items-center gap-4">
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-medium">{result.testName}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    Reference: {result.referenceRange || 'N/A'}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <p className={`text-lg font-semibold ${getAbnormalColor(result.abnormalFlag)}`}>
-                                    {result.resultValue} {result.resultUnits}
-                                  </p>
-                                  {result.abnormalFlag && result.abnormalFlag !== 'N' && (
-                                    <Badge variant={result.abnormalFlag.includes('H') ? 'destructive' : 'secondary'}>
-                                      {result.abnormalFlag}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                              {result.reviewedBy ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                              ) : (
-                                <Clock className="h-5 w-5 text-yellow-600" />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          )}
-        </TabsContent>
-
-        <TabsContent value="pending">
+        <TabsContent value="search" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Results Pending Review</CardTitle>
+              <CardTitle>Search Lab Tests</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by LOINC code, test name, or description..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8"
+                  />
+                </div>
+                <select
+                  value={selectedLab}
+                  onChange={(e) => setSelectedLab(e.target.value as any)}
+                  className="px-3 py-2 border rounded-md"
+                >
+                  <option value="all">All Labs</option>
+                  <option value="quest">Quest Only</option>
+                  <option value="labcorp">LabCorp Only</option>
+                  <option value="hospital">Hospital Only</option>
+                </select>
+              </div>
+
+              {isSearching && <div>Searching...</div>}
+
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {searchResults.map((test: LabTest) => (
+                  <div
+                    key={test.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex-1">
+                      <div className="font-medium">{test.commonName}</div>
+                      <div className="text-sm text-gray-600">
+                        LOINC: {test.loincCode} | {test.loincName}
+                      </div>
+                      <div className="flex gap-2 mt-1">
+                        {test.availableAt.quest && (
+                          <Badge variant="secondary" className="text-xs">
+                            Quest: {test.questCode}
+                          </Badge>
+                        )}
+                        {test.availableAt.labcorp && (
+                          <Badge variant="secondary" className="text-xs">
+                            LabCorp: {test.labcorpCode}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => addToCart(test)}
+                      disabled={cart.some(t => t.id === test.id)}
+                    >
+                      {cart.some(t => t.id === test.id) ? 'Added' : 'Add to Cart'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="order-sets" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Common Order Sets</CardTitle>
             </CardHeader>
             <CardContent>
-              {pendingReview.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle2 className="h-16 w-16 mx-auto mb-4 text-green-300" />
-                  <p>All results have been reviewed</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {pendingReview.map((result: LabResult) => (
-                    <div key={result.id} className="flex items-center justify-between p-3 border rounded">
+              <div className="grid gap-4">
+                {orderSets.map((set) => (
+                  <div
+                    key={set.id}
+                    className="p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-start justify-between">
                       <div>
-                        <span className="font-medium">{result.testName}: </span>
-                        <span className={getAbnormalColor(result.abnormalFlag)}>
-                          {result.resultValue} {result.resultUnits}
-                        </span>
+                        <h3 className="font-medium">{set.setName}</h3>
+                        {set.description && (
+                          <p className="text-sm text-gray-600 mt-1">{set.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-sm text-gray-500">
+                            {set.tests.length} tests
+                          </span>
+                          {set.department && (
+                            <Badge variant="outline">{set.department}</Badge>
+                          )}
+                          <span className="text-sm text-gray-500">
+                            Used {set.usageCount} times
+                          </span>
+                        </div>
                       </div>
                       <Button
                         size="sm"
-                        onClick={() => handleReviewResults([result])}
+                        onClick={() => addOrderSetToCart(set)}
                       >
-                        Review
+                        Add Set
                       </Button>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cart" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Cart</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {cart.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  No tests in cart. Add tests from search or order sets.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    {cart.map((test) => (
+                      <div
+                        key={test.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div>
+                          <div className="font-medium">{test.commonName}</div>
+                          <div className="text-sm text-gray-600">
+                            LOINC: {test.loincCode}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setCart(cart.filter(t => t.id !== test.id))}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      className="flex-1"
+                      onClick={() => createLabOrder.mutate(cart)}
+                      disabled={createLabOrder.isPending}
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Place Order ({cart.length} tests)
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCart([])}
+                    >
+                      Clear Cart
+                    </Button>
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Lab Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Lab orders content */}
-              <p className="text-muted-foreground">Active lab orders will be displayed here</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lab Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Trends and charts */}
-              <p className="text-muted-foreground">Lab trends and historical charts will be displayed here</p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Review Dialog */}
-      <Dialog open={showReviewDialog} onOpenChange={setShowReviewDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Review Lab Results & Generate Patient Communication</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Results Summary */}
-            <div className="bg-gray-50 p-4 rounded">
-              <h3 className="font-semibold mb-2">Results Being Reviewed:</h3>
-              <div className="space-y-1">
-                {selectedResults.map((result: LabResult) => (
-                  <div key={result.id} className="text-sm">
-                    <span className="font-medium">{result.testName}:</span> {result.resultValue} {result.resultUnits}
-                    {result.abnormalFlag && result.abnormalFlag !== 'N' && (
-                      <Badge variant="outline" className="ml-2">{result.abnormalFlag}</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Provider Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="reviewNote">Clinical Interpretation & Notes</Label>
-              <Textarea
-                id="reviewNote"
-                placeholder="Enter your clinical interpretation, follow-up instructions, and any relevant notes..."
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-                rows={4}
-              />
-            </div>
-
-            {/* Patient Communication */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="font-medium">Patient Communication</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateMessage}
-                  disabled={isGeneratingMessage}
-                  className="flex items-center gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  {isGeneratingMessage ? "Generating..." : "Generate AI Message"}
-                </Button>
-              </div>
-              
-              {generatedMessage && (
-                <div className="p-3 bg-navy-blue-50 border border-navy-blue-200 rounded">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Send className="h-4 w-4 text-navy-blue-600" />
-                    <span className="text-sm font-medium text-navy-blue-800">Generated Patient Message</span>
-                  </div>
-                  <p className="text-sm text-navy-blue-700">{generatedMessage}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowReviewDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCompleteReview}>
-                Complete Review
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

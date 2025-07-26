@@ -37,6 +37,10 @@ import {
   type AbTest, type InsertAbTest, type AbTestAssignment, type InsertAbTestAssignment,
   type AdPlatformAccount, type InsertAdPlatformAccount, type AdCampaignPerformance, type InsertAdCampaignPerformance,
   type UserCohort, type InsertUserCohort, type HealthcareMarketingIntelligence, type InsertHealthcareMarketingIntelligence,
+  // Lab Catalog tables
+  labTestCatalog, labInterfaceMappings, labOrderSets,
+  type LabTestCatalog, type InsertLabTestCatalog, type LabInterfaceMapping, type InsertLabInterfaceMapping,
+  type LabOrderSet, type InsertLabOrderSet,
   // Removed orphaned UserPreferences imports - now handled via auth.ts
 } from "@shared/schema";
 import { db } from "./db.js";
@@ -116,6 +120,30 @@ export interface IStorage {
   getPatientLabOrders(patientId: number): Promise<any[]>;
   getPatientLabResults(patientId: number): Promise<any[]>;
   deleteLabResult(id: number, userId: number): Promise<void>;
+  
+  // Lab Test Catalog management
+  searchLabTests(query: {
+    searchTerm?: string;
+    category?: string;
+    lab?: 'quest' | 'labcorp' | 'hospital';
+    includeObsolete?: boolean;
+  }): Promise<LabTestCatalog[]>;
+  getLabTestByLoincCode(loincCode: string): Promise<LabTestCatalog | undefined>;
+  getLabTestByExternalCode(lab: 'quest' | 'labcorp', code: string): Promise<LabTestCatalog | undefined>;
+  createOrUpdateLabTest(test: InsertLabTestCatalog): Promise<LabTestCatalog>;
+  importLabTestCatalog(tests: InsertLabTestCatalog[], source: string): Promise<number>;
+  
+  // Lab Interface Mappings
+  getLabMappingsForLab(externalLabId: number): Promise<LabInterfaceMapping[]>;
+  mapInternalToExternal(externalLabId: number, internalCode: string, direction: 'outbound' | 'inbound'): Promise<string | undefined>;
+  mapExternalToInternal(externalLabId: number, externalCode: string, direction: 'outbound' | 'inbound'): Promise<string | undefined>;
+  createLabMapping(mapping: InsertLabInterfaceMapping): Promise<LabInterfaceMapping>;
+  
+  // Lab Order Sets
+  getLabOrderSets(department?: string): Promise<LabOrderSet[]>;
+  getLabOrderSetByCode(setCode: string): Promise<LabOrderSet | undefined>;
+  createLabOrderSet(orderSet: InsertLabOrderSet): Promise<LabOrderSet>;
+  trackLabOrderSetUsage(setCode: string): Promise<void>;
   
   // Imaging orders and results
   getPatientImagingOrders(patientId: number): Promise<any[]>;
@@ -1412,6 +1440,205 @@ export class DatabaseStorage implements IStorage {
     
     console.log(`✅ [Storage] Lab result ${id} updated successfully`);
     return updatedResults[0];
+  }
+
+  // Lab Test Catalog management
+  async searchLabTests(query: {
+    searchTerm?: string;
+    category?: string;
+    lab?: 'quest' | 'labcorp' | 'hospital';
+    includeObsolete?: boolean;
+  }): Promise<LabTestCatalog[]> {
+    let conditions = [];
+
+    if (query.searchTerm) {
+      const searchPattern = `%${query.searchTerm}%`;
+      conditions.push(
+        or(
+          sql`${labTestCatalog.loincCode} ILIKE ${searchPattern}`,
+          sql`${labTestCatalog.loincName} ILIKE ${searchPattern}`,
+          sql`${labTestCatalog.commonName} ILIKE ${searchPattern}`,
+          sql`${labTestCatalog.questName} ILIKE ${searchPattern}`,
+          sql`${labTestCatalog.labcorpName} ILIKE ${searchPattern}`
+        )
+      );
+    }
+
+    if (query.category) {
+      conditions.push(eq(labTestCatalog.category, query.category));
+    }
+
+    if (!query.includeObsolete) {
+      conditions.push(eq(labTestCatalog.obsolete, false));
+    }
+
+    const tests = await db
+      .select()
+      .from(labTestCatalog)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    // Filter by lab availability if specified
+    if (query.lab) {
+      return tests.filter(test => {
+        const availability = test.availableAt as any;
+        return availability && availability[query.lab] === true;
+      });
+    }
+
+    return tests;
+  }
+
+  async getLabTestByLoincCode(loincCode: string): Promise<LabTestCatalog | undefined> {
+    const [test] = await db
+      .select()
+      .from(labTestCatalog)
+      .where(eq(labTestCatalog.loincCode, loincCode));
+    
+    return test;
+  }
+
+  async getLabTestByExternalCode(lab: 'quest' | 'labcorp', code: string): Promise<LabTestCatalog | undefined> {
+    const column = lab === 'quest' ? labTestCatalog.questCode : labTestCatalog.labcorpCode;
+    
+    const [test] = await db
+      .select()
+      .from(labTestCatalog)
+      .where(eq(column, code));
+    
+    return test;
+  }
+
+  async createOrUpdateLabTest(test: InsertLabTestCatalog): Promise<LabTestCatalog> {
+    const existing = await this.getLabTestByLoincCode(test.loincCode);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(labTestCatalog)
+        .set({ ...test, updatedAt: new Date() })
+        .where(eq(labTestCatalog.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(labTestCatalog)
+        .values(test)
+        .returning();
+      return created;
+    }
+  }
+
+  async importLabTestCatalog(tests: InsertLabTestCatalog[], source: string): Promise<number> {
+    let imported = 0;
+    
+    for (const test of tests) {
+      try {
+        await this.createOrUpdateLabTest({ ...test, source });
+        imported++;
+      } catch (error) {
+        console.error(`Failed to import test ${test.loincCode}:`, error);
+      }
+    }
+    
+    return imported;
+  }
+
+  // Lab Interface Mappings
+  async getLabMappingsForLab(externalLabId: number): Promise<LabInterfaceMapping[]> {
+    return await db
+      .select()
+      .from(labInterfaceMappings)
+      .where(eq(labInterfaceMappings.externalLabId, externalLabId));
+  }
+
+  async mapInternalToExternal(
+    externalLabId: number, 
+    internalCode: string, 
+    direction: 'outbound' | 'inbound'
+  ): Promise<string | undefined> {
+    const [mapping] = await db
+      .select()
+      .from(labInterfaceMappings)
+      .where(
+        and(
+          eq(labInterfaceMappings.externalLabId, externalLabId),
+          eq(labInterfaceMappings.internalCode, internalCode),
+          eq(labInterfaceMappings.direction, direction),
+          eq(labInterfaceMappings.active, true)
+        )
+      );
+    
+    return mapping?.externalCode;
+  }
+
+  async mapExternalToInternal(
+    externalLabId: number, 
+    externalCode: string, 
+    direction: 'outbound' | 'inbound'
+  ): Promise<string | undefined> {
+    const [mapping] = await db
+      .select()
+      .from(labInterfaceMappings)
+      .where(
+        and(
+          eq(labInterfaceMappings.externalLabId, externalLabId),
+          eq(labInterfaceMappings.externalCode, externalCode),
+          eq(labInterfaceMappings.direction, direction),
+          eq(labInterfaceMappings.active, true)
+        )
+      );
+    
+    return mapping?.internalCode;
+  }
+
+  async createLabMapping(mapping: InsertLabInterfaceMapping): Promise<LabInterfaceMapping> {
+    const [created] = await db
+      .insert(labInterfaceMappings)
+      .values(mapping)
+      .returning();
+    
+    return created;
+  }
+
+  // Lab Order Sets
+  async getLabOrderSets(department?: string): Promise<LabOrderSet[]> {
+    const conditions = [eq(labOrderSets.active, true)];
+    
+    if (department) {
+      conditions.push(eq(labOrderSets.department, department));
+    }
+
+    return await db
+      .select()
+      .from(labOrderSets)
+      .where(and(...conditions));
+  }
+
+  async getLabOrderSetByCode(setCode: string): Promise<LabOrderSet | undefined> {
+    const [set] = await db
+      .select()
+      .from(labOrderSets)
+      .where(eq(labOrderSets.setCode, setCode));
+    
+    return set;
+  }
+
+  async createLabOrderSet(orderSet: InsertLabOrderSet): Promise<LabOrderSet> {
+    const [created] = await db
+      .insert(labOrderSets)
+      .values(orderSet)
+      .returning();
+    
+    return created;
+  }
+
+  async trackLabOrderSetUsage(setCode: string): Promise<void> {
+    await db
+      .update(labOrderSets)
+      .set({ 
+        usageCount: sql`${labOrderSets.usageCount} + 1`,
+        lastUsed: new Date()
+      })
+      .where(eq(labOrderSets.setCode, setCode));
   }
 
   // Imaging orders and results
