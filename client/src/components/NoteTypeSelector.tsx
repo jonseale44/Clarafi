@@ -45,7 +45,7 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
   });
 
   // Get user note preferences for AI mode
-  const { data: userNotePreferences } = useQuery<any>({
+  const { data: userNotePreferences, refetch: refetchNotePreferences } = useQuery<any>({
     queryKey: ['/api/user-preferences/notes']
   });
 
@@ -65,8 +65,10 @@ export const NoteTypeSelector: React.FC<NoteTypeSelectorProps> = ({
       console.log('🔧 [NoteTypeSelector] Updating AI mode:', updates);
       return await apiRequest('PUT', '/api/user-preferences/notes', updates);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('✅ [NoteTypeSelector] AI mode updated successfully:', data);
+      // Force refetch to update UI
+      await refetchNotePreferences();
       queryClient.invalidateQueries({ queryKey: ['/api/user-preferences/notes'] });
     },
     onError: (error: any) => {

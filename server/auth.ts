@@ -712,6 +712,44 @@ export function setupAuth(app: Express) {
     }
   });
 
+  // User note preferences endpoints (specific route for NoteTypeSelector)
+  app.get("/api/user-preferences/notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      console.log(`📋 [NotePreferences] Fetching note preferences for user ${userId}`);
+      
+      const preferences = await storage.getUserNotePreferences(userId);
+      console.log(`📋 [NotePreferences] Retrieved preferences:`, preferences);
+      
+      res.json(preferences || {});
+    } catch (error: any) {
+      console.error("❌ [NotePreferences] Error fetching note preferences:", error);
+      res.status(500).json({ error: "Failed to fetch note preferences" });
+    }
+  });
+
+  app.put("/api/user-preferences/notes", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const userId = req.user.id;
+      const updates = req.body;
+      
+      console.log(`🔧 [NotePreferences] Updating note preferences for user ${userId}:`, updates);
+      
+      // Update or create user preferences
+      const preferences = await storage.updateUserNotePreferences(userId, updates);
+      console.log(`✅ [NotePreferences] Updated preferences:`, preferences);
+      
+      res.json(preferences);
+    } catch (error: any) {
+      console.error("❌ [NotePreferences] Error updating note preferences:", error);
+      res.status(500).json({ error: "Failed to update note preferences" });
+    }
+  });
+
   // User profile update endpoint
   app.put("/api/user/profile", async (req, res) => {
     try {
