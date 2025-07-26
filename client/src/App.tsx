@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import { UploadProvider } from "@/contexts/UploadContext";
+import { useEffect } from "react";
+import { initGA } from "./lib/analytics";
+import { useAnalytics } from "./hooks/use-analytics";
 import Dashboard from "@/pages/dashboard";
 import AuthPage from "@/pages/auth-page";
 import { PatientCreation } from "@/pages/PatientCreation";
@@ -59,6 +62,9 @@ import MedianDemoPage from "@/pages/median-demo";
 import MedianBackgroundAudioDemo from "@/pages/median-background-audio-demo";
 
 function Router() {
+  // Track page views when routes change
+  useAnalytics();
+  
   return (
     <Switch>
       {/* Public landing page as root */}
@@ -133,6 +139,16 @@ function Router() {
 }
 
 function App() {
+  // Initialize Google Analytics when app loads
+  useEffect(() => {
+    // Verify required environment variable is present
+    if (!import.meta.env.VITE_GA_MEASUREMENT_ID) {
+      console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
+    } else {
+      initGA();
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

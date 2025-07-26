@@ -1,0 +1,64 @@
+Skip to main content
+Help Center
+Community
+Announcements
+Analytics
+Contact us
+Get started with AnalyticsCollect and manage dataReport and exploreAdvertising and attributionAudiences and remarketingManage accounts, properties, and usersGoogle Analytics 360Policies and data privacy
+Introduction to Analytics[GA4] Introducing the next generation of Analytics, Google Analytics 4
+[GA4] Introducing the next generation of Analytics, Google Analytics 4
+Explore Google Analytics 4, the next generation of Analytics which collects event-based data from both websites and apps
+GA4 is a new kind of property designed for the future of measurement: 
+
+Collects both website and app data to better understand the customer journey
+Uses event-based data instead of session-based
+Includes privacy controls such as cookieless measurement, and behavioral and key event modeling
+Predictive capabilities offer guidance without complex models
+Direct integrations to media platforms help drive actions on your website or app
+Starting July 1, 2023, standard Universal Analytics properties stopped processing data. You'll be able to see your Universal Analytics reports for a period of time after July 1, 2023. However, new data will only flow into Google Analytics 4 properties. Learn more
+
+ 360 Universal Analytics properties will receive a one-time processing extension ending on July 1, 2024.
+How to get started with Google Analytics 4
+There are 2 ways to get started if you are an editor or administrator:
+
+Option 1: Set up Analytics data collection for the first time
+
+Do this if you’re new to Analytics and ready to collect data for your website and/or app. 
+
+Option 2: Add Google Analytics 4 to a website builder platform or CMS (content management system)
+
+Do this if you use a CMS-hosted (Content Management System) website, e.g. a website created using Wix, WordPress, Drupal, Squarespace, GoDaddy, WooCommerce, Shopify, Magento, Awesome Motive, HubSpot, etc.
+
+Existing Google Analytics for Firebase customers are advised to upgrade to a Google Analytics 4 property.
+Related resources
+Google Analytics offers four training courses and a certification:
+101: Get started using Google Analytics 4 (GA4) (Beginner)
+102: Manage GA4 data and learn to read reports (Beginner)
+201: Dive deeper into GA4 data and reports (Intermediate)
+301: Use GA4 with other tools and data sources (Advanced)
+Google Analytics 4 Certification
+
+Give feedback about this article
+Was this helpful?
+
+
+Need more help?
+Post to the help community
+Get answers from community members
+Contact us
+Tell us more and we’ll help you get there
+Introduction to Analytics
+[GA4] Introducing the next generation of Analytics, Google Analytics 4
+The value of digital analytics
+How Google Analytics works
+[GA4] Why does Google Analytics look different?
+[GA4] Find your way around Analytics
+[GA4] Search box in Google Analytics 4 properties
+©2025 Google  Privacy Policy  Terms of Service
+Language
+
+Help guide
+
+Help guide
+Hi, I’m a new AI support assistant. Chat with me to find answers and solve account issues.
+Let’s chat
