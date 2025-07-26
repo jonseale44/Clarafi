@@ -16,10 +16,24 @@ export default function LandingPage() {
     }
   }, [user, setLocation]);
 
-  // TODO: Track page view for marketing analytics
+  // Track landing page visit for marketing analytics
   useEffect(() => {
-    // Track landing page visit with source, medium, campaign
-    console.log('TODO: Track landing page visit');
+    // Import analytics service
+    import('@/lib/analytics').then(({ analytics }) => {
+      // Track page view with landing page specific data
+      analytics.trackPageView({
+        page: '/',
+        pageType: 'landing'
+      });
+      
+      // Track landing as a conversion event
+      analytics.trackEvent('landing_page_visit', {
+        source: new URLSearchParams(window.location.search).get('utm_source') || 'direct',
+        medium: new URLSearchParams(window.location.search).get('utm_medium') || 'none',
+        campaign: new URLSearchParams(window.location.search).get('utm_campaign') || 'none',
+        referrer: document.referrer || 'direct'
+      });
+    });
   }, []);
 
   return (

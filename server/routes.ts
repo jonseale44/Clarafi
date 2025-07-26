@@ -63,6 +63,7 @@ import schedulingRoutes from "./scheduling-routes";
 import { testPatientRoutes } from "./test-patient-routes";
 import acquisitionRoutes from "./acquisition-routes";
 
+
 import patientAttachmentsRoutes from "./patient-attachments-routes";
 
 import nursingSummaryRoutes from "./nursing-summary-routes";
@@ -6313,6 +6314,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   const marketingAnalyticsRoutes = await import("./marketing-analytics-routes");
   app.use(marketingAnalyticsRoutes.default);
   console.log("📊 [MarketingAnalytics] Marketing analytics routes registered");
+  
+  // Import and register advanced analytics routes
+  const advancedAnalyticsRoutes = await import("./advanced-analytics-routes");
+  app.use(advancedAnalyticsRoutes.default);
+  console.log("📈 [AdvancedAnalytics] Advanced analytics routes registered");
 
   return httpServer;
 }
