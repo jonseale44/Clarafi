@@ -45,6 +45,27 @@ Created state-of-the-art marketing analytics services to compete with leading EM
    - Real-time anomaly detection
    - Content optimization suggestions
 
+### CLARAFI Revenue Model Implementation (July 26, 2025 - 10:52 AM) - COMPLETED
+Updated all revenue calculations throughout the marketing analytics system to reflect CLARAFI's subscription-only revenue model:
+
+1. **Revenue Model Clarification**:
+   - CLARAFI generates revenue exclusively from subscriptions, not from patient visits or procedures
+   - Individual Provider: $149/month
+   - Enterprise Base: $399/month
+   - Additional Enterprise Users: $99/month per nurse, $49/month per non-clinical staff
+
+2. **Updated Components**:
+   - **Predictive Analytics Service**: Changed CLV calculations from patient visit revenue to subscription-based MRR
+   - **Advanced Analytics Routes**: Replaced avgRevenuePerPatient with avgRevenuePerUser based on subscription tiers
+   - **Marketing Analytics Routes**: Updated LTV:CAC calculations to use weighted subscription revenue
+   - **AI Insights Generation**: Now uses subscription revenue for all financial calculations
+
+3. **Key Changes**:
+   - Patient value is now calculated as contribution to subscription retention, not direct revenue
+   - Engagement metrics affect retention probability rather than visit revenue
+   - LTV calculations based on 24-month average subscription retention
+   - Channel attribution uses subscription LTV ($149 × 24 months = $3,576 default)
+
 ### Google Analytics Integration (July 26, 2025 - 2:25 AM) - COMPLETED & VERIFIED WORKING
 Successfully integrated and verified Google Analytics 4 with measurement ID `G-TLTL94GKCQ`:
 

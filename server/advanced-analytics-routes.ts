@@ -312,11 +312,16 @@ async function getAnalyticsForPeriod(
       : 0
   };
   
-  // Revenue calculations - based on industry averages
-  const avgRevenuePerVisit = 125; // Average revenue per visit for primary care
-  const avgVisitsPerYear = 3.2; // Industry average for established patients
-  const avgPatientLifespanYears = 4.5; // Average patient retention
-  const avgRevenuePerPatient = avgRevenuePerVisit * avgVisitsPerYear * avgPatientLifespanYears;
+  // Revenue calculations - CLARAFI subscription model
+  const individualMonthlyRevenue = 149; // Individual provider subscription
+  const enterpriseBaseRevenue = 399; // Enterprise base subscription
+  const nurseMonthlyRevenue = 99; // Per nurse in enterprise
+  const staffMonthlyRevenue = 49; // Per non-clinical staff in enterprise
+  
+  // Calculate average revenue per user based on subscription model
+  const avgMonthlyRevenuePerUser = individualMonthlyRevenue; // Default to individual tier
+  const avgCustomerLifetimeMonths = 24; // 2-year average retention
+  const avgRevenuePerUser = avgMonthlyRevenuePerUser * avgCustomerLifetimeMonths;
   
   return {
     marketingSpend,
@@ -325,12 +330,12 @@ async function getAnalyticsForPeriod(
     leads,
     appointments,
     newPatientsFromWeb,
-    avgRevenuePerPatient,
-    avgPatientLifespanYears,
+    avgRevenuePerUser,
+    avgCustomerLifetimeMonths,
     emailMetrics,
     channelAttribution: await getChannelAttribution(events),
     cpa: newUsers.length > 0 ? marketingSpend / newUsers.length : 0,
-    ltv: avgRevenuePerPatient
+    ltv: avgRevenuePerUser
   };
 }
 
@@ -362,7 +367,7 @@ async function getChannelAttribution(events: any[]) {
       channels[channel] = { patients: 0, revenue: 0, cost: 0 };
     }
     channels[channel].patients += 1;
-    channels[channel].revenue += 187.50 * 24; // Mock LTV
+    channels[channel].revenue += 149 * 24; // Individual subscription LTV (24-month retention)
   });
   
   return channels;

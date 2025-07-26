@@ -919,7 +919,12 @@ router.post("/api/marketing/insights/generate", requireAdmin, async (req: Authen
     
     // 4. Campaign Performance Insights
     const activeCAC = 75; // Cost per acquisition
-    const monthlyRevenue = 149; // Monthly subscription
+    const individualMonthlyRevenue = 149; // Individual provider subscription
+    const enterpriseBaseRevenue = 399; // Enterprise base subscription
+    
+    // Calculate weighted average revenue based on subscription mix
+    const enterpriseSubscriptions = users.filter(u => u.healthSystemId && u.role === 'provider').length > 1;
+    const monthlyRevenue = enterpriseSubscriptions ? enterpriseBaseRevenue : individualMonthlyRevenue;
     
     if (signups.length > 0 && subscriptions.length > 0) {
       const ltvCacRatio = (monthlyRevenue * 24) / activeCAC; // Assuming 24-month retention

@@ -167,34 +167,22 @@ export class PredictiveAnalyticsService {
         const engagementMultiplier = Math.min(2, 0.5 + (monthlyActivityRate / 2));
         const patientCLV = patientContributionToMRR * 24 * engagementMultiplier; // 24-month baseline
         
-        // Project future value based on activity rate
-        const monthlyRate = appointments.length / tenureMonths;
-        const projectedMonthlyValue = monthlyRate * avgAppointmentRevenue;
-        const projectedLifetimeMonths = 60; // 5 year projection
-        
-        // Apply retention probability (decreases over time)
-        const retentionRate = 0.85; // 85% annual retention
-        const yearsRemaining = projectedLifetimeMonths / 12;
-        const adjustedFutureValue = projectedMonthlyValue * projectedLifetimeMonths * Math.pow(retentionRate, yearsRemaining);
-        
-        const clv = totalHistoricalValue + adjustedFutureValue;
-        
-        // Segment patients
-        if (clv > 10000) {
+        // Segment patients based on engagement (which affects subscription retention)
+        if (monthlyActivityRate > 5) {
           segments.vip.patients.push(patient);
-          segments.vip.totalValue += clv;
-        } else if (clv > 5000) {
+          segments.vip.totalValue += patientCLV;
+        } else if (monthlyActivityRate > 2) {
           segments.regular.patients.push(patient);
-          segments.regular.totalValue += clv;
-        } else if (tenureMonths < 3) {
+          segments.regular.totalValue += patientCLV;
+        } else if (monthsSinceCreated < 3) {
           segments.new.patients.push(patient);
-          segments.new.totalValue += clv;
+          segments.new.totalValue += patientCLV;
         } else {
           segments.occasional.patients.push(patient);
-          segments.occasional.totalValue += clv;
+          segments.occasional.totalValue += patientCLV;
         }
         
-        patientValues.push(clv);
+        patientValues.push(patientCLV);
       }
       
       // Calculate average CLV
