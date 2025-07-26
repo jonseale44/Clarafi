@@ -384,6 +384,9 @@ export const userNotePreferences = pgTable("user_note_preferences", {
   showTemplatePreview: boolean("show_template_preview").default(true),
   autoSaveChanges: boolean("auto_save_changes").default(true),
   
+  // AI assistance mode - controls whether AI strictly follows transcription or can be more assistive
+  aiAssistanceMode: text("ai_assistance_mode").default("strict"), // 'strict' or 'flexible'
+  
   // Medical Problems Display preferences
   medicalProblemsDisplayThreshold: integer("medical_problems_display_threshold").default(100), // Percentage (1-100)
   
