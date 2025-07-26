@@ -110,9 +110,9 @@ router.get("/api/analytics/predictive", requireAdmin, async (req: any, res: any)
 });
 
 // ==========================================
-// Patient Journey Analytics
+// User Journey Analytics (CLARAFI acquires users, not patients)
 // ==========================================
-router.get("/api/analytics/patient-journey", requireAdmin, async (req: any, res: any) => {
+router.get("/api/analytics/user-journey", requireAdmin, async (req: any, res: any) => {
   try {
     const { startDate, endDate } = req.query;
     const healthSystemId = req.user.healthSystemId;
@@ -127,29 +127,51 @@ router.get("/api/analytics/patient-journey", requireAdmin, async (req: any, res:
       endDate: end
     });
     
-    // Analyze patient journey stages
-    const journeyStages = {
-      websiteVisits: events.filter(e => e.eventType === 'page_view' && e.eventData?.pageType === 'landing').length,
-      leadForms: events.filter(e => e.eventType === 'lead_capture').length,
-      signups: events.filter(e => e.eventType === 'conversion_signup').length,
-      firstPatients: events.filter(e => e.eventType === 'conversion_first_patient').length,
-      firstSOAP: events.filter(e => e.eventType === 'conversion_first_soap').length,
-      activePatients: events.filter(e => e.eventType === 'feature_usage' && e.eventData?.feature === 'patient_creation').length,
-    };
+    // Get real page views - if no landing page views, use all page views
+    const pageViews = events.filter(e => e.eventType === 'page_view');
+    const landingPageViews = pageViews.filter(e => e.eventData?.pageType === 'landing');
+    const websiteVisits = landingPageViews.length || pageViews.length;
     
-    // Calculate conversion rates
-    const conversionRates = {
-      visitorToLead: journeyStages.leadForms > 0 ? (journeyStages.leadForms / journeyStages.websiteVisits) * 100 : 0,
-      leadToSignup: journeyStages.signups > 0 ? (journeyStages.signups / journeyStages.leadForms) * 100 : 0,
-      signupToPatient: journeyStages.firstPatients > 0 ? (journeyStages.firstPatients / journeyStages.signups) * 100 : 0,
-      patientToActive: journeyStages.firstSOAP > 0 ? (journeyStages.firstSOAP / journeyStages.firstPatients) * 100 : 0,
-    };
+    // Get sign-ups and user conversions
+    const signUps = events.filter(e => e.eventType === 'conversion_signup').length;
+    const accountsCreated = await storage.getUsersByHealthSystem(healthSystemId)
+      .then(users => users.filter(u => 
+        u.createdAt && new Date(u.createdAt) >= start && new Date(u.createdAt) <= end
+      ).length);
     
-    res.json({
-      stages: journeyStages,
-      conversionRates,
-      period: { start, end }
-    });
+    const firstPatientAdded = events.filter(e => e.eventType === 'conversion_first_patient').length;
+    const activeSubscribers = events.filter(e => e.eventType === 'conversion_subscription_upgrade').length;
+    
+    // Build journey stages for CLARAFI's user acquisition
+    const stages = [
+      { 
+        stage: "Website Visit", 
+        count: websiteVisits,
+        icon: "Globe"
+      },
+      { 
+        stage: "Sign Up Started", 
+        count: signUps,
+        icon: "Mail"
+      },
+      { 
+        stage: "Account Created", 
+        count: accountsCreated,
+        icon: "UserCheck"
+      },
+      { 
+        stage: "First Patient Added", 
+        count: firstPatientAdded,
+        icon: "Users"
+      },
+      { 
+        stage: "Active Subscriber", 
+        count: activeSubscribers,
+        icon: "Activity"
+      }
+    ];
+    
+    res.json({ stages });
   } catch (error) {
     APIResponseHandler.error(res, error as Error);
   }

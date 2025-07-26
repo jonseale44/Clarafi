@@ -54,10 +54,10 @@ export default function AdvancedAnalyticsDashboard() {
     const currentPeriodData = analyticsData.current || {};
     const previousPeriodData = analyticsData.previous || {};
 
-    // Patient Acquisition Cost (CPA)
+    // User Acquisition Cost (CPA) - CLARAFI acquires users
     const totalSpend = currentPeriodData.marketingSpend || 0;
-    const newPatients = currentPeriodData.newPatients || 0;
-    const cpa = newPatients > 0 ? totalSpend / newPatients : 0;
+    const newUsers = currentPeriodData.newPatients || 0; // API still returns 'newPatients'
+    const cpa = newUsers > 0 ? totalSpend / newUsers : 0;
 
     // Patient Lifetime Value (LTV)
     const avgRevenuePerPatient = currentPeriodData.avgRevenuePerPatient || 0;
@@ -95,7 +95,7 @@ export default function AdvancedAnalyticsDashboard() {
       cpa,
       ltv,
       ltvCacRatio,
-      newPatients,
+      newUsers,
       totalSpend,
       conversionRates: {
         visitorToLead: visitorToLeadRate,
@@ -110,7 +110,7 @@ export default function AdvancedAnalyticsDashboard() {
       changes: {
         cpa: calculateChange(cpa, previousPeriodData.cpa || 0),
         ltv: calculateChange(ltv, previousPeriodData.ltv || 0),
-        newPatients: calculateChange(newPatients, previousPeriodData.newPatients || 0),
+        newUsers: calculateChange(newUsers, previousPeriodData.newPatients || 0),
       },
       benchmarkComparison: {
         cpaDiff: ((cpa - INDUSTRY_BENCHMARKS.cpaHealthcare) / INDUSTRY_BENCHMARKS.cpaHealthcare) * 100,
@@ -296,27 +296,51 @@ export default function AdvancedAnalyticsDashboard() {
     );
   };
 
-  // Patient Journey Analytics
-  const PatientJourneyAnalytics = () => {
-    const journeyData = [
-      { stage: "Website Visit", count: 10000, icon: Globe },
-      { stage: "Lead Form", count: 260, icon: Mail },
-      { stage: "Appointment Booked", count: 187, icon: Clock },
-      { stage: "First Visit", count: 134, icon: UserCheck },
-      { stage: "Active Patient", count: 114, icon: Activity },
+  // User Acquisition Journey Analytics
+  const UserJourneyAnalytics = () => {
+    // Fetch real journey data from API
+    const { data: journeyData } = useQuery({
+      queryKey: ['/api/analytics/user-journey'],
+      refetchInterval: 5 * 60 * 1000, // Refresh every 5 minutes
+    });
+    
+    // Icon mapping for string icon names from API
+    const iconMap: Record<string, any> = {
+      Globe,
+      Mail,
+      UserCheck,
+      Users,
+      Activity
+    };
+    
+    // Default journey stages for CLARAFI's user acquisition
+    const defaultJourney = [
+      { stage: "Website Visit", count: 0, icon: Globe },
+      { stage: "Sign Up Started", count: 0, icon: Mail },
+      { stage: "Account Created", count: 0, icon: UserCheck },
+      { stage: "First Patient Added", count: 0, icon: Users },
+      { stage: "Active Subscriber", count: 0, icon: Activity },
     ];
+    
+    // Map API data with actual icon components
+    const displayData = journeyData?.stages 
+      ? journeyData.stages.map((stage: any) => ({
+          ...stage,
+          icon: iconMap[stage.icon] || Globe
+        }))
+      : defaultJourney;
 
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Patient Acquisition Journey</CardTitle>
+          <CardTitle>User Acquisition Journey</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {journeyData.map((stage, index) => {
+            {displayData.map((stage, index) => {
               const Icon = stage.icon;
-              const conversionRate = index > 0 
-                ? ((stage.count / journeyData[index - 1].count) * 100).toFixed(1)
+              const conversionRate = index > 0 && displayData[index - 1].count > 0
+                ? ((stage.count / displayData[index - 1].count) * 100).toFixed(1)
                 : "100";
               
               return (
@@ -430,7 +454,7 @@ export default function AdvancedAnalyticsDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Patient Lifetime Value</p>
+                  <p className="text-sm text-muted-foreground">User Lifetime Value</p>
                   <p className="text-2xl font-bold">${metrics.ltv.toLocaleString()}</p>
                   <p className={`text-xs mt-1 flex items-center ${metrics.changes.ltv > 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {metrics.changes.ltv > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
@@ -461,11 +485,11 @@ export default function AdvancedAnalyticsDashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">New Patients</p>
-                  <p className="text-2xl font-bold">{metrics.newPatients}</p>
-                  <p className={`text-xs mt-1 flex items-center ${metrics.changes.newPatients > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {metrics.changes.newPatients > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                    {Math.abs(metrics.changes.newPatients).toFixed(1)}%
+                  <p className="text-sm text-muted-foreground">New Users</p>
+                  <p className="text-2xl font-bold">{metrics.newUsers}</p>
+                  <p className={`text-xs mt-1 flex items-center ${metrics.changes.newUsers > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {metrics.changes.newUsers > 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
+                    {Math.abs(metrics.changes.newUsers).toFixed(1)}%
                   </p>
                 </div>
                 <Users className="h-8 w-8 text-muted-foreground" />
@@ -478,14 +502,14 @@ export default function AdvancedAnalyticsDashboard() {
       {/* Main Analytics Sections */}
       <Tabs defaultValue="journey" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="journey">Patient Journey</TabsTrigger>
+          <TabsTrigger value="journey">User Journey</TabsTrigger>
           <TabsTrigger value="attribution">Channel Attribution</TabsTrigger>
           <TabsTrigger value="predictive">Predictive Insights</TabsTrigger>
           <TabsTrigger value="campaigns">Campaign ROI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="journey" className="space-y-4">
-          <PatientJourneyAnalytics />
+          <UserJourneyAnalytics />
         </TabsContent>
 
         <TabsContent value="attribution" className="space-y-4">

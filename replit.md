@@ -16,6 +16,26 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 
 ## Recent Changes (July 26, 2025)
 
+### User Acquisition Journey Updates (July 26, 2025 - 12:15 PM) - COMPLETED
+Fixed critical terminology and created real user journey tracking for CLARAFI's subscription model:
+
+1. **Terminology Updates**:
+   - Changed "Patient Journey" to "User Journey" throughout the system
+   - Changed "New Patients" to "New Users" in all metrics dashboards
+   - Changed "Patient Lifetime Value" to "User Lifetime Value"
+   - Updated API endpoints from `/api/analytics/patient-journey` to `/api/analytics/user-journey`
+
+2. **User Journey API Implementation**:
+   - Created real-time user acquisition funnel tracking: Website Visit → Sign Up → Account Created → First Patient Added → Active Subscriber
+   - Uses actual analytics events instead of mock data
+   - Tracks real user signups, account creations, and subscription conversions
+   - Properly handles icon mapping between API string names and React components
+
+3. **Business Model Alignment**:
+   - CLARAFI acquires users (physicians, nurses, staff), not patients
+   - Revenue comes from user subscriptions, not patient visits
+   - All marketing analytics now focus on user acquisition and retention
+
 ### Enhanced Marketing & Analytics Infrastructure (July 26, 2025 - 10:45 AM) - COMPLETED
 Created state-of-the-art marketing analytics services to compete with leading EMR/AI scribe solutions:
 
