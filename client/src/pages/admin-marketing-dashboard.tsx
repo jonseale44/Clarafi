@@ -40,7 +40,7 @@ export default function AdminMarketingDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   
   // Check if user has admin access
-  const { data: user } = useQuery({ queryKey: ["/api/user"] });
+  const { data: user } = useQuery<{ id: number; email: string; role: string }>({ queryKey: ["/api/user"] });
   
   if (!user || (user.role !== 'admin' && user.role !== 'system_admin')) {
     return (

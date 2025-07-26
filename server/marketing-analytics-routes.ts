@@ -15,7 +15,7 @@ const router = Router();
 
 // Middleware to ensure admin access for marketing routes
 const requireAdmin = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated() || (req.user.role !== 'admin' && req.user.role !== 'system_admin')) {
+  if (!req.isAuthenticated() || !req.user || (req.user.role !== 'admin' && req.user.role !== 'system_admin')) {
     return res.status(403).json({ error: "Admin access required for marketing analytics" });
   }
   next();
