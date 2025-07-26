@@ -762,6 +762,49 @@ export default function LandingPage() {
               </div>
             </div>
             
+            {/* Revolutionary Lab Processing Feature */}
+            <div className="group relative animate-fadeInUp delay-350">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-8 hover:border-emerald-500/30 transition-all duration-300">
+                <div className="flex items-start gap-6">
+                  <div className="w-16 h-16 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">Lab Processing That Works With ANY Lab Worldwide</h3>
+                    <p className="text-gray-300 mb-4">
+                      No integrations needed. No waiting. Start processing labs from any source in 5 minutes.
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-purple-300 mb-2">🎯 What You Need:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Order labs from any provider</li>
+                          <li>• Process results instantly</li>
+                          <li>• Review & send to patients</li>
+                        </ul>
+                      </div>
+                      <div className="bg-gray-900/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-yellow-300 mb-2">✨ What You'll Love:</h4>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          <li>• Works with PDFs, faxes, photos</li>
+                          <li>• Links results to original orders</li>
+                          <li>• Generates patient explanations</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-green-400 font-medium">
+                      → Outcome: Complete lab workflow without expensive integrations. Deploy today.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             {/* Clinical Intelligence Feature */}
             <div className="group relative animate-fadeInUp delay-400">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl blur-xl opacity-0 group-hover:opacity-10 transition-opacity" />
@@ -1088,7 +1131,7 @@ export default function LandingPage() {
                 </Link>
                 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  No credit card required • Setup in 3 minutes
+                  No credit card required • 5-minute clinic setup • Works with ANY lab worldwide
                 </p>
               </div>
             </div>

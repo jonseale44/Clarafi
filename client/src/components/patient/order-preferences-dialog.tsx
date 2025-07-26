@@ -299,16 +299,46 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
 
             {/* Lab service provider input */}
             {orderType === "lab" && getCurrentValue() === "real_service" && (
-              <div>
-                <Label htmlFor="lab-provider">Lab Service Provider</Label>
-                <Input
-                  id="lab-provider"
-                  placeholder="Enter lab service name"
-                  value={preferences?.labServiceProvider || ""}
-                  onChange={(e) =>
-                    setPreferences(prev => prev ? { ...prev, labServiceProvider: e.target.value } : null)
-                  }
-                />
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">Lab Integration Partnership</h4>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                    We're actively adding direct lab integrations. Until your lab is connected, you can still:
+                  </p>
+                  <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1 mb-3">
+                    <li>• Send orders via fax/email to any lab</li>
+                    <li>• Upload results (PDF, fax, handwritten)</li>
+                    <li>• AI parses results automatically</li>
+                    <li>• Links to original order & provider</li>
+                  </ul>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      window.open('https://forms.gle/LabIntegrationRequest', '_blank');
+                      toast({
+                        title: "Partnership Request",
+                        description: "Opening lab integration partnership form...",
+                      });
+                    }}
+                  >
+                    Request Lab Integration
+                  </Button>
+                </div>
+                <div>
+                  <Label htmlFor="lab-provider">Lab Service Name (for manual orders)</Label>
+                  <Input
+                    id="lab-provider"
+                    placeholder="e.g., LabCorp, Quest, Local Hospital Lab"
+                    value={preferences?.labServiceProvider || ""}
+                    onChange={(e) =>
+                      setPreferences(prev => prev ? { ...prev, labServiceProvider: e.target.value } : null)
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    We'll include this on fax/email order forms
+                  </p>
+                </div>
               </div>
             )}
 
