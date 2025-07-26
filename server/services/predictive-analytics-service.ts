@@ -109,12 +109,35 @@ export class PredictiveAnalyticsService {
       const patients = await storage.getAllPatients();
       const healthSystemPatients = patients.filter(p => p.healthSystemId === healthSystemId);
       
-      // Base values for calculation (would come from billing integration)
-      const avgAppointmentRevenue = 175; // Average revenue per appointment
-      const avgLabRevenue = 125; // Average revenue per lab order
-      const avgProcedureRevenue = 450; // Average revenue per procedure
+      // CLARAFI subscription-only revenue model
+      const individualMonthlyRevenue = 149; // Individual provider subscription
+      const enterpriseBaseRevenue = 399; // Enterprise base subscription
+      const nurseMonthlyRevenue = 99; // Per nurse in enterprise
+      const staffMonthlyRevenue = 49; // Per non-clinical staff in enterprise
       
-      const patientValues = [];
+      // Get subscription data for this health system
+      const healthSystem = await storage.getHealthSystemById(healthSystemId);
+      const subscriptionTier = healthSystem?.subscriptionTier || 'tier1';
+      const monthlyRevenue = subscriptionTier === 'enterprise' ? enterpriseBaseRevenue : individualMonthlyRevenue;
+      
+      // Calculate based on user count and roles
+      const usersByRole = new Map<string, number>();
+      const healthSystemUsers = await storage.getUsersByHealthSystem(healthSystemId);
+      
+      healthSystemUsers.forEach(user => {
+        const role = user.role || 'provider';
+        usersByRole.set(role, (usersByRole.get(role) || 0) + 1);
+      });
+      
+      // Calculate total monthly recurring revenue (MRR)
+      let totalMRR = monthlyRevenue; // Base subscription
+      if (subscriptionTier === 'enterprise') {
+        // Add additional user costs for enterprise
+        const nurses = usersByRole.get('nurse') || 0;
+        const staff = usersByRole.get('staff') || 0;
+        totalMRR += (nurses * nurseMonthlyRevenue) + (staff * staffMonthlyRevenue);
+      }
+      
       const segments = {
         vip: { patients: [], totalValue: 0 },
         regular: { patients: [], totalValue: 0 },
@@ -122,21 +145,27 @@ export class PredictiveAnalyticsService {
         new: { patients: [], totalValue: 0 }
       };
       
+      // For CLARAFI, CLV is based on subscription retention, not patient value
+      const patientValues = [];
+      const avgPatientsPerProvider = healthSystemPatients.length / Math.max(1, usersByRole.get('provider') || 1);
+      
       for (const patient of healthSystemPatients) {
-        // Calculate patient tenure in months
-        const createdDate = patient.createdAt ? new Date(patient.createdAt) : new Date();
-        const tenureMonths = Math.max(1, (Date.now() - createdDate.getTime()) / (30 * 24 * 60 * 60 * 1000));
+        // Calculate patient's contribution to subscription value
+        const patientContributionToMRR = totalMRR / Math.max(1, healthSystemPatients.length);
         
-        // Get patient activity
+        // Get patient activity for engagement scoring
         const appointments = await storage.getAppointmentsByPatient(patient.id);
         const encounters = await storage.getEncountersByPatient(patient.id);
         
-        // Calculate historical value
-        const appointmentValue = appointments.filter(a => a.status === 'completed').length * avgAppointmentRevenue;
-        const labValue = encounters.length * avgLabRevenue * 0.3; // Assume 30% of encounters have labs
-        const procedureValue = encounters.length * avgProcedureRevenue * 0.1; // Assume 10% have procedures
+        // Calculate engagement score (affects retention probability)
+        const monthsSinceCreated = patient.createdAt 
+          ? (Date.now() - new Date(patient.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000)
+          : 1;
+        const monthlyActivityRate = (appointments.length + encounters.length) / Math.max(1, monthsSinceCreated);
         
-        const totalHistoricalValue = appointmentValue + labValue + procedureValue;
+        // Higher engagement = higher retention = higher CLV
+        const engagementMultiplier = Math.min(2, 0.5 + (monthlyActivityRate / 2));
+        const patientCLV = patientContributionToMRR * 24 * engagementMultiplier; // 24-month baseline
         
         // Project future value based on activity rate
         const monthlyRate = appointments.length / tenureMonths;
