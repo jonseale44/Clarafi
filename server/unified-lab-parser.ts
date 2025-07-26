@@ -27,6 +27,8 @@ interface ParsedLabResult {
   warnings?: string[];
   extractedDate?: string;
   timeContext?: string;
+  requisitionNumber?: string; // e.g., REQ-12345, LAB-12345
+  orderId?: string; // e.g., ORDER ID: LAB-123
 }
 
 interface LabParsingResult {
@@ -113,7 +115,9 @@ Return ONLY a valid JSON array with this structure:
     "confidence": number (0.0-1.0 decimal format, confidence in extraction accuracy),
     "warnings": ["array of critical value or interpretation warnings"],
     "extractedDate": "YYYY-MM-DD primary date for this result",
-    "timeContext": "admission/day1/outpatient/followup/etc or null"
+    "timeContext": "admission/day1/outpatient/followup/etc or null",
+    "requisitionNumber": "requisition number if found (e.g., REQ-12345, LAB-12345) or null",
+    "orderId": "order ID if found (e.g., ORDER ID: LAB-123) or null"
   }
 ]
 
@@ -130,6 +134,8 @@ CRITICAL LABORATORY INTELLIGENCE RULES:
 - Extract temporal context even without explicit dates
 - Preserve exact result values with appropriate precision
 - Use consolidation reasoning to explain merge/separate decisions
+- CRITICAL: Extract requisition numbers - look for: "Requisition:", "Req #:", "REQ-", "LAB-", "Order ID:", "Accession:", "Lab Order #"
+- All tests from the same requisition should have the same requisitionNumber value
 - Return empty array if no lab results found
 - No explanatory text, ONLY the JSON array
 
@@ -390,8 +396,28 @@ Input: "${labText}"`;
           resultNumeric: labResult.resultNumeric,
           resultNumericType: typeof labResult.resultNumeric,
           sourceConfidence: parseResult.confidence,
-          maxConfidenceAllowed: 9.99
+          maxConfidenceAllowed: 9.99,
+          requisitionNumber: labResult.requisitionNumber
         });
+
+        // Try to find matching lab order by requisition number
+        let matchedOrderId = null;
+        if (labResult.requisitionNumber) {
+          console.log(`⚗️ [LabParser] 🔍 Looking for lab order with requisition number: ${labResult.requisitionNumber}`);
+          const matchingOrder = await db.query.labOrders.findFirst({
+            where: and(
+              eq(labOrders.patientId, patientId),
+              eq(labOrders.requisitionNumber, labResult.requisitionNumber)
+            )
+          });
+          
+          if (matchingOrder) {
+            matchedOrderId = matchingOrder.id;
+            console.log(`⚗️ [LabParser] ✅ Found matching lab order ID: ${matchedOrderId} for requisition: ${labResult.requisitionNumber}`);
+          } else {
+            console.log(`⚗️ [LabParser] ⚠️ No matching lab order found for requisition: ${labResult.requisitionNumber}`);
+          }
+        }
 
         // Ensure confidence doesn't exceed database precision limits (3,2 = max 9.99)
         const safeConfidence = Math.min(parseResult.confidence || 0, 9.99);
@@ -417,12 +443,13 @@ Input: "${labText}"`;
           testName: labResult.testName,
           safeConfidence,
           safeResultNumeric,
-          originalResultNumeric: labResult.resultNumeric
+          originalResultNumeric: labResult.resultNumeric,
+          labOrderId: matchedOrderId
         });
         
         await db.insert(labResults).values({
           patientId: patientId,
-          labOrderId: null, // Attachment results don't have associated orders
+          labOrderId: matchedOrderId, // Now linked if requisition number matched
           loincCode:
             labResult.loincCode || `EXTRACT_${labResult.testCode || "UNKNOWN"}`,
           testCode:

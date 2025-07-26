@@ -1,6 +1,6 @@
-import { TwilioFaxService } from './twilio-fax-service.js';
+import { twilioFaxService } from './twilio-fax-service.js';
 import { db } from './db.js';
-import { labOrders, labResults, attachments } from '../shared/schema.js';
+import { labOrders, labResults, patients, users } from '../shared/schema.js';
 import { eq } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs/promises';
@@ -102,35 +102,40 @@ export class EFaxService {
   async sendLabOrder(orderId: number, faxNumber: string): Promise<{ success: boolean; faxSid?: string; error?: string }> {
     try {
       // Get lab order details
-      const order = await db.query.labOrders.findFirst({
-        where: eq(labOrders.id, orderId),
-        with: {
-          patient: true,
-          orderedByUser: true
-        }
-      });
+      const [orderData] = await db
+        .select({
+          order: labOrders,
+          patient: patients,
+          provider: users
+        })
+        .from(labOrders)
+        .leftJoin(patients, eq(labOrders.patientId, patients.id))
+        .leftJoin(users, eq(labOrders.orderedBy, users.id))
+        .where(eq(labOrders.id, orderId));
 
-      if (!order) {
+      if (!orderData) {
         return { success: false, error: 'Lab order not found' };
       }
 
+      const { order, patient, provider } = orderData;
+
       // Parse test details
-      const tests = order.tests as any[] || [];
+      const tests = order.testDetails as any[] || [];
       
       // Generate PDF
       const pdfPath = await this.generateLabOrderPDF({
         orderId: order.id,
-        patientName: `${order.patient.firstName} ${order.patient.lastName}`,
-        patientDOB: order.patient.dateOfBirth,
-        patientMRN: order.patient.mrn,
-        providerName: `${order.orderedByUser.firstName} ${order.orderedByUser.lastName}, ${order.orderedByUser.credentials}`,
-        providerNPI: order.orderedByUser.npi || 'N/A',
+        patientName: patient ? `${patient.firstName} ${patient.lastName}` : 'Unknown Patient',
+        patientDOB: patient?.dateOfBirth || 'Unknown',
+        patientMRN: patient?.mrn || 'N/A',
+        providerName: provider ? `${provider.firstName} ${provider.lastName}, ${provider.credentials || 'MD'}` : 'Unknown Provider',
+        providerNPI: provider?.npi || 'N/A',
         labTests: tests.map(test => ({
           name: test.name || test.testName,
           loincCode: test.loincCode,
           specimenType: test.specimenType
         })),
-        labDestination: order.externalLabName || 'Lab',
+        labDestination: order.externalLab || 'Lab',
         faxNumber
       });
 
@@ -138,8 +143,7 @@ export class EFaxService {
       const pdfBuffer = await fs.readFile(pdfPath);
       
       // Send via Twilio Fax
-      const twilioService = new TwilioFaxService();
-      const result = await twilioService.sendFax({
+      const result = await twilioFaxService.sendFax({
         to: faxNumber,
         pdfBuffer
       });
@@ -148,14 +152,16 @@ export class EFaxService {
         // Update order with fax tracking
         await db.update(labOrders)
           .set({
-            transmissionStatus: 'sent',
+            transmittedAt: new Date(),
+            transmissionMethod: 'efax',
             transmissionDetails: {
               method: 'fax',
               faxNumber,
               sentAt: new Date().toISOString(),
               faxSid: result.faxSid,
               pdfPath
-            }
+            },
+            updatedAt: new Date()
           })
           .where(eq(labOrders.id, orderId));
       }

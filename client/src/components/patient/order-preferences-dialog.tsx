@@ -193,9 +193,10 @@ export function OrderPreferencesDialog({ patientId, orderType, children }: Order
     switch (orderType) {
       case "lab":
         return [
-          { value: "mock_service", label: "Mock Lab Service (Default)" },
-          { value: "real_service", label: "Real Lab Service (Coming Soon)" },
-          { value: "print_pdf", label: "Print PDF" },
+          { value: "efax_lab", label: "E-Fax to Lab (Production Ready)" },
+          { value: "mock_service", label: "Mock Lab Service (Testing)" },
+          { value: "hl7_direct", label: "Direct HL7 (Coming Soon)" },
+          { value: "print_pdf", label: "Print PDF for Patient" },
         ];
       case "imaging":
         return [

@@ -37,6 +37,35 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 26, 2025)
 
+### Complete Production Lab Order to Results Workflow (July 26, 2025 - 10:20 PM) - COMPLETED
+Implemented a fully production-ready lab order and results workflow with complete requisition number tracking and result-to-order linking:
+
+1. **E-Fax Service Implementation**:
+   - Fixed all import and property access issues in e-fax service
+   - Integrated with Twilio Fax service for actual PDF transmission
+   - Lab orders are faxed to external labs with requisition numbers in PDF
+
+2. **Requisition Number Workflow**:
+   - Lab orders automatically generate unique requisition numbers on signing
+   - Requisition numbers are included in PDF faxes to labs
+   - Results returning via attachments have requisition numbers extracted
+
+3. **Unified Lab Parser Enhancement**:
+   - Updated GPT prompt to extract requisition numbers from lab results
+   - Added logic to find matching lab orders by requisition number
+   - Results are automatically linked to original orders when requisition matches
+   - Logs show successful matching: "Found matching lab order ID: X for requisition: REQ-Y"
+
+4. **Complete Production Workflow**:
+   - Provider creates lab order → Order gets signed → Requisition number generated
+   - PDF created with patient info, tests, and requisition number
+   - PDF faxed to external lab via Twilio
+   - Lab results returned as attachment → GPT extracts requisition
+   - Results linked back to original order and ordering physician
+   - Provider dashboard shows results for review
+
+5. **Result**: True production system where lab results are properly tracked from order to result, maintaining physician accountability and patient safety through requisition number tracking.
+
 ### Complete Lab Order CRUD Operations Fix (July 26, 2025 - 8:20 PM) - COMPLETED
 Fixed all remaining lab order operations to properly handle the dual-table architecture (orders vs labOrders):
 

@@ -171,19 +171,103 @@ router.put("/:orderId/sign", async (req: Request, res: Response) => {
       return APIResponseHandler.notFound(res, "Lab order not found or already signed");
     }
 
-    // Trigger external lab processing
-    console.log(`🔄 [ConsolidatedLab] Triggering external lab processing for newly signed order ${orderId}`);
+    // Assign requisition number
+    const { LabRequisitionService } = await import("./lab-requisition-service");
+    const requisitionNumber = await LabRequisitionService.assignRequisitionNumber(orderId);
+    console.log(`📋 [ConsolidatedLab] Assigned requisition number ${requisitionNumber} to order ${orderId}`);
+
+    // Get patient order preferences for delivery method
+    const [patientPrefs] = await db
+      .select()
+      .from(patientOrderPreferences)
+      .where(eq(patientOrderPreferences.patientId, updatedOrder.patientId));
     
-    const { labSimulator } = await import("./lab-simulator-service");
-    
-    setImmediate(async () => {
-      try {
-        await labSimulator.simulateLabOrderTransmission(orderId);
-        console.log(`✅ [ConsolidatedLab] Lab simulation started for signed order ${orderId}`);
-      } catch (error) {
-        console.error(`❌ [ConsolidatedLab] Failed to start lab simulation:`, error);
-      }
-    });
+    const deliveryMethod = patientPrefs?.labDeliveryMethod || 'mock_service';
+    console.log(`📤 [ConsolidatedLab] Lab order ${orderId} delivery method: ${deliveryMethod}`);
+
+    // Handle different delivery methods
+    switch (deliveryMethod) {
+      case 'efax_lab':
+        // Production-ready e-fax to external lab
+        console.log(`📠 [ConsolidatedLab] Preparing e-fax delivery for order ${orderId}`);
+        setImmediate(async () => {
+          try {
+            const pdfBuffer = await LabRequisitionService.generateRequisitionPDF(orderId);
+            const { efaxService } = await import("./efax-service");
+            
+            // Get external lab fax number from preferences or use default
+            const labFaxNumber = patientPrefs?.labServiceProvider || process.env.DEFAULT_LAB_FAX_NUMBER || '+1-555-LAB-RESULTS';
+            
+            const faxResult = await efaxService.sendFax({
+              to: labFaxNumber,
+              from: process.env.PRACTICE_FAX_NUMBER || '+1-555-PRACTICE',
+              subject: `Lab Requisition - ${requisitionNumber}`,
+              body: `Please process the attached lab requisition and return results to the ordering provider.`,
+              attachments: [{
+                filename: `lab-requisition-${requisitionNumber}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+              }]
+            });
+            
+            // Update order with transmission details
+            await db.update(labOrders)
+              .set({
+                transmittedAt: new Date(),
+                transmissionMethod: 'efax',
+                transmissionDetails: {
+                  faxSid: faxResult.sid,
+                  faxNumber: labFaxNumber,
+                  status: 'sent'
+                },
+                updatedAt: new Date()
+              })
+              .where(eq(labOrders.id, orderId));
+              
+            console.log(`✅ [ConsolidatedLab] E-fax sent successfully for order ${orderId}, SID: ${faxResult.sid}`);
+          } catch (error) {
+            console.error(`❌ [ConsolidatedLab] Failed to send e-fax:`, error);
+            // Update order with error
+            await db.update(labOrders)
+              .set({
+                transmissionDetails: {
+                  error: error.message,
+                  attemptedAt: new Date()
+                }
+              })
+              .where(eq(labOrders.id, orderId));
+          }
+        });
+        break;
+        
+      case 'mock_service':
+        // Existing mock service for testing
+        console.log(`🔄 [ConsolidatedLab] Triggering mock lab processing for order ${orderId}`);
+        const { labSimulator } = await import("./lab-simulator-service");
+        setImmediate(async () => {
+          try {
+            await labSimulator.simulateLabOrderTransmission(orderId);
+            console.log(`✅ [ConsolidatedLab] Lab simulation started for signed order ${orderId}`);
+          } catch (error) {
+            console.error(`❌ [ConsolidatedLab] Failed to start lab simulation:`, error);
+          }
+        });
+        break;
+        
+      case 'hl7_direct':
+        // Future HL7 direct integration
+        console.log(`⚠️ [ConsolidatedLab] HL7 direct integration not yet implemented for order ${orderId}`);
+        break;
+        
+      case 'print_pdf':
+        // Generate PDF for patient to take to lab
+        console.log(`🖨️ [ConsolidatedLab] PDF generation for patient requested for order ${orderId}`);
+        // PDF will be generated on-demand when patient/provider downloads it
+        break;
+        
+      default:
+        console.warn(`⚠️ [ConsolidatedLab] Unknown delivery method '${deliveryMethod}' for order ${orderId}`);
+    }
 
     return APIResponseHandler.success(res, updatedOrder);
   } catch (error) {
