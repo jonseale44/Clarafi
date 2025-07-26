@@ -359,8 +359,11 @@ export default function AdvancedAnalyticsDashboard() {
                       )}
                     </div>
                   </div>
-                  <Progress value={(stage.count / journeyData[0].count) * 100} className="h-2" />
-                  {index < journeyData.length - 1 && (
+                  <Progress 
+                    value={displayData[0]?.count > 0 ? (stage.count / displayData[0].count) * 100 : 0} 
+                    className="h-2" 
+                  />
+                  {index < displayData.length - 1 && (
                     <ChevronRight className="h-4 w-4 mx-auto my-2 text-muted-foreground" />
                   )}
                 </div>

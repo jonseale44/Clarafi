@@ -134,10 +134,11 @@ router.get("/api/analytics/user-journey", requireAdmin, async (req: any, res: an
     
     // Get sign-ups and user conversions
     const signUps = events.filter(e => e.eventType === 'conversion_signup').length;
-    const accountsCreated = await storage.getUsersByHealthSystem(healthSystemId)
-      .then(users => users.filter(u => 
-        u.createdAt && new Date(u.createdAt) >= start && new Date(u.createdAt) <= end
-      ).length);
+    const allUsers = await storage.getAllUsers();
+    const accountsCreated = allUsers.filter(u => 
+      u.healthSystemId === healthSystemId &&
+      u.createdAt && new Date(u.createdAt) >= start && new Date(u.createdAt) <= end
+    ).length;
     
     const firstPatientAdded = events.filter(e => e.eventType === 'conversion_first_patient').length;
     const activeSubscribers = events.filter(e => e.eventType === 'conversion_subscription_upgrade').length;
