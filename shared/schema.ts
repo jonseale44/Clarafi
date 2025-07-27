@@ -4193,7 +4193,7 @@ export type InsertMigrationInvitation = z.infer<typeof insertMigrationInvitation
 export const subscriptionKeys = pgTable("subscription_keys", {
   id: serial("id").primaryKey(),
   healthSystemId: integer("health_system_id").notNull(),
-  keyValue: text("key_value").notNull(),
+  key: text("key").notNull(),
   keyType: text("key_type").notNull(), // 'provider', 'staff', 'admin'
   createdBy: integer("created_by").notNull(),
   assignedTo: integer("assigned_to").references(() => users.id),
