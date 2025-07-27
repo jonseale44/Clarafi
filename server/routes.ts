@@ -5880,7 +5880,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         return res.status(500).json({ error: "Webhook secret not configured" });
       }
 
-      const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+        apiVersion: "2023-10-16",
+      });
       console.log("🔍 [Stripe] Constructing event with signature");
       
       const event = stripe.webhooks.constructEvent(
