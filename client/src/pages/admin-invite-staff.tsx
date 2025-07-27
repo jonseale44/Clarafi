@@ -45,8 +45,13 @@ export default function AdminInviteStaff() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Fetch health system info
-  const { data: healthSystem } = useQuery<{ name: string }>({
+  const { data: healthSystem } = useQuery<{ name: string; subscriptionTier: number }>({
     queryKey: ['/api/clinic-admin/health-system'],
+  });
+
+  // Fetch clinic stats to get current tier
+  const { data: clinicStats } = useQuery<{ currentTier: number }>({
+    queryKey: ['/api/clinic-admin/stats'],
   });
 
   // Fetch invitation templates
@@ -72,11 +77,20 @@ export default function AdminInviteStaff() {
   // Generate subscription keys mutation
   const generateKeysMutation = useMutation({
     mutationFn: async (count: number) => {
+      // Get tier from health system or clinic stats, defaulting to 2
+      const currentTier = healthSystem?.subscriptionTier || clinicStats?.currentTier || 2;
+      
+      console.log('Generating keys with tier:', currentTier, 'healthSystem:', healthSystem, 'clinicStats:', clinicStats);
+      
       const response = await apiRequest('POST', '/api/subscription-keys/generate', {
         providerCount: selectedRole === 'provider' ? count : 0,
         staffCount: selectedRole !== 'provider' ? count : 0,
+        tier: Number(currentTier), // Ensure it's a number
       });
-      if (!response.ok) throw new Error('Failed to generate subscription keys');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to generate subscription keys');
+      }
       return response.json();
     },
     onSuccess: () => {
@@ -344,7 +358,7 @@ ${customMessage.replace('[SubscriptionKey]', key.key).replace('[StaffName]', ema
                 </div>
                 <Button
                   onClick={() => generateKeysMutation.mutate(Math.max(5, emails.length))}
-                  disabled={generateKeysMutation.isPending}
+                  disabled={generateKeysMutation.isPending || (!healthSystem && !clinicStats)}
                   size="sm"
                 >
                   Generate Keys
@@ -363,7 +377,7 @@ ${customMessage.replace('[SubscriptionKey]', key.key).replace('[StaffName]', ema
                   </p>
                   <Button
                     onClick={() => generateKeysMutation.mutate(5)}
-                    disabled={generateKeysMutation.isPending}
+                    disabled={generateKeysMutation.isPending || (!healthSystem && !clinicStats)}
                     className="mt-4"
                   >
                     Generate 5 Keys
