@@ -575,17 +575,17 @@ export function LabResultsMatrix({
   
   // Extract data based on API response structure
   const gptReviewNotes = gptReviewNotesResponse || [];
+
+  const isLoading = resultsLoading || ordersLoading;
+
+  const results = (labResults as any) || [];
+  const orders = (labOrders as any) || [];
   
   useEffect(() => {
     console.log('🧪 [LabResultsMatrix] GPT Review Notes Response:', gptReviewNotesResponse);
     console.log('🧪 [LabResultsMatrix] GPT Review Notes:', gptReviewNotes);
     console.log('🧪 [LabResultsMatrix] Results:', results);
   }, [gptReviewNotesResponse, gptReviewNotes, results]);
-
-  const isLoading = resultsLoading || ordersLoading;
-
-  const results = (labResults as any) || [];
-  const orders = (labOrders as any) || [];
 
   // Define lab panel groupings with proper hierarchy - CMP takes precedence over BMP
   const labPanels = useMemo(() => ({
