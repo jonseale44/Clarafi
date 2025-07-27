@@ -1016,7 +1016,7 @@ export function LabResultsMatrix({
       .find(test => test.testName === testName)?.results
       .some(result => result.needsReview);
     
-    let classes = "p-2 sticky left-0 bg-white border-l-4 transition-all text-sm";
+    let classes = "p-0.5 sticky left-0 bg-white border-l-4 transition-all text-sm";
     
     if (isSelected) {
       classes += " bg-navy-blue-200 text-navy-blue-900 border-l-blue-500 font-medium";
@@ -1126,10 +1126,10 @@ export function LabResultsMatrix({
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
+        <CardContent className="p-0.5">
+          <div className="animate-pulse space-y-0.5">
             <div className="h-4 bg-muted rounded w-1/4"></div>
-            <div className="space-y-2">
+            <div className="space-y-0.5">
               {[1, 2, 3].map(i => (
                 <div key={i} className="h-12 bg-muted rounded"></div>
               ))}
@@ -1143,7 +1143,7 @@ export function LabResultsMatrix({
   if (!matrixData.length) {
     return (
       <Card>
-        <CardContent className="p-6">
+        <CardContent className="p-0.5">
           <div className="text-center text-muted-foreground">
             No lab results available for this patient.
           </div>
@@ -1156,7 +1156,7 @@ export function LabResultsMatrix({
     <>
       <Card>
         {showTitle && mode !== 'encounter' && (
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-0.5">
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg">Lab Results Matrix</CardTitle>
             {mode !== 'full' && (
@@ -1198,20 +1198,20 @@ export function LabResultsMatrix({
                 </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300" style={{ minHeight: '60px' }}>
-                      <div className="px-3 py-4" style={{ lineHeight: '1.5' }}>Test</div>
+                    <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300" style={{ minHeight: '30px' }}>
+                      <div className="px-1 py-0.5" style={{ lineHeight: '1' }}>Test</div>
                     </th>
                     {displayColumns.map((dateCol, index) => (
                       <th 
                         key={`header-${index}`} 
                         data-matrix-date={dateCol.displayDate}
-                        className="text-center p-4 font-semibold border-r border-gray-300 cursor-pointer hover:bg-gray-100 bg-gray-50"
+                        className="text-center p-0.5 font-semibold border-r border-gray-300 cursor-pointer hover:bg-gray-100 bg-gray-50"
                         onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
                         onMouseEnter={() => setHoveredDate(dateCol.date)}
                         onMouseLeave={() => setHoveredDate(null)}
                       >
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <span className="text-sm font-medium">{format(new Date(dateCol.date), 'MM/dd/yy')}</span>
+                        <div className="flex flex-col items-center justify-center gap-0">
+                          <span className="text-xs font-medium">{format(new Date(dateCol.date), 'MM/dd/yy')}</span>
                           <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
                         </div>
                       </th>
@@ -1299,10 +1299,10 @@ export function LabResultsMatrix({
                   return (
                     <tr key={`panel-${item.name}`} className="border-b-2 border-gray-300 bg-gray-100">
                       <td className="lab-matrix-sticky-col bg-gray-100 font-bold text-sm border-r border-gray-300">
-                        <div className="px-3 py-3">{item.name}</div>
+                        <div className="px-1 py-0.5">{item.name}</div>
                       </td>
                       {displayColumns.map((dateCol, index) => (
-                        <td key={`panel-${index}`} className="p-3 text-center border-r border-gray-200" data-matrix-date={dateCol.displayDate}>
+                        <td key={`panel-${index}`} className="p-0.5 text-center border-r border-gray-200" data-matrix-date={dateCol.displayDate}>
                           <span className="text-muted-foreground text-xs">—</span>
                         </td>
                       ))}
@@ -1324,9 +1324,9 @@ export function LabResultsMatrix({
                         onMouseEnter={() => setHoveredTestRow(test.testName)}
                         onMouseLeave={() => setHoveredTestRow(null)}
                       >
-                        <div className="px-3 py-3">
-                          <div className="flex flex-col">
-                            <div className="font-medium text-sm">{test.testName}</div>
+                        <div className="px-1 py-0.5">
+                          <div className="flex flex-col gap-0">
+                            <div className="font-medium text-xs">{test.testName}</div>
                             {test.unit && (
                               <div className="text-xs text-muted-foreground">
                                 ({test.unit})
@@ -1343,7 +1343,7 @@ export function LabResultsMatrix({
                         });
                         const isDateSelected = selectedDates.has(dateCol.displayDate);
                         
-                        let cellClass = "p-3 text-center border-r border-gray-200 transition-colors";
+                        let cellClass = "p-0.5 text-center border-r border-gray-200 transition-colors";
                         if (isDateSelected) {
                           cellClass += " bg-navy-blue-50 border-2 border-navy-blue-200";
                         }
@@ -1353,7 +1353,7 @@ export function LabResultsMatrix({
                             {result ? (
                               <div className="relative group">
                                 <div 
-                                  className={`px-2 py-1 rounded text-sm font-medium transition-all ${
+                                  className={`px-0.5 py-0 rounded text-xs font-medium transition-all ${
                                     result.isPending 
                                       ? 'bg-navy-blue-100 text-navy-blue-800 border border-navy-blue-300' 
                                       : result.criticalFlag
@@ -1436,7 +1436,7 @@ export function LabResultsMatrix({
         
         {/* Bottom Review Button - only shown when selections are made */}
         {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
-          <div className="border-t p-2 bg-gray-50">
+          <div className="border-t p-0.5 bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="text-xs text-gray-600">
                 {(() => {
@@ -1516,8 +1516,8 @@ export function LabResultsMatrix({
           <Collapsible open={isReviewPanelOpen} onOpenChange={setIsReviewPanelOpen}>
             <div className="border-t bg-slate-50">
               <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-100">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between p-0.5 cursor-pointer hover:bg-slate-100">
+                  <div className="flex items-center gap-0">
                     <FileText className="h-4 w-4 text-navy-blue-600" />
                     <span className="font-medium text-navy-blue-800">Review Selected Lab Results</span>
                     <Badge variant="secondary">
@@ -1571,10 +1571,10 @@ export function LabResultsMatrix({
                 </div>
               </CollapsibleTrigger>
               
-              <CollapsibleContent className="px-3 pb-3">
-                <div className="space-y-4">
+              <CollapsibleContent className="px-0.5 pb-0.5">
+                <div className="space-y-0.5">
                   {/* Quick Pick Templates */}
-                  <div className="space-y-2">
+                  <div className="space-y-0.5">
                     <Label htmlFor="review-template">Quick-Pick Templates</Label>
                     <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
                       <SelectTrigger>
@@ -1591,7 +1591,7 @@ export function LabResultsMatrix({
                   </div>
 
                   {/* Review Note */}
-                  <div className="space-y-2">
+                  <div className="space-y-0.5">
                     <Label htmlFor="review-note">Clinical Review Note</Label>
                     <Textarea
                       id="review-note"
@@ -1617,9 +1617,9 @@ export function LabResultsMatrix({
                   </div>
 
                   {/* Communication and Assignment */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
                     {/* Staff Assignment */}
-                    <div className="space-y-2">
+                    <div className="space-y-0.5">
                       <Label>Assign Follow-up To</Label>
                       <Select value={assignedStaff} onValueChange={setAssignedStaff}>
                         <SelectTrigger>
@@ -1636,9 +1636,9 @@ export function LabResultsMatrix({
                     </div>
 
                     {/* Communication Options */}
-                    <div className="space-y-2">
+                    <div className="space-y-0.5">
                       <Label>Patient Communication</Label>
-                      <div className="space-y-2">
+                      <div className="space-y-0.5">
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="portal-release"
@@ -1713,7 +1713,7 @@ export function LabResultsMatrix({
                     </div>
                     
                     {generatedGPTReview && (
-                      <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-navy-blue-200 rounded-lg">
+                      <div className="space-y-0.5 p-0.5 bg-gradient-to-r from-blue-50 to-purple-50 border border-navy-blue-200 rounded-lg">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">🤖</span>
@@ -1740,10 +1740,10 @@ export function LabResultsMatrix({
                           </div>
                         </div>
                         
-                        <div className="space-y-4">
+                        <div className="space-y-0.5">
                           {/* Clinical Interpretation */}
-                          <div className="p-3 bg-white border border-navy-blue-200 rounded">
-                            <Label className="text-sm font-medium text-navy-blue-700 mb-2 block">Clinical Interpretation</Label>
+                          <div className="p-0.5 bg-white border border-navy-blue-200 rounded">
+                            <Label className="text-sm font-medium text-navy-blue-700 mb-0 block">Clinical Interpretation</Label>
                             {editableReviewId === generatedGPTReview.id ? (
                               <Textarea
                                 value={editableClinicalReview}
@@ -1759,10 +1759,10 @@ export function LabResultsMatrix({
                             )}
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5">
                             {/* Patient Message */}
-                            <div className="p-3 bg-white border border-green-200 rounded">
-                              <Label className="text-sm font-medium text-green-700 mb-2 block">Patient Message</Label>
+                            <div className="p-0.5 bg-white border border-green-200 rounded">
+                              <Label className="text-sm font-medium text-green-700 mb-0 block">Patient Message</Label>
                               {editableReviewId === generatedGPTReview.id ? (
                                 <Textarea
                                   value={editablePatientMessage}
@@ -1779,8 +1779,8 @@ export function LabResultsMatrix({
                             </div>
                             
                             {/* Nurse Message */}
-                            <div className="p-3 bg-white border border-orange-200 rounded">
-                              <Label className="text-sm font-medium text-orange-700 mb-2 block">Nurse Message</Label>
+                            <div className="p-0.5 bg-white border border-orange-200 rounded">
+                              <Label className="text-sm font-medium text-orange-700 mb-0 block">Nurse Message</Label>
                               {editableReviewId === generatedGPTReview.id ? (
                                 <Textarea
                                   value={editableNurseMessage}
@@ -1807,7 +1807,7 @@ export function LabResultsMatrix({
                               <span className="text-green-600">Changes saved automatically</span>
                             )}
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-0.5">
                             <Button
                               variant="default"
                               size="sm"
@@ -2093,7 +2093,7 @@ export function LabResultsMatrix({
                               <div className="absolute -left-[21px] top-1 w-3 h-3 bg-white border-2 border-gray-400 rounded-full"></div>
                               
                               {/* Timeline content */}
-                              <div className="space-y-2">
+                              <div className="space-y-0.5">
                                 {/* Provider Review */}
                                 <div>
                                   <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -2164,7 +2164,7 @@ export function LabResultsMatrix({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <Label htmlFor="resultValue">Result Value</Label>
             <Input
               id="resultValue"
@@ -2172,7 +2172,7 @@ export function LabResultsMatrix({
               onChange={(e) => setEditFormData(prev => ({ ...prev, resultValue: e.target.value }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <Label htmlFor="resultUnits">Units</Label>
             <Input
               id="resultUnits"
@@ -2180,7 +2180,7 @@ export function LabResultsMatrix({
               onChange={(e) => setEditFormData(prev => ({ ...prev, resultUnits: e.target.value }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <Label htmlFor="referenceRange">Reference Range</Label>
             <Input
               id="referenceRange"
@@ -2188,7 +2188,7 @@ export function LabResultsMatrix({
               onChange={(e) => setEditFormData(prev => ({ ...prev, referenceRange: e.target.value }))}
             />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <Label htmlFor="abnormalFlag">Abnormal Flag</Label>
             <Select
               value={editFormData.abnormalFlag}
@@ -2214,7 +2214,7 @@ export function LabResultsMatrix({
             />
             <Label htmlFor="criticalFlag">Critical Result</Label>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-0.5">
             <Label htmlFor="providerNotes">Provider Notes</Label>
             <Textarea
               id="providerNotes"
