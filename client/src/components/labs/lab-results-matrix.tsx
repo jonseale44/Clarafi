@@ -158,6 +158,7 @@ export function LabResultsMatrix({
   const [isReviewNotesPanelOpen, setIsReviewNotesPanelOpen] = useState(true);
   const matrixScrollRef = React.useRef<HTMLDivElement>(null);
   const reviewScrollRef = React.useRef<HTMLDivElement>(null);
+  const isScrollingSyncRef = React.useRef(false);
   const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   
   const queryClient = useQueryClient();
@@ -1175,7 +1176,9 @@ export function LabResultsMatrix({
           ref={matrixScrollRef}
           className="overflow-x-auto max-h-[70vh] matrix-scroll-container"
           onScroll={(e) => {
-            if (reviewScrollRef.current) {
+            if (reviewScrollRef.current && !isScrollingSyncRef.current) {
+              isScrollingSyncRef.current = true;
+              
               // Find which date column is currently visible
               const scrollLeft = e.currentTarget.scrollLeft;
               const containerRect = e.currentTarget.getBoundingClientRect();
@@ -1197,10 +1200,15 @@ export function LabResultsMatrix({
                 const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
                 reviewElements.forEach((element) => {
                   if (element.getAttribute('data-review-date') === visibleDate) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    element.scrollIntoView({ behavior: 'auto', block: 'start' });
                   }
                 });
               }
+              
+              // Reset flag after a delay
+              setTimeout(() => {
+                isScrollingSyncRef.current = false;
+              }, 300);
             }
           }}
         >
@@ -1908,33 +1916,45 @@ export function LabResultsMatrix({
           className="max-h-[400px] overflow-y-auto p-4 review-scroll-container"
           onScroll={(e) => {
             // Sync scroll from review notes to matrix
-            const reviewContainer = e.currentTarget;
-            const matrixContainer = matrixScrollRef.current;
-            if (!matrixContainer) return;
-            
-            // Find which date section is currently visible
-            const dateElements = reviewContainer.querySelectorAll('[data-review-date]');
-            let visibleDate = '';
-            
-            dateElements.forEach((element) => {
-              const rect = element.getBoundingClientRect();
-              const containerRect = reviewContainer.getBoundingClientRect();
-              if (rect.top >= containerRect.top && rect.top <= containerRect.top + 100) {
-                visibleDate = element.getAttribute('data-review-date') || '';
+            if (!isScrollingSyncRef.current) {
+              isScrollingSyncRef.current = true;
+              
+              const reviewContainer = e.currentTarget;
+              const matrixContainer = matrixScrollRef.current;
+              if (!matrixContainer) {
+                isScrollingSyncRef.current = false;
+                return;
               }
-            });
-            
-            if (visibleDate) {
-              // Find corresponding column in matrix
-              const matrixHeaders = matrixContainer.querySelectorAll('[data-matrix-date]');
-              matrixHeaders.forEach((header) => {
-                if (header.getAttribute('data-matrix-date') === visibleDate) {
-                  const headerRect = header.getBoundingClientRect();
-                  const matrixRect = matrixContainer.getBoundingClientRect();
-                  const scrollLeft = header.parentElement?.offsetLeft || 0;
-                  matrixContainer.scrollLeft = scrollLeft - 200; // Offset to account for sticky column
+              
+              // Find which date section is currently visible
+              const dateElements = reviewContainer.querySelectorAll('[data-review-date]');
+              let visibleDate = '';
+              
+              dateElements.forEach((element) => {
+                const rect = element.getBoundingClientRect();
+                const containerRect = reviewContainer.getBoundingClientRect();
+                if (rect.top >= containerRect.top && rect.top <= containerRect.top + 100) {
+                  visibleDate = element.getAttribute('data-review-date') || '';
                 }
               });
+              
+              if (visibleDate) {
+                // Find corresponding column in matrix
+                const matrixHeaders = matrixContainer.querySelectorAll('[data-matrix-date]');
+                matrixHeaders.forEach((header) => {
+                  if (header.getAttribute('data-matrix-date') === visibleDate) {
+                    const headerRect = header.getBoundingClientRect();
+                    const matrixRect = matrixContainer.getBoundingClientRect();
+                    const scrollLeft = header.parentElement?.offsetLeft || 0;
+                    matrixContainer.scrollLeft = scrollLeft - 200; // Offset to account for sticky column
+                  }
+                });
+              }
+              
+              // Reset flag after a delay
+              setTimeout(() => {
+                isScrollingSyncRef.current = false;
+              }, 300);
             }
           }}
         >

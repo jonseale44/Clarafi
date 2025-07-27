@@ -131,6 +131,27 @@ Implemented critical synchronized scrolling feature between the dual-panel Lab R
 
 5. **Result**: The Lab Results Matrix now features production-level synchronized scrolling, allowing physicians to efficiently review lab results and their corresponding notes with dates automatically aligned between panels.
 
+### Fixed Synchronized Scrolling Feedback Loop (July 27, 2025 - 1:49 PM) - COMPLETED
+Fixed critical glitchy scrolling behavior where matrix scroll would get "stuck" and drawn back to beginning:
+
+1. **Issue Identified**: Synchronized scrolling was creating an infinite feedback loop between panels
+   - When user scrolled the matrix, it triggered review panel scroll
+   - Review panel scroll then triggered matrix scroll back
+   - This created a "stuck" feeling where matrix kept returning to newer dates
+
+2. **Solution Implemented**:
+   - Added `isScrollingSyncRef` flag to prevent recursive scroll events
+   - Flag is set to true when one panel starts scrolling
+   - Prevents the other panel from triggering sync scroll while flag is active
+   - Flag resets after 300ms timeout to allow natural scrolling
+
+3. **Additional Improvements**:
+   - Changed from smooth scrolling to immediate scrolling (`behavior: 'auto'`)
+   - Increased timeout from 150ms to 300ms for better scroll settling
+   - Both panels now check synchronization flag before triggering sync
+
+4. **Result**: Synchronized scrolling now works smoothly without feedback loops, providing production-level stability for reviewing lab results across multiple dates.
+
 ## Recent Changes (July 26, 2025)
 
 ### Complete Production Lab Order to Results Workflow (July 26, 2025 - 10:20 PM) - COMPLETED
