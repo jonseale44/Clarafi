@@ -1784,45 +1784,189 @@ export function LabResultsMatrix({
       </CardContent>
     </Card>
 
-    {/* Phase 2: Review Notes Panel - Always visible */}
+    {/* Phase 2: Review Notes Panel with GPT Summaries */}
     <Card className="mt-4">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Lab Review Notes</CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsReviewNotesPanelOpen(!isReviewNotesPanelOpen)}
-          >
-            {isReviewNotesPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          <CardTitle className="text-lg font-semibold">Review Notes (Patient Communications)</CardTitle>
+          <Badge variant="outline" className="text-xs">
+            Phase 2: Conversation Reviews
+          </Badge>
         </div>
       </CardHeader>
-      {isReviewNotesPanelOpen && (
-          <CardContent className="pt-0">
-            <div 
-              ref={reviewScrollRef}
-              className="overflow-x-auto" 
-              onScroll={(e) => {
-                if (matrixScrollRef.current) {
-                  matrixScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+      <CardContent className="space-y-2">
+        {(() => {
+          // Group GPT reviews by specimen collection date
+          const reviewsByDate = useMemo(() => {
+            const grouped = new Map<string, any[]>();
+            
+            gptReviewNotes.forEach((review: any) => {
+              // Get specimen collection dates for the lab results in this review
+              const reviewResults = results.filter((r: any) => 
+                review.resultIds?.includes(r.id)
+              );
+              
+              reviewResults.forEach((result: any) => {
+                const date = result.specimenCollectedAt || result.resultAvailableAt;
+                if (date) {
+                  const dateKey = format(new Date(date), 'MM/dd/yy');
+                  if (!grouped.has(dateKey)) {
+                    grouped.set(dateKey, []);
+                  }
+                  grouped.get(dateKey)?.push({
+                    ...review,
+                    result,
+                    fullDate: date
+                  });
                 }
-              }}
-            >
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    <th className="sticky left-0 z-20 bg-white border-r p-2 text-left min-w-[200px]">
-                      <div className="font-medium text-sm">Review Type</div>
-                    </th>
-                    {/* Generate columns to match the matrix date columns */}
-                    {dateColumns.map((dateCol) => (
-                      <th key={dateCol.displayDate} className="border-r p-2 text-center min-w-[100px]">
-                        <div className="font-medium text-xs">{dateCol.displayDate}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
+              });
+            });
+            
+            // Sort by date descending (most recent first)
+            return new Map([...grouped.entries()].sort((a, b) => 
+              new Date(b[1][0].fullDate).getTime() - new Date(a[1][0].fullDate).getTime()
+            ));
+          }, [gptReviewNotes, results]);
+          
+          const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+          
+          const toggleExpanded = (dateKey: string) => {
+            const newExpanded = new Set(expandedDates);
+            if (newExpanded.has(dateKey)) {
+              newExpanded.delete(dateKey);
+            } else {
+              newExpanded.add(dateKey);
+            }
+            setExpandedDates(newExpanded);
+          };
+          
+          if (reviewsByDate.size === 0) {
+            return (
+              <div className="text-center py-8 text-gray-500">
+                <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-sm">No review communications found for these lab results.</p>
+              </div>
+            );
+          }
+          
+          return Array.from(reviewsByDate.entries()).map(([dateKey, dateReviews]) => {
+            const isExpanded = expandedDates.has(dateKey);
+            // Get the most recent review for this date to show conversation summary
+            const latestReview = dateReviews.reduce((latest, current) => {
+              const latestTime = latest.conversationReviewGeneratedAt || latest.generatedAt;
+              const currentTime = current.conversationReviewGeneratedAt || current.generatedAt;
+              return new Date(currentTime) > new Date(latestTime) ? current : latest;
+            });
+            
+            return (
+              <div key={dateKey} className="border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleExpanded(dateKey)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-4 text-left">
+                    <div className="flex-shrink-0">
+                      <Calendar className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <div className="flex-grow">
+                      <div className="font-medium text-sm">{dateKey}</div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {latestReview.conversationReview || 
+                         `${dateReviews.length} lab result${dateReviews.length > 1 ? 's' : ''} reviewed`}
+                      </div>
+                      {latestReview.conversationClosed && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span className="text-xs text-green-600">
+                            Conversation closed {latestReview.conversationClosedAt ? 
+                              format(new Date(latestReview.conversationClosedAt), 'MM/dd/yy h:mm a') : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronDown 
+                    className={`h-5 w-5 text-gray-400 transition-transform ${
+                      isExpanded ? 'rotate-180' : ''
+                    }`} 
+                  />
+                </button>
+                
+                {isExpanded && (
+                  <div className="border-t bg-gray-50 p-4">
+                    <div className="space-y-4">
+                      {dateReviews.map((review, idx) => (
+                        <div key={`${review.id}-${idx}`} className="bg-white rounded-lg p-4 shadow-sm">
+                          {/* Timeline header */}
+                          <div className="flex items-center gap-2 mb-3 text-xs text-gray-500">
+                            <FlaskConical className="h-4 w-4" />
+                            <span>Lab results: {review.result.testName}</span>
+                            <span>•</span>
+                            <span>{format(new Date(review.generatedAt), 'h:mm a')}</span>
+                          </div>
+                          
+                          {/* Clinical Review */}
+                          <div className="mb-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <User className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-600">Clinical Review</span>
+                            </div>
+                            <p className="text-sm text-gray-700 pl-6">{review.clinicalReview}</p>
+                          </div>
+                          
+                          {/* Patient Message */}
+                          {review.patientMessageSent && (
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Mail className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-600">Patient Message</span>
+                                {review.patientMessageSentAt && (
+                                  <span className="text-xs text-gray-500">
+                                    Sent {format(new Date(review.patientMessageSentAt), 'MM/dd h:mm a')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700 pl-6">{review.patientMessage}</p>
+                            </div>
+                          )}
+                          
+                          {/* Nurse Message */}
+                          {review.nurseMessageSent && (
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Phone className="h-4 w-4 text-orange-600" />
+                                <span className="text-sm font-medium text-orange-600">Nurse Communication</span>
+                                {review.nurseMessageSentAt && (
+                                  <span className="text-xs text-gray-500">
+                                    Sent {format(new Date(review.nurseMessageSentAt), 'MM/dd h:mm a')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700 pl-6">{review.nurseMessage}</p>
+                            </div>
+                          )}
+                          
+                          {/* Status badges */}
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge variant={review.status === 'sent' ? 'default' : 'secondary'} className="text-xs">
+                              {review.status}
+                            </Badge>
+                            {review.reviewedBy && (
+                              <Badge variant="outline" className="text-xs">
+                                Reviewed by Dr. {review.reviewedBy}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          });
+        })()}
+      </CardContent>
                 <tbody>
                   {/* Conversation Review Row - Full communication chain summary */}
                   <tr className="border-t">

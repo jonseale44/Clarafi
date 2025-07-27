@@ -52,8 +52,8 @@ This document provides a comprehensive guide for implementing a sophisticated la
 
 ### Objectives
 - Add review notes panel below lab table
-- Create GPT-powered summaries of all notes for each date
-- Show chronological details on expansion
+- Create GPT-powered summaries of all notes for each date = Conversation Review
+- Show chronological details on expansion (provider notes, clinical review, patient message, nurse notes)
 
 ### Implementation Plan
 1. **Panel Structure**
@@ -66,7 +66,7 @@ This document provides a comprehensive guide for implementing a sophisticated la
    └─────────────────────────────────────────┘
    ```
 
-2. **GPT Summary Generation**
+2. **GPT Summary Generation** = Conversation Review
    - Aggregate all notes for a specimen collection date
    - Include: Patient messages, clinical reviews, nurse notes
    - Generate concise 2-3 sentence summary
