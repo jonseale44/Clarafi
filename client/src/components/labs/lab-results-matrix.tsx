@@ -1189,17 +1189,23 @@ export function LabResultsMatrix({
                 }
               }}
             >
-              <table className="w-full border-collapse text-sm">
+              <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '200px' }} />
+                  {displayColumns.map((_, index) => (
+                    <col key={`col-${index}`} style={{ width: '120px' }} />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="text-left p-3 font-semibold min-w-[200px] lab-matrix-sticky-col bg-gray-50 border-r border-gray-300">
-                      Test
+                    <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300">
+                      <div className="px-3 py-3">Test</div>
                     </th>
                     {displayColumns.map((dateCol, index) => (
                       <th 
                         key={`header-${index}`} 
                         data-matrix-date={dateCol.displayDate}
-                        className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100 bg-gray-50"
+                        className="text-center p-3 font-semibold border-r border-gray-300 cursor-pointer hover:bg-gray-100 bg-gray-50"
                         onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
                         onMouseEnter={() => setHoveredDate(dateCol.date)}
                         onMouseLeave={() => setHoveredDate(null)}
@@ -1263,15 +1269,21 @@ export function LabResultsMatrix({
               }
             }}
           >
-            <table className="w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '200px' }} />
+                {displayColumns.map((_, index) => (
+                  <col key={`body-col-${index}`} style={{ width: '120px' }} />
+                ))}
+              </colgroup>
               <tbody>
               {flatTestData.map((item, index) => {
                 if (item.type === 'panel') {
                   // Panel header row - always visible
                   return (
                     <tr key={`panel-${item.name}`} className="border-b-2 border-gray-300 bg-gray-100">
-                      <td className="p-3 lab-matrix-sticky-col bg-gray-100 font-bold text-sm border-r border-gray-300">
-                        {item.name}
+                      <td className="lab-matrix-sticky-col bg-gray-100 font-bold text-sm border-r border-gray-300">
+                        <div className="px-3 py-3">{item.name}</div>
                       </td>
                       {displayColumns.map((dateCol, index) => (
                         <td key={`panel-${index}`} className="p-3 text-center border-r border-gray-200">
@@ -1291,18 +1303,20 @@ export function LabResultsMatrix({
                       className={`border-b hover:bg-muted/20 ${isTestSelected ? 'bg-navy-blue-50' : ''}`}
                     >
                       <td 
-                        className="p-3 lab-matrix-sticky-col bg-white border-r border-gray-200 cursor-pointer transition-colors"
+                        className="lab-matrix-sticky-col bg-white border-r border-gray-200 cursor-pointer transition-colors"
                         onClick={() => handleTestRowClick(test.testName)}
                         onMouseEnter={() => setHoveredTestRow(test.testName)}
                         onMouseLeave={() => setHoveredTestRow(null)}
                       >
-                        <div className="flex flex-col">
-                          <div className="font-medium text-sm">{test.testName}</div>
-                          {test.unit && (
-                            <div className="text-xs text-muted-foreground">
-                              ({test.unit})
-                            </div>
-                          )}
+                        <div className="px-3 py-3">
+                          <div className="flex flex-col">
+                            <div className="font-medium text-sm">{test.testName}</div>
+                            {test.unit && (
+                              <div className="text-xs text-muted-foreground">
+                                ({test.unit})
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                       

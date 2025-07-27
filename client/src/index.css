@@ -1197,6 +1197,12 @@
   overflow: auto;
 }
 
+/* Ensure both tables have same layout */
+.lab-matrix-header table,
+.lab-matrix-body table {
+  table-layout: fixed;
+}
+
 /* Ensure proper background on header cells */
 .lab-matrix-header th {
   background-color: rgb(249 250 251); /* bg-gray-50 */
@@ -1208,6 +1214,14 @@
   left: 0;
   z-index: 10;
   background-color: white;
+  min-width: 200px;
+  max-width: 200px;
+  width: 200px;
+}
+
+/* Ensure header sticky column has proper background */
+.lab-matrix-header .lab-matrix-sticky-col {
+  background-color: rgb(249 250 251); /* bg-gray-50 */
 }
 
 /* Review notes panel scrollbar styling */
