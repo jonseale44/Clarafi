@@ -1213,9 +1213,9 @@ export function LabResultsMatrix({
           }}
         >
           <table className="w-full border-collapse text-sm">
-            <thead>
+            <thead className="sticky top-0 z-10">
               <tr className="border-b-2 border-gray-300 bg-gray-50">
-                <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300">
+                <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300 z-20">
                   Test
                 </th>
                 {displayColumns.map((dateCol, index) => (
