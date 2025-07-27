@@ -45,6 +45,26 @@ Both pathways feed into unified lab results database with:
 - Full audit trail and compliance tracking
 - Specimen tracking and barcode support (coming soon)
 
+## Recent Changes (July 27, 2025)
+
+### Fixed Subscription Key Generation After Payment (July 27, 2025 - 9:56 PM) - COMPLETED
+Fixed critical issue where subscription keys were not being generated after successful Stripe payment:
+
+1. **Problem Identified**:
+   - When users paid for subscription keys, the Stripe webhook wasn't handling the `per_user` billing type
+   - Keys were never generated after payment completion
+   - Users would pay but receive no subscription keys
+
+2. **Solution Implemented**:
+   - Updated Stripe webhook handler to detect `billingType: 'per_user'` in checkout session metadata
+   - Added key generation logic that reads provider/nurse/staff counts from metadata
+   - Integrated with SubscriptionKeyService to generate the correct number of keys
+   - Added email notification that sends generated keys to health system's primary contact email
+   - Updated success URL to redirect to `/admin/subscription-keys` instead of dashboard
+   - Added success/cancelled payment handling in subscription keys page with toast notifications
+
+3. **Result**: After successful payment, subscription keys are now automatically generated, emailed to the admin, and displayed on the subscription keys page with a success message.
+
 ## Recent Security Fix (July 27, 2025)
 
 ### Complete Database Field Name Fix for Subscription Keys (July 27, 2025 - 7:45 PM) - COMPLETED

@@ -256,8 +256,91 @@ export class StripeService {
         if (session.metadata?.healthSystemId) {
           const healthSystemId = parseInt(session.metadata.healthSystemId);
           
-          // Check if this is a tier 2 upgrade
-          if (session.metadata?.upgradeType === 'tier2') {
+          // Check if this is a per-user billing (subscription key purchase)
+          if (session.metadata?.billingType === 'per_user') {
+            console.log(`🔑 [Stripe] Processing subscription key purchase for health system ${healthSystemId}`);
+            
+            // Import the subscription key service
+            const { SubscriptionKeyService } = await import('./subscription-key-service.js');
+            
+            // Get key counts from metadata
+            const providerCount = parseInt(session.metadata.providerCount || '0');
+            const nurseCount = parseInt(session.metadata.nurseCount || '0');
+            const staffCount = parseInt(session.metadata.staffCount || '0');
+            
+            console.log(`📦 [Stripe] Generating keys:`, { providerCount, nurseCount, staffCount });
+            
+            // Generate the subscription keys
+            const generatedKeys = await SubscriptionKeyService.createKeysForHealthSystem(
+              healthSystemId,
+              providerCount,
+              staffCount,
+              nurseCount // Pass nurse count as third parameter
+            );
+            
+            console.log(`✅ [Stripe] Generated ${generatedKeys.length} subscription keys for health system ${healthSystemId}`);
+            
+            // Send email with the generated keys
+            try {
+              const { EmailVerificationService } = await import('./email-verification-service.js');
+              
+              // Get health system details for the email
+              const [healthSystem] = await db.select()
+                .from(healthSystems)
+                .where(eq(healthSystems.id, healthSystemId));
+              
+              if (healthSystem?.primaryContactEmail) {
+                // Format the keys for email
+                const keysByType = {
+                  provider: generatedKeys.filter(k => k.keyType === 'provider'),
+                  nurse: generatedKeys.filter(k => k.keyType === 'clinicalStaff'),
+                  staff: generatedKeys.filter(k => k.keyType === 'adminStaff')
+                };
+                
+                const keysHtml = `
+                  <h2>Your CLARAFI Subscription Keys</h2>
+                  <p>Thank you for your purchase! Here are your new subscription keys:</p>
+                  
+                  ${keysByType.provider.length > 0 ? `
+                    <h3>Provider Keys ($399/month each)</h3>
+                    <ul>
+                      ${keysByType.provider.map(k => `<li><code>${k.key}</code></li>`).join('')}
+                    </ul>
+                  ` : ''}
+                  
+                  ${keysByType.nurse.length > 0 ? `
+                    <h3>Nurse/Clinical Staff Keys ($99/month each)</h3>
+                    <ul>
+                      ${keysByType.nurse.map(k => `<li><code>${k.key}</code></li>`).join('')}
+                    </ul>
+                  ` : ''}
+                  
+                  ${keysByType.staff.length > 0 ? `
+                    <h3>Administrative Staff Keys ($49/month each)</h3>
+                    <ul>
+                      ${keysByType.staff.map(k => `<li><code>${k.key}</code></li>`).join('')}
+                    </ul>
+                  ` : ''}
+                  
+                  <p>To use these keys, share them with your staff members who will use them during account registration.</p>
+                  <p>You can also view and manage your keys at: <a href="https://${process.env.REPLIT_DEV_DOMAIN}/admin/subscription-keys">Subscription Keys Dashboard</a></p>
+                `;
+                
+                await EmailVerificationService.sendEmail({
+                  to: healthSystem.primaryContactEmail,
+                  subject: 'CLARAFI - Your New Subscription Keys',
+                  html: keysHtml,
+                  text: `Your CLARAFI Subscription Keys\n\n${generatedKeys.map(k => `${k.key} (${k.keyType})`).join('\n')}\n\nView your keys at: https://${process.env.REPLIT_DEV_DOMAIN}/admin/subscription-keys`
+                });
+                
+                console.log(`📧 [Stripe] Sent subscription keys email to ${healthSystem.primaryContactEmail}`);
+              }
+            } catch (emailError) {
+              console.error('❌ [Stripe] Failed to send subscription keys email:', emailError);
+              // Don't fail the webhook, keys are still generated
+            }
+            
+          } else if (session.metadata?.upgradeType === 'tier2') {
             console.log(`🚀 [Stripe] Processing tier 2 upgrade for health system ${healthSystemId}`);
             
             // Update health system to tier 2
@@ -666,14 +749,17 @@ export class StripeService {
         customer_email: params.email,
         line_items: lineItems,
         mode: 'subscription',
-        success_url: `https://${process.env.REPLIT_DEV_DOMAIN}/dashboard?billing=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `https://${process.env.REPLIT_DEV_DOMAIN}/dashboard?billing=cancelled`,
+        success_url: `https://${process.env.REPLIT_DEV_DOMAIN}/admin/subscription-keys?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `https://${process.env.REPLIT_DEV_DOMAIN}/admin/subscription-keys?payment=cancelled`,
         metadata: {
           healthSystemId: params.healthSystemId.toString(),
           healthSystemName: params.healthSystemName,
           billingType: 'per_user',
           totalUsers: Object.values(params.userCounts).reduce((a, b) => a + b, 0).toString(),
           monthlyTotal: params.monthlyAmount.toString(),
+          providerCount: params.userCounts.providers.toString(),
+          nurseCount: params.userCounts.clinicalStaff.toString(),
+          staffCount: params.userCounts.adminStaff.toString(),
         },
         subscription_data: {
           metadata: {

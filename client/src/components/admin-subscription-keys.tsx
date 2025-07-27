@@ -14,8 +14,37 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useEffect } from 'react';
+import { useLocation } from 'wouter';
 
 export function AdminSubscriptionKeys() {
+  const [location] = useLocation();
+  
+  // Check for payment success/cancelled params
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    
+    if (paymentStatus === 'success') {
+      toast({
+        title: "Payment Successful!",
+        description: "Your subscription keys have been generated and emailed to you. They should appear below momentarily.",
+        duration: 8000,
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/admin/subscription-keys');
+      // Refetch keys data
+      queryClient.invalidateQueries({ queryKey: ['/api/subscription-keys/list'] });
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Payment Cancelled",
+        description: "Your payment was cancelled. No keys were generated.",
+        variant: "destructive",
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/admin/subscription-keys');
+    }
+  }, []);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateForm, setGenerateForm] = useState({
     providerCount: 5,
