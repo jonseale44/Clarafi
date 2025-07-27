@@ -47,6 +47,22 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Security Fix (July 27, 2025)
 
+### Complete Database Field Name Fix for Subscription Keys (July 27, 2025 - 2:30 PM) - COMPLETED
+Fixed comprehensive database field name mismatches in subscription-key-service.ts that were causing SQL errors:
+
+1. **Problem Identified**: 
+   - Multiple places in subscription-key-service.ts were using incorrect field name `key` instead of `keyValue`
+   - This caused SQL errors: "column 'key' does not exist" when generating or querying subscription keys
+   - Affected provider, nurse, and staff key generation, regeneration, and lookup operations
+
+2. **Solution Implemented**:
+   - Fixed provider key generation: Changed `key: key` to `keyValue: key` in insert statement
+   - Fixed nurse key generation: Changed `key: key` to `keyValue: key` in insert statement  
+   - Fixed staff key generation: Changed `key: key` to `keyValue: key` in insert statement
+   - Fixed key validation query: Changed `eq(subscriptionKeys.key, keyString)` to `eq(subscriptionKeys.keyValue, keyString)`
+
+3. **Result**: All subscription key operations now work correctly without SQL errors. The stats endpoint returns 200 OK.
+
 ### Critical Security Fix: System Admin vs Clinic Admin Authorization (July 27, 2025 - 1:49 PM) - COMPLETED
 Fixed major security vulnerability where clinic administrators could access system-wide admin routes:
 

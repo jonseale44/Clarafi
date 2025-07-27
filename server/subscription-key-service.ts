@@ -65,7 +65,7 @@ export class SubscriptionKeyService {
     for (let i = 0; i < providerCount; i++) {
       const key = this.generateKey(shortName, 'provider');
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        key: key,
+        keyValue: key,
         healthSystemId,
         keyType: 'provider',
         createdBy: createdByUserId, // User who initiated key generation
@@ -85,7 +85,7 @@ export class SubscriptionKeyService {
     for (let i = 0; i < nurseCount; i++) {
       const key = this.generateKey(shortName, 'nurse');
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        key: key,
+        keyValue: key,
         healthSystemId,
         keyType: 'nurse',
         createdBy: createdByUserId, // User who initiated key generation
@@ -106,7 +106,7 @@ export class SubscriptionKeyService {
       const key = this.generateKey(shortName, 'staff');
       // Staff keys can be for clinical or admin staff - default to general staff pricing
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        key: key,
+        keyValue: key,
         healthSystemId,
         keyType: 'staff',
         createdBy: createdByUserId, // User who initiated key generation
@@ -159,7 +159,7 @@ export class SubscriptionKeyService {
   static async validateAndUseKey(keyString: string, userId: number) {
     // Check if key exists and is valid
     const [key] = await db.select().from(subscriptionKeys)
-      .where(eq(subscriptionKeys.key, keyString));
+      .where(eq(subscriptionKeys.keyValue, keyString));
 
     if (!key) {
       return { success: false, error: 'Invalid key' };
@@ -341,7 +341,7 @@ export class SubscriptionKeyService {
     expiresAt.setHours(expiresAt.getHours() + 72);
 
     const [regeneratedKey] = await db.insert(subscriptionKeys).values({
-      key: newKey,
+      keyValue: newKey,
       healthSystemId: oldKey.healthSystemId,
       keyType: oldKey.keyType,
       createdBy: adminUserId,

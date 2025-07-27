@@ -101,6 +101,7 @@ function Router() {
       <ProtectedRoute path="/admin/subscription-config" component={SubscriptionConfigPage} />
       <ProtectedRoute path="/admin/subscription-keys" component={AdminSubscriptionKeysPage} />
       <ProtectedRoute path="/admin/health-system-upgrade" component={HealthSystemUpgradePage} />
+      <ProtectedRoute path="/health-system-upgrade" component={HealthSystemUpgradePage} />
       <ProtectedRoute path="/upgrade" component={TrialUpgradePage} />
       <ProtectedRoute path="/admin/clinic-import" component={AdminClinicImport} />
       <ProtectedRoute path="/admin/verification-review" component={AdminVerificationReview} />
