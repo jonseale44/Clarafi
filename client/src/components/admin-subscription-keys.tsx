@@ -19,7 +19,7 @@ export function AdminSubscriptionKeys() {
   const [generateForm, setGenerateForm] = useState({
     providerCount: 5,
     staffCount: 10,
-    tier: 3,
+    tier: 2, // Enterprise tier
     healthSystemId: undefined as number | undefined,
   });
 
@@ -131,11 +131,11 @@ export function AdminSubscriptionKeys() {
   const inactiveKeys = keysData?.keys?.filter((k: any) => ['expired', 'deactivated'].includes(k.status)) || [];
 
   // Determine current health system tier
-  const currentTier = isSystemAdmin ? 3 : (userHealthSystemData?.subscriptionTier || 1);
-  const isTier3 = currentTier === 3;
+  const currentTier = isSystemAdmin ? 2 : (userHealthSystemData?.subscriptionTier || 1);
+  const isTier2 = currentTier === 2;
 
-  // Show upgrade message for non-Tier 3 health systems
-  if (!isSystemAdmin && !isTier3) {
+  // Show upgrade message for non-Tier 2 health systems
+  if (!isSystemAdmin && !isTier2) {
     return (
       <div className="space-y-6">
         <Card>
@@ -145,7 +145,7 @@ export function AdminSubscriptionKeys() {
               Subscription Keys - Enterprise Feature
             </CardTitle>
             <CardDescription>
-              Subscription keys are only available for Enterprise (Tier 3) health systems
+              Subscription keys are only available for Enterprise (Tier 2) health systems
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -153,7 +153,7 @@ export function AdminSubscriptionKeys() {
               <h3 className="text-lg font-semibold mb-2">Upgrade to Enterprise</h3>
               <p className="text-gray-700 mb-4">
                 Subscription keys allow you to invite providers and staff to join your health system. 
-                This feature is exclusive to Enterprise (Tier 3) subscriptions.
+                This feature is exclusive to Enterprise (Tier 2) subscriptions.
               </p>
               <div className="space-y-2 mb-6">
                 <p className="font-medium">Enterprise benefits include:</p>
@@ -384,7 +384,7 @@ export function AdminSubscriptionKeys() {
                     setGenerateForm({
                       ...generateForm,
                       healthSystemId: healthSystem?.id,
-                      tier: healthSystem?.subscriptionTier || 3
+                      tier: healthSystem?.subscriptionTier || 2
                     });
                   }}
                 >
@@ -395,7 +395,7 @@ export function AdminSubscriptionKeys() {
                     {healthSystemsData?.map((hs: any) => (
                       <SelectItem key={hs.id} value={hs.id.toString()}>
                         {hs.name} (Tier {hs.subscriptionTier || 1})
-                        {(hs.subscriptionTier || 1) < 3 && <span className="text-amber-600"> - Upgrade Required</span>}
+                        {(hs.subscriptionTier || 1) < 2 && <span className="text-amber-600"> - Upgrade Required</span>}
                       </SelectItem>
                     ))}
                     {healthSystemsData?.length === 0 && (
@@ -404,10 +404,10 @@ export function AdminSubscriptionKeys() {
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {generateForm.healthSystemId && healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier < 3 ? (
-                    <span className="text-amber-600">⚠️ This health system needs to upgrade to Tier 3 to generate subscription keys</span>
+                  {generateForm.healthSystemId && healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier < 2 ? (
+                    <span className="text-amber-600">⚠️ This health system needs to upgrade to Tier 2 to generate subscription keys</span>
                   ) : (
-                    "Only Tier 3 health systems can generate subscription keys"
+                    "Only Tier 2 health systems can generate subscription keys"
                   )}
                 </p>
               </div>
@@ -438,7 +438,7 @@ export function AdminSubscriptionKeys() {
               </Button>
               <Button
                 onClick={() => generateKeysMutation.mutate(generateForm)}
-                disabled={generateKeysMutation.isPending || (isSystemAdmin && (!generateForm.healthSystemId || (healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier || 1) < 3))}
+                disabled={generateKeysMutation.isPending || (isSystemAdmin && (!generateForm.healthSystemId || (healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier || 1) < 2))}
               >
                 {generateKeysMutation.isPending ? (
                   <>
