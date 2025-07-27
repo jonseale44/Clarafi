@@ -1884,8 +1884,21 @@ export function LabResultsMatrix({
                       
                       {/* Conversation Review Summary */}
                       <div className="text-sm text-gray-600">
-                        {latestReview.conversationReview || 
-                         `${dateReviews.length} lab result${dateReviews.length > 1 ? 's' : ''} reviewed`}
+                        {latestReview.conversationReview ? (
+                          <div>{latestReview.conversationReview}</div>
+                        ) : (
+                          <button 
+                            onClick={() => toggleReviewExpanded(reviewKey)}
+                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                          >
+                            <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700 border-yellow-300">
+                              Review In Progress
+                            </Badge>
+                            <span className="text-xs">
+                              {dateReviews.length} lab result{dateReviews.length > 1 ? 's' : ''} - click to view communications
+                            </span>
+                          </button>
+                        )}
                       </div>
                       
                       {/* Expand button for full timeline */}
