@@ -65,12 +65,14 @@ export class SubscriptionKeyService {
     for (let i = 0; i < providerCount; i++) {
       const key = this.generateKey(shortName, 'provider');
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        keyValue: key,
+        key,
         healthSystemId,
         keyType: 'provider',
-        createdBy: createdByUserId, // User who initiated key generation
+        subscriptionTier: tier,
+        monthlyPrice: PER_USER_PRICING.provider.monthly.toString(),
         expiresAt: expiresAt,
         metadata: {
+          createdBy: createdByUserId, // User who initiated key generation
           subscriptionTier: tier,
           monthlyPrice: PER_USER_PRICING.provider.monthly.toString(),
           generationBatch: new Date().toISOString(),
@@ -85,12 +87,14 @@ export class SubscriptionKeyService {
     for (let i = 0; i < nurseCount; i++) {
       const key = this.generateKey(shortName, 'nurse');
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        keyValue: key,
+        key,
         healthSystemId,
         keyType: 'nurse',
-        createdBy: createdByUserId, // User who initiated key generation
+        subscriptionTier: tier,
+        monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
         expiresAt: expiresAt,
         metadata: {
+          createdBy: createdByUserId, // User who initiated key generation
           subscriptionTier: tier,
           monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
           generationBatch: new Date().toISOString(),
@@ -106,14 +110,16 @@ export class SubscriptionKeyService {
       const key = this.generateKey(shortName, 'staff');
       // Staff keys can be for clinical or admin staff - default to general staff pricing
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        keyValue: key,
+        key,
         healthSystemId,
         keyType: 'staff',
-        createdBy: createdByUserId, // User who initiated key generation
+        subscriptionTier: tier,
+        monthlyPrice: PER_USER_PRICING.nonClinicalStaff.monthly.toString(),
         expiresAt: expiresAt,
         metadata: {
+          createdBy: createdByUserId, // User who initiated key generation
           subscriptionTier: tier,
-          monthlyPrice: PER_USER_PRICING.generalStaff.monthly.toString(),
+          monthlyPrice: PER_USER_PRICING.nonClinicalStaff.monthly.toString(),
           generationBatch: new Date().toISOString(),
           index: i + 1,
           totalInBatch: staffCount
@@ -159,7 +165,7 @@ export class SubscriptionKeyService {
   static async validateAndUseKey(keyString: string, userId: number) {
     // Check if key exists and is valid
     const [key] = await db.select().from(subscriptionKeys)
-      .where(eq(subscriptionKeys.keyValue, keyString));
+      .where(eq(subscriptionKeys.key, keyString));
 
     if (!key) {
       return { success: false, error: 'Invalid key' };
@@ -201,10 +207,8 @@ export class SubscriptionKeyService {
     await db.update(subscriptionKeys)
       .set({
         status: 'used',
-        assignedTo: userId,
-        assignedAt: new Date(),
-        usageCount: 1,
-        lastUsedAt: new Date()
+        usedBy: userId,
+        usedAt: new Date()
       })
       .where(eq(subscriptionKeys.id, key.id));
 
@@ -341,12 +345,14 @@ export class SubscriptionKeyService {
     expiresAt.setHours(expiresAt.getHours() + 72);
 
     const [regeneratedKey] = await db.insert(subscriptionKeys).values({
-      keyValue: newKey,
+      key: newKey,
       healthSystemId: oldKey.healthSystemId,
       keyType: oldKey.keyType,
-      createdBy: adminUserId,
+      subscriptionTier: oldKey.subscriptionTier,
+      monthlyPrice: oldKey.monthlyPrice,
       expiresAt,
       metadata: {
+        createdBy: adminUserId,
         subscriptionTier: oldKey.metadata?.subscriptionTier || 2,
         monthlyPrice: oldKey.metadata?.monthlyPrice || PER_USER_PRICING.provider.monthly.toString(),
         regeneratedFrom: oldKeyId,

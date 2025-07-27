@@ -179,21 +179,23 @@ router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
     // Get all keys - system admins see all, others see only their health system
     let keysQuery = db.select({
       id: subscriptionKeys.id,
-      key: subscriptionKeys.keyValue,
+      key: subscriptionKeys.key,
       keyType: subscriptionKeys.keyType,
       status: subscriptionKeys.status,
       createdAt: subscriptionKeys.createdAt,
       expiresAt: subscriptionKeys.expiresAt,
-      assignedAt: subscriptionKeys.assignedAt,
-      assignedTo: subscriptionKeys.assignedTo,
+      usedAt: subscriptionKeys.usedAt,
+      usedBy: subscriptionKeys.usedBy,
       userName: users.firstName,
       userLastName: users.lastName,
       userEmail: users.email,
       healthSystemId: subscriptionKeys.healthSystemId,
-      metadata: subscriptionKeys.metadata
+      metadata: subscriptionKeys.metadata,
+      subscriptionTier: subscriptionKeys.subscriptionTier,
+      monthlyPrice: subscriptionKeys.monthlyPrice
     })
     .from(subscriptionKeys)
-    .leftJoin(users, eq(subscriptionKeys.assignedTo, users.id));
+    .leftJoin(users, eq(subscriptionKeys.usedBy, users.id));
     
     // Apply filter for non-system admins
     let keys;

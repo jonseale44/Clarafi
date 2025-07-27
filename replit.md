@@ -47,21 +47,30 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Security Fix (July 27, 2025)
 
-### Complete Database Field Name Fix for Subscription Keys (July 27, 2025 - 2:30 PM) - COMPLETED
-Fixed comprehensive database field name mismatches in subscription-key-service.ts that were causing SQL errors:
+### Complete Database Field Name Fix for Subscription Keys (July 27, 2025 - 7:45 PM) - COMPLETED
+Fixed comprehensive database field name mismatches throughout subscription key system to align with actual database structure:
 
 1. **Problem Identified**: 
-   - Multiple places in subscription-key-service.ts were using incorrect field name `key` instead of `keyValue`
-   - This caused SQL errors: "column 'key' does not exist" when generating or querying subscription keys
-   - Affected provider, nurse, and staff key generation, regeneration, and lookup operations
+   - Schema definition in shared/schema.ts did not match actual database table structure
+   - Database has columns: id, key, health_system_id, key_type, subscription_tier, status, monthly_price, created_at, expires_at, used_by, used_at, deactivated_by, deactivated_at, metadata
+   - Schema incorrectly defined: keyValue (should be key), assignedTo/assignedAt (should be usedBy/usedAt), createdBy (doesn't exist in DB)
+   - This caused SQL errors throughout the subscription key system
 
 2. **Solution Implemented**:
-   - Fixed provider key generation: Changed `key: key` to `keyValue: key` in insert statement
-   - Fixed nurse key generation: Changed `key: key` to `keyValue: key` in insert statement  
-   - Fixed staff key generation: Changed `key: key` to `keyValue: key` in insert statement
-   - Fixed key validation query: Changed `eq(subscriptionKeys.key, keyString)` to `eq(subscriptionKeys.keyValue, keyString)`
+   - Fixed schema.ts to match actual database columns:
+     - Changed `keyValue` to `key`
+     - Removed non-existent fields: createdBy, assignedTo, assignedAt, usageCount, lastUsedAt
+     - Added missing fields: subscription_tier, monthly_price, deactivated_by, deactivated_at
+   - Updated subscription-key-service.ts:
+     - Fixed all field references to use correct column names
+     - Moved createdBy information to metadata field
+     - Fixed validateAndUseKey to use usedBy/usedAt instead of assignedTo/assignedAt
+   - Updated subscription-key-routes.ts:
+     - Fixed list endpoint query to use correct field names
+     - Updated join to use usedBy instead of assignedTo
+   - Updated subscriptionKeys relations to reference existing fields only
 
-3. **Result**: All subscription key operations now work correctly without SQL errors. The stats endpoint returns 200 OK.
+3. **Result**: All subscription key operations now work correctly. The subscription keys page loads successfully, stats endpoint returns 200 OK, and key generation/validation functions properly.
 
 ### Critical Security Fix: System Admin vs Clinic Admin Authorization (July 27, 2025 - 1:49 PM) - COMPLETED
 Fixed major security vulnerability where clinic administrators could access system-wide admin routes:

@@ -4195,21 +4195,23 @@ export const subscriptionKeys = pgTable("subscription_keys", {
   healthSystemId: integer("health_system_id").notNull(),
   key: text("key").notNull(),
   keyType: text("key_type").notNull(), // 'provider', 'staff', 'admin'
-  createdBy: integer("created_by").notNull(),
-  assignedTo: integer("assigned_to").references(() => users.id),
-  assignedAt: timestamp("assigned_at"),
-  expiresAt: timestamp("expires_at"),
+  subscriptionTier: integer("subscription_tier"),
   status: text("status").default("active"), // 'active', 'used', 'expired', 'deactivated'
-  usageCount: integer("usage_count").default(0),
-  lastUsedAt: timestamp("last_used_at"),
+  monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at"),
+  expiresAt: timestamp("expires_at"),
+  usedBy: integer("used_by").references(() => users.id),
+  usedAt: timestamp("used_at"),
+  deactivatedBy: integer("deactivated_by").references(() => users.id),
+  deactivatedAt: timestamp("deactivated_at"),
   metadata: jsonb("metadata").$type<{
     subscriptionTier?: number; // 1 or 2 only
     monthlyPrice?: string;
     regenerationCount?: number;
     notes?: string;
+    createdBy?: number; // Who created the key
     [key: string]: any;
   }>(),
-  createdAt: timestamp("created_at"),
 });
 
 // Subscription history for tracking changes and grace periods
@@ -4349,12 +4351,12 @@ export const subscriptionKeysRelations = relations(subscriptionKeys, ({ one }) =
     fields: [subscriptionKeys.healthSystemId],
     references: [healthSystems.id],
   }),
-  assignedToUser: one(users, {
-    fields: [subscriptionKeys.assignedTo],
+  usedByUser: one(users, {
+    fields: [subscriptionKeys.usedBy],
     references: [users.id],
   }),
-  createdByUser: one(users, {
-    fields: [subscriptionKeys.createdBy],
+  deactivatedByUser: one(users, {
+    fields: [subscriptionKeys.deactivatedBy],
     references: [users.id],
   }),
 }));
