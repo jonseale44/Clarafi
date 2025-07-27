@@ -57,6 +57,7 @@ import BusinessAssociateAgreement from "@/pages/legal/business-associate-agreeme
 import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
 import AdminInviteStaff from "@/pages/admin-invite-staff";
 import AdminSubscriptionPage from "@/pages/admin-subscription";
+import BillingManagement from "@/pages/billing-management";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing-page";

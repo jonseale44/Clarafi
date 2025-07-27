@@ -6323,6 +6323,10 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
   registerBillingRoutes(app);
+  
+  // Import and register billing routes (payment methods, history, automation)
+  const billingRoutes = await import("./billing-routes");
+  app.use("/api/billing", billingRoutes.default);
 
   // Import and register marketing analytics routes
   const marketingAnalyticsRoutes = await import("./marketing-analytics-routes");
