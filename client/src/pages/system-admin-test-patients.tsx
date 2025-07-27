@@ -461,7 +461,7 @@ export default function SystemAdminTestPatients() {
                     value={[config.numberOfLabResults]}
                     onValueChange={([value]) => setConfig(prev => ({ ...prev, numberOfLabResults: value }))}
                     min={1}
-                    max={50}
+                    max={20}
                     step={1}
                   />
                 </div>
