@@ -3,6 +3,7 @@ import { SubscriptionKeyService } from './subscription-key-service';
 import { db } from './db.js';
 import { users, healthSystems, subscriptionKeys } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
+import { StripeService } from './stripe-service.js';
 
 const router = Router();
 
@@ -13,6 +14,75 @@ const ensureHealthSystemAdmin = async (req: any, res: any, next: any) => {
   }
   next();
 };
+
+// Create Stripe checkout session for purchasing keys
+router.post('/create-checkout', ensureHealthSystemAdmin, async (req, res) => {
+  try {
+    const { providerCount, nurseCount, staffCount } = req.body;
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const userId = req.user.id;
+    
+    // Get user's health system details
+    const [user] = await db.select({
+      healthSystemId: users.healthSystemId,
+      email: users.email,
+      healthSystemName: healthSystems.name,
+      subscriptionTier: healthSystems.subscriptionTier
+    })
+    .from(users)
+    .leftJoin(healthSystems, eq(users.healthSystemId, healthSystems.id))
+    .where(eq(users.id, userId));
+    
+    if (!user || !user.healthSystemId) {
+      return res.status(400).json({ error: 'No health system associated with user' });
+    }
+    
+    // Only allow for Tier 2 health systems
+    if (user.subscriptionTier !== 2) {
+      return res.status(403).json({ 
+        error: 'Subscription keys are only available for Enterprise (Tier 2) health systems' 
+      });
+    }
+    
+    // Calculate total monthly cost
+    const monthlyAmount = (providerCount * 399) + (nurseCount * 99) + (staffCount * 49);
+    
+    console.log(`💰 [SubscriptionKeys] Creating checkout session:`, {
+      providerCount,
+      nurseCount, 
+      staffCount,
+      monthlyAmount,
+      healthSystemName: user.healthSystemName
+    });
+    
+    // Create checkout session using StripeService
+    const checkoutUrl = await StripeService.createPerUserBillingCheckout({
+      email: user.email,
+      healthSystemId: user.healthSystemId,
+      healthSystemName: user.healthSystemName || 'Unknown Health System',
+      userCounts: {
+        providers: providerCount,
+        nurses: nurseCount,
+        staff: staffCount
+      },
+      monthlyAmount
+    });
+    
+    res.json({ 
+      success: true, 
+      checkoutUrl,
+      message: 'Redirecting to payment...'
+    });
+    
+  } catch (error: any) {
+    console.error('❌ [SubscriptionKeys] Error creating checkout:', error);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+});
 
 // Generate keys for health system (admin only)
 router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {

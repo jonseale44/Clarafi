@@ -54,20 +54,33 @@ export function AdminSubscriptionKeys() {
 
   const generateKeysMutation = useMutation({
     mutationFn: async (data: typeof generateForm) => {
-      return await apiRequest('POST', '/api/subscription-keys/generate', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Keys Generated",
-        description: "New subscription keys have been generated successfully.",
+      const response = await apiRequest('POST', '/api/subscription-keys/create-checkout', {
+        providerCount: data.providerCount,
+        nurseCount: data.nurseCount,
+        staffCount: data.staffCount
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/subscription-keys/list'] });
-      setShowGenerateDialog(false);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.checkoutUrl) {
+        toast({
+          title: "Redirecting to Payment",
+          description: "You will be redirected to Stripe to complete your purchase.",
+        });
+        // Redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create checkout session",
+          variant: 'destructive',
+        });
+      }
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.error || 'Failed to generate keys',
+        description: error.error || 'Failed to create checkout session',
         variant: 'destructive',
       });
     },
