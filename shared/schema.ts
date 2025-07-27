@@ -2237,6 +2237,12 @@ export const gptLabReviewNotes = pgTable("gpt_lab_review_notes", {
     reason: string;
   }>>(),
   
+  // Conversation Review - GPT-generated summary of entire communication chain
+  conversationReview: text("conversation_review"), // e.g., "Doctor advised increase metformin, pt refused, nurse documented."
+  conversationReviewGeneratedAt: timestamp("conversation_review_generated_at"),
+  conversationClosed: boolean("conversation_closed").default(false),
+  conversationClosedAt: timestamp("conversation_closed_at"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

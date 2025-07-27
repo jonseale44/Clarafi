@@ -1784,22 +1784,21 @@ export function LabResultsMatrix({
       </CardContent>
     </Card>
 
-    {/* Phase 2: Review Notes Panel */}
-    {gptReviewNotes.length > 0 && (
-      <Card className="mt-4">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">Lab Review Notes</CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsReviewNotesPanelOpen(!isReviewNotesPanelOpen)}
-            >
-              {isReviewNotesPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-        </CardHeader>
-        {isReviewNotesPanelOpen && (
+    {/* Phase 2: Review Notes Panel - Always visible */}
+    <Card className="mt-4">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Lab Review Notes</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsReviewNotesPanelOpen(!isReviewNotesPanelOpen)}
+          >
+            {isReviewNotesPanelOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </CardHeader>
+      {isReviewNotesPanelOpen && (
           <CardContent className="pt-0">
             <div 
               ref={reviewScrollRef}
@@ -1825,6 +1824,48 @@ export function LabResultsMatrix({
                   </tr>
                 </thead>
                 <tbody>
+                  {/* Conversation Review Row - Full communication chain summary */}
+                  <tr className="border-t">
+                    <td className="sticky left-0 z-10 bg-white border-r p-2">
+                      <div className="flex items-center gap-2">
+                        <FlaskConical className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium">Conversation Review</span>
+                      </div>
+                    </td>
+                    {dateColumns.map((dateCol) => {
+                      // Find GPT reviews that include results from this date and have conversation review
+                      const relevantReviews = gptReviewNotes.filter((review: any) => {
+                        return review.conversationReview && review.resultIds?.some((resultId: number) => {
+                          const result = results.find((r: any) => r.id === resultId);
+                          if (!result) return false;
+                          const resultDate = format(new Date(result.specimenCollectedAt || result.resultAvailableAt), 'MM/dd/yy');
+                          return resultDate === dateCol.displayDate;
+                        });
+                      });
+
+                      return (
+                        <td key={dateCol.displayDate} className="border-r p-2 align-top">
+                          {relevantReviews.length > 0 ? (
+                            <div className="space-y-2">
+                              {relevantReviews.map((review: any, idx: number) => (
+                                <div key={idx} className="text-xs bg-blue-50 p-2 rounded border border-blue-200">
+                                  <div className="text-gray-700 font-medium">{review.conversationReview}</div>
+                                  {review.conversationReviewGeneratedAt && (
+                                    <div className="text-gray-500 text-[10px] mt-1">
+                                      Closed: {format(new Date(review.conversationReviewGeneratedAt), 'MM/dd/yy h:mm a')}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+
                   {/* Provider Notes Row */}
                   <tr className="border-t">
                     <td className="sticky left-0 z-10 bg-white border-r p-2">
@@ -1976,7 +2017,6 @@ export function LabResultsMatrix({
           </CardContent>
         )}
       </Card>
-    )}
 
     {/* Edit Lab Result Dialog */}
     <Dialog open={!!editingResult} onOpenChange={(open) => !open && setEditingResult(null)}>

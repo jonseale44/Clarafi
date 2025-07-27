@@ -725,6 +725,11 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
             ? `Patient's ${randomTest.testName} is abnormal at ${testResult.value}. Please ensure provider is aware and follow-up is scheduled.`
             : `${randomTest.testName} results normal. No nursing interventions required.`;
           
+          // Generate conversation review summary
+          const conversationReview = testResult.isAbnormal
+            ? `Doctor advised monitoring abnormal ${randomTest.testName} (${testResult.value}), patient acknowledged, nurse documented follow-up scheduled.`
+            : `Doctor reviewed normal ${randomTest.testName} results, patient reassured, no immediate action required.`;
+          
           const gptReviewData = {
             resultIds: [insertedLabResult.id],
             patientId,
@@ -732,6 +737,10 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
             clinicalReview,
             patientMessage,
             nurseMessage,
+            conversationReview,
+            conversationReviewGeneratedAt: new Date(encounter.startTime.getTime() + 48 * 60 * 60 * 1000), // 2 days after results
+            conversationClosed: true,
+            conversationClosedAt: new Date(encounter.startTime.getTime() + 48 * 60 * 60 * 1000),
             patientContext: {
               demographics: {
                 age: new Date().getFullYear() - dateOfBirth.getFullYear(),
@@ -764,7 +773,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
             templateUsed: "standard_lab_review",
           };
           
-          await db.insert(gptLabReviewNotes).values(gptReviewData);
+          await db.insert(gptLabReviewNotes).values([gptReviewData]);
           
           labResultsCreated++;
           console.log(`[TestPatientGenerator] Created lab result ${labResultsCreated}/${config.numberOfLabResults}: ${randomTest.testName}`);
