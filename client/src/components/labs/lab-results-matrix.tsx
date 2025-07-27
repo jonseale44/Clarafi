@@ -1286,7 +1286,7 @@ export function LabResultsMatrix({
                         <div className="px-3 py-3">{item.name}</div>
                       </td>
                       {displayColumns.map((dateCol, index) => (
-                        <td key={`panel-${index}`} className="p-3 text-center border-r border-gray-200">
+                        <td key={`panel-${index}`} className="p-3 text-center border-r border-gray-200" data-matrix-date={dateCol.displayDate}>
                           <span className="text-muted-foreground text-xs">—</span>
                         </td>
                       ))}
@@ -1333,7 +1333,7 @@ export function LabResultsMatrix({
                         }
                         
                         return (
-                          <td key={`test-${index}`} className={cellClass}>
+                          <td key={`test-${index}`} className={cellClass} data-matrix-date={dateCol.displayDate}>
                             {result ? (
                               <div className="relative group">
                                 <div 
