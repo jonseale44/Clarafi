@@ -287,7 +287,7 @@ export default function ClinicAdminDashboard() {
                     <p className="font-medium">Total Staff</p>
                     <p className="text-sm text-gray-600">{stats?.totalStaff || 0} users across all roles</p>
                   </div>
-                  <Link href="/admin/users">
+                  <Link href="/clinic-admin/users">
                     <Button size="sm">
                       Manage Users
                     </Button>
@@ -298,7 +298,7 @@ export default function ClinicAdminDashboard() {
                     <p className="font-medium">Locations</p>
                     <p className="text-sm text-gray-600">{stats?.locationsCount || 0} active locations</p>
                   </div>
-                  <Link href="/admin/locations">
+                  <Link href="/clinic-admin/locations">
                     <Button size="sm" variant="outline">
                       Manage Locations
                     </Button>
