@@ -5871,22 +5871,32 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
   app.post("/api/stripe/webhook", async (req, res) => {
     try {
+      console.log("🔔 [Stripe] Webhook received");
       const sig = req.headers["stripe-signature"] as string;
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
+      if (!webhookSecret) {
+        console.error("❌ [Stripe] STRIPE_WEBHOOK_SECRET not configured");
+        return res.status(500).json({ error: "Webhook secret not configured" });
+      }
+
       const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+      console.log("🔍 [Stripe] Constructing event with signature");
+      
       const event = stripe.webhooks.constructEvent(
         req.body,
         sig,
         webhookSecret,
       );
 
+      console.log(`✅ [Stripe] Event verified: ${event.type} (${event.id})`);
+
       const { StripeService } = await import("./stripe-service");
       await StripeService.handleWebhook(event);
 
       res.json({ received: true });
     } catch (error: any) {
-      console.error("Webhook error:", error);
+      console.error("❌ [Stripe] Webhook error:", error.message);
       res.status(400).json({ error: error.message });
     }
   });
