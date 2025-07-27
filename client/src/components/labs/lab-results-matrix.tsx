@@ -1174,7 +1174,7 @@ export function LabResultsMatrix({
       <CardContent className="p-0">
         <div 
           ref={matrixScrollRef}
-          className="overflow-x-auto max-h-[70vh] matrix-scroll-container"
+          className="overflow-auto max-h-[70vh] matrix-scroll-container relative"
           onScroll={(e) => {
             if (reviewScrollRef.current && !isScrollingSyncRef.current) {
               isScrollingSyncRef.current = true;
@@ -1213,7 +1213,7 @@ export function LabResultsMatrix({
           }}
         >
           <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-10">
+            <thead className="sticky top-0 z-10 bg-gray-50">
               <tr className="border-b-2 border-gray-300 bg-gray-50">
                 <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300 z-20">
                   Test
@@ -1222,7 +1222,7 @@ export function LabResultsMatrix({
                   <th 
                     key={`date-${index}`} 
                     data-matrix-date={dateCol.displayDate}
-                    className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100"
+                    className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100 bg-gray-50"
                     onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
                     onMouseEnter={() => setHoveredDate(dateCol.date)}
                     onMouseLeave={() => setHoveredDate(null)}

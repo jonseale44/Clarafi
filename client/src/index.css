@@ -1144,6 +1144,7 @@
 .matrix-scroll-container {
   scrollbar-width: thin;
   scrollbar-color: #e5e7eb #f3f4f6;
+  position: relative;
 }
 
 .matrix-scroll-container::-webkit-scrollbar {
@@ -1161,6 +1162,27 @@
 
 .matrix-scroll-container::-webkit-scrollbar-thumb:hover {
   background-color: #d1d5db;
+}
+
+/* Make the table header sticky within the scrollable container */
+.matrix-scroll-container table {
+  position: relative;
+}
+
+.matrix-scroll-container thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Ensure proper background on sticky header cells */
+.matrix-scroll-container thead th {
+  background-color: rgb(249 250 251); /* bg-gray-50 */
+}
+
+/* The Test column header needs higher z-index for dual sticky behavior */
+.matrix-scroll-container thead th.sticky {
+  z-index: 20;
 }
 
 /* Review notes panel scrollbar styling */
