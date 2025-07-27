@@ -182,33 +182,105 @@ export function AdminSubscriptionKeys() {
 
   return (
     <div className="space-y-6">
-      {/* Pricing Information Card */}
+      {/* Pricing Information and Billing Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
-            Enterprise Subscription Pricing
+            Current Subscription & Billing
           </CardTitle>
           <CardDescription>
-            Monthly pricing per user type
+            Your current subscription breakdown and monthly costs
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">$399/month</div>
-              <p className="text-sm text-muted-foreground">Provider Keys</p>
-              <p className="text-xs">Full EMR access for physicians and providers</p>
+          <div className="space-y-6">
+            {/* Pricing Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3"></th>
+                    <th className="text-center p-3 font-semibold">Provider</th>
+                    <th className="text-center p-3 font-semibold">Nurse</th>
+                    <th className="text-center p-3 font-semibold">Front Staff</th>
+                    <th className="text-right p-3 font-semibold">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Price/month</td>
+                    <td className="text-center p-3 text-lg">$399</td>
+                    <td className="text-center p-3 text-lg">$99</td>
+                    <td className="text-center p-3 text-lg">$49</td>
+                    <td className="text-right p-3"></td>
+                  </tr>
+                  <tr className="border-b bg-gray-50">
+                    <td className="p-3 font-medium">Current Subscription</td>
+                    <td className="text-center p-3 text-lg font-semibold">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'provider' && k.status === 'used').length || 0}
+                    </td>
+                    <td className="text-center p-3 text-lg font-semibold">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'nurse' && k.status === 'used').length || 0}
+                    </td>
+                    <td className="text-center p-3 text-lg font-semibold">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'staff' && k.status === 'used').length || 0}
+                    </td>
+                    <td className="text-right p-3 text-lg font-semibold">
+                      {(keysData?.keys?.filter((k: any) => k.status === 'used').length || 0)} users
+                    </td>
+                  </tr>
+                  <tr className="border-b">
+                    <td className="p-3 font-medium">Total Price/month</td>
+                    <td className="text-center p-3 text-lg font-bold text-green-600">
+                      ${(keysData?.keys?.filter((k: any) => k.keyType === 'provider' && k.status === 'used').length || 0) * 399}
+                    </td>
+                    <td className="text-center p-3 text-lg font-bold text-green-600">
+                      ${(keysData?.keys?.filter((k: any) => k.keyType === 'nurse' && k.status === 'used').length || 0) * 99}
+                    </td>
+                    <td className="text-center p-3 text-lg font-bold text-green-600">
+                      ${(keysData?.keys?.filter((k: any) => k.keyType === 'staff' && k.status === 'used').length || 0) * 49}
+                    </td>
+                    <td className="text-right p-3 text-xl font-bold text-green-600">
+                      ${
+                        (keysData?.keys?.filter((k: any) => k.keyType === 'provider' && k.status === 'used').length || 0) * 399 +
+                        (keysData?.keys?.filter((k: any) => k.keyType === 'nurse' && k.status === 'used').length || 0) * 99 +
+                        (keysData?.keys?.filter((k: any) => k.keyType === 'staff' && k.status === 'used').length || 0) * 49
+                      }
+                    </td>
+                  </tr>
+                  <tr className="bg-blue-50">
+                    <td className="p-3 font-medium">Unused Keys</td>
+                    <td className="text-center p-3 text-sm text-gray-600">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'provider' && k.status === 'active').length || 0}
+                    </td>
+                    <td className="text-center p-3 text-sm text-gray-600">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'nurse' && k.status === 'active').length || 0}
+                    </td>
+                    <td className="text-center p-3 text-sm text-gray-600">
+                      {keysData?.keys?.filter((k: any) => k.keyType === 'staff' && k.status === 'active').length || 0}
+                    </td>
+                    <td className="text-right p-3 text-sm text-gray-600">
+                      {keysData?.keys?.filter((k: any) => k.status === 'active').length || 0} available
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">$99/month</div>
-              <p className="text-sm text-muted-foreground">Nurse Keys</p>
-              <p className="text-xs">Clinical access for nursing staff</p>
-            </div>
-            <div className="space-y-2">
-              <div className="text-2xl font-bold">$49/month</div>
-              <p className="text-sm text-muted-foreground">Staff Keys</p>
-              <p className="text-xs">Administrative access for non-clinical staff</p>
+            
+            {/* Purchase More Keys Button */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div>
+                <p className="text-sm text-muted-foreground">Need more users?</p>
+                <p className="text-xs text-muted-foreground">Purchase additional subscription keys to add more staff</p>
+              </div>
+              <Button 
+                onClick={() => setShowGenerateDialog(true)} 
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Purchase More Keys
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -219,61 +291,14 @@ export function AdminSubscriptionKeys() {
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Key className="h-5 w-5" />
-              Subscription Key Management
+              Subscription Key Details
             </span>
-            <Button onClick={() => setShowGenerateDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Generate Keys
-            </Button>
           </CardTitle>
           <CardDescription>
-            Manage subscription keys for your health system
+            View and manage individual subscription keys
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Keys</CardTitle>
-                <Key className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{keysData?.counts?.total || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Available</CardTitle>
-                <Key className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{keysData?.counts?.available || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Used</CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{keysData?.counts?.used || 0}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Health System</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm">
-                  Providers: {keysData?.counts?.providers || 0}<br />
-                  Nurses: {keysData?.counts?.nurses || 0}<br />
-                  Staff: {keysData?.counts?.staff || 0}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           <Tabs defaultValue="active">
             <TabsList>
               <TabsTrigger value="active">Available ({activeKeys.length})</TabsTrigger>
@@ -401,11 +426,11 @@ export function AdminSubscriptionKeys() {
       </Card>
 
       <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Generate Subscription Keys</DialogTitle>
+            <DialogTitle>Purchase Additional Subscription Keys</DialogTitle>
             <DialogDescription>
-              Generate new subscription keys for your health system staff
+              Add more users to your subscription. You will be charged monthly for each key.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -447,36 +472,73 @@ export function AdminSubscriptionKeys() {
                 </p>
               </div>
             )}
-            <div>
-              <Label htmlFor="provider-count">Number of Provider Keys</Label>
-              <Input
-                id="provider-count"
-                type="number"
-                min="0"
-                value={generateForm.providerCount}
-                onChange={(e) => setGenerateForm({ ...generateForm, providerCount: parseInt(e.target.value) || 0 })}
-              />
+            
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <Label htmlFor="provider-count">Provider Keys ($399/mo each)</Label>
+                <Input
+                  id="provider-count"
+                  type="number"
+                  min="0"
+                  value={generateForm.providerCount}
+                  onChange={(e) => setGenerateForm({ ...generateForm, providerCount: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="nurse-count">Nurse Keys ($99/mo each)</Label>
+                <Input
+                  id="nurse-count"
+                  type="number"
+                  min="0"
+                  value={generateForm.nurseCount}
+                  onChange={(e) => setGenerateForm({ ...generateForm, nurseCount: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="staff-count">Staff Keys ($49/mo each)</Label>
+                <Input
+                  id="staff-count"
+                  type="number"
+                  min="0"
+                  value={generateForm.staffCount}
+                  onChange={(e) => setGenerateForm({ ...generateForm, staffCount: parseInt(e.target.value) || 0 })}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="nurse-count">Number of Nurse Keys</Label>
-              <Input
-                id="nurse-count"
-                type="number"
-                min="0"
-                value={generateForm.nurseCount}
-                onChange={(e) => setGenerateForm({ ...generateForm, nurseCount: parseInt(e.target.value) || 0 })}
-              />
+            
+            {/* Cost Summary */}
+            <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+              <h4 className="font-semibold text-sm">Monthly Cost Summary</h4>
+              <div className="space-y-1 text-sm">
+                {generateForm.providerCount > 0 && (
+                  <div className="flex justify-between">
+                    <span>{generateForm.providerCount} Provider{generateForm.providerCount > 1 ? 's' : ''}</span>
+                    <span>${generateForm.providerCount * 399}/month</span>
+                  </div>
+                )}
+                {generateForm.nurseCount > 0 && (
+                  <div className="flex justify-between">
+                    <span>{generateForm.nurseCount} Nurse{generateForm.nurseCount > 1 ? 's' : ''}</span>
+                    <span>${generateForm.nurseCount * 99}/month</span>
+                  </div>
+                )}
+                {generateForm.staffCount > 0 && (
+                  <div className="flex justify-between">
+                    <span>{generateForm.staffCount} Staff</span>
+                    <span>${generateForm.staffCount * 49}/month</span>
+                  </div>
+                )}
+                <div className="border-t pt-2 font-semibold">
+                  <div className="flex justify-between">
+                    <span>Additional Monthly Cost</span>
+                    <span className="text-green-600">
+                      ${generateForm.providerCount * 399 + generateForm.nurseCount * 99 + generateForm.staffCount * 49}/month
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="staff-count">Number of Staff Keys</Label>
-              <Input
-                id="staff-count"
-                type="number"
-                min="0"
-                value={generateForm.staffCount}
-                onChange={(e) => setGenerateForm({ ...generateForm, staffCount: parseInt(e.target.value) || 0 })}
-              />
-            </div>
+            
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowGenerateDialog(false)}>
                 Cancel
@@ -484,14 +546,18 @@ export function AdminSubscriptionKeys() {
               <Button
                 onClick={() => generateKeysMutation.mutate(generateForm)}
                 disabled={generateKeysMutation.isPending || (isSystemAdmin && (!generateForm.healthSystemId || (healthSystemsData?.find((hs: any) => hs.id === generateForm.healthSystemId)?.subscriptionTier || 1) < 2))}
+                className="bg-green-600 hover:bg-green-700"
               >
                 {generateKeysMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
+                    Processing...
                   </>
                 ) : (
-                  'Generate Keys'
+                  <>
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Purchase & Generate Keys
+                  </>
                 )}
               </Button>
             </div>

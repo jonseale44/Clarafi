@@ -269,11 +269,11 @@ export default function AdminSubscriptionPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {currentTier < 3 && (
+            {currentTier < 2 && (
               <Link href="/health-system-upgrade">
                 <Button className="w-full" variant="default">
                   <TrendingUp className="mr-2 h-4 w-4" />
-                  Upgrade Plan
+                  Upgrade to Enterprise
                 </Button>
               </Link>
             )}

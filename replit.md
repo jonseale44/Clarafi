@@ -118,6 +118,40 @@ Enhanced the subscription key generation system to support all three enterprise 
    - Nurses: $99/month (mapped to clinicalStaff pricing tier)
    - Staff: $49/month
 
+### Enterprise Subscription UI Improvements (July 27, 2025 - 3:46 PM) - COMPLETED
+Enhanced the clinic admin subscription management interface for clarity and better user experience:
+
+1. **Subscription Keys Page (/admin/subscription-keys)**:
+   - Added comprehensive billing breakdown table showing:
+     - Base pricing per user type ($399/provider, $99/nurse, $49/staff)
+     - Current subscription counts (how many of each type are actively used)
+     - Monthly cost calculations per user type
+     - Grand total monthly subscription cost
+   - Changed "Generate Keys" button to "Purchase More Keys" with green styling
+   - Removed confusing statistics cards that mixed "available" and "total" keys
+   - Added "Unused Keys" row to clearly show keys that have been purchased but not yet assigned
+
+2. **Purchase Dialog Enhancement**:
+   - Renamed from "Generate Subscription Keys" to "Purchase Additional Subscription Keys"
+   - Added pricing per key type in the input labels
+   - Added real-time cost summary showing monthly cost breakdown
+   - Changed button text to "Purchase & Generate Keys" with dollar sign icon
+   - Made it clear that purchasing keys will trigger payment
+
+3. **Admin Subscription Page (/admin/subscription)**:
+   - Updated tier 2 display from "Up to 5 providers" to "Per-user pricing model"
+   - Removed misleading provider limits that suggested a flat rate
+   - Added clear per-user pricing breakdown under monthly cost
+   - Removed "Upgrade Plan" button for tier 2 users (already at highest enterprise tier)
+   - Changed button text to "Upgrade to Enterprise" for tier 1 users
+
+4. **Key Terminology Clarification**:
+   - "Current Subscription" = number of keys actively assigned to users (what you're paying for)
+   - "Unused Keys" = keys purchased but not yet assigned to users
+   - "Total Keys" = all keys regardless of status (active, used, deactivated)
+
+5. **Business Model Confirmation**: Enterprise (tier 2) uses a pure per-user pricing model with no base subscription fee
+
 ## Recent Changes (July 26, 2025)
 
 ### Enhanced Test Patient Generator with Doctor Reviews (July 26, 2025 - 11:10 PM) - COMPLETED
