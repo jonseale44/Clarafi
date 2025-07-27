@@ -1164,25 +1164,50 @@
   background-color: #d1d5db;
 }
 
-/* Make the table header sticky within the scrollable container */
-.matrix-scroll-container table {
+/* Lab Results Matrix fixed header styling */
+.lab-matrix-wrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
 }
 
-.matrix-scroll-container thead {
+.lab-matrix-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
+  background: white;
+  border-bottom: 2px solid #e5e7eb;
+  overflow: hidden;
 }
 
-/* Ensure proper background on sticky header cells */
-.matrix-scroll-container thead th {
+.lab-matrix-header-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lab-matrix-header-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.lab-matrix-body {
+  flex: 1;
+  overflow: auto;
+}
+
+/* Ensure proper background on header cells */
+.lab-matrix-header th {
   background-color: rgb(249 250 251); /* bg-gray-50 */
 }
 
-/* The Test column header needs higher z-index for dual sticky behavior */
-.matrix-scroll-container thead th.sticky {
-  z-index: 20;
+/* The Test column needs to be sticky in both header and body */
+.lab-matrix-sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: white;
 }
 
 /* Review notes panel scrollbar styling */

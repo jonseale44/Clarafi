@@ -1172,77 +1172,105 @@ export function LabResultsMatrix({
       )}
       
       <CardContent className="p-0">
-        <div 
-          ref={matrixScrollRef}
-          className="overflow-auto max-h-[70vh] matrix-scroll-container relative"
-          onScroll={(e) => {
-            if (reviewScrollRef.current && !isScrollingSyncRef.current) {
-              isScrollingSyncRef.current = true;
-              
-              // Find which date column is currently visible
-              const scrollLeft = e.currentTarget.scrollLeft;
-              const containerRect = e.currentTarget.getBoundingClientRect();
-              
-              // Find the column that's currently visible (accounting for sticky column)
-              const headers = e.currentTarget.querySelectorAll('[data-matrix-date]');
-              let visibleDate = '';
-              
-              headers.forEach((header) => {
-                const rect = header.getBoundingClientRect();
-                // Check if this header is in the visible area (accounting for sticky column width)
-                if (rect.left >= containerRect.left + 200 && rect.left <= containerRect.left + 400) {
-                  visibleDate = header.getAttribute('data-matrix-date') || '';
+        <div className="lab-matrix-wrapper">
+          {/* Fixed header */}
+          <div className="lab-matrix-header">
+            <div 
+              className="lab-matrix-header-scroll"
+              ref={(el) => {
+                if (el) {
+                  // Sync with body scroll
+                  const bodyEl = el.parentElement?.nextElementSibling?.querySelector('.lab-matrix-body');
+                  if (bodyEl) {
+                    bodyEl.addEventListener('scroll', () => {
+                      el.scrollLeft = bodyEl.scrollLeft;
+                    });
+                  }
                 }
-              });
-              
-              if (visibleDate) {
-                // Scroll review panel to corresponding date
-                const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
-                reviewElements.forEach((element) => {
-                  if (element.getAttribute('data-review-date') === visibleDate) {
-                    element.scrollIntoView({ behavior: 'auto', block: 'start' });
+              }}
+            >
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-gray-50">
+                    <th className="text-left p-3 font-semibold min-w-[200px] lab-matrix-sticky-col bg-gray-50 border-r border-gray-300">
+                      Test
+                    </th>
+                    {displayColumns.map((dateCol, index) => (
+                      <th 
+                        key={`header-${index}`} 
+                        data-matrix-date={dateCol.displayDate}
+                        className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100 bg-gray-50"
+                        onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
+                        onMouseEnter={() => setHoveredDate(dateCol.date)}
+                        onMouseLeave={() => setHoveredDate(null)}
+                      >
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <span className="text-sm font-medium">{format(new Date(dateCol.date), 'MM/dd/yy')}</span>
+                          <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              </table>
+            </div>
+          </div>
+
+          {/* Scrollable body */}
+          <div 
+            ref={matrixScrollRef}
+            className="lab-matrix-body matrix-scroll-container"
+            onScroll={(e) => {
+              // Sync header horizontal scroll
+              const headerEl = e.currentTarget.previousElementSibling?.querySelector('.lab-matrix-header-scroll');
+              if (headerEl) {
+                headerEl.scrollLeft = e.currentTarget.scrollLeft;
+              }
+
+              if (reviewScrollRef.current && !isScrollingSyncRef.current) {
+                isScrollingSyncRef.current = true;
+                
+                // Find which date column is currently visible
+                const scrollLeft = e.currentTarget.scrollLeft;
+                const containerRect = e.currentTarget.getBoundingClientRect();
+                
+                // Find the column that's currently visible (accounting for sticky column)
+                const headers = e.currentTarget.querySelectorAll('[data-matrix-date]');
+                let visibleDate = '';
+                
+                headers.forEach((header) => {
+                  const rect = header.getBoundingClientRect();
+                  // Check if this header is in the visible area (accounting for sticky column width)
+                  if (rect.left >= containerRect.left + 200 && rect.left <= containerRect.left + 400) {
+                    visibleDate = header.getAttribute('data-matrix-date') || '';
                   }
                 });
+                
+                if (visibleDate) {
+                  // Scroll review panel to corresponding date
+                  const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
+                  reviewElements.forEach((element) => {
+                    if (element.getAttribute('data-review-date') === visibleDate) {
+                      element.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    }
+                  });
+                }
+                
+                // Reset flag after a delay
+                setTimeout(() => {
+                  isScrollingSyncRef.current = false;
+                }, 300);
               }
-              
-              // Reset flag after a delay
-              setTimeout(() => {
-                isScrollingSyncRef.current = false;
-              }, 300);
-            }
-          }}
-        >
-          <table className="w-full border-collapse text-sm">
-            <thead className="sticky top-0 z-10 bg-gray-50">
-              <tr className="border-b-2 border-gray-300 bg-gray-50">
-                <th className="text-left p-3 font-semibold min-w-[200px] sticky left-0 bg-gray-50 border-r border-gray-300 z-20">
-                  Test
-                </th>
-                {displayColumns.map((dateCol, index) => (
-                  <th 
-                    key={`date-${index}`} 
-                    data-matrix-date={dateCol.displayDate}
-                    className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100 bg-gray-50"
-                    onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
-                    onMouseEnter={() => setHoveredDate(dateCol.date)}
-                    onMouseLeave={() => setHoveredDate(null)}
-                  >
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      <span className="text-sm font-medium">{format(new Date(dateCol.date), 'MM/dd/yy')}</span>
-                      <span className="text-xs text-gray-600">{format(new Date(dateCol.date), 'HH:mm')}</span>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            
-            <tbody>
+            }}
+          >
+            <table className="w-full border-collapse text-sm">
+              <tbody>
               {flatTestData.map((item, index) => {
                 if (item.type === 'panel') {
                   // Panel header row - always visible
                   return (
                     <tr key={`panel-${item.name}`} className="border-b-2 border-gray-300 bg-gray-100">
-                      <td className="p-3 sticky left-0 bg-gray-100 font-bold text-sm border-r border-gray-300">
+                      <td className="p-3 lab-matrix-sticky-col bg-gray-100 font-bold text-sm border-r border-gray-300">
                         {item.name}
                       </td>
                       {displayColumns.map((dateCol, index) => (
@@ -1263,7 +1291,7 @@ export function LabResultsMatrix({
                       className={`border-b hover:bg-muted/20 ${isTestSelected ? 'bg-navy-blue-50' : ''}`}
                     >
                       <td 
-                        className="p-3 sticky left-0 bg-white border-r border-gray-200 cursor-pointer transition-colors"
+                        className="p-3 lab-matrix-sticky-col bg-white border-r border-gray-200 cursor-pointer transition-colors"
                         onClick={() => handleTestRowClick(test.testName)}
                         onMouseEnter={() => setHoveredTestRow(test.testName)}
                         onMouseLeave={() => setHoveredTestRow(null)}
@@ -1374,6 +1402,7 @@ export function LabResultsMatrix({
             </tbody>
           </table>
         </div>
+      </div>
         
         {/* Bottom Review Button - only shown when selections are made */}
         {(selectedDates.size > 0 || selectedTestRows.size > 0 || selectedPanels.size > 0) && (
