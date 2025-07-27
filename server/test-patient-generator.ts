@@ -44,6 +44,7 @@ export interface TestPatientConfig {
   numberOfAllergies: number;
   numberOfPriorEncounters: number;
   numberOfFutureAppointments: number;
+  numberOfLabResults: number;
   includeLabResults: boolean;
   includeImagingResults: boolean;
   includeVitals: boolean;
@@ -114,6 +115,120 @@ const ALLERGIES_POOL = [
   { allergen: "Peanuts", reaction: "Throat swelling", severity: "severe", allergyType: "food" },
   { allergen: "Eggs", reaction: "Hives", severity: "moderate", allergyType: "food" },
   { allergen: "Iodine contrast", reaction: "Anaphylactoid reaction", severity: "severe", allergyType: "drug" }
+];
+
+const LAB_TESTS_POOL = [
+  { 
+    testCode: "CBC", 
+    testName: "Complete Blood Count", 
+    loincCode: "58410-2", 
+    cptCode: "85025", 
+    category: "hematology",
+    generateValue: () => ({
+      value: `WBC: ${(Math.random() * 8 + 4).toFixed(1)}, RBC: ${(Math.random() * 2 + 4).toFixed(1)}, Hgb: ${(Math.random() * 4 + 12).toFixed(1)}, Hct: ${(Math.random() * 10 + 36).toFixed(1)}`,
+      isAbnormal: Math.random() > 0.7,
+      reference: "See report"
+    })
+  },
+  { 
+    testCode: "HBA1C", 
+    testName: "Hemoglobin A1C", 
+    loincCode: "4548-4", 
+    cptCode: "83036", 
+    category: "chemistry",
+    generateValue: () => {
+      const value = (Math.random() * 4 + 5).toFixed(1);
+      return {
+        value,
+        isAbnormal: parseFloat(value) > 7.0,
+        reference: "< 7.0%"
+      };
+    }
+  },
+  { 
+    testCode: "CMP", 
+    testName: "Comprehensive Metabolic Panel", 
+    loincCode: "24323-8", 
+    cptCode: "80053", 
+    category: "chemistry",
+    generateValue: () => ({
+      value: "All values within normal limits",
+      isAbnormal: false,
+      reference: "See report"
+    })
+  },
+  { 
+    testCode: "LIPID", 
+    testName: "Lipid Panel", 
+    loincCode: "24331-1", 
+    cptCode: "80061", 
+    category: "chemistry",
+    generateValue: () => {
+      const ldl = Math.floor(Math.random() * 100 + 70);
+      return {
+        value: `Total Chol: ${Math.floor(Math.random() * 80 + 150)}, LDL: ${ldl}, HDL: ${Math.floor(Math.random() * 30 + 40)}, Trig: ${Math.floor(Math.random() * 100 + 100)}`,
+        isAbnormal: ldl > 130,
+        reference: "LDL < 130 mg/dL"
+      };
+    }
+  },
+  { 
+    testCode: "TSH", 
+    testName: "Thyroid Stimulating Hormone", 
+    loincCode: "3016-3", 
+    cptCode: "84443", 
+    category: "endocrine",
+    generateValue: () => {
+      const value = (Math.random() * 4 + 0.5).toFixed(2);
+      return {
+        value,
+        isAbnormal: parseFloat(value) < 0.5 || parseFloat(value) > 4.0,
+        reference: "0.5-4.0 mIU/L"
+      };
+    }
+  },
+  { 
+    testCode: "B12", 
+    testName: "Vitamin B12", 
+    loincCode: "2132-9", 
+    cptCode: "82607", 
+    category: "chemistry",
+    generateValue: () => {
+      const value = Math.floor(Math.random() * 600 + 200);
+      return {
+        value: value.toString(),
+        isAbnormal: value < 200,
+        reference: "200-900 pg/mL"
+      };
+    }
+  },
+  { 
+    testCode: "UA", 
+    testName: "Urinalysis", 
+    loincCode: "24356-8", 
+    cptCode: "81003", 
+    category: "urinalysis",
+    generateValue: () => ({
+      value: "Clear, SG: 1.015, pH: 6.0, Protein: Negative, Glucose: Negative",
+      isAbnormal: false,
+      reference: "See report"
+    })
+  },
+  { 
+    testCode: "PSA", 
+    testName: "Prostate Specific Antigen", 
+    loincCode: "2857-1", 
+    cptCode: "84153", 
+    category: "tumor_markers",
+    generateValue: () => {
+      const value = (Math.random() * 3 + 0.5).toFixed(2);
+      return {
+        value,
+        isAbnormal: parseFloat(value) > 4.0,
+        reference: "< 4.0 ng/mL"
+      };
+    }
+  }
 ];
 
 const SURGICAL_HISTORY_POOL = [
@@ -432,6 +547,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
 
     // Generate past encounters
     const encounterDates: Date[] = [];
+    const encounterList: any[] = []; // Store encounters for lab result generation
     for (let i = 0; i < config.numberOfPriorEncounters; i++) {
       const monthsAgo = i * 3 + Math.floor(Math.random() * 2); // Roughly every 3 months
       const encounterDate = new Date();
@@ -517,116 +633,142 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
         await db.insert(diagnoses).values(diagnosisData);
       }
 
-      // Add lab results for some encounters
-      if (config.includeLabResults && index % 2 === 0) {
-        // First, create a lab order for this result
-        const labOrderData = {
-          patientId,
-          encounterId: encounter.id,
-          orderedBy: config.providerId,
-          orderDate: encounterDate,
-          testCode: hasDiabetes ? "HBA1C" : "CMP",
-          testName: hasDiabetes ? "Hemoglobin A1C" : "Comprehensive Metabolic Panel",
-          loincCode: hasDiabetes ? "4548-4" : "24323-8",
-          cptCode: hasDiabetes ? "83036" : "80053",
-          testCategory: hasDiabetes ? "chemistry" : "chemistry",
-          specimenType: "blood",
-          orderStatus: "signed",
-          requisitionNumber: `REQ-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          externalOrderId: `EXT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        };
+      // Store encounters for lab result generation
+      if (!encounterList) {
+        encounterList = [];
+      }
+      encounterList.push(encounter);
+    }
+
+    // Generate lab results based on numberOfLabResults parameter
+    if (config.includeLabResults && config.numberOfLabResults > 0 && encounterList.length > 0) {
+      console.log(`[TestPatientGenerator] Generating ${config.numberOfLabResults} lab results for patient ${patientId}`);
+      
+      // Distribute lab results across available encounters
+      const labResultsPerEncounter = Math.ceil(config.numberOfLabResults / encounterList.length);
+      let labResultsCreated = 0;
+      
+      for (const encounter of encounterList) {
+        if (labResultsCreated >= config.numberOfLabResults) break;
         
-        const [labOrder] = await db.insert(labOrders).values(labOrderData).returning();
+        // Create up to labResultsPerEncounter lab results for this encounter
+        const resultsForThisEncounter = Math.min(
+          labResultsPerEncounter, 
+          config.numberOfLabResults - labResultsCreated
+        );
         
-        // Create the lab result
-        const labResultValue = hasDiabetes ? (Math.random() * 4 + 6).toFixed(1) : "Normal";
-        const isAbnormal = hasDiabetes && parseFloat(labResultValue) > 7.0;
-        
-        const labData = {
-          patientId,
-          labOrderId: labOrder.id,
-          loincCode: hasDiabetes ? "4548-4" : "24323-8",
-          testCode: hasDiabetes ? "HBA1C" : "CMP",
-          testName: hasDiabetes ? "Hemoglobin A1C" : "Comprehensive Metabolic Panel",
-          testCategory: "chemistry",
-          resultValue: labResultValue,
-          resultNumeric: hasDiabetes ? labResultValue : null,
-          resultUnits: hasDiabetes ? "%" : null,
-          referenceRange: hasDiabetes ? "< 7.0%" : "See report",
-          abnormalFlag: isAbnormal ? "H" : null,
-          criticalFlag: false,
-          specimenCollectedAt: encounterDate,
-          resultAvailableAt: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000),
-          resultFinalizedAt: new Date(encounterDate.getTime() + 24 * 60 * 60 * 1000),
-          resultStatus: "final",
-          verificationStatus: "verified",
-          needsReview: true,
-          reviewStatus: "pending",
-          orderedBy: config.providerId,
-        };
-        
-        const [insertedLabResult] = await db.insert(labResults).values(labData).returning();
-        
-        // Generate doctor review for the lab result
-        const clinicalReview = hasDiabetes 
-          ? isAbnormal 
-            ? `The patient's HbA1c is ${labResultValue}%, which is above the target of <7.0%. This indicates suboptimal glycemic control over the past 3 months. Consider intensifying diabetes management with lifestyle modifications and/or medication adjustment.`
-            : `The patient's HbA1c is ${labResultValue}%, which is within the target range. This indicates good glycemic control. Continue current diabetes management plan.`
-          : `Comprehensive Metabolic Panel results are within normal limits. Kidney function, liver function, and electrolytes are all normal.`;
+        for (let i = 0; i < resultsForThisEncounter; i++) {
+          // Select a random lab test from the pool
+          const randomTest = LAB_TESTS_POOL[Math.floor(Math.random() * LAB_TESTS_POOL.length)];
+          const testResult = randomTest.generateValue();
           
-        const patientMessage = hasDiabetes
-          ? isAbnormal
-            ? `Your recent HbA1c test result is ${labResultValue}%. This is slightly higher than the target of less than 7%. This test shows your average blood sugar over the past 3 months. We recommend discussing ways to improve your blood sugar control at your next visit.`
-            : `Good news! Your HbA1c test result is ${labResultValue}%, which is within the healthy range. This shows your diabetes is well-controlled. Keep up the great work with your current management plan!`
-          : `Your metabolic panel test results look good. All values are within normal ranges, including kidney function, liver function, and electrolyte levels.`;
+          // Create lab order first
+          const labOrderData = {
+            patientId,
+            encounterId: encounter.id,
+            orderedBy: config.providerId,
+            orderDate: encounter.startTime,
+            testCode: randomTest.testCode,
+            testName: randomTest.testName,
+            loincCode: randomTest.loincCode,
+            cptCode: randomTest.cptCode,
+            testCategory: randomTest.category,
+            specimenType: "blood",
+            orderStatus: "signed",
+            requisitionNumber: `REQ-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            externalOrderId: `EXT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          };
           
-        const nurseMessage = hasDiabetes
-          ? isAbnormal
-            ? `Patient's HbA1c is elevated at ${labResultValue}%. Please schedule follow-up to discuss diabetes management. Consider referral to diabetes educator if not already established.`
-            : `HbA1c is at goal (${labResultValue}%). Continue current monitoring schedule.`
-          : `CMP results normal. No nursing interventions required.`;
-        
-        // Create GPT lab review note
-        const gptReviewData = {
-          resultIds: [insertedLabResult.id],
-          patientId,
-          encounterId: encounter.id,
-          clinicalReview,
-          patientMessage,
-          nurseMessage,
-          patientContext: {
-            demographics: {
-              age: Math.floor(Math.random() * 40) + 30,
-              gender: Math.random() > 0.5 ? "Male" : "Female",
-              mrn: `ZTEST${Date.now()}`
+          const [labOrder] = await db.insert(labOrders).values(labOrderData).returning();
+          
+          // Create lab result
+          const labData = {
+            patientId,
+            labOrderId: labOrder.id,
+            loincCode: randomTest.loincCode,
+            testCode: randomTest.testCode,
+            testName: randomTest.testName,
+            testCategory: randomTest.category,
+            resultValue: testResult.value,
+            resultNumeric: randomTest.testCode === "HBA1C" || randomTest.testCode === "TSH" || randomTest.testCode === "B12" || randomTest.testCode === "PSA" 
+              ? testResult.value 
+              : null,
+            resultUnits: randomTest.testCode === "HBA1C" ? "%" : 
+                        randomTest.testCode === "TSH" ? "mIU/L" :
+                        randomTest.testCode === "B12" ? "pg/mL" :
+                        randomTest.testCode === "PSA" ? "ng/mL" : null,
+            referenceRange: testResult.reference,
+            abnormalFlag: testResult.isAbnormal ? "H" : null,
+            criticalFlag: false,
+            specimenCollectedAt: encounter.startTime,
+            resultAvailableAt: new Date(encounter.startTime.getTime() + 24 * 60 * 60 * 1000),
+            resultFinalizedAt: new Date(encounter.startTime.getTime() + 24 * 60 * 60 * 1000),
+            resultStatus: "final",
+            verificationStatus: "verified",
+            needsReview: true,
+            reviewStatus: "pending",
+            orderedBy: config.providerId,
+          };
+          
+          const [insertedLabResult] = await db.insert(labResults).values(labData).returning();
+          
+          // Generate GPT review for each lab result
+          const clinicalReview = testResult.isAbnormal 
+            ? `The patient's ${randomTest.testName} result is ${testResult.value}, which is abnormal. This requires clinical attention and follow-up.`
+            : `The patient's ${randomTest.testName} result is ${testResult.value}, which is within normal limits.`;
+            
+          const patientMessage = testResult.isAbnormal
+            ? `Your ${randomTest.testName} test result is ${testResult.value}. This is outside the normal range. Please follow up with your healthcare provider to discuss this result.`
+            : `Good news! Your ${randomTest.testName} test result is ${testResult.value}, which is within the normal range.`;
+            
+          const nurseMessage = testResult.isAbnormal
+            ? `Patient's ${randomTest.testName} is abnormal at ${testResult.value}. Please ensure provider is aware and follow-up is scheduled.`
+            : `${randomTest.testName} results normal. No nursing interventions required.`;
+          
+          const gptReviewData = {
+            resultIds: [insertedLabResult.id],
+            patientId,
+            encounterId: encounter.id,
+            clinicalReview,
+            patientMessage,
+            nurseMessage,
+            patientContext: {
+              demographics: {
+                age: new Date().getFullYear() - dateOfBirth.getFullYear(),
+                gender: Math.random() > 0.5 ? "Male" : "Female",
+                mrn: mrn
+              },
+              activeProblems: selectedProblems.map(p => p.title),
+              currentMedications: selectedMedications.slice(0, 5).map(m => ({ 
+                name: m.name, 
+                dosage: m.dosage, 
+                frequency: m.frequency 
+              })),
+              allergies: selectedAllergies.map(a => a.allergen),
+              recentSOAP: "Follow-up visit",
+              priorLabResults: []
             },
-            activeProblems: hasDiabetes ? ["Type 2 Diabetes Mellitus"] : [],
-            currentMedications: hasDiabetes ? [{ name: "Metformin", dosage: "500mg", frequency: "BID" }] : [],
-            allergies: [],
-            recentSOAP: chiefComplaint,
-            priorLabResults: []
-          },
-          gptModel: "gpt-4",
-          promptVersion: "v1.0",
-          gptCompletionTokens: Math.floor(Math.random() * 200) + 100,
-          gptPromptTokens: Math.floor(Math.random() * 500) + 300,
-          interpretationNotes: hasDiabetes
-            ? `HbA1c reflects 3-month average glucose control. Target <7% for most diabetic patients.`
-            : `All metabolic panel components within normal limits.`,
-          followUpRecommendations: hasDiabetes && isAbnormal
-            ? `1. Review current diabetes medications\n2. Assess diet and exercise habits\n3. Consider continuous glucose monitoring\n4. Recheck HbA1c in 3 months`
-            : `Continue routine monitoring`,
-          criticalFindings: null,
-          additionalComments: `Test performed at Test Laboratory`,
-          reviewStatus: "pending",
-          confidenceScore: 0.95,
-          generatedBy: config.providerId,
-          templateUsed: "standard_lab_review",
-        };
-        
-        await db.insert(gptLabReviewNotes).values(gptReviewData);
-        
-        console.log(`[TestPatientGenerator] Created lab result and doctor review for patient ${patientId}`);
+            gptModel: "gpt-4",
+            promptVersion: "v1.0",
+            gptCompletionTokens: Math.floor(Math.random() * 200) + 100,
+            gptPromptTokens: Math.floor(Math.random() * 500) + 300,
+            interpretationNotes: `${randomTest.testName} test performed to monitor patient's condition.`,
+            followUpRecommendations: testResult.isAbnormal 
+              ? `1. Review abnormal ${randomTest.testName} result\n2. Consider repeat testing\n3. Evaluate for underlying causes`
+              : `Continue routine monitoring`,
+            criticalFindings: null,
+            additionalComments: `Test performed at Test Laboratory`,
+            reviewStatus: "pending",
+            confidenceScore: 0.95,
+            generatedBy: config.providerId,
+            templateUsed: "standard_lab_review",
+          };
+          
+          await db.insert(gptLabReviewNotes).values(gptReviewData);
+          
+          labResultsCreated++;
+          console.log(`[TestPatientGenerator] Created lab result ${labResultsCreated}/${config.numberOfLabResults}: ${randomTest.testName}`);
+        }
       }
     }
 

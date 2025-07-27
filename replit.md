@@ -63,6 +63,28 @@ Upgraded the mock patient generation system to create comprehensive doctor revie
 
 4. **Result**: Mock patient system now generates production-quality lab workflows that match real-world clinical scenarios, enabling better testing and demonstration of the lab results matrix enhancement features.
 
+### Configurable Lab Results Count in Test Patient Generator (July 27, 2025 - 10:45 AM) - COMPLETED
+Added numberOfLabResults parameter to control the exact number of lab results generated for test patients:
+
+1. **Frontend Implementation**:
+   - Added conditional slider in test patient UI that appears when "Include Lab Results" is checked
+   - Slider allows selection of 1-20 lab results
+   - Updates TestPatientConfig interface with numberOfLabResults field
+
+2. **Backend Implementation**:
+   - Added numberOfLabResults to TestPatientConfig interface and validation schema
+   - Restructured lab generation logic to create exact number of lab results requested
+   - Distributes lab results evenly across available encounters
+   - Expanded lab test pool with variety: CBC, CMP, Lipid Panel, TSH, HbA1c, B12, Urinalysis, PSA
+
+3. **Key Improvements**:
+   - Moved from fixed encounter-based generation to user-controlled count
+   - Each lab result gets unique test type randomly selected from pool
+   - Maintains complete workflow: order creation → result generation → GPT review
+   - Test variety provides more realistic clinical scenarios
+
+4. **Result**: Test patient generator now offers precise control over lab result quantity with varied test types, enhancing testing capabilities for the production-level lab results matrix system.
+
 ## Recent Changes (July 26, 2025)
 
 ### Complete Production Lab Order to Results Workflow (July 26, 2025 - 10:20 PM) - COMPLETED

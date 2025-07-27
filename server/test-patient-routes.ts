@@ -17,6 +17,7 @@ const generateTestPatientSchema = z.object({
   numberOfAllergies: z.number().min(0).max(10),
   numberOfPriorEncounters: z.number().min(0).max(50),
   numberOfFutureAppointments: z.number().min(0).max(10),
+  numberOfLabResults: z.number().min(0).max(20),
   includeLabResults: z.boolean(),
   includeImagingResults: z.boolean(),
   includeVitals: z.boolean(),

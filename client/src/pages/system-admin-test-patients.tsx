@@ -27,6 +27,7 @@ interface TestPatientConfig {
   numberOfAllergies: number;
   numberOfPriorEncounters: number;
   numberOfFutureAppointments: number;
+  numberOfLabResults: number;
   includeLabResults: boolean;
   includeImagingResults: boolean;
   includeVitals: boolean;
@@ -59,6 +60,7 @@ export default function SystemAdminTestPatients() {
     numberOfAllergies: 2,
     numberOfPriorEncounters: 12,
     numberOfFutureAppointments: 3,
+    numberOfLabResults: 15,
     includeLabResults: true,
     includeImagingResults: true,
     includeVitals: true,
@@ -450,6 +452,20 @@ export default function SystemAdminTestPatients() {
                   <Label htmlFor="surgical">Include Surgical History</Label>
                 </div>
               </div>
+
+              {/* Conditional Lab Results Slider */}
+              {config.includeLabResults && (
+                <div className="mt-4">
+                  <Label>Lab Results: {config.numberOfLabResults}</Label>
+                  <Slider
+                    value={[config.numberOfLabResults]}
+                    onValueChange={([value]) => setConfig(prev => ({ ...prev, numberOfLabResults: value }))}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </div>
+              )}
 
               {/* AI Scheduling Parameters */}
               <div className="space-y-4">
