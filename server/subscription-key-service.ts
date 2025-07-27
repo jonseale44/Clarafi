@@ -114,12 +114,12 @@ export class SubscriptionKeyService {
         healthSystemId,
         keyType: 'staff',
         subscriptionTier: tier,
-        monthlyPrice: PER_USER_PRICING.nonClinicalStaff.monthly.toString(),
+        monthlyPrice: PER_USER_PRICING.adminStaff.monthly.toString(),
         expiresAt: expiresAt,
         metadata: {
           createdBy: createdByUserId, // User who initiated key generation
           subscriptionTier: tier,
-          monthlyPrice: PER_USER_PRICING.nonClinicalStaff.monthly.toString(),
+          monthlyPrice: PER_USER_PRICING.adminStaff.monthly.toString(),
           generationBatch: new Date().toISOString(),
           index: i + 1,
           totalInBatch: staffCount

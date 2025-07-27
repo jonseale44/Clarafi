@@ -91,21 +91,36 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
     if (limits.providerKeys && currentKeys.providers + providerCount > limits.providerKeys) {
       console.error(`❌ [SubscriptionKeys] Provider limit exceeded: ${currentKeys.providers} + ${providerCount} > ${limits.providerKeys}`);
       return res.status(400).json({ 
-        error: `Would exceed provider key limit (${limits.providerKeys}). Current: ${currentKeys.providers}, Requested: ${providerCount}` 
+        error: `Cannot generate ${providerCount} provider key${providerCount > 1 ? 's' : ''}. Your subscription allows ${limits.providerKeys} total provider key${limits.providerKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.providers} active provider key${currentKeys.providers !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
+        details: {
+          currentProviderKeys: currentKeys.providers,
+          providerKeyLimit: limits.providerKeys,
+          requestedKeys: providerCount
+        }
       });
     }
     
     if (limits.nurseKeys && currentKeys.nurses + nurseCount > limits.nurseKeys) {
       console.error(`❌ [SubscriptionKeys] Nurse limit exceeded: ${currentKeys.nurses} + ${nurseCount} > ${limits.nurseKeys}`);
       return res.status(400).json({ 
-        error: `Would exceed nurse key limit (${limits.nurseKeys}). Current: ${currentKeys.nurses}, Requested: ${nurseCount}` 
+        error: `Cannot generate ${nurseCount} nurse key${nurseCount > 1 ? 's' : ''}. Your subscription allows ${limits.nurseKeys} total nurse key${limits.nurseKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.nurses} active nurse key${currentKeys.nurses !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
+        details: {
+          currentNurseKeys: currentKeys.nurses,
+          nurseKeyLimit: limits.nurseKeys,
+          requestedKeys: nurseCount
+        }
       });
     }
     
     if (limits.staffKeys && currentKeys.staff + staffCount > limits.staffKeys) {
       console.error(`❌ [SubscriptionKeys] Staff limit exceeded: ${currentKeys.staff} + ${staffCount} > ${limits.staffKeys}`);
       return res.status(400).json({ 
-        error: `Would exceed staff key limit (${limits.staffKeys}). Current: ${currentKeys.staff}, Requested: ${staffCount}` 
+        error: `Cannot generate ${staffCount} staff key${staffCount > 1 ? 's' : ''}. Your subscription allows ${limits.staffKeys} total staff key${limits.staffKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.staff} active staff key${currentKeys.staff !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
+        details: {
+          currentStaffKeys: currentKeys.staff,
+          staffKeyLimit: limits.staffKeys,
+          requestedKeys: staffCount
+        }
       });
     }
 
@@ -122,7 +137,18 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
     res.json({ success: true, keys });
   } catch (error) {
     console.error('Error generating keys:', error);
-    res.status(500).json({ error: 'Failed to generate keys' });
+    // Handle specific error messages from the service
+    if (error instanceof Error && error.message) {
+      res.status(500).json({ 
+        error: error.message.includes('Trial') || error.message.includes('payment') ? 
+          error.message : 
+          'Unable to generate subscription keys at this time. Please try again later or contact support.'
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Unable to generate subscription keys at this time. Please try again later or contact support.' 
+      });
+    }
   }
 });
 
