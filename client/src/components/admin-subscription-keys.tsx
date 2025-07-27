@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign } from 'lucide-react';
+import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export function AdminSubscriptionKeys() {
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
@@ -43,6 +44,12 @@ export function AdminSubscriptionKeys() {
   const { data: userHealthSystemData } = useQuery({
     queryKey: [`/api/health-systems/${userData?.healthSystemId}`],
     enabled: !!userData?.healthSystemId && !isSystemAdmin,
+  });
+
+  // Fetch trial status
+  const { data: trialStatusData } = useQuery({
+    queryKey: ['/api/trial-status'],
+    enabled: !!userData?.healthSystemId,
   });
 
   const generateKeysMutation = useMutation({
@@ -180,8 +187,44 @@ export function AdminSubscriptionKeys() {
     );
   }
 
+  // Calculate trial allocations for tier 2
+  const trialAllocations = {
+    provider: 1,
+    nurse: 2,
+    staff: 0
+  };
+
+  const isOnTrial = trialStatusData?.trialStatus?.status === 'active' || 
+                    trialStatusData?.trialStatus?.status === 'warning';
+  const trialDaysRemaining = trialStatusData?.trialStatus?.daysRemaining || 0;
+
   return (
     <div className="space-y-6">
+      {/* Trial Status Alert */}
+      {isOnTrial && (
+        <Alert className={trialDaysRemaining <= 7 ? "border-amber-500 bg-amber-50" : "border-blue-500 bg-blue-50"}>
+          <Clock className={`h-4 w-4 ${trialDaysRemaining <= 7 ? "text-amber-600" : "text-blue-600"}`} />
+          <AlertTitle className={trialDaysRemaining <= 7 ? "text-amber-900" : "text-blue-900"}>
+            Trial Status: {trialDaysRemaining} days remaining
+          </AlertTitle>
+          <AlertDescription className={trialDaysRemaining <= 7 ? "text-amber-800" : "text-blue-800"}>
+            <div className="mt-2 space-y-2">
+              <p>Your trial includes the following allocations:</p>
+              <ul className="list-disc list-inside ml-2 space-y-1">
+                <li>{trialAllocations.provider} Provider key{trialAllocations.provider !== 1 ? 's' : ''}</li>
+                <li>{trialAllocations.nurse} Nurse key{trialAllocations.nurse !== 1 ? 's' : ''}</li>
+                <li>{trialAllocations.staff} Staff key{trialAllocations.staff !== 1 ? 's' : ''}</li>
+              </ul>
+              {trialDaysRemaining <= 7 && (
+                <p className="font-semibold mt-3">
+                  ⚠️ Your trial expires soon. Complete payment to continue accessing your account.
+                </p>
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Pricing Information and Billing Breakdown */}
       <Card>
         <CardHeader>
@@ -215,8 +258,25 @@ export function AdminSubscriptionKeys() {
                     <td className="text-center p-3 text-lg">$49</td>
                     <td className="text-right p-3"></td>
                   </tr>
+                  {isOnTrial && (
+                    <tr className="border-b bg-blue-50">
+                      <td className="p-3 font-medium">Trial Allocation</td>
+                      <td className="text-center p-3 text-lg text-blue-700 font-semibold">
+                        {trialAllocations.provider}
+                      </td>
+                      <td className="text-center p-3 text-lg text-blue-700 font-semibold">
+                        {trialAllocations.nurse}
+                      </td>
+                      <td className="text-center p-3 text-lg text-blue-700 font-semibold">
+                        {trialAllocations.staff}
+                      </td>
+                      <td className="text-right p-3 text-sm text-blue-600">
+                        (included free)
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-b bg-gray-50">
-                    <td className="p-3 font-medium">Current Subscription</td>
+                    <td className="p-3 font-medium">Used Keys</td>
                     <td className="text-center p-3 text-lg font-semibold">
                       {keysData?.keys?.filter((k: any) => k.keyType === 'provider' && k.status === 'used').length || 0}
                     </td>
@@ -264,8 +324,44 @@ export function AdminSubscriptionKeys() {
                       {keysData?.keys?.filter((k: any) => k.status === 'active').length || 0} available
                     </td>
                   </tr>
+                  <tr className="bg-gray-100 border-t-2 border-gray-300">
+                    <td className="p-3 font-bold">Total Access Available</td>
+                    <td className="text-center p-3 text-lg font-bold">
+                      {(keysData?.keys?.filter((k: any) => k.keyType === 'provider' && (k.status === 'active' || k.status === 'used')).length || 0) + (isOnTrial ? trialAllocations.provider : 0)}
+                    </td>
+                    <td className="text-center p-3 text-lg font-bold">
+                      {(keysData?.keys?.filter((k: any) => k.keyType === 'nurse' && (k.status === 'active' || k.status === 'used')).length || 0) + (isOnTrial ? trialAllocations.nurse : 0)}
+                    </td>
+                    <td className="text-center p-3 text-lg font-bold">
+                      {(keysData?.keys?.filter((k: any) => k.keyType === 'staff' && (k.status === 'active' || k.status === 'used')).length || 0) + (isOnTrial ? trialAllocations.staff : 0)}
+                    </td>
+                    <td className="text-right p-3 text-sm font-bold">
+                      {isOnTrial ? 'Trial + Purchased' : 'Total Purchased'}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
+            </div>
+            
+            {/* Explanation Section */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-900 mb-2">How Subscription Keys Work</h4>
+              <ul className="space-y-1 text-sm text-blue-800">
+                {isOnTrial && (
+                  <>
+                    <li>• <span className="font-semibold">Trial Allocation:</span> Free keys included during your trial period</li>
+                    <li>• <span className="font-semibold">Used Keys:</span> Keys that have been assigned to users (what you're paying for after trial)</li>
+                  </>
+                )}
+                {!isOnTrial && (
+                  <li>• <span className="font-semibold">Used Keys:</span> Keys that have been assigned to users (what you're paying for)</li>
+                )}
+                <li>• <span className="font-semibold">Unused Keys:</span> Purchased keys ready to be assigned to new users</li>
+                <li>• <span className="font-semibold">Total Access:</span> The total number of users who can access your system</li>
+                {isOnTrial && (
+                  <li className="text-amber-700 font-semibold mt-2">⚠️ After your trial ends, you'll only pay for used keys (currently $0/month)</li>
+                )}
+              </ul>
             </div>
             
             {/* Purchase More Keys Button */}
