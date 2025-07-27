@@ -75,10 +75,34 @@ export function registerClinicAdminRoutes(app: Express) {
 
       // Calculate subscription cost based on tier
       let monthlySubscriptionCost = 0;
+      let providerKeysUsed = 0;
+      let nurseKeysUsed = 0;
+      let staffKeysUsed = 0;
+      
       if (currentTier === 1) {
         monthlySubscriptionCost = 149; // Personal EMR
       } else if (currentTier === 2) {
-        monthlySubscriptionCost = 399; // Enterprise EMR
+        // For Enterprise tier, calculate based on subscription keys in use
+        const usedKeysResult = await db.select()
+          .from(subscriptionKeys)
+          .where(and(
+            eq(subscriptionKeys.healthSystemId, healthSystemId),
+            eq(subscriptionKeys.status, 'used')
+          ));
+        
+        // Count keys by type and calculate total
+        for (const key of usedKeysResult) {
+          if (key.keyType === 'provider') {
+            providerKeysUsed++;
+          } else if (key.keyType === 'nurse') {
+            nurseKeysUsed++;
+          } else if (key.keyType === 'staff') {
+            staffKeysUsed++;
+          }
+        }
+        
+        // Calculate total monthly cost based on per-user pricing
+        monthlySubscriptionCost = (providerKeysUsed * 399) + (nurseKeysUsed * 99) + (staffKeysUsed * 49);
       }
 
       // Get location count
@@ -99,6 +123,8 @@ export function registerClinicAdminRoutes(app: Express) {
       const nextBillingDate = new Date();
       nextBillingDate.setDate(nextBillingDate.getDate() + 30);
 
+
+
       res.json({
         totalUsers,
         activeProviders,
@@ -107,6 +133,9 @@ export function registerClinicAdminRoutes(app: Express) {
         currentTier,
         subscriptionStatus: healthSystem?.subscriptionStatus || 'active',
         monthlySubscriptionCost,
+        providerKeysUsed,
+        nurseKeysUsed,
+        staffKeysUsed,
         nextBillingDate: nextBillingDate.toISOString(),
         locationsCount,
         patientsCount

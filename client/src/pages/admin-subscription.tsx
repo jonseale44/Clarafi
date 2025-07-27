@@ -30,6 +30,9 @@ interface ClinicStats {
   currentTier: number;
   subscriptionStatus: string;
   monthlySubscriptionCost: number;
+  providerKeysUsed: number;
+  nurseKeysUsed: number;
+  staffKeysUsed: number;
   nextBillingDate: string;
   locationsCount: number;
   patientsCount: number;
