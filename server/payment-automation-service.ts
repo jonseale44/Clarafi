@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 import { db } from './db.js';
 import { healthSystems, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import { EmailService } from './email-service.js';
+import { EmailVerificationService } from './email-verification-service.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2024-11-20.acacia',
@@ -200,11 +200,18 @@ export class PaymentAutomationService {
         return;
       }
 
-      await EmailService.sendPaymentReminder({
+      await EmailVerificationService.sendEmail({
         to: healthSystem.primaryContactEmail,
-        healthSystemName: healthSystem.name,
-        daysUntilCharge,
-        updatePaymentUrl: `https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`,
+        subject: `CLARAFI - Payment Reminder`,
+        html: `
+          <h2>Payment Reminder</h2>
+          <p>Hello ${healthSystem.name},</p>
+          <p>This is a reminder that your CLARAFI subscription payment will be processed in ${daysUntilCharge} days.</p>
+          <p>If you need to update your payment method, you can do so at:</p>
+          <p><a href="${`https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`}">Update Payment Method</a></p>
+          <p>Thank you for using CLARAFI!</p>
+        `,
+        text: `Payment Reminder\n\nHello ${healthSystem.name},\n\nThis is a reminder that your CLARAFI subscription payment will be processed in ${daysUntilCharge} days.\n\nIf you need to update your payment method, please visit: ${`https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`}\n\nThank you for using CLARAFI!`,
       });
 
       console.log(`📧 [PaymentAutomation] Sent payment reminder to ${healthSystem.name}`);
@@ -244,12 +251,19 @@ export class PaymentAutomationService {
 
       // Send notification
       if (healthSystem.primaryContactEmail) {
-        await EmailService.sendPaymentFailedNotification({
+        await EmailVerificationService.sendEmail({
           to: healthSystem.primaryContactEmail,
-          healthSystemName: healthSystem.name,
-          amount: invoice.amount_due / 100,
-          retryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
-          updatePaymentUrl: `https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`,
+          subject: 'CLARAFI - Payment Failed',
+          html: `
+            <h2>Payment Failed</h2>
+            <p>Hello ${healthSystem.name},</p>
+            <p>We were unable to process your subscription payment of $${(invoice.amount_due / 100).toFixed(2)}.</p>
+            <p>We will automatically retry your payment on ${new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()}.</p>
+            <p>To avoid service interruption, please update your payment method:</p>
+            <p><a href="${`https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`}">Update Payment Method</a></p>
+            <p>If you have any questions, please contact support@clarafi.com</p>
+          `,
+          text: `Payment Failed\n\nHello ${healthSystem.name},\n\nWe were unable to process your subscription payment of $${(invoice.amount_due / 100).toFixed(2)}.\n\nWe will automatically retry your payment on ${new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()}.\n\nTo avoid service interruption, please update your payment method at: ${`https://${process.env.REPLIT_DEV_DOMAIN}/billing/payment-methods`}\n\nIf you have any questions, please contact support@clarafi.com`,
         });
       }
 

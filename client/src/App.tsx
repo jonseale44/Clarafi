@@ -83,6 +83,7 @@ function Router() {
       <ProtectedRoute path="/clinic-admin/users" component={ClinicAdminUsers} />
       <ProtectedRoute path="/admin/invite-staff" component={AdminInviteStaff} />
       <ProtectedRoute path="/admin/subscription" component={AdminSubscriptionPage} />
+      <ProtectedRoute path="/billing/management" component={BillingManagement} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id/chart" component={PatientView} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />

@@ -341,9 +341,9 @@ export default function ClinicAdminDashboard() {
                       Manage Subscription
                     </Button>
                   </Link>
-                  <Link href="/admin/billing">
+                  <Link href="/billing/management">
                     <Button size="sm" variant="outline" className="flex-1">
-                      Billing History
+                      Billing & Payments
                     </Button>
                   </Link>
                 </div>
