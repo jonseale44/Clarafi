@@ -18,6 +18,10 @@ const ensureHealthSystemAdmin = async (req: any, res: any, next: any) => {
 router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
   try {
     const { providerCount, staffCount, tier, healthSystemId } = req.body;
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const userId = req.user.id;
 
     console.log(`🔑 [SubscriptionKeys] Generate request from user ${userId} - Providers: ${providerCount}, Staff: ${staffCount}, Tier: ${tier}`);
@@ -103,7 +107,8 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       targetHealthSystemId,
       tier,
       providerCount,
-      staffCount
+      staffCount,
+      userId // Pass the current user ID who is generating the keys
     );
 
     res.json({ success: true, keys });
@@ -148,6 +153,9 @@ router.post('/validate', async (req, res) => {
 // Get keys for health system (admin only)
 router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const userId = req.user.id;
     
     // Get user's health system
@@ -163,21 +171,21 @@ router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
     // Get all keys - system admins see all, others see only their health system
     let keysQuery = db.select({
       id: subscriptionKeys.id,
-      key: subscriptionKeys.key,
+      key: subscriptionKeys.keyValue,
       keyType: subscriptionKeys.keyType,
       status: subscriptionKeys.status,
       createdAt: subscriptionKeys.createdAt,
       expiresAt: subscriptionKeys.expiresAt,
-      usedAt: subscriptionKeys.usedAt,
-      usedBy: subscriptionKeys.usedBy,
+      assignedAt: subscriptionKeys.assignedAt,
+      assignedTo: subscriptionKeys.assignedTo,
       userName: users.firstName,
       userLastName: users.lastName,
       userEmail: users.email,
       healthSystemId: subscriptionKeys.healthSystemId,
-      subscriptionTier: subscriptionKeys.subscriptionTier
+      metadata: subscriptionKeys.metadata
     })
     .from(subscriptionKeys)
-    .leftJoin(users, eq(subscriptionKeys.usedBy, users.id));
+    .leftJoin(users, eq(subscriptionKeys.assignedTo, users.id));
     
     // Apply filter for non-system admins
     let keys;
@@ -215,6 +223,9 @@ router.get('/list', ensureHealthSystemAdmin, async (req, res) => {
 router.post('/deactivate/:keyId', ensureHealthSystemAdmin, async (req, res) => {
   try {
     const keyId = parseInt(req.params.keyId);
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const userId = req.user.id;
 
     // Verify key belongs to user's health system
@@ -243,6 +254,9 @@ router.post('/deactivate/:keyId', ensureHealthSystemAdmin, async (req, res) => {
 router.post('/regenerate/:keyId', ensureHealthSystemAdmin, async (req, res) => {
   try {
     const keyId = parseInt(req.params.keyId);
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const userId = req.user.id;
 
     // Verify key belongs to user's health system

@@ -14,6 +14,16 @@ A comprehensive medical EMR (Electronic Medical Records) platform built with Typ
 - Appointment scheduling
 - Comprehensive clinical documentation
 
+### Subscription Model
+CLARAFI uses a simplified two-tier subscription model:
+- **Tier 1 (Individual Provider)**: $149/month for individual providers
+- **Tier 2 (Enterprise)**: Role-based pricing
+  - Providers: $399/month
+  - Nurses: $99/month
+  - Other staff: $49/month
+- All tiers include a 30-day free trial
+- Payment enforcement activated after trial period ends
+
 ### Lab System Architecture - Dual Pathway Approach
 Our production-ready lab system uniquely combines AI-powered processing with direct lab integrations:
 

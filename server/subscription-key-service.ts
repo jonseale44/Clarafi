@@ -24,13 +24,34 @@ export class SubscriptionKeyService {
     healthSystemId: number,
     tier: number,
     providerCount: number,
-    staffCount: number
+    staffCount: number,
+    createdByUserId: number = 1
   ) {
     const [healthSystem] = await db.select().from(healthSystems)
       .where(eq(healthSystems.id, healthSystemId));
     
     if (!healthSystem) {
       throw new Error('Health system not found');
+    }
+
+    // Payment enforcement: After trial period, require payment before generating keys
+    if (healthSystem.subscriptionStatus === 'trial') {
+      // Check if trial has ended
+      const trialEndDate = healthSystem.trialEndDate || 
+        new Date(healthSystem.subscriptionStartDate.getTime() + (30 * 24 * 60 * 60 * 1000));
+      
+      if (new Date() > trialEndDate) {
+        throw new Error('Trial period has ended. Please complete payment to generate additional keys.');
+      }
+    } else if (healthSystem.subscriptionStatus === 'trial_expired') {
+      throw new Error('Trial has expired. Please complete payment to generate additional keys.');
+    } else if (healthSystem.subscriptionStatus === 'deactivated') {
+      throw new Error('Account is deactivated. Please contact support.');
+    }
+
+    // Ensure we only support tier 1 or 2
+    if (tier !== 1 && tier !== 2) {
+      throw new Error('Invalid subscription tier. Only tiers 1 and 2 are supported.');
     }
 
     const shortName = healthSystem.shortName || 'EMR';
@@ -43,13 +64,14 @@ export class SubscriptionKeyService {
     for (let i = 0; i < providerCount; i++) {
       const key = this.generateKey(shortName, 'provider');
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        key,
+        keyValue: key,
         healthSystemId,
         keyType: 'provider',
-        subscriptionTier: tier,
-        monthlyPrice: PER_USER_PRICING.provider.monthly.toString(),
-        expiresAt,
+        createdBy: createdByUserId, // User who initiated key generation
+        expiresAt: expiresAt,
         metadata: {
+          subscriptionTier: tier,
+          monthlyPrice: PER_USER_PRICING.provider.monthly.toString(),
           generationBatch: new Date().toISOString(),
           index: i + 1,
           totalInBatch: providerCount
@@ -63,13 +85,14 @@ export class SubscriptionKeyService {
       const key = this.generateKey(shortName, 'staff');
       // Staff keys can be for clinical or admin staff - default to clinical pricing
       const [insertedKey] = await db.insert(subscriptionKeys).values({
-        key,
+        keyValue: key,
         healthSystemId,
         keyType: 'staff',
-        subscriptionTier: tier,
-        monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
-        expiresAt,
+        createdBy: createdByUserId, // User who initiated key generation
+        expiresAt: expiresAt,
         metadata: {
+          subscriptionTier: tier,
+          monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
           generationBatch: new Date().toISOString(),
           index: i + 1,
           totalInBatch: staffCount
@@ -113,7 +136,7 @@ export class SubscriptionKeyService {
   static async validateAndUseKey(keyString: string, userId: number) {
     // Check if key exists and is valid
     const [key] = await db.select().from(subscriptionKeys)
-      .where(eq(subscriptionKeys.key, keyString));
+      .where(eq(subscriptionKeys.keyValue, keyString));
 
     if (!key) {
       return { success: false, error: 'Invalid key' };
@@ -130,7 +153,7 @@ export class SubscriptionKeyService {
     }
 
     // Check if key is expired
-    if (key.status === 'expired' || new Date() > key.expiresAt) {
+    if (key.status === 'expired' || (key.expiresAt && new Date() > key.expiresAt)) {
       // Update status if not already marked as expired
       if (key.status !== 'expired') {
         await db.update(subscriptionKeys)
@@ -148,17 +171,22 @@ export class SubscriptionKeyService {
       return { success: false, error: 'Health system subscription is not active' };
     }
 
+    // Get subscription tier from metadata
+    const subscriptionTier = key.metadata?.subscriptionTier as number || 2;
+
     // Use the key
     await db.update(subscriptionKeys)
       .set({
         status: 'used',
-        usedBy: userId,
-        usedAt: new Date()
+        assignedTo: userId,
+        assignedAt: new Date(),
+        usageCount: 1,
+        lastUsedAt: new Date()
       })
       .where(eq(subscriptionKeys.id, key.id));
 
-    // Update user verification status
-    const verificationStatus = key.subscriptionTier === 3 ? 'tier3_verified' : 'verified';
+    // Update user verification status - only tier 1 or 2 now
+    const verificationStatus = 'verified';
     await db.update(users)
       .set({
         verificationStatus,
@@ -171,7 +199,7 @@ export class SubscriptionKeyService {
     return {
       success: true,
       keyType: key.keyType,
-      subscriptionTier: key.subscriptionTier,
+      subscriptionTier: subscriptionTier,
       healthSystemId: key.healthSystemId
     };
   }

@@ -4192,23 +4192,24 @@ export type InsertMigrationInvitation = z.infer<typeof insertMigrationInvitation
 // Subscription keys for tier-based access
 export const subscriptionKeys = pgTable("subscription_keys", {
   id: serial("id").primaryKey(),
-  key: varchar("key", { length: 20 }).unique().notNull(),
-  healthSystemId: integer("health_system_id").notNull().references(() => healthSystems.id),
+  healthSystemId: integer("health_system_id").notNull(),
+  keyValue: text("key_value").notNull(),
   keyType: text("key_type").notNull(), // 'provider', 'staff', 'admin'
-  subscriptionTier: integer("subscription_tier").notNull(), // 1, 2, 3
+  createdBy: integer("created_by").notNull(),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  assignedAt: timestamp("assigned_at"),
+  expiresAt: timestamp("expires_at"),
   status: text("status").default("active"), // 'active', 'used', 'expired', 'deactivated'
-  monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }), // Per-user monthly price
-  createdAt: timestamp("created_at").defaultNow(),
-  expiresAt: timestamp("expires_at").notNull(), // 72 hours from creation for unused keys
-  usedBy: integer("used_by").references(() => users.id),
-  usedAt: timestamp("used_at"),
-  deactivatedBy: integer("deactivated_by").references(() => users.id),
-  deactivatedAt: timestamp("deactivated_at"),
+  usageCount: integer("usage_count").default(0),
+  lastUsedAt: timestamp("last_used_at"),
   metadata: jsonb("metadata").$type<{
+    subscriptionTier?: number; // 1 or 2 only
+    monthlyPrice?: string;
     regenerationCount?: number;
     notes?: string;
     [key: string]: any;
-  }>().default({}),
+  }>(),
+  createdAt: timestamp("created_at"),
 });
 
 // Subscription history for tracking changes and grace periods
@@ -4348,12 +4349,12 @@ export const subscriptionKeysRelations = relations(subscriptionKeys, ({ one }) =
     fields: [subscriptionKeys.healthSystemId],
     references: [healthSystems.id],
   }),
-  usedByUser: one(users, {
-    fields: [subscriptionKeys.usedBy],
+  assignedToUser: one(users, {
+    fields: [subscriptionKeys.assignedTo],
     references: [users.id],
   }),
-  deactivatedByUser: one(users, {
-    fields: [subscriptionKeys.deactivatedBy],
+  createdByUser: one(users, {
+    fields: [subscriptionKeys.createdBy],
     references: [users.id],
   }),
 }));
