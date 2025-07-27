@@ -152,6 +152,21 @@ Fixed critical glitchy scrolling behavior where matrix scroll would get "stuck" 
 
 4. **Result**: Synchronized scrolling now works smoothly without feedback loops, providing production-level stability for reviewing lab results across multiple dates.
 
+### Fixed Parent Container Jump During Synchronized Scrolling (July 27, 2025 - 1:35 PM) - COMPLETED
+Fixed critical issue where scrolling the lab-matrix-body caused the patient-chart-content container to jump:
+
+1. **Issue Identified**: When both patient-chart-content and lab-matrix-body were at top position, scrolling the lab matrix horizontally caused the parent container to suddenly jump to its bottom
+
+2. **Root Cause**: The synchronization code was using `scrollIntoView()` which affects parent containers beyond just the review panel
+
+3. **Solution Implemented**:
+   - Replaced `scrollIntoView()` with direct `scrollTop` manipulation
+   - Now only sets scroll position on the review container itself
+   - Added proper null checks for TypeScript safety
+   - Prevents any impact on parent patient-chart-content container
+
+4. **Result**: Horizontal scrolling in the lab matrix now smoothly syncs with the review panel without causing any unexpected jumps in the main patient chart container, providing a professional user experience.
+
 ### Sticky Header Implementation for Lab Results Matrix (July 27, 2025 - 1:59 PM) - COMPLETED
 Implemented sticky header row for the Lab Results Matrix to keep date columns visible during scrolling:
 

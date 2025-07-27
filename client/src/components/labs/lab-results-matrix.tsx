@@ -1252,18 +1252,20 @@ export function LabResultsMatrix({
                   }
                 });
                 
-                if (visibleDate) {
+                if (visibleDate && reviewScrollRef.current) {
                   // Scroll review panel to corresponding date
                   const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
                   reviewElements.forEach((element) => {
                     if (element.getAttribute('data-review-date') === visibleDate) {
                       // Calculate position relative to the review container
                       const reviewContainer = reviewScrollRef.current;
-                      const elementTop = (element as HTMLElement).offsetTop;
-                      
-                      // Set scroll position directly on the review container
-                      // This prevents the parent patient-chart-content from jumping
-                      reviewContainer.scrollTop = elementTop;
+                      if (reviewContainer) {
+                        const elementTop = (element as HTMLElement).offsetTop;
+                        
+                        // Set scroll position directly on the review container
+                        // This prevents the parent patient-chart-content from jumping
+                        reviewContainer.scrollTop = elementTop;
+                      }
                     }
                   });
                 }
