@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2 } from 'lucide-react';
+import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function AdminSubscriptionKeys() {
@@ -182,6 +182,38 @@ export function AdminSubscriptionKeys() {
 
   return (
     <div className="space-y-6">
+      {/* Pricing Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Enterprise Subscription Pricing
+          </CardTitle>
+          <CardDescription>
+            Monthly pricing per user type
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">$399/month</div>
+              <p className="text-sm text-muted-foreground">Provider Keys</p>
+              <p className="text-xs">Full EMR access for physicians and providers</p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">$99/month</div>
+              <p className="text-sm text-muted-foreground">Nurse Keys</p>
+              <p className="text-xs">Clinical access for nursing staff</p>
+            </div>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">$49/month</div>
+              <p className="text-sm text-muted-foreground">Staff Keys</p>
+              <p className="text-xs">Administrative access for non-clinical staff</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
