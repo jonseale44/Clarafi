@@ -114,7 +114,7 @@ export function LabResultsMatrix({
   const [hoveredTestRow, setHoveredTestRow] = useState<string | null>(null);
   
   // Review interface state
-  const [isReviewPanelOpen, setIsReviewPanelOpen] = useState<boolean>(false);
+  const [isReviewPanelOpen, setIsReviewPanelOpen] = useState<boolean>(true);
   const [reviewNote, setReviewNote] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [assignedStaff, setAssignedStaff] = useState<string>('');
