@@ -5869,6 +5869,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     }
   });
 
+  // Raw body parser for Stripe webhook
+  app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
+  
   app.post("/api/stripe/webhook", async (req, res) => {
     try {
       console.log("🔔 [Stripe] Webhook received");

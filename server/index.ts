@@ -19,8 +19,25 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+// Parse JSON for all routes except Stripe webhook
+app.use((req, res, next) => {
+  if (req.path === '/api/stripe/webhook') {
+    // Skip JSON parsing for Stripe webhook
+    next();
+  } else {
+    express.json({ limit: '50mb' })(req, res, next);
+  }
+});
+
+// Parse URL encoded for all routes except Stripe webhook  
+app.use((req, res, next) => {
+  if (req.path === '/api/stripe/webhook') {
+    // Skip URL encoding parsing for Stripe webhook
+    next();
+  } else {
+    express.urlencoded({ extended: false, limit: '50mb' })(req, res, next);
+  }
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
