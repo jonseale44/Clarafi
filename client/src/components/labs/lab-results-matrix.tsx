@@ -1191,7 +1191,7 @@ export function LabResultsMatrix({
             >
               <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: '220px' }} />
+                  <col style={{ width: '200px' }} />
                   {displayColumns.map((_, index) => (
                     <col key={`col-${index}`} style={{ width: '120px' }} />
                   ))}
@@ -1199,13 +1199,13 @@ export function LabResultsMatrix({
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300">
-                      <div className="px-3 py-3">Test</div>
+                      <div className="px-3 py-4">Test</div>
                     </th>
                     {displayColumns.map((dateCol, index) => (
                       <th 
                         key={`header-${index}`} 
                         data-matrix-date={dateCol.displayDate}
-                        className="text-center p-3 font-semibold border-r border-gray-300 cursor-pointer hover:bg-gray-100 bg-gray-50"
+                        className="text-center p-4 font-semibold border-r border-gray-300 cursor-pointer hover:bg-gray-100 bg-gray-50"
                         onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
                         onMouseEnter={() => setHoveredDate(dateCol.date)}
                         onMouseLeave={() => setHoveredDate(null)}
@@ -1247,7 +1247,7 @@ export function LabResultsMatrix({
                 headers.forEach((header) => {
                   const rect = header.getBoundingClientRect();
                   // Check if this header is in the visible area (accounting for sticky column width)
-                  if (rect.left >= containerRect.left + 220 && rect.left <= containerRect.left + 400) {
+                  if (rect.left >= containerRect.left + 200 && rect.left <= containerRect.left + 400) {
                     visibleDate = header.getAttribute('data-matrix-date') || '';
                   }
                 });
@@ -1271,7 +1271,7 @@ export function LabResultsMatrix({
           >
             <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
               <colgroup>
-                <col style={{ width: '220px' }} />
+                <col style={{ width: '200px' }} />
                 {displayColumns.map((_, index) => (
                   <col key={`body-col-${index}`} style={{ width: '120px' }} />
                 ))}
