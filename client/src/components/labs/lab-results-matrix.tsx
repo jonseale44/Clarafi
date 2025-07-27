@@ -18,7 +18,7 @@
  * 
  * See: docs/LAB_RESULTS_MATRIX_IMPLEMENTATION_GUIDE.md for full details
  */
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -747,8 +747,8 @@ export function LabResultsMatrix({
     return Array.from(testGroups.values()).sort((a, b) => a.testName.localeCompare(b.testName));
   }, [results, orders, pendingReviewIds]);
 
-  // Create flat list of tests organized by panel but displayed as flat rows
-  const flatTestData = useMemo(() => {
+  // Create grouped data by panel for panel selection
+  const groupedData = useMemo(() => {
     const groups: { [key: string]: MatrixData[] } = {};
     
     // Initialize groups
@@ -776,21 +776,26 @@ export function LabResultsMatrix({
       }
     });
 
+    return groups;
+  }, [matrixData, labPanels]);
+
+  // Create flat list of tests organized by panel but displayed as flat rows
+  const flatTestData = useMemo(() => {
     // Create flat list with panel headers
     const flatList: Array<{ type: 'panel', name: string } | { type: 'test', data: MatrixData, panel: string }> = [];
     
     const panelOrder = ['CBC', 'CMP', 'Lipid Panel', 'Thyroid Function', 'HbA1c', 'Other'];
     panelOrder.forEach(panelName => {
-      if (groups[panelName] && groups[panelName].length > 0) {
+      if (groupedData[panelName] && groupedData[panelName].length > 0) {
         flatList.push({ type: 'panel', name: panelName });
-        groups[panelName].forEach(test => {
+        groupedData[panelName].forEach(test => {
           flatList.push({ type: 'test', data: test, panel: panelName });
         });
       }
     });
 
     return flatList;
-  }, [matrixData, labPanels]);
+  }, [groupedData]);
 
   // Create date-based columns since encounter IDs are null
   const dateColumns = useMemo(() => {
@@ -1056,7 +1061,18 @@ export function LabResultsMatrix({
   // Group GPT reviews by specimen collection date for the Review Notes Panel
   // Must be before any early returns to follow React hooks rules
   const reviewsByDate = useMemo(() => {
-    const grouped = new Map<string, any[]>();
+    const grouped = new Map<string, Array<{
+      id: number;
+      clinicalReview: string;
+      patientMessage: string;
+      nurseMessage: string;
+      patientMessageSentAt?: string | null;
+      nurseMessageSentAt?: string | null;
+      conversationReview?: string | null;
+      conversationReviewGeneratedAt?: string | null;
+      conversationClosed?: boolean;
+      generatedAt: string;
+    }>>();
     
     gptReviewNotes.forEach((review: any) => {
       // Get specimen collection dates for the lab results in this review
@@ -1160,7 +1176,31 @@ export function LabResultsMatrix({
           className="overflow-x-auto max-h-[70vh] matrix-scroll-container"
           onScroll={(e) => {
             if (reviewScrollRef.current) {
-              reviewScrollRef.current.scrollLeft = e.currentTarget.scrollLeft;
+              // Find which date column is currently visible
+              const scrollLeft = e.currentTarget.scrollLeft;
+              const containerRect = e.currentTarget.getBoundingClientRect();
+              
+              // Find the column that's currently visible (accounting for sticky column)
+              const headers = e.currentTarget.querySelectorAll('[data-matrix-date]');
+              let visibleDate = '';
+              
+              headers.forEach((header) => {
+                const rect = header.getBoundingClientRect();
+                // Check if this header is in the visible area (accounting for sticky column width)
+                if (rect.left >= containerRect.left + 200 && rect.left <= containerRect.left + 400) {
+                  visibleDate = header.getAttribute('data-matrix-date') || '';
+                }
+              });
+              
+              if (visibleDate) {
+                // Scroll review panel to corresponding date
+                const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
+                reviewElements.forEach((element) => {
+                  if (element.getAttribute('data-review-date') === visibleDate) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                });
+              }
             }
           }}
         >
@@ -1173,6 +1213,7 @@ export function LabResultsMatrix({
                 {displayColumns.map((dateCol, index) => (
                   <th 
                     key={`date-${index}`} 
+                    data-matrix-date={dateCol.displayDate}
                     className="text-center p-3 font-semibold border-r border-gray-300 min-w-[120px] cursor-pointer hover:bg-gray-100"
                     onClick={(e) => handleDateClick(dateCol.date, e.shiftKey)}
                     onMouseEnter={() => setHoveredDate(dateCol.date)}
@@ -1861,9 +1902,44 @@ export function LabResultsMatrix({
           </Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {reviewsByDate.size === 0 ? (
+      <CardContent className="p-0">
+        <div 
+          ref={reviewScrollRef}
+          className="max-h-[400px] overflow-y-auto p-4 review-scroll-container"
+          onScroll={(e) => {
+            // Sync scroll from review notes to matrix
+            const reviewContainer = e.currentTarget;
+            const matrixContainer = matrixScrollRef.current;
+            if (!matrixContainer) return;
+            
+            // Find which date section is currently visible
+            const dateElements = reviewContainer.querySelectorAll('[data-review-date]');
+            let visibleDate = '';
+            
+            dateElements.forEach((element) => {
+              const rect = element.getBoundingClientRect();
+              const containerRect = reviewContainer.getBoundingClientRect();
+              if (rect.top >= containerRect.top && rect.top <= containerRect.top + 100) {
+                visibleDate = element.getAttribute('data-review-date') || '';
+              }
+            });
+            
+            if (visibleDate) {
+              // Find corresponding column in matrix
+              const matrixHeaders = matrixContainer.querySelectorAll('[data-matrix-date]');
+              matrixHeaders.forEach((header) => {
+                if (header.getAttribute('data-matrix-date') === visibleDate) {
+                  const headerRect = header.getBoundingClientRect();
+                  const matrixRect = matrixContainer.getBoundingClientRect();
+                  const scrollLeft = header.parentElement?.offsetLeft || 0;
+                  matrixContainer.scrollLeft = scrollLeft - 200; // Offset to account for sticky column
+                }
+              });
+            }
+          }}
+        >
+          <div className="space-y-3">
+            {reviewsByDate.size === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
               <p className="text-sm">No review communications found for these lab results.</p>
@@ -1881,7 +1957,7 @@ export function LabResultsMatrix({
               const isReviewExpanded = expandedReviews.has(reviewKey);
               
               return (
-                <div key={dateKey} className="border-b pb-3 last:border-b-0">
+                <div key={dateKey} data-review-date={dateKey} className="border-b pb-3 last:border-b-0">
                   {/* Date Row with Conversation Review */}
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 pt-1">
@@ -1993,7 +2069,8 @@ export function LabResultsMatrix({
                 </div>
               );
             })
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

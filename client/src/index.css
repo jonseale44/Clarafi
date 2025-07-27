@@ -1139,3 +1139,49 @@
 .delay-700 { animation-delay: 700ms; }
 .delay-800 { animation-delay: 800ms; }
 .delay-1000 { animation-delay: 1000ms; }
+
+/* Lab Results Matrix scrollbar styling */
+.matrix-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb #f3f4f6;
+}
+
+.matrix-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.matrix-scroll-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.matrix-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+.matrix-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #d1d5db;
+}
+
+/* Review notes panel scrollbar styling */
+.review-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb #f3f4f6;
+}
+
+.review-scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.review-scroll-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.review-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #e5e7eb;
+  border-radius: 4px;
+}
+
+.review-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #d1d5db;
+}
