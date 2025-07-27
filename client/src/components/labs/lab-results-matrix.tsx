@@ -1,18 +1,20 @@
 /**
  * Lab Results Matrix Component
  * 
- * IMPLEMENTATION STATUS: Phase 1 of 6 Complete
+ * IMPLEMENTATION STATUS: Phase 2 of 6 Complete
  * - Phase 1 ✓: Enhanced table structure using specimen collection dates as columns
- * - Phase 2: Review notes panel with GPT summaries (pending)
+ * - Phase 2 ✓: Review notes panel with GPT summaries and conversation reviews
  * - Phase 3: Bidirectional sync & navigation (pending)
  * - Phase 4: Flexible zoom controls (pending)
  * - Phase 5: Review note management (pending)
  * - Phase 6: Performance optimization (pending)
  * 
- * Key Features (Phase 1):
+ * Key Features (Phase 1 & 2):
  * - Columns are specimen collection dates (most recent on LEFT)
  * - Preserves all existing functionality (badges, source tracking, edit/delete)
  * - Falls back to result available date if specimen date not available
+ * - Review Notes Panel displays conversation reviews with expandable timelines
+ * - Dates shown vertically with GPT-generated summaries
  * 
  * See: docs/LAB_RESULTS_MATRIX_IMPLEMENTATION_GUIDE.md for full details
  */
@@ -1040,36 +1042,8 @@ export function LabResultsMatrix({
     return 'bg-gray-50 text-gray-700'; // Normal unreviewed state
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-1/4"></div>
-            <div className="space-y-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-12 bg-muted rounded"></div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!matrixData.length) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
-            No lab results available for this patient.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   // Group GPT reviews by specimen collection date for the Review Notes Panel
+  // Must be before any early returns to follow React hooks rules
   const reviewsByDate = useMemo(() => {
     const grouped = new Map<string, any[]>();
     
@@ -1114,6 +1088,35 @@ export function LabResultsMatrix({
     }
     setExpandedReviews(newExpanded);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-muted rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-12 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!matrixData.length) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-muted-foreground">
+            No lab results available for this patient.
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
