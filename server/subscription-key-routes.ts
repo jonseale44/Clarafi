@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { SubscriptionKeyService } from './subscription-key-service';
 import { db } from './db.js';
 import { users, healthSystems, subscriptionKeys } from '../shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { StripeService } from './stripe-service.js';
+import { TrialManagementService } from './trial-management-service.js';
 
 const router = Router();
 
@@ -66,8 +67,9 @@ router.post('/create-checkout', ensureHealthSystemAdmin, async (req, res) => {
       healthSystemName: user.healthSystemName || 'Unknown Health System',
       userCounts: {
         providers: providerCount,
-        nurses: nurseCount,
-        staff: staffCount
+        clinicalStaff: nurseCount,  // nurses map to clinicalStaff
+        adminStaff: staffCount,      // staff maps to adminStaff
+        readOnly: 0                  // no read-only users for now
       },
       monthlyAmount
     });
@@ -149,7 +151,49 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       return res.status(400).json({ error: `Tier mismatch: ${healthSystem?.name} is tier ${healthSystem?.subscriptionTier}, but you requested tier ${tier} keys` });
     }
 
-    // For tier 2 (enterprise), there are no hard limits - it's a per-user pricing model
+    // Check trial status for tier 2 key limits
+    const TRIAL_KEY_LIMIT = 20;
+    let isOnTrial = false;
+    
+    if (tier === 2) {
+      // Check if health system is on trial
+      const trialStatus = await TrialManagementService.getTrialStatus(targetHealthSystemId);
+      // During trial, the status would be 'active' but subscription status would be 'trial'
+      isOnTrial = healthSystem.subscriptionStatus === 'trial';
+      
+      if (isOnTrial) {
+        // Count all keys (active + used) for trial limit
+        const allKeysResult = await db.select()
+          .from(subscriptionKeys)
+          .where(and(
+            eq(subscriptionKeys.healthSystemId, targetHealthSystemId),
+            or(
+              eq(subscriptionKeys.status, 'active'),
+              eq(subscriptionKeys.status, 'used')
+            )
+          ));
+        
+        const currentTotalKeys = allKeysResult.length;
+        const requestedTotal = providerCount + nurseCount + staffCount;
+        
+        console.log(`🔐 [SubscriptionKeys] Trial key check - Current: ${currentTotalKeys}, Requested: ${requestedTotal}, Limit: ${TRIAL_KEY_LIMIT}`);
+        
+        if (currentTotalKeys + requestedTotal > TRIAL_KEY_LIMIT) {
+          console.error(`❌ [SubscriptionKeys] Trial key limit exceeded: ${currentTotalKeys} + ${requestedTotal} > ${TRIAL_KEY_LIMIT}`);
+          return res.status(400).json({ 
+            error: `Trial accounts are limited to ${TRIAL_KEY_LIMIT} total subscription keys. You currently have ${currentTotalKeys} keys and are requesting ${requestedTotal} more. To generate additional keys, please upgrade to a paid subscription.`,
+            details: {
+              currentKeys: currentTotalKeys,
+              requestedKeys: requestedTotal,
+              trialKeyLimit: TRIAL_KEY_LIMIT,
+              requiresUpgrade: true
+            }
+          });
+        }
+      }
+    }
+    
+    // For tier 2 (enterprise), there are no hard limits after trial - it's a per-user pricing model
     // Only check limits for tier 1 (single provider)
     if (tier === 1) {
       const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
