@@ -156,6 +156,7 @@ export function LabResultsMatrix({
   const [isReviewNotesPanelOpen, setIsReviewNotesPanelOpen] = useState(true);
   const matrixScrollRef = React.useRef<HTMLDivElement>(null);
   const reviewScrollRef = React.useRef<HTMLDivElement>(null);
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1068,6 +1069,52 @@ export function LabResultsMatrix({
     );
   }
 
+  // Group GPT reviews by specimen collection date for the Review Notes Panel
+  const reviewsByDate = useMemo(() => {
+    const grouped = new Map<string, any[]>();
+    
+    gptReviewNotes.forEach((review: any) => {
+      // Get specimen collection dates for the lab results in this review
+      const reviewResults = results.filter((r: any) => 
+        review.resultIds?.includes(r.id)
+      );
+      
+      reviewResults.forEach((result: any) => {
+        const date = result.specimenCollectedAt || result.resultAvailableAt;
+        if (date) {
+          const dateKey = format(new Date(date), 'MM/dd/yy');
+          if (!grouped.has(dateKey)) {
+            grouped.set(dateKey, []);
+          }
+          // Avoid duplicates
+          const exists = grouped.get(dateKey)?.some(r => r.id === review.id);
+          if (!exists) {
+            grouped.get(dateKey)?.push({
+              ...review,
+              result,
+              fullDate: date
+            });
+          }
+        }
+      });
+    });
+    
+    // Sort by date descending (most recent first)
+    return new Map([...grouped.entries()].sort((a, b) => 
+      new Date(b[1][0].fullDate).getTime() - new Date(a[1][0].fullDate).getTime()
+    ));
+  }, [gptReviewNotes, results]);
+  
+  const toggleReviewExpanded = (reviewKey: string) => {
+    const newExpanded = new Set(expandedReviews);
+    if (newExpanded.has(reviewKey)) {
+      newExpanded.delete(reviewKey);
+    } else {
+      newExpanded.add(reviewKey);
+    }
+    setExpandedReviews(newExpanded);
+  };
+
   return (
     <>
       <Card>
@@ -1796,65 +1843,13 @@ export function LabResultsMatrix({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {(() => {
-            // Group GPT reviews by specimen collection date
-            const reviewsByDate = useMemo(() => {
-              const grouped = new Map<string, any[]>();
-              
-              gptReviewNotes.forEach((review: any) => {
-                // Get specimen collection dates for the lab results in this review
-                const reviewResults = results.filter((r: any) => 
-                  review.resultIds?.includes(r.id)
-                );
-                
-                reviewResults.forEach((result: any) => {
-                  const date = result.specimenCollectedAt || result.resultAvailableAt;
-                  if (date) {
-                    const dateKey = format(new Date(date), 'MM/dd/yy');
-                    if (!grouped.has(dateKey)) {
-                      grouped.set(dateKey, []);
-                    }
-                    // Avoid duplicates
-                    const exists = grouped.get(dateKey)?.some(r => r.id === review.id);
-                    if (!exists) {
-                      grouped.get(dateKey)?.push({
-                        ...review,
-                        result,
-                        fullDate: date
-                      });
-                    }
-                  }
-                });
-              });
-              
-              // Sort by date descending (most recent first)
-              return new Map([...grouped.entries()].sort((a, b) => 
-                new Date(b[1][0].fullDate).getTime() - new Date(a[1][0].fullDate).getTime()
-              ));
-            }, [gptReviewNotes, results]);
-            
-            const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
-            
-            const toggleReviewExpanded = (reviewKey: string) => {
-              const newExpanded = new Set(expandedReviews);
-              if (newExpanded.has(reviewKey)) {
-                newExpanded.delete(reviewKey);
-              } else {
-                newExpanded.add(reviewKey);
-              }
-              setExpandedReviews(newExpanded);
-            };
-            
-            if (reviewsByDate.size === 0) {
-              return (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No review communications found for these lab results.</p>
-                </div>
-              );
-            }
-            
-            return Array.from(reviewsByDate.entries()).map(([dateKey, dateReviews]) => {
+          {reviewsByDate.size === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <MessageSquare className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No review communications found for these lab results.</p>
+            </div>
+          ) : (
+            Array.from(reviewsByDate.entries()).map(([dateKey, dateReviews]) => {
               // Get the most recent review for this date to show conversation summary
               const latestReview = dateReviews.reduce((latest, current) => {
                 const latestTime = latest.conversationReviewGeneratedAt || latest.generatedAt;
@@ -1964,8 +1959,8 @@ export function LabResultsMatrix({
                   </div>
                 </div>
               );
-            });
-          })()}
+            })
+          )}
         </div>
       </CardContent>
     </Card>
