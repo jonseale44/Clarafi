@@ -63,14 +63,14 @@ const TIER_BENEFITS = {
     ]
   },
   2: {
-    name: 'Advanced EMR',
+    name: 'Enterprise EMR',
     icon: TrendingUp,
     color: 'text-purple-600',
     bgColor: 'bg-purple-50',
     borderColor: 'border-purple-200',
-    price: 399,
+    price: null, // Per-user pricing
     features: [
-      'Up to 5 providers',
+      'Per-user pricing model',
       'Everything in Professional',
       'Multi-location support',
       'Staff accounts',
@@ -182,10 +182,10 @@ export default function AdminSubscriptionPage() {
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
-                  <span>Provider Usage</span>
-                  <span>{stats?.activeProviders || 0} / {currentTier === 1 ? 1 : currentTier === 2 ? 5 : '∞'}</span>
+                  <span>Active Providers</span>
+                  <span>{stats?.activeProviders || 0} {currentTier === 1 ? '/ 1' : ''}</span>
                 </div>
-                <Progress value={providerUsage} className="h-2" />
+                {currentTier === 1 && <Progress value={providerUsage} className="h-2" />}
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
@@ -196,10 +196,25 @@ export default function AdminSubscriptionPage() {
               </div>
               <div className="pt-2">
                 <p className="text-sm text-muted-foreground">Monthly Cost</p>
-                <p className="text-3xl font-bold">
-                  ${stats?.monthlySubscriptionCost || tierInfo.price || 'Custom'}
-                  <span className="text-sm font-normal text-muted-foreground">/month</span>
-                </p>
+                {currentTier === 2 ? (
+                  <div>
+                    <p className="text-2xl font-bold">Per-User Pricing</p>
+                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <div>Providers: $399/month each</div>
+                      <div>Nurses: $99/month each</div>
+                      <div>Staff: $49/month each</div>
+                    </div>
+                    <p className="text-lg font-semibold mt-2">
+                      Total: ${stats?.monthlySubscriptionCost || 0}
+                      <span className="text-sm font-normal text-muted-foreground">/month</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-3xl font-bold">
+                    ${stats?.monthlySubscriptionCost || tierInfo.price || 'Custom'}
+                    <span className="text-sm font-normal text-muted-foreground">/month</span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
