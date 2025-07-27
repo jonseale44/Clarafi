@@ -17,14 +17,14 @@ const ensureHealthSystemAdmin = async (req: any, res: any, next: any) => {
 // Generate keys for health system (admin only)
 router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
   try {
-    const { providerCount, staffCount, tier, healthSystemId } = req.body;
+    const { providerCount, nurseCount, staffCount, tier, healthSystemId } = req.body;
     
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
     const userId = req.user.id;
 
-    console.log(`🔑 [SubscriptionKeys] Generate request from user ${userId} - Providers: ${providerCount}, Staff: ${staffCount}, Tier: ${tier}`);
+    console.log(`🔑 [SubscriptionKeys] Generate request from user ${userId} - Providers: ${providerCount}, Nurses: ${nurseCount}, Staff: ${staffCount}, Tier: ${tier}`);
 
     // Get user details
     const [user] = await db.select().from(users).where(eq(users.id, userId));
@@ -85,13 +85,20 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
     
     console.log(`🔐 [SubscriptionKeys] Current key counts:`, currentKeys);
     console.log(`📊 [SubscriptionKeys] Health system limits:`, limits);
-    console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${staffCount} staff keys`);
-    console.log(`📈 [SubscriptionKeys] Would result in: ${currentKeys.providers + providerCount} providers, ${currentKeys.staff + staffCount} staff`);
+    console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${nurseCount} nurse keys, ${staffCount} staff keys`);
+    console.log(`📈 [SubscriptionKeys] Would result in: ${currentKeys.providers + providerCount} providers, ${currentKeys.nurses + nurseCount} nurses, ${currentKeys.staff + staffCount} staff`);
     
     if (limits.providerKeys && currentKeys.providers + providerCount > limits.providerKeys) {
       console.error(`❌ [SubscriptionKeys] Provider limit exceeded: ${currentKeys.providers} + ${providerCount} > ${limits.providerKeys}`);
       return res.status(400).json({ 
         error: `Would exceed provider key limit (${limits.providerKeys}). Current: ${currentKeys.providers}, Requested: ${providerCount}` 
+      });
+    }
+    
+    if (limits.nurseKeys && currentKeys.nurses + nurseCount > limits.nurseKeys) {
+      console.error(`❌ [SubscriptionKeys] Nurse limit exceeded: ${currentKeys.nurses} + ${nurseCount} > ${limits.nurseKeys}`);
+      return res.status(400).json({ 
+        error: `Would exceed nurse key limit (${limits.nurseKeys}). Current: ${currentKeys.nurses}, Requested: ${nurseCount}` 
       });
     }
     
@@ -107,6 +114,7 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       targetHealthSystemId,
       tier,
       providerCount,
+      nurseCount,
       staffCount,
       userId // Pass the current user ID who is generating the keys
     );

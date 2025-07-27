@@ -8,7 +8,7 @@ export class SubscriptionKeyService {
   /**
    * Generate a unique subscription key with format: PREFIX-YEAR-XXXX-XXXX
    */
-  static generateKey(healthSystemShortName: string, keyType: 'provider' | 'staff' | 'admin'): string {
+  static generateKey(healthSystemShortName: string, keyType: 'provider' | 'nurse' | 'staff' | 'admin'): string {
     const prefix = healthSystemShortName.substring(0, 3).toUpperCase();
     const year = new Date().getFullYear();
     const random1 = crypto.randomBytes(2).toString('hex').toUpperCase();
@@ -24,6 +24,7 @@ export class SubscriptionKeyService {
     healthSystemId: number,
     tier: number,
     providerCount: number,
+    nurseCount: number,
     staffCount: number,
     createdByUserId: number = 1
   ) {
@@ -80,6 +81,26 @@ export class SubscriptionKeyService {
       keys.push(insertedKey);
     }
 
+    // Generate nurse keys
+    for (let i = 0; i < nurseCount; i++) {
+      const key = this.generateKey(shortName, 'nurse');
+      const [insertedKey] = await db.insert(subscriptionKeys).values({
+        keyValue: key,
+        healthSystemId,
+        keyType: 'nurse',
+        createdBy: createdByUserId, // User who initiated key generation
+        expiresAt: expiresAt,
+        metadata: {
+          subscriptionTier: tier,
+          monthlyPrice: PER_USER_PRICING.clinicalStaff.monthly.toString(),
+          generationBatch: new Date().toISOString(),
+          index: i + 1,
+          totalInBatch: nurseCount
+        }
+      }).returning();
+      keys.push(insertedKey);
+    }
+
     // Generate staff keys
     for (let i = 0; i < staffCount; i++) {
       const key = this.generateKey(shortName, 'staff');
@@ -106,8 +127,9 @@ export class SubscriptionKeyService {
       .set({
         subscriptionLimits: {
           providerKeys: providerCount,
+          nurseKeys: nurseCount,
           staffKeys: staffCount,
-          totalUsers: providerCount + staffCount
+          totalUsers: providerCount + nurseCount + staffCount
         }
       })
       .where(eq(healthSystems.id, healthSystemId));
@@ -123,6 +145,7 @@ export class SubscriptionKeyService {
       metadata: {
         keysGenerated: keys.length,
         providerKeys: providerCount,
+        nurseKeys: nurseCount,
         staffKeys: staffCount
       }
     });
@@ -218,11 +241,13 @@ export class SubscriptionKeyService {
       ));
 
     const providerKeys = activeKeys.filter(k => k.keyType === 'provider');
+    const nurseKeys = activeKeys.filter(k => k.keyType === 'nurse');
     const staffKeys = activeKeys.filter(k => k.keyType === 'staff');
 
     return {
       total: activeKeys.length,
       providers: providerKeys.length,
+      nurses: nurseKeys.length,
       staff: staffKeys.length,
       used: activeKeys.filter(k => k.status === 'used').length,
       available: activeKeys.filter(k => k.status === 'active').length
@@ -292,6 +317,10 @@ export class SubscriptionKeyService {
       return { success: false, error: 'Provider key limit reached' };
     }
     
+    if (oldKey.keyType === 'nurse' && keyCount.nurses >= limits.nurseKeys) {
+      return { success: false, error: 'Nurse key limit reached' };
+    }
+    
     if (oldKey.keyType === 'staff' && keyCount.staff >= limits.staffKeys) {
       return { success: false, error: 'Staff key limit reached' };
     }
@@ -312,13 +341,14 @@ export class SubscriptionKeyService {
     expiresAt.setHours(expiresAt.getHours() + 72);
 
     const [regeneratedKey] = await db.insert(subscriptionKeys).values({
-      key: newKey,
+      keyValue: newKey,
       healthSystemId: oldKey.healthSystemId,
       keyType: oldKey.keyType,
-      subscriptionTier: oldKey.subscriptionTier,
-      monthlyPrice: oldKey.monthlyPrice,
+      createdBy: adminUserId,
       expiresAt,
       metadata: {
+        subscriptionTier: oldKey.metadata?.subscriptionTier || 2,
+        monthlyPrice: oldKey.metadata?.monthlyPrice || PER_USER_PRICING.provider.monthly.toString(),
         regeneratedFrom: oldKeyId,
         regeneratedBy: adminUserId,
         regeneratedAt: new Date().toISOString(),

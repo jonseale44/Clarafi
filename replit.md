@@ -69,6 +69,30 @@ Fixed major security vulnerability where clinic administrators could access syst
 
 4. **Key Security Principle**: System administrators must have BOTH role='admin' AND healthSystemId=1. All other admins are clinic-level admins with access only to their own health system data.
 
+### Subscription Key System Enhancement - Three-Tier Support (July 27, 2025 - 2:06 PM) - COMPLETED
+Enhanced the subscription key generation system to support all three enterprise pricing tiers (Providers, Nurses, Staff):
+
+1. **Problem Identified**: 
+   - System only supported two key types (provider and staff) but enterprise pricing has three tiers
+   - Nurses ($99/month) needed their own key type distinct from general staff ($49/month)
+
+2. **Backend Updates**:
+   - Updated `SubscriptionKeyService.createKeysForHealthSystem` to accept `nurseCount` parameter
+   - Added nurse key generation logic using 'clinicalStaff' pricing tier ($99/month)
+   - Updated `getActiveKeyCount` method to track nurse keys separately
+   - Fixed regenerateKey method to handle nurse key limits
+   - Fixed SQL error in clinic-admin-routes.ts (changed non-existent `usedAt` to `status`)
+
+3. **Frontend Updates**:
+   - Added nurse count input field to subscription key generation dialog
+   - Updated key counts display to show Providers, Nurses, and Staff separately
+   - Added 'nurse' key type to badge display function
+
+4. **Result**: Enterprise subscription model now properly supports three distinct user types with appropriate pricing:
+   - Providers: $399/month
+   - Nurses: $99/month (mapped to clinicalStaff pricing tier)
+   - Staff: $49/month
+
 ## Recent Changes (July 26, 2025)
 
 ### Enhanced Test Patient Generator with Doctor Reviews (July 26, 2025 - 11:10 PM) - COMPLETED

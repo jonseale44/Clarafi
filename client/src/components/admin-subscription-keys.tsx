@@ -18,6 +18,7 @@ export function AdminSubscriptionKeys() {
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generateForm, setGenerateForm] = useState({
     providerCount: 5,
+    nurseCount: 10,
     staffCount: 10,
     tier: 2, // Enterprise tier
     healthSystemId: undefined as number | undefined,
@@ -112,6 +113,7 @@ export function AdminSubscriptionKeys() {
   const getKeyTypeBadge = (type: string) => {
     const variants: Record<string, "default" | "outline"> = {
       provider: 'default',
+      nurse: 'default',
       staff: 'outline',
       admin: 'default',
     };
@@ -233,6 +235,7 @@ export function AdminSubscriptionKeys() {
               <CardContent>
                 <div className="text-sm">
                   Providers: {keysData?.counts?.providers || 0}<br />
+                  Nurses: {keysData?.counts?.nurses || 0}<br />
                   Staff: {keysData?.counts?.staff || 0}
                 </div>
               </CardContent>
@@ -420,6 +423,16 @@ export function AdminSubscriptionKeys() {
                 min="0"
                 value={generateForm.providerCount}
                 onChange={(e) => setGenerateForm({ ...generateForm, providerCount: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="nurse-count">Number of Nurse Keys</Label>
+              <Input
+                id="nurse-count"
+                type="number"
+                min="0"
+                value={generateForm.nurseCount}
+                onChange={(e) => setGenerateForm({ ...generateForm, nurseCount: parseInt(e.target.value) || 0 })}
               />
             </div>
             <div>

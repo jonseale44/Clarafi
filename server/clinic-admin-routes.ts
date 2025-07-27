@@ -59,7 +59,7 @@ export function registerClinicAdminRoutes(app: Express) {
         .from(subscriptionKeys)
         .where(and(
           eq(subscriptionKeys.healthSystemId, healthSystemId),
-          eq(subscriptionKeys.usedAt, null)
+          eq(subscriptionKeys.status, 'active')
         ));
       
       const unusedKeys = unusedKeysResult.length;
