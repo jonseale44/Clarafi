@@ -54,6 +54,8 @@ import TermsOfService from "@/pages/terms-of-service";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import BusinessAssociateAgreement from "@/pages/legal/business-associate-agreement";
 import TermsOfServiceLegal from "@/pages/legal/terms-of-service";
+import AdminInviteStaff from "@/pages/admin-invite-staff";
+import AdminSubscriptionPage from "@/pages/admin-subscription";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing-page";
@@ -76,6 +78,8 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/healthcare-data" component={AdminHealthcareData} />
       <ProtectedRoute path="/clinic-admin" component={ClinicAdminDashboard} />
+      <ProtectedRoute path="/admin/invite-staff" component={AdminInviteStaff} />
+      <ProtectedRoute path="/admin/subscription" component={AdminSubscriptionPage} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />
       <ProtectedRoute path="/patients/:id/chart" component={PatientView} />
       <ProtectedRoute path="/patients/:id" component={PatientView} />
