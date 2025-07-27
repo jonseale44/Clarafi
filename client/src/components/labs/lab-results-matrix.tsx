@@ -1240,8 +1240,14 @@ export function LabResultsMatrix({
                 const scrollLeft = e.currentTarget.scrollLeft;
                 const containerRect = e.currentTarget.getBoundingClientRect();
                 
-                // Find the column that's currently visible (accounting for sticky column)
-                const headers = e.currentTarget.querySelectorAll('[data-matrix-date]');
+                // Find the headers in the fixed header section (not in the scrolling body)
+                const headerSection = e.currentTarget.previousElementSibling?.querySelector('.lab-matrix-header-scroll');
+                if (!headerSection) {
+                  isScrollingSyncRef.current = false;
+                  return;
+                }
+                
+                const headers = headerSection.querySelectorAll('[data-matrix-date]');
                 let visibleDate = '';
                 
                 headers.forEach((header) => {
@@ -1254,18 +1260,20 @@ export function LabResultsMatrix({
                 
                 if (visibleDate && reviewScrollRef.current) {
                   // Scroll review panel to corresponding date
-                  const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
+                  const reviewContainer = reviewScrollRef.current;
+                  const reviewElements = reviewContainer.querySelectorAll('[data-review-date]');
+                  
                   reviewElements.forEach((element) => {
                     if (element.getAttribute('data-review-date') === visibleDate) {
                       // Calculate position relative to the review container
-                      const reviewContainer = reviewScrollRef.current;
-                      if (reviewContainer) {
-                        const elementTop = (element as HTMLElement).offsetTop;
-                        
-                        // Set scroll position directly on the review container
-                        // This prevents the parent patient-chart-content from jumping
-                        reviewContainer.scrollTop = elementTop;
-                      }
+                      const elementRect = element.getBoundingClientRect();
+                      const containerRect = reviewContainer.getBoundingClientRect();
+                      
+                      // Calculate the relative position
+                      const relativeTop = elementRect.top - containerRect.top + reviewContainer.scrollTop;
+                      
+                      // Set scroll position directly on the review container
+                      reviewContainer.scrollTop = relativeTop;
                     }
                   });
                 }
