@@ -128,17 +128,21 @@ export class SubscriptionKeyService {
       keys.push(insertedKey);
     }
 
-    // Update health system subscription limits
-    await db.update(healthSystems)
-      .set({
-        subscriptionLimits: {
-          providerKeys: providerCount,
-          nurseKeys: nurseCount,
-          staffKeys: staffCount,
-          totalUsers: providerCount + nurseCount + staffCount
-        }
-      })
-      .where(eq(healthSystems.id, healthSystemId));
+    // For tier 1, update the subscription limits
+    // For tier 2 (enterprise), we don't set limits since it's a per-user pricing model
+    if (tier === 1) {
+      const currentKeys = await this.getActiveKeyCount(healthSystemId);
+      await db.update(healthSystems)
+        .set({
+          subscriptionLimits: {
+            providerKeys: currentKeys.providers + providerCount,
+            nurseKeys: 0, // Tier 1 doesn't support nurses
+            staffKeys: 0, // Tier 1 doesn't support staff
+            totalUsers: currentKeys.providers + providerCount
+          }
+        })
+        .where(eq(healthSystems.id, healthSystemId));
+    }
 
     // Record in subscription history
     await db.insert(subscriptionHistory).values({
@@ -310,23 +314,20 @@ export class SubscriptionKeyService {
       return { success: false, error: 'Cannot regenerate a used key' };
     }
 
-    // Check key limits
-    const keyCount = await this.getActiveKeyCount(oldKey.healthSystemId);
+    // Check key limits only for tier 1
     const [healthSystem] = await db.select().from(healthSystems)
       .where(eq(healthSystems.id, oldKey.healthSystemId));
 
-    const limits = healthSystem?.subscriptionLimits as any || {};
-    
-    if (oldKey.keyType === 'provider' && keyCount.providers >= limits.providerKeys) {
-      return { success: false, error: 'Provider key limit reached' };
-    }
-    
-    if (oldKey.keyType === 'nurse' && keyCount.nurses >= limits.nurseKeys) {
-      return { success: false, error: 'Nurse key limit reached' };
-    }
-    
-    if (oldKey.keyType === 'staff' && keyCount.staff >= limits.staffKeys) {
-      return { success: false, error: 'Staff key limit reached' };
+    if (healthSystem?.subscriptionTier === 1) {
+      const keyCount = await this.getActiveKeyCount(oldKey.healthSystemId);
+      
+      if (oldKey.keyType === 'provider' && keyCount.providers >= 1) {
+        return { success: false, error: 'Tier 1 subscriptions are limited to 1 provider' };
+      }
+      
+      if (oldKey.keyType === 'nurse' || oldKey.keyType === 'staff') {
+        return { success: false, error: 'Tier 1 subscriptions do not support nurse or staff keys' };
+      }
     }
 
     // Deactivate old key

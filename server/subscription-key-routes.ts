@@ -79,49 +79,40 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
       return res.status(400).json({ error: `Tier mismatch: ${healthSystem?.name} is tier ${healthSystem?.subscriptionTier}, but you requested tier ${tier} keys` });
     }
 
-    // Check current key counts against limits
-    const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
-    const limits = healthSystem.subscriptionLimits as any || {};
-    
-    console.log(`🔐 [SubscriptionKeys] Current key counts:`, currentKeys);
-    console.log(`📊 [SubscriptionKeys] Health system limits:`, limits);
-    console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${nurseCount} nurse keys, ${staffCount} staff keys`);
-    console.log(`📈 [SubscriptionKeys] Would result in: ${currentKeys.providers + providerCount} providers, ${currentKeys.nurses + nurseCount} nurses, ${currentKeys.staff + staffCount} staff`);
-    
-    if (limits.providerKeys && currentKeys.providers + providerCount > limits.providerKeys) {
-      console.error(`❌ [SubscriptionKeys] Provider limit exceeded: ${currentKeys.providers} + ${providerCount} > ${limits.providerKeys}`);
-      return res.status(400).json({ 
-        error: `Cannot generate ${providerCount} provider key${providerCount > 1 ? 's' : ''}. Your subscription allows ${limits.providerKeys} total provider key${limits.providerKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.providers} active provider key${currentKeys.providers !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
-        details: {
-          currentProviderKeys: currentKeys.providers,
-          providerKeyLimit: limits.providerKeys,
-          requestedKeys: providerCount
-        }
-      });
-    }
-    
-    if (limits.nurseKeys && currentKeys.nurses + nurseCount > limits.nurseKeys) {
-      console.error(`❌ [SubscriptionKeys] Nurse limit exceeded: ${currentKeys.nurses} + ${nurseCount} > ${limits.nurseKeys}`);
-      return res.status(400).json({ 
-        error: `Cannot generate ${nurseCount} nurse key${nurseCount > 1 ? 's' : ''}. Your subscription allows ${limits.nurseKeys} total nurse key${limits.nurseKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.nurses} active nurse key${currentKeys.nurses !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
-        details: {
-          currentNurseKeys: currentKeys.nurses,
-          nurseKeyLimit: limits.nurseKeys,
-          requestedKeys: nurseCount
-        }
-      });
-    }
-    
-    if (limits.staffKeys && currentKeys.staff + staffCount > limits.staffKeys) {
-      console.error(`❌ [SubscriptionKeys] Staff limit exceeded: ${currentKeys.staff} + ${staffCount} > ${limits.staffKeys}`);
-      return res.status(400).json({ 
-        error: `Cannot generate ${staffCount} staff key${staffCount > 1 ? 's' : ''}. Your subscription allows ${limits.staffKeys} total staff key${limits.staffKeys > 1 ? 's' : ''}, and you currently have ${currentKeys.staff} active staff key${currentKeys.staff !== 1 ? 's' : ''}. Please deactivate existing keys or contact support to increase your limit.`,
-        details: {
-          currentStaffKeys: currentKeys.staff,
-          staffKeyLimit: limits.staffKeys,
-          requestedKeys: staffCount
-        }
-      });
+    // For tier 2 (enterprise), there are no hard limits - it's a per-user pricing model
+    // Only check limits for tier 1 (single provider)
+    if (tier === 1) {
+      const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
+      
+      console.log(`🔐 [SubscriptionKeys] Current key counts:`, currentKeys);
+      console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${nurseCount} nurse keys, ${staffCount} staff keys`);
+      
+      // Tier 1 only allows 1 provider
+      if (currentKeys.providers + providerCount > 1) {
+        console.error(`❌ [SubscriptionKeys] Tier 1 provider limit exceeded: ${currentKeys.providers} + ${providerCount} > 1`);
+        return res.status(400).json({ 
+          error: `Tier 1 subscriptions are limited to 1 provider. You currently have ${currentKeys.providers} active provider key${currentKeys.providers !== 1 ? 's' : ''}. Please upgrade to Enterprise (Tier 2) for multiple providers.`,
+          details: {
+            currentProviderKeys: currentKeys.providers,
+            providerKeyLimit: 1,
+            requestedKeys: providerCount
+          }
+        });
+      }
+      
+      // Tier 1 doesn't support nurse or staff keys
+      if (nurseCount > 0 || staffCount > 0) {
+        console.error(`❌ [SubscriptionKeys] Tier 1 does not support nurse/staff keys`);
+        return res.status(400).json({ 
+          error: `Tier 1 subscriptions do not support nurse or staff keys. Please upgrade to Enterprise (Tier 2) for multi-user support.`
+        });
+      }
+    } else {
+      // For tier 2, just log the current state for monitoring
+      const currentKeys = await SubscriptionKeyService.getActiveKeyCount(targetHealthSystemId);
+      console.log(`🔐 [SubscriptionKeys] Current key counts (Tier 2 - no limits):`, currentKeys);
+      console.log(`📋 [SubscriptionKeys] Requested: ${providerCount} provider keys, ${nurseCount} nurse keys, ${staffCount} staff keys`);
+      console.log(`📈 [SubscriptionKeys] Will result in: ${currentKeys.providers + providerCount} providers, ${currentKeys.nurses + nurseCount} nurses, ${currentKeys.staff + staffCount} staff`);
     }
 
     // Generate keys
