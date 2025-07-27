@@ -1,0 +1,46 @@
+ts: { providers: 1, clinicalStaff: 2, adminStaff: 1, readOnly: 0 }
+}
+✅ [Stripe] Per-user billing checkout session created: cs_test_b114PorYF694XOwZWQURdVW3A0m2ZreZkEKy8xugCE6MY9CKWEyZGn3ITL
+10:29:03 PM [express] POST /api/subscription-keys/create-checkout 200 in 931ms :: {"success":true,"ch…
+📍 [FIRST] POST /api/stripe/webhook
+🔔 [Stripe] Webhook received
+🔍 [Stripe] Constructing event with signature
+❌ [Stripe] Webhook error: Webhook payload must be provided as a string or a Buffer (https://nodejs.org/api/buffer.html) instance representing the _raw_ request body.Payload was provided as a parsed JavaScript object instead. 
+Signature verification is impossible without access to the original signed material. 
+
+Learn more about webhook signing and explore webhook integration examples for various frameworks at https://docs.stripe.com/webhooks/signature
+
+10:29:20 PM [express] POST /api/stripe/webhook 400 in 7ms :: {"error":"Webhook payload must be provid…
+📍 [FIRST] POST /api/stripe/webhook
+🔔 [Stripe] Webhook received
+🔍 [Stripe] Constructing event with signature
+❌ [Stripe] Webhook error: Webhook payload must be provided as a string or a Buffer (https://nodejs.org/api/buffer.html) instance representing the _raw_ request body.Payload was provided as a parsed JavaScript object instead. 
+Signature verification is impossible without access to the original signed material. 
+
+Learn more about webhook signing and explore webhook integration examples for various frameworks at https://docs.stripe.com/webhooks/signature
+
+10:29:20 PM [express] POST /api/stripe/webhook 400 in 4ms :: {"error":"Webhook payload must be provid…
+📍 [FIRST] POST /api/stripe/webhook
+🔔 [Stripe] Webhook received
+🔍 [Stripe] Constructing event with signature
+❌ [Stripe] Webhook error: Webhook payload must be provided as a string or a Buffer (https://nodejs.org/api/buffer.html) instance representing the _raw_ request body.Payload was provided as a parsed JavaScript object instead. 
+Signature verification is impossible without access to the original signed material. 
+
+Learn more about webhook signing and explore webhook integration examples for various frameworks at https://docs.stripe.com/webhooks/signature
+
+10:29:20 PM [express] POST /api/stripe/webhook 400 in 4ms :: {"error":"Webhook payload must be provid…
+📍 [FIRST] POST /api/stripe/webhook
+🔔 [Stripe] Webhook received
+🔍 [Stripe] Constructing event with signature
+❌ [Stripe] Webhook error: Webhook payload must be provided as a string or a Buffer (https://nodejs.org/api/buffer.html) instance representing the _raw_ request body.Payload was provided as a parsed JavaScript object instead. 
+Signature verification is impossible without access to the original signed material. 
+
+Learn more about webhook signing and explore webhook integration examples for various frameworks at https://docs.stripe.com/webhooks/signature
+
+10:29:21 PM [express] POST /api/stripe/webhook 400 in 3ms :: {"error":"Webhook payload must be provid…
+🚨 [PatientNotification] Checking for critical results
+📍 [FIRST] GET /admin/subscription-keys?payment=success&session_id=cs_test_b114PorYF694XOwZWQURdVW3A0m2ZreZkEKy8xugCE6MY9CKWEyZGn3ITL
+📍 [FIRST] GET /@vite/client
+📍 [FIRST] GET /@react-refresh
+📍 [FIRST] GET /src/main.tsx?v=9kVCKhxfUBCOnJ0Ig7V7T
+📍 [FIRST] GET /@fs/home/runner/workspace/node_modules/vite/dist/
