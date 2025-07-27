@@ -1198,8 +1198,8 @@ export function LabResultsMatrix({
                 </colgroup>
                 <thead>
                   <tr className="bg-gray-50">
-                    <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300">
-                      <div className="px-3 py-4">Test</div>
+                    <th className="text-left font-semibold lab-matrix-sticky-col bg-gray-50 border-r border-gray-300" style={{ minHeight: '60px' }}>
+                      <div className="px-3 py-4" style={{ lineHeight: '1.5' }}>Test</div>
                     </th>
                     {displayColumns.map((dateCol, index) => (
                       <th 
