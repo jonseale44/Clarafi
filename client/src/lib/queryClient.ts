@@ -53,6 +53,12 @@ export const getQueryFn: <T>(options: {
     await throwIfResNotOk(res);
     const data = await res.json();
     console.log('✅ [QueryClient] Success for:', url, 'Data length:', Array.isArray(data) ? data.length : 'object');
+    
+    // Special logging for GPT lab review endpoint
+    if (url.includes('gpt-lab-review')) {
+      console.log('🧪 [QueryClient] GPT Lab Review Response:', data);
+    }
+    
     return data;
   };
 

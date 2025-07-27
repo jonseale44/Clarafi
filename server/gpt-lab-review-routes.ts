@@ -221,4 +221,31 @@ router.get("/results/:resultIds", async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/gpt-lab-review/patient/:patientId
+ * Get all GPT reviews for a specific patient
+ */
+router.get("/patient/:patientId", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return APIResponseHandler.unauthorized(res);
+    }
+
+    const patientId = parseInt(req.params.patientId);
+    if (isNaN(patientId)) {
+      return APIResponseHandler.badRequest(res, "Invalid patient ID");
+    }
+
+    const reviews = await GPTLabReviewService.getGPTReviewsForPatient(patientId);
+
+    console.log(`🤖 [GPTLabReviewRoutes] Found ${reviews.length} GPT reviews for patient ${patientId}`);
+
+    return APIResponseHandler.success(res, reviews);
+
+  } catch (error) {
+    console.error('🤖 [GPTLabReviewRoutes] Get reviews for patient error:', error);
+    return APIResponseHandler.error(res, "Failed to fetch GPT reviews for patient", 500, "FETCH_FAILED");
+  }
+});
+
 export default router;

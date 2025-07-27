@@ -18,7 +18,7 @@
  * 
  * See: docs/LAB_RESULTS_MATRIX_IMPLEMENTATION_GUIDE.md for full details
  */
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -568,10 +568,19 @@ export function LabResultsMatrix({
   });
 
   // Fetch GPT lab review notes for this patient
-  const { data: gptReviewNotes = [] } = useQuery({
-    queryKey: [`/api/patients/${patientId}/gpt-lab-reviews`],
+  const { data: gptReviewNotesResponse } = useQuery({
+    queryKey: [`/api/gpt-lab-review/patient/${patientId}`],
     enabled: !!patientId
   });
+  
+  // Extract data based on API response structure
+  const gptReviewNotes = gptReviewNotesResponse || [];
+  
+  useEffect(() => {
+    console.log('🧪 [LabResultsMatrix] GPT Review Notes Response:', gptReviewNotesResponse);
+    console.log('🧪 [LabResultsMatrix] GPT Review Notes:', gptReviewNotes);
+    console.log('🧪 [LabResultsMatrix] Results:', results);
+  }, [gptReviewNotesResponse, gptReviewNotes, results]);
 
   const isLoading = resultsLoading || ordersLoading;
 
@@ -1049,9 +1058,15 @@ export function LabResultsMatrix({
     
     gptReviewNotes.forEach((review: any) => {
       // Get specimen collection dates for the lab results in this review
-      const reviewResults = results.filter((r: any) => 
-        review.resultIds?.includes(r.id)
-      );
+      // Handle both single value and array formats for resultIds
+      const reviewResults = results.filter((r: any) => {
+        if (Array.isArray(review.resultIds)) {
+          return review.resultIds.includes(r.id);
+        } else if (review.resultIds) {
+          return review.resultIds === r.id;
+        }
+        return false;
+      });
       
       reviewResults.forEach((result: any) => {
         const date = result.specimenCollectedAt || result.resultAvailableAt;

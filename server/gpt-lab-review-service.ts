@@ -521,4 +521,21 @@ The patient and nurse messages should be identical in content but different in p
       })
       .where(eq(gptLabReviewNotes.id, reviewId));
   }
+
+  /**
+   * Get all GPT reviews for a specific patient
+   */
+  static async getGPTReviewsForPatient(patientId: number): Promise<any[]> {
+    const reviews = await db
+      .select()
+      .from(gptLabReviewNotes)
+      .where(eq(gptLabReviewNotes.patientId, patientId))
+      .orderBy(desc(gptLabReviewNotes.generatedAt));
+
+    console.log(
+      `🤖 [GPTLabReview] Found ${reviews.length} GPT reviews for patient ${patientId}`,
+    );
+
+    return reviews;
+  }
 }
