@@ -1257,7 +1257,13 @@ export function LabResultsMatrix({
                   const reviewElements = reviewScrollRef.current.querySelectorAll('[data-review-date]');
                   reviewElements.forEach((element) => {
                     if (element.getAttribute('data-review-date') === visibleDate) {
-                      element.scrollIntoView({ behavior: 'auto', block: 'start' });
+                      // Calculate position relative to the review container
+                      const reviewContainer = reviewScrollRef.current;
+                      const elementTop = (element as HTMLElement).offsetTop;
+                      
+                      // Set scroll position directly on the review container
+                      // This prevents the parent patient-chart-content from jumping
+                      reviewContainer.scrollTop = elementTop;
                     }
                   });
                 }
