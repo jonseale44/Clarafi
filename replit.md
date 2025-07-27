@@ -45,6 +45,30 @@ Both pathways feed into unified lab results database with:
 - Full audit trail and compliance tracking
 - Specimen tracking and barcode support (coming soon)
 
+## Recent Security Fix (July 27, 2025)
+
+### Critical Security Fix: System Admin vs Clinic Admin Authorization (July 27, 2025 - 1:49 PM) - COMPLETED
+Fixed major security vulnerability where clinic administrators could access system-wide admin routes:
+
+1. **Security Vulnerability Discovered**: 
+   - Clinic admins (role='admin' with healthSystemId != 1) could access system admin routes like `/api/admin/users`
+   - Both system admins and clinic admins had the same role='admin' in database
+   - Backend authorization only checked role, not health system ownership
+
+2. **Backend Security Fix**:
+   - Updated `requireAdmin` middleware to `requireSystemAdmin` that checks BOTH conditions:
+     - User must have role='admin'
+     - User must belong to healthSystemId=1 (System Administration)
+   - Applied fix to all system admin routes including `/api/admin/users` and `/api/health-systems`
+   - Added security logging to track denied access attempts
+
+3. **Frontend Updates**:
+   - Changed clinic admin dashboard links from `/admin/users` to `/clinic-admin/users`
+   - Changed locations link from `/admin/locations` to `/clinic-admin/locations`
+   - Prevents clinic admins from even attempting to access system routes
+
+4. **Key Security Principle**: System administrators must have BOTH role='admin' AND healthSystemId=1. All other admins are clinic-level admins with access only to their own health system data.
+
 ## Recent Changes (July 26, 2025)
 
 ### Enhanced Test Patient Generator with Doctor Reviews (July 26, 2025 - 11:10 PM) - COMPLETED

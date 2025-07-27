@@ -5,13 +5,23 @@ import { eq, sql, and, isNull, desc, or } from "drizzle-orm";
 import { z } from "zod";
 
 export function registerAdminUserRoutes(app: Express) {
-  // Middleware to check if user is admin
-  const requireAdmin = (req: any, res: any, next: any) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
+  // Middleware to check if user is a SYSTEM admin (not just clinic admin)
+  const requireSystemAdmin = (req: any, res: any, next: any) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
     }
+    
+    // System admins must have role 'admin' AND belong to health system ID 1
+    if (req.user.role !== "admin" || req.user.healthSystemId !== 1) {
+      console.log(`🚫 [Security] Access denied for user ${req.user.username} (role: ${req.user.role}, healthSystemId: ${req.user.healthSystemId})`);
+      return res.status(403).json({ message: "System administrator access required" });
+    }
+    
     next();
   };
+  
+  // Keep the old requireAdmin for backward compatibility but make it an alias
+  const requireAdmin = requireSystemAdmin;
 
   // Public endpoint to get health systems for registration
   // Does not require authentication since it's used on registration page
@@ -34,12 +44,17 @@ export function registerAdminUserRoutes(app: Express) {
     }
   });
 
-  // Get all health systems for admin - includes subscription tier info
+  // Get all health systems for system admin - includes subscription tier info
   app.get("/api/health-systems", async (req, res) => {
-    console.log("[HealthSystems] Request from user:", req.user?.username, "Role:", req.user?.role);
-    if (!req.isAuthenticated() || req.user.role !== 'admin') {
-      console.log("[HealthSystems] Access denied - not admin or not authenticated");
-      return res.status(403).json({ message: "Admin access required" });
+    console.log("[HealthSystems] Request from user:", req.user?.username, "Role:", req.user?.role, "HealthSystemId:", req.user?.healthSystemId);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    // Only system admins (health system ID 1) can view all health systems
+    if (req.user.role !== 'admin' || req.user.healthSystemId !== 1) {
+      console.log("[HealthSystems] Access denied - not system admin");
+      return res.status(403).json({ message: "System administrator access required" });
     }
     try {
       const allHealthSystems = await db

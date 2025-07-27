@@ -39,6 +39,7 @@ import AdminVerificationReview from "@/pages/admin-verification-review";
 import AdminDashboard from "@/pages/admin-dashboard";
 import AdminHealthcareData from "@/pages/admin-healthcare-data";
 import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
+import ClinicAdminUsers from "@/pages/clinic-admin-users";
 import PasswordChangeRequired from "@/pages/password-change-required";
 import MagicLinkPage from "@/pages/magic-link-page";
 import SchedulingPage from "@/pages/scheduling";
@@ -78,6 +79,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/healthcare-data" component={AdminHealthcareData} />
       <ProtectedRoute path="/clinic-admin" component={ClinicAdminDashboard} />
+      <ProtectedRoute path="/clinic-admin/users" component={ClinicAdminUsers} />
       <ProtectedRoute path="/admin/invite-staff" component={AdminInviteStaff} />
       <ProtectedRoute path="/admin/subscription" component={AdminSubscriptionPage} />
       <ProtectedRoute path="/patients/create" component={PatientCreation} />

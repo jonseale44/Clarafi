@@ -8,7 +8,7 @@ import {
   patients,
   userLocations 
 } from '../shared/schema';
-import { eq, and, gte, or } from 'drizzle-orm';
+import { eq, and, gte, or, sql } from 'drizzle-orm';
 
 
 export function registerClinicAdminRoutes(app: Express) {
@@ -248,6 +248,76 @@ Best regards,
       res.status(500).json({ 
         error: 'Failed to fetch invitation templates' 
       });
+    }
+  });
+
+  /**
+   * Get users in the clinic admin's health system
+   */
+  app.get('/api/clinic-admin/users', requireAuth, requireClinicAdmin, async (req, res) => {
+    try {
+      const healthSystemId = req.user!.healthSystemId;
+      
+      // Get all users in this health system with location count
+      const usersInHealthSystem = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          npi: users.npi,
+          credentials: users.credentials,
+          active: users.active,
+          lastLogin: users.lastLogin,
+          createdAt: users.createdAt,
+          healthSystemId: users.healthSystemId,
+          locationCount: sql<number>`COUNT(DISTINCT ${userLocations.locationId})`.as("locationCount"),
+        })
+        .from(users)
+        .leftJoin(userLocations, eq(users.id, userLocations.userId))
+        .where(eq(users.healthSystemId, healthSystemId))
+        .groupBy(users.id)
+        .orderBy(users.lastName, users.firstName);
+
+      console.log(`🔍 [ClinicAdminRoutes] Fetched ${usersInHealthSystem.length} users for health system ${healthSystemId}`);
+      res.json(usersInHealthSystem);
+    } catch (error) {
+      console.error('❌ [ClinicAdminRoutes] Error fetching users:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  /**
+   * Get locations in the clinic admin's health system
+   */
+  app.get('/api/clinic-admin/locations', requireAuth, requireClinicAdmin, async (req, res) => {
+    try {
+      const healthSystemId = req.user!.healthSystemId;
+      
+      const locationsInHealthSystem = await db
+        .select({
+          id: locations.id,
+          name: locations.name,
+          shortName: locations.shortName,
+          locationType: locations.locationType,
+          address: locations.address,
+          city: locations.city,
+          state: locations.state,
+          zipCode: locations.zipCode,
+          phone: locations.phone,
+          healthSystemId: locations.healthSystemId,
+        })
+        .from(locations)
+        .where(eq(locations.healthSystemId, healthSystemId))
+        .orderBy(locations.name);
+
+      console.log(`🔍 [ClinicAdminRoutes] Fetched ${locationsInHealthSystem.length} locations for health system ${healthSystemId}`);
+      res.json(locationsInHealthSystem);
+    } catch (error) {
+      console.error('❌ [ClinicAdminRoutes] Error fetching locations:', error);
+      res.status(500).json({ error: 'Failed to fetch locations' });
     }
   });
 
