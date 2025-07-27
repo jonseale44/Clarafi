@@ -1191,7 +1191,7 @@ export function LabResultsMatrix({
             >
               <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: '200px' }} />
+                  <col style={{ width: '220px' }} />
                   {displayColumns.map((_, index) => (
                     <col key={`col-${index}`} style={{ width: '120px' }} />
                   ))}
@@ -1247,7 +1247,7 @@ export function LabResultsMatrix({
                 headers.forEach((header) => {
                   const rect = header.getBoundingClientRect();
                   // Check if this header is in the visible area (accounting for sticky column width)
-                  if (rect.left >= containerRect.left + 200 && rect.left <= containerRect.left + 400) {
+                  if (rect.left >= containerRect.left + 220 && rect.left <= containerRect.left + 400) {
                     visibleDate = header.getAttribute('data-matrix-date') || '';
                   }
                 });
@@ -1271,7 +1271,7 @@ export function LabResultsMatrix({
           >
             <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed' }}>
               <colgroup>
-                <col style={{ width: '200px' }} />
+                <col style={{ width: '220px' }} />
                 {displayColumns.map((_, index) => (
                   <col key={`body-col-${index}`} style={{ width: '120px' }} />
                 ))}
