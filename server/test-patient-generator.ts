@@ -547,7 +547,7 @@ Labs ordered for next visit. Patient counseled on medication compliance and life
 
     // Generate past encounters
     const encounterDates: Date[] = [];
-    const encounterList: any[] = []; // Store encounters for lab result generation
+    let encounterList: any[] = []; // Store encounters for lab result generation
     for (let i = 0; i < config.numberOfPriorEncounters; i++) {
       const monthsAgo = i * 3 + Math.floor(Math.random() * 2); // Roughly every 3 months
       const encounterDate = new Date();
