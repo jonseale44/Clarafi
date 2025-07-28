@@ -133,7 +133,7 @@ This email was sent by ${healthSystemName} via CLARAFI
 
   const msg = {
     to,
-    from: process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com',
+    from: process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.ai',
     subject: `Your ${healthSystemName} CLARAFI ${keyTypeLabel} Access Key`,
     text: textContent,
     html: htmlContent
