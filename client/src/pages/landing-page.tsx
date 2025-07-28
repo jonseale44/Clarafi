@@ -1185,19 +1185,14 @@ export default function LandingPage() {
                   </li>
                 </ul>
                 
-                <Button 
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all" 
-                  size="lg"
-                  onClick={() => {
-                    // TODO: Implement contact sales
-                    toast({
-                      title: "Enterprise Sales",
-                      description: "Please email sales@clarafi.com or call 1-800-CLARAFI",
-                    });
-                  }}
-                >
-                  Contact Sales Team
-                </Button>
+                <Link href="/admin-verification">
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all" 
+                    size="lg"
+                  >
+                    Apply for Enterprise
+                  </Button>
+                </Link>
                 
                 <p className="text-xs text-gray-500 text-center mt-4">
                   Volume discounts available
