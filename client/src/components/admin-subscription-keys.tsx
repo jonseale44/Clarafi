@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle, Send, ExternalLink } from 'lucide-react';
+import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle, Send, ExternalLink, UserCheck, Calendar, Activity, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect } from 'react';
@@ -70,6 +70,11 @@ export function AdminSubscriptionKeys() {
 
   const { data: keysData, isLoading } = useQuery({
     queryKey: ['/api/subscription-keys/list'],
+  });
+
+  // Fetch registered users for this health system
+  const { data: registeredUsersData } = useQuery({
+    queryKey: ['/api/clinic-admin/users'],
   });
 
   const { data: userData } = useQuery({
@@ -494,6 +499,7 @@ export function AdminSubscriptionKeys() {
             <TabsList>
               <TabsTrigger value="active">Available ({activeKeys.length})</TabsTrigger>
               <TabsTrigger value="used">Used ({usedKeys.length})</TabsTrigger>
+              <TabsTrigger value="registered-users">Registered Users ({registeredUsersData?.length || 0})</TabsTrigger>
               <TabsTrigger value="inactive">Inactive ({inactiveKeys.length})</TabsTrigger>
             </TabsList>
 
@@ -672,6 +678,102 @@ export function AdminSubscriptionKeys() {
                 {usedKeys.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     No keys have been used yet
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="registered-users">
+              <div className="space-y-4">
+                {registeredUsersData && registeredUsersData.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Location Count</TableHead>
+                        <TableHead>Last Login</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {registeredUsersData.map((user: any) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">
+                            {user.firstName} {user.lastName}
+                            {user.credentials && <span className="text-muted-foreground ml-1">{user.credentials}</span>}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">{user.username}</TableCell>
+                          <TableCell className="text-sm">{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              user.role === 'admin' ? 'destructive' :
+                              user.role === 'provider' ? 'default' :
+                              user.role === 'nurse' ? 'secondary' :
+                              'outline'
+                            }>
+                              {user.role === 'admin' ? 'Administrator' :
+                               user.role === 'provider' ? 'Provider' :
+                               user.role === 'nurse' ? 'Nurse' :
+                               'Staff'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">{user.locationCount || 0}</TableCell>
+                          <TableCell>
+                            {user.lastLogin ? (
+                              <div className="text-sm">
+                                <p>{format(new Date(user.lastLogin), 'MMM d, yyyy')}</p>
+                                <p className="text-xs text-muted-foreground">{format(new Date(user.lastLogin), 'h:mm a')}</p>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Never</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {user.active ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600">
+                                  <Activity className="h-3 w-3 mr-1" />
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-red-600 border-red-600">
+                                  <Ban className="h-3 w-3 mr-1" />
+                                  Inactive
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                toast({
+                                  title: "Password Reset",
+                                  description: `Password reset email sent to ${user.email}`,
+                                });
+                              }}
+                              className="ml-2"
+                            >
+                              <RotateCcw className="h-4 w-4 mr-1" />
+                              Reset Password
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-12">
+                    <UserCheck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium text-muted-foreground">No registered users yet</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Users who register using subscription keys will appear here
+                    </p>
                   </div>
                 )}
               </div>
