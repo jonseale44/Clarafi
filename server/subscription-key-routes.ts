@@ -284,7 +284,18 @@ router.get('/details/:key', async (req, res) => {
     // Return key details including employee info if available
     const employeeInfo = subscriptionKey.metadata?.employeeInfo || {};
     
-    res.json({
+    console.log('🔍 [SubscriptionKeys] Key details requested:', {
+      key: key,
+      keyId: subscriptionKey.id,
+      keyType: subscriptionKey.keyType,
+      status: subscriptionKey.status,
+      healthSystemId: subscriptionKey.healthSystemId,
+      healthSystemName: healthSystem?.name,
+      hasEmployeeInfo: !!subscriptionKey.metadata?.employeeInfo,
+      employeeInfo: employeeInfo
+    });
+    
+    const response = {
       success: true,
       keyType: subscriptionKey.keyType,
       healthSystemId: subscriptionKey.healthSystemId,
@@ -302,7 +313,11 @@ router.get('/details/:key', async (req, res) => {
           'staff'
         )
       }
-    });
+    };
+    
+    console.log('✅ [SubscriptionKeys] Sending response:', JSON.stringify(response, null, 2));
+    
+    res.json(response);
   } catch (error) {
     console.error('Error getting key details:', error);
     res.status(500).json({ error: 'Failed to get key details' });
