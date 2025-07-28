@@ -442,8 +442,9 @@ export class RegistrationService {
       }
 
       // Track acquisition data if provided
+      let acquisitionId: number | null = null;
       if (data.utmSource || data.utmMedium || data.referrerUrl || data.landingPage) {
-        await tx
+        const acquisitionResult = await tx
           .insert(userAcquisition)
           .values({
             userId: newUser.id,
@@ -480,9 +481,11 @@ export class RegistrationService {
                 referrer: data.referrerUrl
               }
             }
-          });
+          })
+          .returning();
         
-        console.log(`📊 [RegistrationService] Tracked acquisition data for user ${newUser.id}`);
+        acquisitionId = acquisitionResult[0].id;
+        console.log(`📊 [RegistrationService] Tracked acquisition data for user ${newUser.id} with acquisition ID: ${acquisitionId}`);
       }
 
       // Track conversion event for signup
@@ -496,7 +499,7 @@ export class RegistrationService {
           sessionId: null, // We don't have session ID from backend
           deviceType: 'unknown', // Will be populated from frontend tracking
           browserInfo: null,
-          acquisitionId: data.utmSource || data.referrerUrl ? newUser.id : null, // Link to acquisition if tracking data exists
+          acquisitionId: acquisitionId, // Link to acquisition if tracking data exists
           eventData: {
             registrationType: registrationType,
             role: userRole,
