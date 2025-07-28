@@ -1046,7 +1046,7 @@ export function AdminSubscriptionKeys() {
               </Label>
               <div className="mt-2 text-xl font-bold text-blue-900">
                 {selectedKeyForSending?.keyType === 'provider' ? 'Provider (MD, DO, NP, PA)' :
-                 selectedKeyForSending?.keyType === 'nurse' ? 'Nurse (RN, LPN)' :
+                 selectedKeyForSending?.keyType === 'nurse' ? 'Nurse (RN, LVN)' :
                  selectedKeyForSending?.keyType === 'staff' ? 'Administrative Staff' : ''}
               </div>
               <p className="text-sm text-blue-700 mt-1">

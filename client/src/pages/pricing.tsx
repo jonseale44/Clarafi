@@ -200,7 +200,7 @@ export default function Pricing() {
                     <span className="font-semibold">$399/mo</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Clinical Staff (RN, MA, LPN)</span>
+                    <span>Clinical Staff (RN, MA, LVN)</span>
                     <span className="font-semibold">$99/mo</span>
                   </div>
                   <div className="flex justify-between">
