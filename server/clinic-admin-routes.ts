@@ -350,5 +350,130 @@ Best regards,
     }
   });
 
+  /**
+   * Create a new location for the clinic admin's health system
+   */
+  app.post('/api/clinic-admin/locations', requireAuth, requireClinicAdmin, async (req, res) => {
+    try {
+      const healthSystemId = req.user!.healthSystemId;
+      const { name, shortName, address, city, state, zipCode, phone, npi, taxId, locationType } = req.body;
+
+      // Validate required fields
+      if (!name || !address || !city || !state || !zipCode) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: name, address, city, state, and zipCode are required' 
+        });
+      }
+
+      // Create the location
+      const [newLocation] = await db.insert(locations)
+        .values({
+          name,
+          shortName: shortName || name.substring(0, 20),
+          address,
+          city,
+          state,
+          zipCode,
+          phone,
+          npi,
+          taxId,
+          locationType: locationType || 'clinic',
+          healthSystemId,
+          active: true,
+        })
+        .returning();
+
+      console.log(`✅ [ClinicAdminRoutes] Created new location: ${newLocation.id} for health system ${healthSystemId}`);
+      res.status(201).json(newLocation);
+    } catch (error) {
+      console.error('❌ [ClinicAdminRoutes] Error creating location:', error);
+      res.status(500).json({ error: 'Failed to create location' });
+    }
+  });
+
+  /**
+   * Update a location in the clinic admin's health system
+   */
+  app.put('/api/clinic-admin/locations/:id', requireAuth, requireClinicAdmin, async (req, res) => {
+    try {
+      const healthSystemId = req.user!.healthSystemId;
+      const locationId = parseInt(req.params.id);
+      const updates = req.body;
+
+      // Verify the location belongs to this health system
+      const [existingLocation] = await db.select()
+        .from(locations)
+        .where(and(
+          eq(locations.id, locationId),
+          eq(locations.healthSystemId, healthSystemId)
+        ))
+        .limit(1);
+
+      if (!existingLocation) {
+        return res.status(404).json({ error: 'Location not found' });
+      }
+
+      // Update the location
+      const [updatedLocation] = await db.update(locations)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(locations.id, locationId))
+        .returning();
+
+      console.log(`✅ [ClinicAdminRoutes] Updated location: ${locationId} for health system ${healthSystemId}`);
+      res.json(updatedLocation);
+    } catch (error) {
+      console.error('❌ [ClinicAdminRoutes] Error updating location:', error);
+      res.status(500).json({ error: 'Failed to update location' });
+    }
+  });
+
+  /**
+   * Delete a location from the clinic admin's health system
+   */
+  app.delete('/api/clinic-admin/locations/:id', requireAuth, requireClinicAdmin, async (req, res) => {
+    try {
+      const healthSystemId = req.user!.healthSystemId;
+      const locationId = parseInt(req.params.id);
+
+      // Verify the location belongs to this health system
+      const [existingLocation] = await db.select()
+        .from(locations)
+        .where(and(
+          eq(locations.id, locationId),
+          eq(locations.healthSystemId, healthSystemId)
+        ))
+        .limit(1);
+
+      if (!existingLocation) {
+        return res.status(404).json({ error: 'Location not found' });
+      }
+
+      // Check if location has associated users
+      const associatedUsers = await db.select()
+        .from(userLocations)
+        .where(eq(userLocations.locationId, locationId))
+        .limit(1);
+
+      if (associatedUsers.length > 0) {
+        return res.status(400).json({ 
+          error: 'Cannot delete location with associated users. Please reassign users first.' 
+        });
+      }
+
+      // Delete the location
+      await db.delete(locations)
+        .where(eq(locations.id, locationId));
+
+      console.log(`✅ [ClinicAdminRoutes] Deleted location: ${locationId} for health system ${healthSystemId}`);
+      res.json({ message: 'Location deleted successfully' });
+    } catch (error) {
+      console.error('❌ [ClinicAdminRoutes] Error deleting location:', error);
+      res.status(500).json({ error: 'Failed to delete location' });
+    }
+  });
+
   console.log('✅ [ClinicAdminRoutes] Clinic admin routes registered');
 }

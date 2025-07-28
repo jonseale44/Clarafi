@@ -40,6 +40,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminHealthcareData from "@/pages/admin-healthcare-data";
 import ClinicAdminDashboard from "@/pages/clinic-admin-dashboard";
 import ClinicAdminUsers from "@/pages/clinic-admin-users";
+import ClinicAdminLocations from "@/pages/clinic-admin-locations";
 import PasswordChangeRequired from "@/pages/password-change-required";
 import MagicLinkPage from "@/pages/magic-link-page";
 import SchedulingPage from "@/pages/scheduling";
@@ -81,6 +82,7 @@ function Router() {
       <ProtectedRoute path="/admin/healthcare-data" component={AdminHealthcareData} />
       <ProtectedRoute path="/clinic-admin" component={ClinicAdminDashboard} />
       <ProtectedRoute path="/clinic-admin/users" component={ClinicAdminUsers} />
+      <ProtectedRoute path="/clinic-admin/locations" component={ClinicAdminLocations} />
       <ProtectedRoute path="/admin/invite-staff" component={AdminInviteStaff} />
       <ProtectedRoute path="/admin/subscription" component={AdminSubscriptionPage} />
       <ProtectedRoute path="/billing/management" component={BillingManagement} />
