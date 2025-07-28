@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Clarafi Secure Capture",
+  "version": "1.0.0",
+  "description": "HIPAA-compliant screen capture for medical records - captures directly to secure servers without local storage",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "identity",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:*/*",
+    "https://*.replit.app/*",
+    "https://*.clarafi.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["capture-ui.css"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["capture-ui.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
