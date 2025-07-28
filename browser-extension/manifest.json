@@ -13,6 +13,7 @@
   "host_permissions": [
     "http://localhost:*/*",
     "https://*.replit.app/*",
+    "https://*.replit.dev/*",
     "https://*.clarafi.com/*"
   ],
   "background": {
@@ -21,7 +22,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://localhost:*/*", "https://*.replit.app/*", "https://*.clarafi.com/*"],
+      "matches": ["http://localhost:*/*", "https://*.replit.app/*", "https://*.replit.dev/*", "https://*.clarafi.com/*"],
       "js": ["clarafi-content.js"],
       "run_at": "document_end"
     }
