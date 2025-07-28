@@ -19,8 +19,10 @@ export function AdminSubscriptionKeysPage() {
             <Link href="/dashboard">
               <div className="flex items-center gap-2 cursor-pointer">
                 <span className="font-bold text-2xl">
-                  <span className="text-navy-blue-600">CLAR</span>
-                  <span className="text-gold">AFI</span>
+                  <span className="text-[#1e3a8a]">CLAR</span>
+                  <span className="text-[#fbbf24]">A</span>
+                  <span className="text-[#1e3a8a]">F</span>
+                  <span className="text-[#fbbf24]">I</span>
                 </span>
               </div>
             </Link>
