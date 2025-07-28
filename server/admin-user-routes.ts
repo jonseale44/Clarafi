@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db.js";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs, userAcquisition, conversionEvents } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs, userAcquisition, conversionEvents, subscriptionKeys } from "@shared/schema";
 import { eq, sql, and, isNull, desc, or } from "drizzle-orm";
 import { z } from "zod";
 
@@ -714,6 +714,16 @@ export function registerAdminUserRoutes(app: Express) {
         await db.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
       } catch (e) {
         console.log(`⚠️ [AdminUserRoutes] No conversion events to delete or table doesn't exist`);
+      }
+      
+      // Update subscription keys to clear usedBy reference before deleting user
+      console.log(`🔓 [AdminUserRoutes] Clearing subscription key references for user ${userId}`);
+      try {
+        await db.update(subscriptionKeys)
+          .set({ usedBy: null })
+          .where(eq(subscriptionKeys.usedBy, userId));
+      } catch (e) {
+        console.log(`⚠️ [AdminUserRoutes] No subscription keys to update or table doesn't exist`);
       }
       
       // Clear original_provider_id from any health systems owned by this user
