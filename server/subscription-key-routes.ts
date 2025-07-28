@@ -332,7 +332,7 @@ router.get('/details/:key', async (req, res) => {
         practiceAddress: primaryLocation.address,
         practiceCity: primaryLocation.city,
         practiceState: primaryLocation.state,
-        practiceZipCode: primaryLocation.zipCode,
+        practiceZipCode: primaryLocation.zip_code,  // Fixed: database column is zip_code, not zipCode
         practicePhone: primaryLocation.phone
       } : null,
       employeeInfo: {

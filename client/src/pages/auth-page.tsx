@@ -1269,17 +1269,7 @@ export default function AuthPage() {
                         </div>
                     )}
                     
-                    {/* Hidden fields for practice information when using subscription key */}
-                    {registerForm.watch('subscriptionKey') && (
-                      <>
-                        <Input type="hidden" {...registerForm.register("practiceName")} />
-                        <Input type="hidden" {...registerForm.register("practiceAddress")} />
-                        <Input type="hidden" {...registerForm.register("practiceCity")} />
-                        <Input type="hidden" {...registerForm.register("practiceState")} />
-                        <Input type="hidden" {...registerForm.register("practiceZipCode")} />
-                        <Input type="hidden" {...registerForm.register("practicePhone")} />
-                      </>
-                    )}
+
                     
                     <div className="space-y-2">
                       <Label htmlFor="password" className="flex items-center gap-2">

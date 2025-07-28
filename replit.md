@@ -49,6 +49,29 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 28, 2025)
 
+### Fixed Practice Address Fields Not Auto-Filling Bug (July 28, 2025 - 6:20 PM) - FIXED
+Fixed critical database field name mismatch that prevented practice address fields from auto-filling for users registering with subscription keys:
+
+1. **Problem Identified**:
+   - All pre-filled fields worked EXCEPT practice address fields (name, address, city, state, zip, phone)
+   - Employee fields (firstName, lastName, email, npi) auto-filled correctly
+   - Issue persisted despite multiple frontend attempts to fix
+
+2. **Root Cause Found**:
+   - Database column uses snake_case: `zip_code`
+   - API code was accessing camelCase: `zipCode`
+   - This field mapping error in `/api/subscription-keys/details/:key` endpoint caused the entire practiceInfo object to fail
+
+3. **Solution Implemented**:
+   - Fixed field mapping in `server/subscription-key-routes.ts` line 335
+   - Changed `primaryLocation.zipCode` to `primaryLocation.zip_code`
+   - Removed unnecessary hidden form field workaround from auth-page.tsx
+
+4. **Remaining Technical Debt**:
+   - Click tracking status doesn't update in real-time (requires manual refresh)
+   - Field naming inconsistency throughout codebase (snake_case vs camelCase)
+   - See SUBSCRIPTION_KEY_TECHNICAL_DEBT.md for full assessment
+
 ### Consolidated Registration Tracking & Password Reset Implementation (July 28, 2025 - 4:54 PM) - COMPLETED
 Consolidated all subscription key registration tracking into the "Active Keys" tab and implemented backend password reset functionality:
 
