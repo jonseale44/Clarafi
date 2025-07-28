@@ -493,55 +493,107 @@ export default function AuthPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionKey = urlParams.get('key');
+    const tabParam = urlParams.get('tab');
+    
+    console.log('🔍 URL params:', {
+      key: subscriptionKey,
+      tab: tabParam,
+      fullURL: window.location.href
+    });
     
     if (subscriptionKey) {
       console.log('🔑 Found subscription key in URL:', subscriptionKey);
       
       // Fetch key details and pre-populate form
       apiRequest("GET", `/api/subscription-keys/details/${encodeURIComponent(subscriptionKey)}`)
-        .then(response => response.json())
+        .then(response => {
+          console.log('📡 API response status:', response.status);
+          return response.json();
+        })
         .then(data => {
-          console.log('📋 Subscription key details:', data);
+          console.log('📋 Full subscription key details:', JSON.stringify(data, null, 2));
           
           if (data.success) {
+            console.log('✅ Success! Setting form values...');
+            
             // Pre-populate form with employee info
+            console.log('Setting subscriptionKey:', subscriptionKey);
             registerForm.setValue('subscriptionKey', subscriptionKey);
+            
+            console.log('Setting registrationType to join_existing');
             registerForm.setValue('registrationType', 'join_existing');
             
             if (data.employeeInfo) {
-              if (data.employeeInfo.firstName) registerForm.setValue('firstName', data.employeeInfo.firstName);
-              if (data.employeeInfo.lastName) registerForm.setValue('lastName', data.employeeInfo.lastName);
-              if (data.employeeInfo.email) registerForm.setValue('email', data.employeeInfo.email);
-              if (data.employeeInfo.username) registerForm.setValue('username', data.employeeInfo.username);
-              if (data.employeeInfo.npi) registerForm.setValue('npi', data.employeeInfo.npi);
-              if (data.employeeInfo.credentials) registerForm.setValue('credentials', data.employeeInfo.credentials);
-              if (data.employeeInfo.role) registerForm.setValue('role', data.employeeInfo.role);
+              console.log('📝 Employee info found:', data.employeeInfo);
+              
+              if (data.employeeInfo.firstName) {
+                console.log('Setting firstName:', data.employeeInfo.firstName);
+                registerForm.setValue('firstName', data.employeeInfo.firstName);
+              }
+              if (data.employeeInfo.lastName) {
+                console.log('Setting lastName:', data.employeeInfo.lastName);
+                registerForm.setValue('lastName', data.employeeInfo.lastName);
+              }
+              if (data.employeeInfo.email) {
+                console.log('Setting email:', data.employeeInfo.email);
+                registerForm.setValue('email', data.employeeInfo.email);
+              }
+              if (data.employeeInfo.username) {
+                console.log('Setting username:', data.employeeInfo.username);
+                registerForm.setValue('username', data.employeeInfo.username);
+              }
+              if (data.employeeInfo.npi) {
+                console.log('Setting npi:', data.employeeInfo.npi);
+                registerForm.setValue('npi', data.employeeInfo.npi);
+              }
+              if (data.employeeInfo.credentials) {
+                console.log('Setting credentials:', data.employeeInfo.credentials);
+                registerForm.setValue('credentials', data.employeeInfo.credentials);
+              }
+              if (data.employeeInfo.role) {
+                console.log('Setting role:', data.employeeInfo.role);
+                registerForm.setValue('role', data.employeeInfo.role);
+              }
+            } else {
+              console.log('⚠️ No employee info in response');
             }
             
             // Store health system info for display
+            console.log('Setting health system:', {
+              id: data.healthSystemId,
+              name: data.healthSystemName
+            });
             setSelectedHealthSystem({
               id: data.healthSystemId,
               name: data.healthSystemName
             });
             
             // Switch to register tab
+            console.log('Switching to register tab');
             setActiveTab('register');
+            
+            // Log final form values
+            console.log('📊 Final form values:', registerForm.getValues());
             
             toast({
               title: "Subscription Key Loaded",
               description: `Your information has been pre-filled for ${data.healthSystemName}`,
               duration: 5000,
             });
+          } else {
+            console.error('❌ API returned success: false', data);
           }
         })
         .catch(error => {
-          console.error('Failed to fetch subscription key details:', error);
+          console.error('❌ Failed to fetch subscription key details:', error);
           toast({
             title: "Invalid Key",
             description: "The subscription key could not be loaded. Please enter it manually.",
             variant: "destructive",
           });
         });
+    } else {
+      console.log('🚫 No subscription key found in URL');
     }
   }, []);
 

@@ -296,9 +296,11 @@ router.get('/details/:key', async (req, res) => {
         username: employeeInfo.username || '',
         npi: employeeInfo.npi || '',
         credentials: employeeInfo.credentials || '',
-        role: subscriptionKey.keyType === 'provider' ? 'provider' : 
-              subscriptionKey.keyType === 'nurse' || subscriptionKey.keyType === 'clinicalStaff' ? 'nurse' : 
-              'staff'
+        role: employeeInfo.role || (
+          subscriptionKey.keyType === 'provider' ? 'provider' : 
+          subscriptionKey.keyType === 'nurse' || subscriptionKey.keyType === 'clinicalStaff' ? 'nurse' : 
+          'staff'
+        )
       }
     });
   } catch (error) {
@@ -507,7 +509,7 @@ router.get('/verification-status', async (req, res) => {
 router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
   try {
     const keyId = parseInt(req.params.keyId);
-    const { email, firstName, lastName, username, employeeId, npi, credentials, includeInstructions } = req.body;
+    const { email, firstName, lastName, username, employeeId, npi, credentials, role, includeInstructions } = req.body;
     
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -541,6 +543,7 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
       employeeId,
       npi,
       credentials,
+      role,
       sentBy: userId,
       sentAt: new Date().toISOString(),
     };

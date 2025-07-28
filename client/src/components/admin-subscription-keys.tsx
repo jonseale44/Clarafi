@@ -56,6 +56,7 @@ export function AdminSubscriptionKeys() {
     employeeId: '',
     npi: '',
     credentials: '',
+    role: '',
     includeInstructions: true,
   });
   const [generateForm, setGenerateForm] = useState({
@@ -168,7 +169,11 @@ export function AdminSubscriptionKeys() {
         email: '',
         firstName: '',
         lastName: '',
+        username: '',
         employeeId: '',
+        npi: '',
+        credentials: '',
+        role: '',
         includeInstructions: true,
       });
     },
@@ -523,7 +528,13 @@ export function AdminSubscriptionKeys() {
                                 email: '',
                                 firstName: '',
                                 lastName: '',
+                                username: '',
                                 employeeId: '',
+                                npi: '',
+                                credentials: '',
+                                role: key.keyType === 'provider' ? 'provider' : 
+                                     key.keyType === 'nurse' ? 'nurse' : 
+                                     'staff',
                                 includeInstructions: true,
                               });
                               setShowSendDialog(true);
