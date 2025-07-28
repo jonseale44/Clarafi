@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit2, Trash2, MapPin, Phone, Globe } from "lucide-react";
+import { Plus, Edit2, Trash2, MapPin, Phone, Globe, ArrowLeft, Key } from "lucide-react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -193,21 +194,45 @@ export default function ClinicAdminLocations() {
   return (
     <AppLayout>
       <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Locations</h1>
-            <p className="text-muted-foreground">
-              Manage your health system's physical locations
-            </p>
+        <div className="mb-6">
+          {/* Check if we came from subscription keys page */}
+          {window.location.search.includes('from=subscription-keys') && (
+            <div className="mb-4">
+              <Link href="/admin/subscription-keys">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Subscription Keys
+                </Button>
+              </Link>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Locations</h1>
+              <p className="text-muted-foreground">
+                Manage your health system's physical locations
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {!window.location.search.includes('from=subscription-keys') && (
+                <Link href="/admin/subscription-keys">
+                  <Button variant="outline">
+                    <Key className="mr-2 h-4 w-4" />
+                    Subscription Keys
+                  </Button>
+                </Link>
+              )}
+              <Button onClick={() => {
+                setEditingLocation(null);
+                form.reset();
+                setIsDialogOpen(true);
+              }}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Location
+              </Button>
+            </div>
           </div>
-          <Button onClick={() => {
-            setEditingLocation(null);
-            form.reset();
-            setIsDialogOpen(true);
-          }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Location
-          </Button>
         </div>
 
         {locations.length === 0 ? (

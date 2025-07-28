@@ -11,11 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle, Send } from 'lucide-react';
+import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle, Send, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 
 export function AdminSubscriptionKeys() {
   const [location] = useLocation();
@@ -986,7 +986,7 @@ export function AdminSubscriptionKeys() {
                 </div>
 
                 <div>
-                  <Label htmlFor="locationId">Assign to Location</Label>
+                  <Label htmlFor="locationId">Assign to Location <span className="text-red-500">*</span></Label>
                   <Select
                     value={sendForm.locationId}
                     onValueChange={(value) => setSendForm({ ...sendForm, locationId: value })}
@@ -995,16 +995,31 @@ export function AdminSubscriptionKeys() {
                       <SelectValue placeholder="Select a location" />
                     </SelectTrigger>
                     <SelectContent>
-                      {locationsData?.locations?.map((location: any) => (
-                        <SelectItem key={location.id} value={location.id.toString()}>
-                          {location.name} - {location.city}, {location.state}
-                        </SelectItem>
-                      ))}
+                      {locationsData && locationsData.length > 0 ? (
+                        locationsData.map((location: any) => (
+                          <SelectItem key={location.id} value={location.id.toString()}>
+                            {location.name} - {location.city}, {location.state}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-4 text-sm text-muted-foreground">
+                          No locations found
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    User will be assigned to this location when they register.
-                  </p>
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="text-sm text-gray-500">
+                      User will be assigned to this location when they register.
+                    </p>
+                    <Link 
+                      to="/clinic-admin/locations?from=subscription-keys" 
+                      className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                    >
+                      Need to add a location?
+                      <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -1042,12 +1057,20 @@ export function AdminSubscriptionKeys() {
                   });
                   return;
                 }
+                if (!sendForm.locationId) {
+                  toast({
+                    title: "Location Required",
+                    description: "Please select a location to assign the employee to.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 sendKeyMutation.mutate({
                   keyId: selectedKeyForSending.id,
                   employeeInfo: sendForm,
                 });
               }}
-              disabled={sendKeyMutation.isPending || !sendForm.email}
+              disabled={sendKeyMutation.isPending || !sendForm.email || !sendForm.locationId}
             >
               {sendKeyMutation.isPending ? (
                 <>
