@@ -503,106 +503,178 @@ export function AdminSubscriptionKeys() {
                   <TableRow>
                     <TableHead>Key</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Sent To</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Expires</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeKeys.map((key: any) => (
-                    <TableRow key={key.id}>
-                      <TableCell className="font-mono">{key.key}</TableCell>
-                      <TableCell>{getKeyTypeBadge(key.keyType)}</TableCell>
-                      <TableCell>{getStatusBadge(key.status)}</TableCell>
-                      <TableCell>{format(new Date(key.createdAt), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>{format(new Date(key.expiresAt), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => copyToClipboard(key.key)}
-                            title="Copy key"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedKeyForSending(key);
-                              setSendForm({
-                                email: '',
-                                firstName: '',
-                                lastName: '',
-                                username: '',
-                                employeeId: '',
-                                npi: '',
-                                credentials: '',
-                                role: key.keyType === 'provider' ? 'provider' : 
-                                     key.keyType === 'nurse' ? 'nurse' : 
-                                     'staff',
-                                locationId: '',
-                                includeInstructions: true,
-                              });
-                              setShowSendDialog(true);
-                            }}
-                            title="Send key to employee"
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deactivateKeyMutation.mutate(key.id)}
-                            title="Deactivate key"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {activeKeys.map((key: any) => {
+                    const sentTo = key.metadata?.sentTo;
+                    const alreadySent = !!sentTo?.email;
+                    
+                    return (
+                      <TableRow key={key.id}>
+                        <TableCell className="font-mono">{key.key}</TableCell>
+                        <TableCell>{getKeyTypeBadge(key.keyType)}</TableCell>
+                        <TableCell>
+                          {sentTo ? (
+                            <div>
+                              <p className="text-sm">{sentTo.firstName} {sentTo.lastName}</p>
+                              <p className="text-xs text-muted-foreground">{sentTo.email}</p>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">Not sent</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{format(new Date(key.createdAt), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>{format(new Date(key.expiresAt), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => copyToClipboard(key.key)}
+                              title="Copy key"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedKeyForSending(key);
+                                setSendForm({
+                                  email: '',
+                                  firstName: '',
+                                  lastName: '',
+                                  username: '',
+                                  employeeId: '',
+                                  npi: '',
+                                  credentials: '',
+                                  role: key.keyType === 'provider' ? 'provider' : 
+                                       key.keyType === 'nurse' ? 'nurse' : 
+                                       'staff',
+                                  locationId: '',
+                                  includeInstructions: true,
+                                });
+                                setShowSendDialog(true);
+                              }}
+                              title={alreadySent ? "Already sent - click to resend to new person" : "Send key to employee"}
+                              disabled={alreadySent}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deactivateKeyMutation.mutate(key.id)}
+                              title="Deactivate key"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TabsContent>
 
             <TabsContent value="used">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Used By</TableHead>
-                    <TableHead>Used At</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usedKeys.map((key: any) => (
-                    <TableRow key={key.id}>
-                      <TableCell className="font-mono">{key.key}</TableCell>
-                      <TableCell>{getKeyTypeBadge(key.keyType)}</TableCell>
-                      <TableCell>{getStatusBadge(key.status)}</TableCell>
-                      <TableCell>
-                        {key.userName} {key.userLastName} ({key.userEmail})
-                      </TableCell>
-                      <TableCell>{format(new Date(key.usedAt), 'MMM d, yyyy')}</TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => deactivateKeyMutation.mutate(key.id)}
-                        >
-                          <Ban className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-4">
+                {usedKeys.map((key: any) => {
+                  const sentTo = key.metadata?.sentTo;
+                  const clickTracking = key.metadata?.clickTracking;
+                  
+                  return (
+                    <Card key={key.id}>
+                      <CardContent className="pt-6">
+                        <div className="grid gap-4">
+                          {/* Key Info Row */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Key</p>
+                                <p className="font-mono text-sm">{key.key}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Type</p>
+                                <div className="mt-1">{getKeyTypeBadge(key.keyType)}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => deactivateKeyMutation.mutate(key.id)}
+                            >
+                              <Ban className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* Tracking Timeline */}
+                          <div className="space-y-3 pl-2 border-l-2 border-muted">
+                            {/* Sent To */}
+                            {sentTo && (
+                              <div className="flex items-start gap-3 -ml-[9px]">
+                                <div className="w-4 h-4 rounded-full bg-blue-500 border-2 border-background" />
+                                <div className="flex-1 -mt-0.5">
+                                  <p className="text-sm font-medium">Key Sent</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    To: {sentTo.firstName} {sentTo.lastName} ({sentTo.email})
+                                    {sentTo.locationId && ` • Location ID: ${sentTo.locationId}`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(new Date(sentTo.sentAt), 'MMM d, yyyy h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Registration Started */}
+                            {clickTracking?.registrationStarted && (
+                              <div className="flex items-start gap-3 -ml-[9px]">
+                                <div className="w-4 h-4 rounded-full bg-amber-500 border-2 border-background" />
+                                <div className="flex-1 -mt-0.5">
+                                  <p className="text-sm font-medium">Registration Started</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Clicked link {clickTracking.clickCount || 1} time{(clickTracking.clickCount || 1) !== 1 ? 's' : ''}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {clickTracking.firstClickedAt && format(new Date(clickTracking.firstClickedAt), 'MMM d, yyyy h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Registration Completed */}
+                            <div className="flex items-start gap-3 -ml-[9px]">
+                              <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-background" />
+                              <div className="flex-1 -mt-0.5">
+                                <p className="text-sm font-medium">Registration Completed</p>
+                                <p className="text-sm text-muted-foreground">
+                                  By: {key.userName} {key.userLastName} ({key.userEmail})
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(key.usedAt), 'MMM d, yyyy h:mm a')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                
+                {usedKeys.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No keys have been used yet
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="inactive">

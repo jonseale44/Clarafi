@@ -276,6 +276,37 @@ router.get('/details/:key', async (req, res) => {
       return res.status(400).json({ error: 'Key is no longer available' });
     }
     
+    // Update click tracking - this tracks when someone views the registration form
+    const clickTracking = subscriptionKey.metadata?.clickTracking || {
+      firstClickedAt: null,
+      clickCount: 0,
+      lastClickedAt: null,
+      registrationStarted: false,
+      registrationStartedAt: null,
+      registrationCompleted: false,
+      registrationCompletedAt: null,
+    };
+    
+    const now = new Date().toISOString();
+    clickTracking.clickCount = (clickTracking.clickCount || 0) + 1;
+    clickTracking.lastClickedAt = now;
+    if (!clickTracking.firstClickedAt) {
+      clickTracking.firstClickedAt = now;
+    }
+    if (!clickTracking.registrationStarted) {
+      clickTracking.registrationStarted = true;
+      clickTracking.registrationStartedAt = now;
+    }
+    
+    await db.update(subscriptionKeys)
+      .set({
+        metadata: {
+          ...subscriptionKey.metadata,
+          clickTracking,
+        }
+      })
+      .where(eq(subscriptionKeys.id, subscriptionKey.id));
+    
     // Get health system info
     const [healthSystem] = await db.select()
       .from(healthSystems)
@@ -550,7 +581,14 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Key is not available for sending' });
     }
 
-    // Update key metadata with employee information
+    // Check if key has already been sent to someone
+    if (key.metadata?.sentTo?.email) {
+      return res.status(400).json({ 
+        error: `This key has already been sent to ${key.metadata.sentTo.email}. Each key can only be sent to one person.` 
+      });
+    }
+
+    // Update key metadata with employee information and tracking
     const employeeInfo = {
       email,
       firstName,
@@ -561,8 +599,22 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
       credentials,
       role,
       locationId: req.body.locationId || null,
+    };
+
+    const sentTo = {
+      ...employeeInfo,
       sentBy: userId,
       sentAt: new Date().toISOString(),
+    };
+
+    const clickTracking = {
+      firstClickedAt: null,
+      clickCount: 0,
+      lastClickedAt: null,
+      registrationStarted: false,
+      registrationStartedAt: null,
+      registrationCompleted: false,
+      registrationCompletedAt: null,
     };
 
     await db.update(subscriptionKeys)
@@ -570,6 +622,8 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
         metadata: {
           ...key.metadata,
           employeeInfo,
+          sentTo,
+          clickTracking,
         }
       })
       .where(eq(subscriptionKeys.id, keyId));

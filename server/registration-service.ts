@@ -538,11 +538,27 @@ export class RegistrationService {
       
       // Mark subscription key as used if this was an enterprise registration
       if (validatedKeyId) {
+        // Get the current key to update metadata
+        const [currentKey] = await tx.select()
+          .from(subscriptionKeys)
+          .where(eq(subscriptionKeys.id, validatedKeyId));
+        
+        const updatedMetadata = {
+          ...currentKey.metadata,
+        };
+        
+        // Update click tracking to mark registration as completed
+        if (updatedMetadata.clickTracking) {
+          updatedMetadata.clickTracking.registrationCompleted = true;
+          updatedMetadata.clickTracking.registrationCompletedAt = new Date().toISOString();
+        }
+        
         await tx.update(subscriptionKeys)
           .set({
             status: 'used',
             usedBy: newUser.id,
-            usedAt: new Date()
+            usedAt: new Date(),
+            metadata: updatedMetadata
           })
           .where(eq(subscriptionKeys.id, validatedKeyId));
           

@@ -166,7 +166,7 @@ export class SubscriptionKeyService {
   /**
    * Validate and use a subscription key
    */
-  static async validateAndUseKey(keyString: string, userId: number) {
+  static async validateAndUseKey(keyString: string, userId: number, userEmail?: string) {
     // Check if key exists and is valid
     const [key] = await db.select().from(subscriptionKeys)
       .where(eq(subscriptionKeys.key, keyString));
@@ -178,6 +178,11 @@ export class SubscriptionKeyService {
     // Check if key is already used
     if (key.status === 'used') {
       return { success: false, error: 'Key has already been used' };
+    }
+    
+    // Check if key has been sent to someone else
+    if (userEmail && key.metadata?.sentTo?.email && key.metadata.sentTo.email !== userEmail) {
+      return { success: false, error: 'This key was sent to a different email address' };
     }
 
     // Check if key is deactivated
@@ -207,12 +212,24 @@ export class SubscriptionKeyService {
     // Get subscription tier from metadata
     const subscriptionTier = key.metadata?.subscriptionTier as number || 2;
 
-    // Use the key
+    // Use the key and update tracking
+    const now = new Date();
+    const updatedMetadata = {
+      ...key.metadata,
+    };
+    
+    // Update click tracking to mark registration as completed
+    if (updatedMetadata.clickTracking) {
+      updatedMetadata.clickTracking.registrationCompleted = true;
+      updatedMetadata.clickTracking.registrationCompletedAt = now.toISOString();
+    }
+    
     await db.update(subscriptionKeys)
       .set({
         status: 'used',
         usedBy: userId,
-        usedAt: new Date()
+        usedAt: now,
+        metadata: updatedMetadata
       })
       .where(eq(subscriptionKeys.id, key.id));
 

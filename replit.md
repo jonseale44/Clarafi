@@ -93,6 +93,36 @@ Implemented comprehensive location assignment functionality for multi-location c
 
 4. **Result**: Clinic administrators can now pre-assign staff to specific locations when sending subscription keys. When staff register using the key, they are automatically assigned to the correct location without any manual selection required.
 
+### Comprehensive Subscription Key Lifecycle Tracking (July 28, 2025 - 4:17 PM) - COMPLETED
+Implemented complete subscription key tracking system with permanent employee information storage and full lifecycle visibility:
+
+1. **Problem Identified**:
+   - No visibility into key usage journey after sending to employees
+   - Couldn't tell if employee clicked registration link or abandoned process
+   - No way to track registration completion status
+   - Keys could be shared between multiple people without detection
+
+2. **Solution Implemented**:
+   - **Employee Info Storage**: All employee details permanently stored in metadata when key is sent
+   - **Click Tracking**: Tracks when registration link is first clicked, total clicks, and timestamps
+   - **Registration Progress**: Monitors registration started vs completed with timestamps
+   - **Single-Person Enforcement**: Keys locked to first recipient email, preventing sharing
+   - **Enhanced UI**: Timeline view shows complete lifecycle from sent → clicked → completed
+
+3. **Technical Details**:
+   - Metadata structure includes `sentTo` (employee info) and `clickTracking` (lifecycle events)
+   - `/api/subscription-keys/details/:key` endpoint updates click tracking on each view
+   - Registration service updates completion status when registration finishes
+   - Email validation prevents key reuse if already sent to different email
+
+4. **UI Enhancements**:
+   - Active keys table shows "Sent To" column with recipient information
+   - Send button disabled for already-sent keys to enforce single-person use
+   - Used keys display full timeline: Key Sent → Registration Started → Registration Completed
+   - Each event shows relevant details, timestamps, and click counts
+
+5. **Result**: Complete visibility into subscription key lifecycle with permanent audit trail, preventing key sharing and providing insights into registration abandonment. Admins can now see exactly who received keys, whether they started registration, and when they completed the process.
+
 ## Recent Changes (July 28, 2025)
 
 ### Restored "Join Existing Health System" Registration Flow (July 28, 2025 - 12:10 AM) - COMPLETED
