@@ -1155,78 +1155,80 @@ export default function AuthPage() {
 
 
 
-                    {/* Practice Information - Always shown since individual practice is the only option */}
-                    <div className="space-y-4 border-t pt-4">
-                      <h3 className="font-medium">Practice Information</h3>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="practiceName">Practice Name</Label>
-                          <Input
-                            id="practiceName"
-                            {...registerForm.register("practiceName")}
-                            placeholder="Your Practice Name"
-                          />
-                          {registerForm.formState.errors.practiceName && (
-                            <p className="text-sm text-red-600">
-                              {registerForm.formState.errors.practiceName.message}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="practiceAddress">Practice Address</Label>
-                          <Input
-                            id="practiceAddress"
-                            {...registerForm.register("practiceAddress")}
-                            placeholder="123 Main Street"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
+                    {/* Practice Information - Only shown when creating new practice (no subscription key) */}
+                    {!registerForm.watch('subscriptionKey') && (
+                      <div className="space-y-4 border-t pt-4">
+                        <h3 className="font-medium">Practice Information</h3>
+                          
                           <div className="space-y-2">
-                            <Label htmlFor="practiceCity">City</Label>
+                            <Label htmlFor="practiceName">Practice Name</Label>
                             <Input
-                              id="practiceCity"
-                              {...registerForm.register("practiceCity")}
-                              placeholder="City"
+                              id="practiceName"
+                              {...registerForm.register("practiceName")}
+                              placeholder="Your Practice Name"
                             />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="practiceState">State</Label>
-                            <Input
-                              id="practiceState"
-                              {...registerForm.register("practiceState")}
-                              placeholder="TX"
-                              maxLength={2}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="practiceZipCode">Zip Code</Label>
-                            <Input
-                              id="practiceZipCode"
-                              {...registerForm.register("practiceZipCode")}
-                              placeholder="00000"
-                              maxLength={5}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="practicePhone">Phone</Label>
-                            <Input
-                              id="practicePhone"
-                              {...registerForm.register("practicePhone")}
-                              placeholder="555-555-5555"
-                            />
-                            {registerForm.formState.errors.practicePhone && (
+                            {registerForm.formState.errors.practiceName && (
                               <p className="text-sm text-red-600">
-                                {registerForm.formState.errors.practicePhone.message}
+                                {registerForm.formState.errors.practiceName.message}
                               </p>
                             )}
                           </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="practiceAddress">Practice Address</Label>
+                            <Input
+                              id="practiceAddress"
+                              {...registerForm.register("practiceAddress")}
+                              placeholder="123 Main Street"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="practiceCity">City</Label>
+                              <Input
+                                id="practiceCity"
+                                {...registerForm.register("practiceCity")}
+                                placeholder="City"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="practiceState">State</Label>
+                              <Input
+                                id="practiceState"
+                                {...registerForm.register("practiceState")}
+                                placeholder="TX"
+                                maxLength={2}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="practiceZipCode">Zip Code</Label>
+                              <Input
+                                id="practiceZipCode"
+                                {...registerForm.register("practiceZipCode")}
+                                placeholder="00000"
+                                maxLength={5}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="practicePhone">Phone</Label>
+                              <Input
+                                id="practicePhone"
+                                {...registerForm.register("practicePhone")}
+                                placeholder="555-555-5555"
+                              />
+                              {registerForm.formState.errors.practicePhone && (
+                                <p className="text-sm text-red-600">
+                                  {registerForm.formState.errors.practicePhone.message}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                    )}
                     
                     <div className="space-y-2">
                       <Label htmlFor="password" className="flex items-center gap-2">
