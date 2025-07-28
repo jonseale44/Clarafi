@@ -68,40 +68,40 @@ export function AdminSubscriptionKeys() {
     healthSystemId: undefined as number | undefined,
   });
 
-  const { data: keysData, isLoading } = useQuery({
+  const { data: keysData, isLoading } = useQuery<{ keys: any[] }>({
     queryKey: ['/api/subscription-keys/list'],
   });
 
   // Fetch registered users for this health system
-  const { data: registeredUsersData } = useQuery({
+  const { data: registeredUsersData } = useQuery<any[]>({
     queryKey: ['/api/clinic-admin/users'],
   });
 
-  const { data: userData } = useQuery({
+  const { data: userData } = useQuery<any>({
     queryKey: ['/api/user'],
   });
 
   const isSystemAdmin = userData?.username === 'admin';
 
-  const { data: healthSystemsData } = useQuery({
+  const { data: healthSystemsData } = useQuery<any[]>({
     queryKey: ['/api/health-systems'],
     enabled: isSystemAdmin,
   });
 
   // Fetch current user's health system to check tier
-  const { data: userHealthSystemData } = useQuery({
+  const { data: userHealthSystemData } = useQuery<any>({
     queryKey: [`/api/health-systems/${userData?.healthSystemId}`],
     enabled: !!userData?.healthSystemId && !isSystemAdmin,
   });
 
   // Fetch trial status
-  const { data: trialStatusData } = useQuery({
+  const { data: trialStatusData } = useQuery<any>({
     queryKey: ['/api/trial-status'],
     enabled: !!userData?.healthSystemId,
   });
 
   // Fetch locations for the health system
-  const { data: locationsData } = useQuery({
+  const { data: locationsData } = useQuery<any[]>({
     queryKey: ['/api/clinic-admin/locations'],
     enabled: !!userData?.healthSystemId,
   });
@@ -194,6 +194,26 @@ export function AdminSubscriptionKeys() {
       toast({
         title: "Failed to Send Key",
         description: error.message || "Could not send the key. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ userId, email }: { userId: number; email: string }) => {
+      const response = await apiRequest('POST', `/api/clinic-admin/users/${userId}/reset-password`);
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Password Reset Email Sent",
+        description: `A password reset link has been sent to ${variables.email}`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email.",
         variant: "destructive",
       });
     },
@@ -507,11 +527,10 @@ export function AdminSubscriptionKeys() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Key</TableHead>
+                    <TableHead className="w-[300px]">Key & Registration Status</TableHead>
                     <TableHead>Type</TableHead>
-                    <TableHead>Sent To</TableHead>
+                    <TableHead>Recipient</TableHead>
                     <TableHead>Created</TableHead>
-                    <TableHead>Expires</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -519,23 +538,79 @@ export function AdminSubscriptionKeys() {
                   {activeKeys.map((key: any) => {
                     const sentTo = key.metadata?.sentTo;
                     const alreadySent = !!sentTo?.email;
+                    const clickTracking = key.metadata?.clickTracking;
                     
                     return (
                       <TableRow key={key.id}>
-                        <TableCell className="font-mono">{key.key}</TableCell>
+                        <TableCell className="w-[300px]">
+                          <div className="space-y-3">
+                            <div className="font-mono text-sm">{key.key}</div>
+                            
+                            {/* Registration Journey Tracking */}
+                            {(sentTo || clickTracking) && (
+                              <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                                {/* Key Sent */}
+                                {sentTo && (
+                                  <div className="flex items-start gap-2">
+                                    <Send className="h-3 w-3 text-blue-500 mt-0.5" />
+                                    <div className="text-xs">
+                                      <p className="font-medium">Sent to {sentTo.firstName} {sentTo.lastName}</p>
+                                      <p className="text-muted-foreground">{sentTo.email}</p>
+                                      {key.metadata?.sentAt && (
+                                        <p className="text-muted-foreground">
+                                          {format(new Date(key.metadata.sentAt), 'MMM d, h:mm a')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Registration Started */}
+                                {clickTracking?.firstClickedAt && (
+                                  <div className="flex items-start gap-2">
+                                    <Clock className="h-3 w-3 text-yellow-500 mt-0.5" />
+                                    <div className="text-xs">
+                                      <p className="font-medium">Registration Started</p>
+                                      <p className="text-muted-foreground">
+                                        {format(new Date(clickTracking.firstClickedAt), 'MMM d, h:mm a')}
+                                        {clickTracking.clickCount > 1 && 
+                                          ` (${clickTracking.clickCount} views)`
+                                        }
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Not Yet Started */}
+                                {sentTo && !clickTracking?.firstClickedAt && (
+                                  <div className="flex items-start gap-2">
+                                    <AlertCircle className="h-3 w-3 text-gray-400 mt-0.5" />
+                                    <div className="text-xs text-muted-foreground">
+                                      Registration link not clicked yet
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{getKeyTypeBadge(key.keyType)}</TableCell>
                         <TableCell>
                           {sentTo ? (
-                            <div>
-                              <p className="text-sm">{sentTo.firstName} {sentTo.lastName}</p>
-                              <p className="text-xs text-muted-foreground">{sentTo.email}</p>
-                            </div>
+                            <Badge variant="secondary" className="text-xs">
+                              Sent
+                            </Badge>
                           ) : (
-                            <span className="text-muted-foreground">Not sent</span>
+                            <Badge variant="outline" className="text-xs">
+                              Available
+                            </Badge>
                           )}
                         </TableCell>
-                        <TableCell>{format(new Date(key.createdAt), 'MMM d, yyyy')}</TableCell>
-                        <TableCell>{format(new Date(key.expiresAt), 'MMM d, yyyy')}</TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground">
+                            {format(new Date(key.createdAt), 'MMM d')}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-2">
                             <Button
@@ -752,10 +827,7 @@ export function AdminSubscriptionKeys() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                toast({
-                                  title: "Password Reset",
-                                  description: `Password reset email sent to ${user.email}`,
-                                });
+                                resetPasswordMutation.mutate({ userId: user.id, email: user.email });
                               }}
                               className="ml-2"
                             >

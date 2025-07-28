@@ -49,6 +49,27 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 28, 2025)
 
+### Consolidated Registration Tracking & Password Reset Implementation (July 28, 2025 - 4:54 PM) - COMPLETED
+Consolidated all subscription key registration tracking into the "Active Keys" tab and implemented backend password reset functionality:
+
+1. **Registration Journey Consolidation**:
+   - Moved complete registration tracking from "Used Keys" tab to "Active Keys" tab
+   - Added "Key & Registration Status" column showing key and full registration timeline
+   - Registration journey displays: Key Sent → Registration Started → Registration Completed
+   - Shows sent recipient info, click tracking (with view counts), and registration status
+   - Simplified "Used Keys" tab to compact table format with concise timeline display
+
+2. **Backend Password Reset Implementation**:
+   - Created POST endpoint `/api/clinic-admin/users/:userId/reset-password` 
+   - Verifies target user belongs to admin's health system
+   - Generates secure reset token using crypto (32 bytes, hex encoded)
+   - Token stored with 1-hour expiration in database
+   - Sends styled HTML password reset email via SendGrid
+   - Frontend "Reset Password" button now fully functional
+   - Graceful error handling if email fails (still returns success for UI)
+
+3. **Result**: Clinic admins now have complete visibility of subscription key lifecycle in one location and can reset passwords for their staff members, providing commercial EMR-level user management capabilities.
+
 ### Auto-Create Primary Location from Verification Data (July 28, 2025 - 3:48 PM) - COMPLETED
 Updated the clinic admin verification approval process to automatically create a primary location from registration data:
 

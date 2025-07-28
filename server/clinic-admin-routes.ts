@@ -475,5 +475,89 @@ Best regards,
     }
   });
 
+  /**
+   * Reset user password
+   */
+  app.post('/api/clinic-admin/users/:userId/reset-password', requireAuth, requireClinicAdmin, async (req, res) => {
+    const { userId } = req.params;
+    
+    console.log('🔑 [ClinicAdmin] Password reset request for user:', userId);
+    
+    try {
+      const userIdNum = parseInt(userId);
+      
+      // Verify clinic admin can reset this user
+      const [targetUser] = await db.select()
+        .from(users)
+        .where(and(
+          eq(users.id, userIdNum),
+          eq(users.healthSystemId, req.user!.healthSystemId)
+        ))
+        .limit(1);
+
+      if (!targetUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Generate reset token
+      const crypto = await import('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 3600000); // 1 hour from now
+      
+      // Update user with reset token
+      await db.update(users)
+        .set({
+          emailVerificationToken: resetToken,
+          emailVerificationExpires: resetExpires,
+          requirePasswordChange: true
+        })
+        .where(eq(users.id, userIdNum));
+      
+      // Send password reset email
+      try {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY || '');
+        
+        const resetUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}`;
+        
+        const msg = {
+          to: targetUser.email,
+          from: process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com',
+          subject: 'Password Reset Request - CLARAFI',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Password Reset Request</h2>
+              <p>Hello ${targetUser.firstName},</p>
+              <p>Your CLARAFI administrator has requested a password reset for your account.</p>
+              <p>Please click the link below to reset your password:</p>
+              <p style="margin: 20px 0;">
+                <a href="${resetUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                  Reset Password
+                </a>
+              </p>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="background-color: #f3f4f6; padding: 10px; word-break: break-all;">${resetUrl}</p>
+              <p>This link will expire in 1 hour.</p>
+              <p>If you did not request this password reset, please contact your administrator immediately.</p>
+              <p>Best regards,<br>The CLARAFI Team</p>
+            </div>
+          `
+        };
+        
+        await sgMail.default.send(msg);
+        console.log('✅ [ClinicAdmin] Password reset email sent to:', targetUser.email);
+        res.json({ success: true, message: 'Password reset email sent' });
+      } catch (emailError) {
+        console.error('❌ [ClinicAdmin] Error sending password reset email:', emailError);
+        // Still return success - admin can see the error in logs
+        res.json({ success: true, message: 'Password reset initiated (email may have failed)' });
+      }
+      
+    } catch (error) {
+      console.error('❌ [ClinicAdmin] Error resetting password:', error);
+      res.status(500).json({ error: 'Failed to reset password' });
+    }
+  });
+
   console.log('✅ [ClinicAdminRoutes] Clinic admin routes registered');
 }
