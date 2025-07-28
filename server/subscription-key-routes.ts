@@ -457,7 +457,7 @@ router.get('/verification-status', async (req, res) => {
 router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
   try {
     const keyId = parseInt(req.params.keyId);
-    const { email, firstName, lastName, employeeId, includeInstructions } = req.body;
+    const { email, firstName, lastName, username, employeeId, npi, credentials, includeInstructions } = req.body;
     
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -487,7 +487,10 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
       email,
       firstName,
       lastName,
+      username,
       employeeId,
+      npi,
+      credentials,
       sentBy: userId,
       sentAt: new Date().toISOString(),
     };

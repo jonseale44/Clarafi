@@ -342,6 +342,15 @@ export class RegistrationService {
             if (employeeInfo.email && !data.email) {
               data.email = employeeInfo.email;
             }
+            if (employeeInfo.username && !data.username) {
+              data.username = employeeInfo.username;
+            }
+            if (employeeInfo.npi && !data.npi) {
+              data.npi = employeeInfo.npi;
+            }
+            if (employeeInfo.credentials && !data.credentials) {
+              data.credentials = employeeInfo.credentials;
+            }
             
             // Store employee ID in user metadata if provided
             if (employeeInfo.employeeId) {

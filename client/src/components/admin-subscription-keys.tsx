@@ -52,7 +52,10 @@ export function AdminSubscriptionKeys() {
     email: '',
     firstName: '',
     lastName: '',
+    username: '',
     employeeId: '',
+    npi: '',
+    credentials: '',
     includeInstructions: true,
   });
   const [generateForm, setGenerateForm] = useState({
@@ -762,7 +765,7 @@ export function AdminSubscriptionKeys() {
 
       {/* Send Key Dialog */}
       <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Send Subscription Key to Employee</DialogTitle>
             <DialogDescription>
@@ -770,26 +773,45 @@ export function AdminSubscriptionKeys() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="key-type">Key Type</Label>
-              <Input
-                id="key-type"
-                value={selectedKeyForSending ? `${selectedKeyForSending.keyType.charAt(0).toUpperCase() + selectedKeyForSending.keyType.slice(1)} Key` : ''}
-                disabled
-                className="bg-gray-50"
-              />
+            {/* Role at the TOP - emphasized and auto-filled */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <Label htmlFor="role" className="text-lg font-semibold text-blue-900">
+                Employee Role
+              </Label>
+              <div className="mt-2 text-xl font-bold text-blue-900">
+                {selectedKeyForSending?.keyType === 'provider' ? 'Provider (MD, DO, NP, PA)' :
+                 selectedKeyForSending?.keyType === 'nurse' ? 'Nurse (RN, LPN)' :
+                 selectedKeyForSending?.keyType === 'staff' ? 'Administrative Staff' : ''}
+              </div>
+              <p className="text-sm text-blue-700 mt-1">
+                This key is specifically for this role and cannot be changed.
+              </p>
             </div>
-            <div>
-              <Label htmlFor="key-value">Key</Label>
-              <Input
-                id="key-value"
-                value={selectedKeyForSending?.key || ''}
-                disabled
-                className="bg-gray-50 font-mono"
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="key-type">Key Type</Label>
+                <Input
+                  id="key-type"
+                  value={selectedKeyForSending ? `${selectedKeyForSending.keyType.charAt(0).toUpperCase() + selectedKeyForSending.keyType.slice(1)} Key` : ''}
+                  disabled
+                  className="bg-gray-50"
+                />
+              </div>
+              <div>
+                <Label htmlFor="key-value">Key</Label>
+                <Input
+                  id="key-value"
+                  value={selectedKeyForSending?.key || ''}
+                  disabled
+                  className="bg-gray-50 font-mono text-xs"
+                />
+              </div>
             </div>
+
             <div className="border-t pt-4">
               <div className="space-y-4">
+                {/* Required Fields */}
                 <div>
                   <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
                   <Input
@@ -801,6 +823,21 @@ export function AdminSubscriptionKeys() {
                     required
                   />
                 </div>
+
+                {/* Optional but Recommended */}
+                <div>
+                  <Label htmlFor="username">Username (Optional)</Label>
+                  <Input
+                    id="username"
+                    placeholder="jdoe"
+                    value={sendForm.username}
+                    onChange={(e) => setSendForm({ ...sendForm, username: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Some clinics prefer standardized usernames (e.g., first initial + last name)
+                  </p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">First Name (Optional)</Label>
@@ -821,6 +858,31 @@ export function AdminSubscriptionKeys() {
                     />
                   </div>
                 </div>
+
+                {/* Provider-specific fields */}
+                {selectedKeyForSending?.keyType === 'provider' && (
+                  <>
+                    <div>
+                      <Label htmlFor="npi">NPI Number (Optional)</Label>
+                      <Input
+                        id="npi"
+                        placeholder="1234567890"
+                        value={sendForm.npi}
+                        onChange={(e) => setSendForm({ ...sendForm, npi: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="credentials">Credentials (Optional)</Label>
+                      <Input
+                        id="credentials"
+                        placeholder="MD, DO, NP, PA"
+                        value={sendForm.credentials}
+                        onChange={(e) => setSendForm({ ...sendForm, credentials: e.target.value })}
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
                   <Label htmlFor="employeeId">Employee ID (Optional)</Label>
                   <Input
@@ -830,6 +892,7 @@ export function AdminSubscriptionKeys() {
                     onChange={(e) => setSendForm({ ...sendForm, employeeId: e.target.value })}
                   />
                 </div>
+
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -844,9 +907,10 @@ export function AdminSubscriptionKeys() {
                 </div>
               </div>
             </div>
-            <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Any information you provide will be pre-filled when the employee registers with this key.
+            
+            <div className="bg-green-50 p-3 rounded-md">
+              <p className="text-sm text-green-800">
+                <strong>Pre-filled Information:</strong> All information you provide here will automatically populate when the employee registers, saving them time and ensuring consistency.
               </p>
             </div>
           </div>
