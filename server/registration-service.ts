@@ -54,6 +54,7 @@ export interface RegistrationData {
   registrationType?: 'create_new' | 'join_existing';
   existingHealthSystemId?: number;
   selectedLocationId?: number; // When user selects a specific location
+  locationId?: number; // When location is provided via subscription key
   practiceName?: string;
   practiceAddress?: string;
   practiceCity?: string;
@@ -356,6 +357,12 @@ export class RegistrationService {
             if (employeeInfo.employeeId) {
               data.employeeId = employeeInfo.employeeId;
             }
+            
+            // Extract location assignment from key metadata
+            if (employeeInfo.locationId) {
+              console.log(`📍 [RegistrationService] Found location assignment in key metadata: ${employeeInfo.locationId}`);
+              data.locationId = parseInt(employeeInfo.locationId);
+            }
           }
           
           console.log(`✅ [RegistrationService] Subscription key validated`);
@@ -413,6 +420,26 @@ export class RegistrationService {
       const newUser = newUserResult[0];
 
       console.log(`✅ [RegistrationService] Created user ID: ${newUser.id} in health system: ${healthSystemId}`);
+
+      // Assign user to location if specified in subscription key
+      if (data.locationId) {
+        try {
+          await tx
+            .insert(userLocations)
+            .values({
+              userId: newUser.id,
+              locationId: data.locationId,
+              isPrimary: true,
+              roleAtLocation: userRole,
+              active: true,
+              startDate: new Date(),
+            });
+          console.log(`📍 [RegistrationService] Assigned user to location ID: ${data.locationId}`);
+        } catch (error) {
+          console.error(`⚠️  [RegistrationService] Failed to assign user to location:`, error);
+          // Don't fail the entire registration if location assignment fails
+        }
+      }
 
       // Track acquisition data if provided
       if (data.utmSource || data.utmMedium || data.referrerUrl || data.landingPage) {

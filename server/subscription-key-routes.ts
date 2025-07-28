@@ -315,7 +315,8 @@ router.get('/details/:key', async (req, res) => {
           subscriptionKey.keyType === 'provider' ? 'provider' : 
           subscriptionKey.keyType === 'nurse' || subscriptionKey.keyType === 'clinicalStaff' ? 'nurse' : 
           'staff'
-        )
+        ),
+        locationId: employeeInfo.locationId || null
       }
     });
   } catch (error) {
@@ -559,6 +560,7 @@ router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
       npi,
       credentials,
       role,
+      locationId: req.body.locationId || null,
       sentBy: userId,
       sentAt: new Date().toISOString(),
     };

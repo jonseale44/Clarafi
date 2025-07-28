@@ -554,6 +554,11 @@ export default function AuthPage() {
                 console.log('Setting role:', data.employeeInfo.role);
                 registerForm.setValue('role', data.employeeInfo.role);
               }
+              if (data.employeeInfo.locationId) {
+                console.log('Setting locationId from subscription key:', data.employeeInfo.locationId);
+                // Store locationId in form data for registration
+                registerForm.setValue('locationId' as any, data.employeeInfo.locationId);
+              }
             } else {
               console.log('⚠️ No employee info in response');
             }
@@ -867,6 +872,8 @@ export default function AuthPage() {
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
       subscriptionKey: data.subscriptionKey,
+      // Include locationId from subscription key if available
+      locationId: (data as any).locationId,
       // Include acquisition tracking data
       utmSource: acquisitionData.utmSource,
       utmMedium: acquisitionData.utmMedium,

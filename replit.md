@@ -70,6 +70,29 @@ Updated the clinic admin verification approval process to automatically create a
 
 4. **Result**: New clinic admins no longer need to re-enter location data after approval - their primary location is automatically created from their verified registration information.
 
+### Multi-Location Staff Assignment via Subscription Keys (July 28, 2025 - 4:00 PM) - COMPLETED
+Implemented comprehensive location assignment functionality for multi-location clinics to specify which location staff should be assigned to when sending subscription keys:
+
+1. **Problem Identified**:
+   - Multi-location clinics couldn't specify which location a new staff member should be assigned to
+   - Staff had to manually select locations after registration
+   - No way to pre-assign staff to specific clinic locations
+
+2. **Solution Implemented**:
+   - **Admin Interface**: Added location dropdown in subscription key send dialog
+   - **Backend Storage**: Location ID stored in subscription key metadata alongside employee info
+   - **Details API**: Returns locationId in employeeInfo when fetching key details
+   - **Registration Service**: Automatically assigns user to specified location via userLocations table
+   - **Frontend Registration**: Processes locationId from subscription key and includes it in registration data
+
+3. **Technical Details**:
+   - Uses many-to-many `userLocations` table with `roleAtLocation` field
+   - Location assignment happens automatically during registration when locationId is present
+   - Primary location flag set to true for subscription key assignments
+   - Proper field name mapping (roleAtLocation vs role) throughout the system
+
+4. **Result**: Clinic administrators can now pre-assign staff to specific locations when sending subscription keys. When staff register using the key, they are automatically assigned to the correct location without any manual selection required.
+
 ## Recent Changes (July 28, 2025)
 
 ### Restored "Join Existing Health System" Registration Flow (July 28, 2025 - 12:10 AM) - COMPLETED

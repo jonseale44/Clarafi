@@ -57,6 +57,7 @@ export function AdminSubscriptionKeys() {
     npi: '',
     credentials: '',
     role: '',
+    locationId: '',
     includeInstructions: true,
   });
   const [generateForm, setGenerateForm] = useState({
@@ -91,6 +92,12 @@ export function AdminSubscriptionKeys() {
   // Fetch trial status
   const { data: trialStatusData } = useQuery({
     queryKey: ['/api/trial-status'],
+    enabled: !!userData?.healthSystemId,
+  });
+
+  // Fetch locations for the health system
+  const { data: locationsData } = useQuery({
+    queryKey: ['/api/clinic-admin/locations'],
     enabled: !!userData?.healthSystemId,
   });
 
@@ -174,6 +181,7 @@ export function AdminSubscriptionKeys() {
         npi: '',
         credentials: '',
         role: '',
+        locationId: '',
         includeInstructions: true,
       });
     },
@@ -535,6 +543,7 @@ export function AdminSubscriptionKeys() {
                                 role: key.keyType === 'provider' ? 'provider' : 
                                      key.keyType === 'nurse' ? 'nurse' : 
                                      'staff',
+                                locationId: '',
                                 includeInstructions: true,
                               });
                               setShowSendDialog(true);
@@ -902,6 +911,28 @@ export function AdminSubscriptionKeys() {
                     value={sendForm.employeeId}
                     onChange={(e) => setSendForm({ ...sendForm, employeeId: e.target.value })}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="locationId">Assign to Location</Label>
+                  <Select
+                    value={sendForm.locationId}
+                    onValueChange={(value) => setSendForm({ ...sendForm, locationId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locationsData?.locations?.map((location: any) => (
+                        <SelectItem key={location.id} value={location.id.toString()}>
+                          {location.name} - {location.city}, {location.state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    User will be assigned to this location when they register.
+                  </p>
                 </div>
 
                 <div className="flex items-center space-x-2">
