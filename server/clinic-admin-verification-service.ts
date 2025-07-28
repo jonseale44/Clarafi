@@ -705,6 +705,31 @@ Keep recommendations concise and specific.
       healthSystem = healthSystemResult[0];
     }
     
+    // Create primary location from verification data
+    if (verificationData.address && verificationData.city && verificationData.state && verificationData.zip) {
+      console.log(`🏥 [AdminVerification] Creating primary location for ${healthSystem.name}`);
+      
+      const { locations } = await import('../shared/schema');
+      const [primaryLocation] = await db.insert(locations).values({
+        name: verificationData.organizationName,
+        shortName: verificationData.organizationName.substring(0, 20),
+        locationType: 'primary' as any,
+        address: verificationData.address,
+        city: verificationData.city,
+        state: verificationData.state,
+        zipCode: verificationData.zip,
+        phone: verificationData.phone,
+        npi: verificationData.npiNumber,
+        taxId: verificationData.taxId,
+        healthSystemId: healthSystem.id,
+        active: true,
+      }).returning();
+      
+      console.log(`✅ [AdminVerification] Primary location created: ${primaryLocation.name} (ID: ${primaryLocation.id})`);
+    } else {
+      console.log(`⚠️ [AdminVerification] No address data found in verification - location not created`);
+    }
+    
     // Store verification documents
     await db.insert(organizationDocuments).values({
       healthSystemId: healthSystem.id,
