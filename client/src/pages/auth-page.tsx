@@ -552,7 +552,13 @@ export default function AuthPage() {
               }
               if (data.employeeInfo.role) {
                 console.log('Setting role:', data.employeeInfo.role);
+                const currentRole = registerForm.getValues('role');
+                console.log('Current role value before setting:', currentRole);
                 registerForm.setValue('role', data.employeeInfo.role);
+                const newRole = registerForm.getValues('role');
+                console.log('Role value after setting:', newRole);
+              } else {
+                console.log('⚠️ No role in employee info');
               }
               if (data.employeeInfo.locationId) {
                 console.log('Setting locationId from subscription key:', data.employeeInfo.locationId);
@@ -566,6 +572,14 @@ export default function AuthPage() {
             // Pre-populate practice information if available
             if (data.practiceInfo) {
               console.log('🏥 Practice info found:', data.practiceInfo);
+              console.log('Current form values before practice update:', {
+                practiceName: registerForm.getValues('practiceName'),
+                practiceAddress: registerForm.getValues('practiceAddress'),
+                practiceCity: registerForm.getValues('practiceCity'),
+                practiceState: registerForm.getValues('practiceState'),
+                practiceZipCode: registerForm.getValues('practiceZipCode'),
+                practicePhone: registerForm.getValues('practicePhone')
+              });
               
               if (data.practiceInfo.practiceName) {
                 console.log('Setting practiceName:', data.practiceInfo.practiceName);
@@ -591,6 +605,15 @@ export default function AuthPage() {
                 console.log('Setting practicePhone:', data.practiceInfo.practicePhone);
                 registerForm.setValue('practicePhone', data.practiceInfo.practicePhone);
               }
+              
+              console.log('Form values after practice update:', {
+                practiceName: registerForm.getValues('practiceName'),
+                practiceAddress: registerForm.getValues('practiceAddress'),
+                practiceCity: registerForm.getValues('practiceCity'),
+                practiceState: registerForm.getValues('practiceState'),
+                practiceZipCode: registerForm.getValues('practiceZipCode'),
+                practicePhone: registerForm.getValues('practicePhone')
+              });
             } else {
               console.log('⚠️ No practice info in response');
             }
@@ -1170,7 +1193,7 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
                       <Select 
-                        defaultValue={registerForm.getValues("role")}
+                        value={registerForm.watch("role") || ""}
                         onValueChange={(value) => registerForm.setValue("role", value)}
                       >
                         <SelectTrigger>
@@ -1194,10 +1217,13 @@ export default function AuthPage() {
 
 
 
-                    {/* Practice Information - Only shown when creating new practice (no subscription key) */}
-                    {!registerForm.watch('subscriptionKey') && (
+                    {/* Practice Information - Show as read-only when using subscription key */}
+                    {(registrationType === 'create_new' || registerForm.watch('subscriptionKey')) && (
                       <div className="space-y-4 border-t pt-4">
                         <h3 className="font-medium">Practice Information</h3>
+                        {registerForm.watch('subscriptionKey') && (
+                          <p className="text-sm text-muted-foreground">Pre-filled from your organization</p>
+                        )}
                           
                           <div className="space-y-2">
                             <Label htmlFor="practiceName">Practice Name</Label>
@@ -1205,6 +1231,8 @@ export default function AuthPage() {
                               id="practiceName"
                               {...registerForm.register("practiceName")}
                               placeholder="Your Practice Name"
+                              disabled={!!registerForm.watch('subscriptionKey')}
+                              className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                             />
                             {registerForm.formState.errors.practiceName && (
                               <p className="text-sm text-red-600">
@@ -1219,6 +1247,8 @@ export default function AuthPage() {
                               id="practiceAddress"
                               {...registerForm.register("practiceAddress")}
                               placeholder="123 Main Street"
+                              disabled={!!registerForm.watch('subscriptionKey')}
+                              className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                             />
                           </div>
 
@@ -1229,6 +1259,8 @@ export default function AuthPage() {
                                 id="practiceCity"
                                 {...registerForm.register("practiceCity")}
                                 placeholder="City"
+                                disabled={!!registerForm.watch('subscriptionKey')}
+                                className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                               />
                             </div>
                             <div className="space-y-2">
@@ -1238,6 +1270,8 @@ export default function AuthPage() {
                                 {...registerForm.register("practiceState")}
                                 placeholder="TX"
                                 maxLength={2}
+                                disabled={!!registerForm.watch('subscriptionKey')}
+                                className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                               />
                             </div>
                           </div>
@@ -1250,6 +1284,8 @@ export default function AuthPage() {
                                 {...registerForm.register("practiceZipCode")}
                                 placeholder="00000"
                                 maxLength={5}
+                                disabled={!!registerForm.watch('subscriptionKey')}
+                                className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                               />
                             </div>
                             <div className="space-y-2">
@@ -1258,6 +1294,8 @@ export default function AuthPage() {
                                 id="practicePhone"
                                 {...registerForm.register("practicePhone")}
                                 placeholder="555-555-5555"
+                                disabled={!!registerForm.watch('subscriptionKey')}
+                                className={registerForm.watch('subscriptionKey') ? 'bg-gray-50' : ''}
                               />
                               {registerForm.formState.errors.practicePhone && (
                                 <p className="text-sm text-red-600">
