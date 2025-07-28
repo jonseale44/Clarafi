@@ -414,7 +414,7 @@ export default function AuthPage() {
     }
   }, [toast]);
 
-  // Capture UTM parameters, referrer, and subscription key on page load
+  // Capture UTM parameters and referrer on page load
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const acquisitionData = {
@@ -432,55 +432,9 @@ export default function AuthPage() {
       setAcquisitionData(acquisitionData);
       console.log('📊 Captured acquisition data:', acquisitionData);
     }
-    
-    // Check for subscription key in URL
-    const subscriptionKey = urlParams.get('key');
-    if (subscriptionKey) {
-      // Fetch key details and pre-populate form
-      apiRequest("GET", `/api/subscription-keys/details/${encodeURIComponent(subscriptionKey)}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Pre-populate form with employee info
-            registerForm.setValue('subscriptionKey', subscriptionKey);
-            registerForm.setValue('registrationType', 'join_existing');
-            
-            if (data.employeeInfo) {
-              if (data.employeeInfo.firstName) registerForm.setValue('firstName', data.employeeInfo.firstName);
-              if (data.employeeInfo.lastName) registerForm.setValue('lastName', data.employeeInfo.lastName);
-              if (data.employeeInfo.email) registerForm.setValue('email', data.employeeInfo.email);
-              if (data.employeeInfo.username) registerForm.setValue('username', data.employeeInfo.username);
-              if (data.employeeInfo.npi) registerForm.setValue('npi', data.employeeInfo.npi);
-              if (data.employeeInfo.credentials) registerForm.setValue('credentials', data.employeeInfo.credentials);
-              if (data.employeeInfo.role) registerForm.setValue('role', data.employeeInfo.role);
-            }
-            
-            // Store health system info for display
-            setSelectedHealthSystem({
-              id: data.healthSystemId,
-              name: data.healthSystemName
-            });
-            
-            // Switch to register tab
-            setActiveTab('register');
-            
-            toast({
-              title: "Subscription Key Loaded",
-              description: `Your information has been pre-filled for ${data.healthSystemName}`,
-              duration: 5000,
-            });
-          }
-        })
-        .catch(error => {
-          console.error('Failed to fetch subscription key details:', error);
-          toast({
-            title: "Invalid Key",
-            description: "The subscription key could not be loaded. Please enter it manually.",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [registerForm, toast]);
+  }, []);
+
+
 
   // Fetch available health systems for registration
   const { data: healthSystemsData } = useQuery({
@@ -534,6 +488,62 @@ export default function AuthPage() {
       termsAccepted: false,
     },
   });
+
+  // Check for subscription key in URL and pre-populate form
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const subscriptionKey = urlParams.get('key');
+    
+    if (subscriptionKey) {
+      console.log('🔑 Found subscription key in URL:', subscriptionKey);
+      
+      // Fetch key details and pre-populate form
+      apiRequest("GET", `/api/subscription-keys/details/${encodeURIComponent(subscriptionKey)}`)
+        .then(response => response.json())
+        .then(data => {
+          console.log('📋 Subscription key details:', data);
+          
+          if (data.success) {
+            // Pre-populate form with employee info
+            registerForm.setValue('subscriptionKey', subscriptionKey);
+            registerForm.setValue('registrationType', 'join_existing');
+            
+            if (data.employeeInfo) {
+              if (data.employeeInfo.firstName) registerForm.setValue('firstName', data.employeeInfo.firstName);
+              if (data.employeeInfo.lastName) registerForm.setValue('lastName', data.employeeInfo.lastName);
+              if (data.employeeInfo.email) registerForm.setValue('email', data.employeeInfo.email);
+              if (data.employeeInfo.username) registerForm.setValue('username', data.employeeInfo.username);
+              if (data.employeeInfo.npi) registerForm.setValue('npi', data.employeeInfo.npi);
+              if (data.employeeInfo.credentials) registerForm.setValue('credentials', data.employeeInfo.credentials);
+              if (data.employeeInfo.role) registerForm.setValue('role', data.employeeInfo.role);
+            }
+            
+            // Store health system info for display
+            setSelectedHealthSystem({
+              id: data.healthSystemId,
+              name: data.healthSystemName
+            });
+            
+            // Switch to register tab
+            setActiveTab('register');
+            
+            toast({
+              title: "Subscription Key Loaded",
+              description: `Your information has been pre-filled for ${data.healthSystemName}`,
+              duration: 5000,
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch subscription key details:', error);
+          toast({
+            title: "Invalid Key",
+            description: "The subscription key could not be loaded. Please enter it manually.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, []);
 
   // Watch form fields for real-time validation
   const watchedUsername = registerForm.watch("username");
