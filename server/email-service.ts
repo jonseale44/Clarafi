@@ -27,7 +27,7 @@ export async function sendSubscriptionKeyEmail(options: SubscriptionKeyEmailOpti
   } = options;
 
   const keyTypeLabel = keyType.charAt(0).toUpperCase() + keyType.slice(1);
-  const registrationUrl = `${process.env.BASE_URL || 'https://clarafi.com'}/register`;
+  const registrationUrl = `${process.env.BASE_URL || 'https://clarafi.ai'}/auth?tab=register`;
 
   let instructionsHtml = '';
   if (includeInstructions) {
