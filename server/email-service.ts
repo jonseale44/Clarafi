@@ -27,23 +27,7 @@ export async function sendSubscriptionKeyEmail(options: SubscriptionKeyEmailOpti
   } = options;
 
   const keyTypeLabel = keyType.charAt(0).toUpperCase() + keyType.slice(1);
-  
-  // For development, we need to get the proper Replit URL
-  const baseUrl = process.env.BASE_URL || 
-    (process.env.REPL_ID ? `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app` : 'https://clarafi.ai');
-  
-  const registrationUrl = `${baseUrl}/auth?tab=register&key=${encodeURIComponent(subscriptionKey)}`;
-  
-  console.log('📧 [Email] Registration URL generated:', {
-    baseUrl,
-    subscriptionKey,
-    fullUrl: registrationUrl,
-    replitEnv: {
-      REPL_ID: process.env.REPL_ID,
-      REPL_SLUG: process.env.REPL_SLUG,
-      REPL_OWNER: process.env.REPL_OWNER
-    }
-  });
+  const registrationUrl = `${process.env.BASE_URL || 'https://clarafi.ai'}/auth?tab=register&key=${encodeURIComponent(subscriptionKey)}`;
 
   let instructionsHtml = '';
   if (includeInstructions) {
