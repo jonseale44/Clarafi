@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Key, Plus, RefreshCw, Ban, Copy, Loader2, Users, Building2, DollarSign, Clock, AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useEffect } from 'react';
@@ -46,6 +46,15 @@ export function AdminSubscriptionKeys() {
     }
   }, []);
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
+  const [showSendDialog, setShowSendDialog] = useState(false);
+  const [selectedKeyForSending, setSelectedKeyForSending] = useState<any>(null);
+  const [sendForm, setSendForm] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    employeeId: '',
+    includeInstructions: true,
+  });
   const [generateForm, setGenerateForm] = useState({
     providerCount: 5,
     nurseCount: 10,
@@ -138,6 +147,34 @@ export function AdminSubscriptionKeys() {
         description: "A new key has been generated to replace the old one.",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/subscription-keys/list'] });
+    },
+  });
+
+  const sendKeyMutation = useMutation({
+    mutationFn: async (data: { keyId: number; employeeInfo: any }) => {
+      return await apiRequest('POST', `/api/subscription-keys/send/${data.keyId}`, data.employeeInfo);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Key Sent Successfully",
+        description: "The subscription key has been emailed to the employee.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscription-keys/list'] });
+      setShowSendDialog(false);
+      setSendForm({
+        email: '',
+        firstName: '',
+        lastName: '',
+        employeeId: '',
+        includeInstructions: true,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Send Key",
+        description: error.message || "Could not send the key. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -470,13 +507,33 @@ export function AdminSubscriptionKeys() {
                             size="sm"
                             variant="outline"
                             onClick={() => copyToClipboard(key.key)}
+                            title="Copy key"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedKeyForSending(key);
+                              setSendForm({
+                                email: '',
+                                firstName: '',
+                                lastName: '',
+                                employeeId: '',
+                                includeInstructions: true,
+                              });
+                              setShowSendDialog(true);
+                            }}
+                            title="Send key to employee"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => deactivateKeyMutation.mutate(key.id)}
+                            title="Deactivate key"
                           >
                             <Ban className="h-4 w-4" />
                           </Button>
@@ -700,6 +757,133 @@ export function AdminSubscriptionKeys() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Key Dialog */}
+      <Dialog open={showSendDialog} onOpenChange={setShowSendDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send Subscription Key to Employee</DialogTitle>
+            <DialogDescription>
+              Enter the employee's information. The key will be emailed with setup instructions.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="key-type">Key Type</Label>
+              <Input
+                id="key-type"
+                value={selectedKeyForSending ? `${selectedKeyForSending.keyType.charAt(0).toUpperCase() + selectedKeyForSending.keyType.slice(1)} Key` : ''}
+                disabled
+                className="bg-gray-50"
+              />
+            </div>
+            <div>
+              <Label htmlFor="key-value">Key</Label>
+              <Input
+                id="key-value"
+                value={selectedKeyForSending?.key || ''}
+                disabled
+                className="bg-gray-50 font-mono"
+              />
+            </div>
+            <div className="border-t pt-4">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="employee@example.com"
+                    value={sendForm.email}
+                    onChange={(e) => setSendForm({ ...sendForm, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="firstName">First Name (Optional)</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      value={sendForm.firstName}
+                      onChange={(e) => setSendForm({ ...sendForm, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName">Last Name (Optional)</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      value={sendForm.lastName}
+                      onChange={(e) => setSendForm({ ...sendForm, lastName: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="employeeId">Employee ID (Optional)</Label>
+                  <Input
+                    id="employeeId"
+                    placeholder="EMP12345"
+                    value={sendForm.employeeId}
+                    onChange={(e) => setSendForm({ ...sendForm, employeeId: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="includeInstructions"
+                    checked={sendForm.includeInstructions}
+                    onChange={(e) => setSendForm({ ...sendForm, includeInstructions: e.target.checked })}
+                    className="h-4 w-4"
+                  />
+                  <Label htmlFor="includeInstructions" className="text-sm font-normal">
+                    Include setup instructions in the email
+                  </Label>
+                </div>
+              </div>
+            </div>
+            <div className="bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Any information you provide will be pre-filled when the employee registers with this key.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowSendDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!sendForm.email) {
+                  toast({
+                    title: "Email Required",
+                    description: "Please enter the employee's email address.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                sendKeyMutation.mutate({
+                  keyId: selectedKeyForSending.id,
+                  employeeInfo: sendForm,
+                });
+              }}
+              disabled={sendKeyMutation.isPending || !sendForm.email}
+            >
+              {sendKeyMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Key
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

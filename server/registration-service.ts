@@ -326,6 +326,29 @@ export class RegistrationService {
           
           // Store key ID to mark as used after user creation
           validatedKeyId = key.id;
+          
+          // Extract employee information from key metadata if available
+          if (key.metadata && key.metadata.employeeInfo) {
+            const employeeInfo = key.metadata.employeeInfo;
+            console.log(`📋 [RegistrationService] Found employee info in key metadata:`, employeeInfo);
+            
+            // Pre-populate user data from key metadata
+            if (employeeInfo.firstName && !data.firstName) {
+              data.firstName = employeeInfo.firstName;
+            }
+            if (employeeInfo.lastName && !data.lastName) {
+              data.lastName = employeeInfo.lastName;
+            }
+            if (employeeInfo.email && !data.email) {
+              data.email = employeeInfo.email;
+            }
+            
+            // Store employee ID in user metadata if provided
+            if (employeeInfo.employeeId) {
+              data.employeeId = employeeInfo.employeeId;
+            }
+          }
+          
           console.log(`✅ [RegistrationService] Subscription key validated`);
         }
         

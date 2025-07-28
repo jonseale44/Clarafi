@@ -453,4 +453,85 @@ router.get('/verification-status', async (req, res) => {
   }
 });
 
+// Send a key to an employee
+router.post('/send/:keyId', ensureHealthSystemAdmin, async (req, res) => {
+  try {
+    const keyId = parseInt(req.params.keyId);
+    const { email, firstName, lastName, employeeId, includeInstructions } = req.body;
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    const userId = req.user.id;
+
+    // Validate email is provided
+    if (!email) {
+      return res.status(400).json({ error: 'Email address is required' });
+    }
+
+    // Get the key and verify it belongs to user's health system
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    const [key] = await db.select().from(subscriptionKeys)
+      .where(eq(subscriptionKeys.id, keyId));
+
+    if (!key || key.healthSystemId !== user.healthSystemId) {
+      return res.status(404).json({ error: 'Key not found' });
+    }
+
+    if (key.status !== 'active') {
+      return res.status(400).json({ error: 'Key is not available for sending' });
+    }
+
+    // Update key metadata with employee information
+    const employeeInfo = {
+      email,
+      firstName,
+      lastName,
+      employeeId,
+      sentBy: userId,
+      sentAt: new Date().toISOString(),
+    };
+
+    await db.update(subscriptionKeys)
+      .set({
+        metadata: {
+          ...key.metadata,
+          employeeInfo,
+        }
+      })
+      .where(eq(subscriptionKeys.id, keyId));
+
+    // Get health system information for the email
+    const [healthSystem] = await db.select().from(healthSystems)
+      .where(eq(healthSystems.id, key.healthSystemId));
+
+    // Send email to employee
+    try {
+      const { sendSubscriptionKeyEmail } = await import('./email-service.js');
+      await sendSubscriptionKeyEmail({
+        to: email,
+        recipientName: firstName && lastName ? `${firstName} ${lastName}` : email,
+        subscriptionKey: key.key,
+        keyType: key.keyType,
+        healthSystemName: healthSystem.name,
+        senderName: `${user.username}`,
+        includeInstructions,
+      });
+    } catch (emailError) {
+      console.error('Failed to send email:', emailError);
+      // Don't fail the whole operation if email fails
+      // The key metadata is already updated
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Key sent successfully',
+      sentTo: email 
+    });
+  } catch (error) {
+    console.error('Error sending key:', error);
+    res.status(500).json({ error: 'Failed to send key' });
+  }
+});
+
 export default router;
