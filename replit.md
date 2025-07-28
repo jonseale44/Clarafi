@@ -49,6 +49,43 @@ Both pathways feed into unified lab results database with:
 
 ## Recent Changes (July 28, 2025)
 
+### HIPAA-Compliant EMR Screenshot Browser Extension (July 28, 2025 - 10:45 PM) - COMPLETED
+Developed complete Chrome browser extension for capturing screenshots from any EMR system with direct integration to Clarafi's attachment system:
+
+1. **Desktop Capture API Implementation**:
+   - Supports both browser-based EMRs (like Athena) and desktop EMRs (like Epic via Citrix)
+   - Chrome's desktop capture API enables capturing any application window, not just browser tabs
+   - Area selection overlay for precise screenshot regions
+   - Offscreen document handling for secure capture processing
+
+2. **Zero PHI Storage Architecture**:
+   - Screenshots converted to base64 and streamed directly to Clarafi servers
+   - No local storage of protected health information
+   - Direct integration with existing HIPAA-compliant attachment system
+   - Maintains complete security compliance
+
+3. **Patient Context Detection**:
+   - Extension detects when running on Clarafi pages
+   - Optional GPT verification to confirm patient context matches
+   - Seamless integration with patient attachment preview
+   - PREVIEW_CAPTURE message handling for direct upload workflow
+
+4. **Complete Extension Components**:
+   - manifest.json with required permissions (activeTab, desktopCapture, offscreen)
+   - Background service worker for capture orchestration
+   - Content script for Clarafi page integration
+   - Popup interface with capture button
+   - Area selection overlay with visual feedback
+   - Comprehensive documentation in README.md
+
+5. **Integration with Clarafi App**:
+   - Modified patient-attachments.tsx to handle PREVIEW_CAPTURE messages
+   - Screenshots appear in attachment preview matching existing workflow
+   - Users must still click "Upload" to confirm attachment
+   - Fixed TypeScript errors in File constructor and event tracking
+
+6. **Result**: Production-ready browser extension enabling healthcare providers to capture screenshots from any EMR system (browser or desktop) with zero local PHI storage and direct streaming to Clarafi's secure servers.
+
 ### Fixed Practice Information Fields Not Visible When Using Subscription Keys (July 28, 2025 - 6:45 PM) - FIXED
 Fixed critical issue where practice information fields were completely hidden from view when users registered with subscription keys:
 

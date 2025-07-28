@@ -385,6 +385,55 @@ export function PatientAttachments({
     }
   }, [patientId]); // Only depend on patientId to run on mount
 
+  // Effect to handle messages from Clarafi browser extension
+  useEffect(() => {
+    const handleExtensionMessage = (event: MessageEvent) => {
+      // Only accept messages from our extension
+      if (event.data?.type === 'PREVIEW_CAPTURE' && event.data?.imageData) {
+        console.log('📸 [PatientAttachments] Received screenshot from Clarafi extension');
+        
+        // Convert base64 to blob
+        const base64Data = event.data.imageData.split(',')[1];
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'image/png' });
+        
+        // Create a File object
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const file = new File([blob], `emr-capture-${timestamp}.png`);
+        
+        // Set the file and show upload form
+        setUploadFile(file);
+        setTitle('EMR Screenshot');
+        
+        // If GPT detected patient context, add it to description
+        if (event.data.context?.patientName) {
+          setDescription(`Captured from EMR for patient: ${event.data.context.patientName}`);
+        } else {
+          setDescription('Screenshot captured from EMR system');
+        }
+        
+        setShowUploadForm(true);
+        
+        // Show a toast notification
+        toast({
+          title: "Screenshot Received",
+          description: "EMR screenshot ready for upload. Please review and confirm.",
+        });
+      }
+    };
+
+    window.addEventListener('message', handleExtensionMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleExtensionMessage);
+    };
+  }, [toast]);
+
   // Single file upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
@@ -464,7 +513,7 @@ export function PatientAttachments({
       
       // Track conversion event
       analytics.trackConversion({
-        eventType: 'attachments_uploaded',
+        eventType: 'attachment_parsed',
         eventData: {
           uploadType: 'single',
           fileCount: 1,
@@ -541,7 +590,7 @@ export function PatientAttachments({
       
       // Track conversion event
       analytics.trackConversion({
-        eventType: 'attachments_uploaded',
+        eventType: 'attachment_parsed',
         eventData: {
           uploadType: 'bulk',
           fileCount: data.count,

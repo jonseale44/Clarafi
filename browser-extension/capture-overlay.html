@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Select Area to Capture</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+      user-select: none;
+    }
+    
+    #screenshot {
+      display: block;
+      max-width: 100%;
+      max-height: 100vh;
+      margin: 0 auto;
+    }
+    
+    #selection-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+    
+    #selection-box {
+      position: absolute;
+      border: 2px solid #4f46e5;
+      background: rgba(79, 70, 229, 0.1);
+      display: none;
+      pointer-events: none;
+    }
+    
+    .instructions {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      z-index: 1000;
+      text-align: center;
+    }
+    
+    .instructions h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    
+    .button-group {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 1000;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    #captureBtn {
+      background: #4f46e5;
+      color: white;
+      display: none;
+    }
+    
+    #captureBtn:hover {
+      background: #4338ca;
+    }
+    
+    #cancelBtn {
+      background: #6b7280;
+      color: white;
+    }
+    
+    #cancelBtn:hover {
+      background: #4b5563;
+    }
+    
+    .dimensions {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="instructions">
+    <h3>Select Area to Capture</h3>
+    <div>Click and drag to select the area you want to capture</div>
+  </div>
+  
+  <img id="screenshot" alt="Screenshot for selection">
+  <div id="selection-overlay">
+    <div id="selection-box"></div>
+    <div id="dimensions" class="dimensions"></div>
+  </div>
+  
+  <div class="button-group">
+    <button id="captureBtn">Capture Selected Area</button>
+    <button id="cancelBtn">Cancel</button>
+  </div>
+  
+  <script src="capture-overlay.js"></script>
+</body>
+</html>
