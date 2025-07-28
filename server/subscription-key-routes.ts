@@ -257,6 +257,56 @@ router.post('/generate', ensureHealthSystemAdmin, async (req, res) => {
   }
 });
 
+// Get key details without using it (for pre-population)
+router.get('/details/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    
+    // Find the key
+    const [subscriptionKey] = await db.select()
+      .from(subscriptionKeys)
+      .where(eq(subscriptionKeys.key, key));
+    
+    if (!subscriptionKey) {
+      return res.status(404).json({ error: 'Key not found' });
+    }
+    
+    // Check if key is available
+    if (subscriptionKey.status !== 'active') {
+      return res.status(400).json({ error: 'Key is no longer available' });
+    }
+    
+    // Get health system info
+    const [healthSystem] = await db.select()
+      .from(healthSystems)
+      .where(eq(healthSystems.id, subscriptionKey.healthSystemId));
+    
+    // Return key details including employee info if available
+    const employeeInfo = subscriptionKey.metadata?.employeeInfo || {};
+    
+    res.json({
+      success: true,
+      keyType: subscriptionKey.keyType,
+      healthSystemId: subscriptionKey.healthSystemId,
+      healthSystemName: healthSystem?.name || '',
+      employeeInfo: {
+        firstName: employeeInfo.firstName || '',
+        lastName: employeeInfo.lastName || '',
+        email: employeeInfo.email || '',
+        username: employeeInfo.username || '',
+        npi: employeeInfo.npi || '',
+        credentials: employeeInfo.credentials || '',
+        role: subscriptionKey.keyType === 'provider' ? 'provider' : 
+              subscriptionKey.keyType === 'nurse' || subscriptionKey.keyType === 'clinicalStaff' ? 'nurse' : 
+              'staff'
+      }
+    });
+  } catch (error) {
+    console.error('Error getting key details:', error);
+    res.status(500).json({ error: 'Failed to get key details' });
+  }
+});
+
 // Validate and use a key
 router.post('/validate', async (req, res) => {
   try {
