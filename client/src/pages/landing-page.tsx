@@ -1078,7 +1078,7 @@ export default function LandingPage() {
               <div className="absolute -top-3 right-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold px-4 py-1 rounded-full text-sm z-10">
                 NO CREDIT CARD
               </div>
-              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:border-yellow-500/30 transition-all">
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8 hover:border-yellow-500/30 transition-all h-full flex flex-col">
                 <h3 className="text-2xl font-bold text-white mb-2">Individual Provider</h3>
                 <div className="mb-6">
                   <span className="text-gray-400 block text-sm mb-1">Perfect for solo practitioners</span>
@@ -1088,7 +1088,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-grow">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1139,7 +1139,7 @@ export default function LandingPage() {
             {/* Enterprise */}
             <div className="relative animate-fadeInUp delay-300">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-2xl opacity-10" />
-              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8">
+              <div className="relative bg-gray-800/50 backdrop-blur-sm border border-blue-500/30 rounded-2xl p-8 h-full flex flex-col">
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="text-2xl font-bold text-white">Enterprise</h3>
                   <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded">POPULAR</span>
@@ -1152,7 +1152,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-3 mb-8 flex-grow">
                   <li className="flex items-center gap-3">
                     <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1195,7 +1195,7 @@ export default function LandingPage() {
                 </Link>
                 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  Volume discounts available
+                  Per-user pricing • Priority support • Custom integrations
                 </p>
               </div>
             </div>
