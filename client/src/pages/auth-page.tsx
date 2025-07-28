@@ -846,99 +846,54 @@ export default function AuthPage() {
                     console.log("Form values:", registerForm.getValues());
                     registerForm.handleSubmit(onRegister)(e);
                   }} className="space-y-4">
-                    {/* Registration Type Selection */}
-                    <div className="space-y-3">
-                      <RadioGroup 
-                        value={registrationType} 
-                        onValueChange={(value) => {
-                          setRegistrationType(value as 'create_new' | 'join_existing');
-                          registerForm.setValue('registrationType', value as 'create_new' | 'join_existing');
-                          if (value === 'create_new') {
-                            setSelectedHealthSystemId('');
-                            registerForm.setValue('subscriptionKey', '');
-                          }
-                        }}
-                      >
-                        <div className="flex items-center space-x-2 border rounded-lg p-4">
-                          <RadioGroupItem value="create_new" id="create_new" />
-                          <Label htmlFor="create_new" className="cursor-pointer flex-1">
-                            <div>
-                              <div className="font-semibold">Individual Practice Setup</div>
-                              <div className="text-sm text-muted-foreground">
-                                You'll be creating a new practice account. This is designed for solo practitioners and small clinics.
-                                You'll need to provide payment information after registration.
-                              </div>
-                            </div>
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2 border rounded-lg p-4">
-                          <RadioGroupItem value="join_existing" id="join_existing" />
-                          <Label htmlFor="join_existing" className="cursor-pointer flex-1">
-                            <div>
-                              <div className="font-semibold">Join Existing Health System</div>
-                              <div className="text-sm text-muted-foreground">
-                                Search for your clinic or health system below. Most providers should select their existing workplace.
-                              </div>
-                            </div>
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    {/* Show clinic search when joining existing */}
-                    {registrationType === 'join_existing' && (
-                      <div className="space-y-3">
-                        <DynamicClinicSearch
-                          onSelectFacility={(facility, healthSystemId) => {
-                            // If healthSystemId is provided, the facility already exists in the system
-                            if (healthSystemId) {
-                              setSelectedHealthSystemId(healthSystemId.toString());
-                            } else {
-                              // New facility - will be created during registration
-                              setSelectedHealthSystemId(`new-${facility.place_id}`);
-                              // Store facility data for later use
-                              registerForm.setValue("selectedFacility", facility as any);
-                            }
-                          }}
-                          showCreateNew={false}
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Show subscription key field when health system is selected */}
-                    {registrationType === 'join_existing' && selectedHealthSystemId && (
+                    {/* Subscription Key First - Simple Flow */}
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="subscriptionKey" className="flex items-center gap-2">
-                          Subscription Key
-                          <span className="text-sm text-red-500">*</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 text-gray-400" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Enter the subscription key provided by your clinic administrator</p>
-                            </TooltipContent>
-                          </Tooltip>
+                        <Label htmlFor="subscriptionKey" className="text-base font-semibold">
+                          Do you have a subscription key?
                         </Label>
+                        <p className="text-sm text-muted-foreground">
+                          If your organization provided you with a subscription key, enter it below. Otherwise, leave it blank to create your own practice.
+                        </p>
                         <Input
                           id="subscriptionKey"
-                          {...registerForm.register("subscriptionKey", {
-                            required: registrationType === 'join_existing' ? "Subscription key is required when joining existing health system" : false
-                          })}
-                          placeholder="XXX-YYYY-XXXX-XXXX"
+                          {...registerForm.register("subscriptionKey")}
+                          placeholder="XXX-YYYY-XXXX-XXXX (optional)"
                           className="font-mono"
                           style={{ textTransform: 'uppercase' }}
+                          onChange={(e) => {
+                            const value = e.target.value.trim();
+                            if (value) {
+                              setRegistrationType('join_existing');
+                              registerForm.setValue('registrationType', 'join_existing');
+                            } else {
+                              setRegistrationType('create_new');
+                              registerForm.setValue('registrationType', 'create_new');
+                            }
+                          }}
                         />
-                        <p className="text-xs text-muted-foreground">
-                          Enter the key provided by your administrator. This will automatically add you to your organization's subscription.
-                        </p>
-                        {registerForm.formState.errors.subscriptionKey && (
-                          <p className="text-sm text-red-600">
-                            {registerForm.formState.errors.subscriptionKey.message}
-                          </p>
-                        )}
                       </div>
-                    )}
+                      
+                      {/* Show appropriate message based on whether they entered a key */}
+                      {registerForm.watch('subscriptionKey') ? (
+                        <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <AlertTitle className="text-green-800 dark:text-green-200">Joining Existing Organization</AlertTitle>
+                          <AlertDescription className="text-green-700 dark:text-green-300">
+                            Your subscription key will automatically add you to your organization's account. No payment required.
+                          </AlertDescription>
+                        </Alert>
+                      ) : (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Individual Practice Setup</AlertTitle>
+                          <AlertDescription>
+                            You'll be creating a new practice account. This is designed for solo practitioners and small clinics.
+                            You'll need to provide payment information after registration.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
 
 
 

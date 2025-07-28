@@ -181,9 +181,46 @@ export class RegistrationService {
         console.log(`🎁 [RegistrationService] Individual provider registration - starting 30-day free trial`);
 
       } else {
-        // Join existing health system (default behavior)
-        if (data.selectedLocationId) {
-          // User selected a specific location - look up its health system
+        // Join existing health system (with subscription key)
+        
+        // NEW SIMPLIFIED FLOW: If subscription key provided, get health system from key
+        if (data.subscriptionKey) {
+          console.log(`🔑 [RegistrationService] Looking up health system from subscription key`);
+          
+          const keyResult = await tx
+            .select({
+              healthSystemId: subscriptionKeys.healthSystemId,
+              keyType: subscriptionKeys.keyType,
+              status: subscriptionKeys.status,
+              expiresAt: subscriptionKeys.expiresAt
+            })
+            .from(subscriptionKeys)
+            .where(eq(subscriptionKeys.key, data.subscriptionKey))
+            .limit(1);
+            
+          if (!keyResult || keyResult.length === 0) {
+            throw new Error('Invalid subscription key');
+          }
+          
+          const key = keyResult[0];
+          
+          // Basic key validation
+          if (key.status === 'used') {
+            throw new Error('Subscription key has already been used');
+          }
+          if (key.status === 'deactivated') {
+            throw new Error('Subscription key has been deactivated');
+          }
+          if (key.status === 'expired' || new Date() > key.expiresAt) {
+            throw new Error('Subscription key has expired');
+          }
+          
+          // Use the health system from the key
+          healthSystemId = key.healthSystemId;
+          console.log(`✅ [RegistrationService] Found health system ID ${healthSystemId} from subscription key`);
+          
+        } else if (data.selectedLocationId) {
+          // Legacy flow: User selected a specific location - look up its health system
           console.log(`🏥 [RegistrationService] Looking up health system for location ID: ${data.selectedLocationId}`);
           const locationResult = await tx
             .select({ healthSystemId: locations.healthSystemId })
@@ -199,7 +236,7 @@ export class RegistrationService {
           primaryLocationId = data.selectedLocationId;
           console.log(`🏥 [RegistrationService] User selected location ${data.selectedLocationId}, joining health system ID: ${healthSystemId}`);
         } else if (data.existingHealthSystemId) {
-          // User selected a health system directly
+          // Legacy flow: User selected a health system directly
           healthSystemId = data.existingHealthSystemId;
           console.log(`🏥 [RegistrationService] Joining existing health system ID: ${healthSystemId}`);
         } else {

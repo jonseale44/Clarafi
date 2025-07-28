@@ -70,6 +70,27 @@ Successfully restored the subscription key workflow that allows new users to joi
 
 4. **Result**: Complete subscription key workflow restored - admins generate keys → distribute to staff → new users select "Join Existing Health System" → enter key → auto-assigned to correct role and billing tier
 
+### Simplified Subscription Key UX (July 28, 2025 - 12:18 AM) - IN PROGRESS
+Implementing simplified registration flow based on the fact that subscription keys are 100% unique across the system:
+
+1. **Insight**: Since subscription keys have a UNIQUE database constraint, there's no need to make users search for their clinic first
+
+2. **Simplified Flow Implemented**:
+   - Registration form now asks "Do you have a subscription key?" upfront
+   - If user enters a key, system automatically determines their health system from the key
+   - If no key, defaults to individual practice setup with payment required
+   - Eliminates the confusing clinic search step and potential for user error
+
+3. **Backend Updates**:
+   - Modified registration service to look up health system ID directly from subscription key
+   - Key validation happens first, then health system assignment follows automatically
+   - Maintains all existing security checks and validation
+
+4. **Benefits**:
+   - Simpler user experience - just paste key and go
+   - Eliminates risk of users selecting wrong clinic
+   - Reduces registration steps from 3 (select type → search clinic → enter key) to 1 (enter key)
+
 ## Recent Changes (July 27, 2025)
 
 ### Fixed Subscription Key Generation After Payment (July 27, 2025 - 9:56 PM) - COMPLETED
