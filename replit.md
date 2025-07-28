@@ -76,6 +76,26 @@ Fixed critical issue where practice information fields were completely hidden fr
    - Click tracking status doesn't update in real-time (requires manual refresh)
    - See SUBSCRIPTION_KEY_TECHNICAL_DEBT.md for full assessment and testing checklist
 
+### Fixed Email Verification Links in Development Environment (July 28, 2025 - 7:30 PM) - FIXED
+Fixed issue where email verification links showed "Run this app" page instead of properly verifying emails:
+
+1. **Problem Identified**:
+   - Email verification links were using Replit dev domain URLs that require workspace access
+   - When users clicked links from email clients, they saw "Run this app to see the results here" page
+   - This affected both development and deployed environments
+
+2. **Solution Implemented**:
+   - Created utility function `server/utils/get-base-url.ts` for consistent URL generation across environments
+   - Enhanced development emails with two verification options:
+     - Option 1: Instructions to copy link and use within Replit workspace
+     - Option 2: Manual verification code (first 8 chars of token) with direct URL
+   - Fixed TypeScript errors in magic-link-service.ts related to userId type handling
+
+3. **Key Improvements**:
+   - Clear development environment notices in emails with yellow background
+   - Better user guidance for handling Replit dev domain limitations
+   - Maintained security while improving user experience
+
 ### Consolidated Registration Tracking & Password Reset Implementation (July 28, 2025 - 4:54 PM) - COMPLETED
 Consolidated all subscription key registration tracking into the "Active Keys" tab and implemented backend password reset functionality:
 

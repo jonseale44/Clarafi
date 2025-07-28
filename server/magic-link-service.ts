@@ -3,6 +3,7 @@ import { users, magicLinks } from "@shared/schema";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import crypto from "crypto";
 import { EmailVerificationService } from "./email-verification-service";
+import { getBaseUrl, isDevelopment } from './utils/get-base-url.js';
 
 export interface MagicLinkOptions {
   purpose: 'login' | 'registration' | 'password_reset';
@@ -87,7 +88,7 @@ export class MagicLinkService {
     return {
       valid: true,
       email: magicLink.email,
-      userId: magicLink.user_id,
+      userId: magicLink.userId ?? undefined,
       purpose: magicLink.purpose
     };
   }
@@ -100,9 +101,8 @@ export class MagicLinkService {
     token: string,
     purpose: MagicLinkOptions['purpose']
   ): Promise<void> {
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : 'http://localhost:5000';
+    // Get the base URL using our utility function
+    const baseUrl = getBaseUrl();
 
     const linkUrl = `${baseUrl}/auth/magic-link/${token}`;
 

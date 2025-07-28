@@ -3,6 +3,7 @@ import { db } from './db.js';
 import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { MailService } from '@sendgrid/mail';
+import { getBaseUrl, isDevelopment } from './utils/get-base-url.js';
 
 export class EmailVerificationService {
   /**
@@ -78,15 +79,32 @@ export class EmailVerificationService {
     const mailService = new MailService();
     mailService.setApiKey(process.env.SENDGRID_API_KEY);
 
-    // Use Replit URL if available, otherwise fallback to localhost
-    const replitUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : null;
-    const baseUrl = process.env.APP_URL || replitUrl || 'http://localhost:5000';
+    // Get the base URL using our utility function
+    const baseUrl = getBaseUrl();
+    
     // Use path parameter format to avoid issues with email clients stripping query parameters
     const verificationUrl = `${baseUrl}/api/verify-email/${token}`;
     
     // Get sender email from environment or use a default
     const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@clarafi.com';
     
+    // Add development notice if needed with better instructions
+    const devNotice = isDevelopment() ? `
+      <div style="background-color: #fffacd; border: 1px solid #ffd700; padding: 15px; margin: 20px 0; border-radius: 5px;">
+        <strong>⚠️ Development Environment Notice:</strong><br>
+        This verification link was generated from a development environment.<br><br>
+        
+        <strong>Option 1: Use the link in your Replit workspace</strong><br>
+        1. Copy the verification link below<br>
+        2. Go back to your Replit workspace where the app is running<br>
+        3. Paste the link in the same browser tab/window where you registered<br><br>
+        
+        <strong>Option 2: Manual verification code</strong><br>
+        Your verification code is: <code style="background: #f0f0f0; padding: 2px 6px; font-family: monospace;">${token.substring(0, 8)}</code><br>
+        Enter this code at: ${baseUrl}/auth?verify=${token.substring(0, 8)}
+      </div>
+    ` : '';
+
     const emailContent = {
       to: email,
       from: fromEmail, // This email must be verified in SendGrid
@@ -95,6 +113,8 @@ export class EmailVerificationService {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #003366;">Welcome to Clarafi!</h2>
           <p>Thank you for registering with Clarafi EMR. To complete your registration, please verify your email address by clicking the button below:</p>
+          
+          ${devNotice}
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${verificationUrl}" style="background-color: #FFD700; color: #003366; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
