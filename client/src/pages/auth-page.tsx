@@ -558,6 +558,38 @@ export default function AuthPage() {
               console.log('⚠️ No employee info in response');
             }
             
+            // Pre-populate practice information if available
+            if (data.practiceInfo) {
+              console.log('🏥 Practice info found:', data.practiceInfo);
+              
+              if (data.practiceInfo.practiceName) {
+                console.log('Setting practiceName:', data.practiceInfo.practiceName);
+                registerForm.setValue('practiceName', data.practiceInfo.practiceName);
+              }
+              if (data.practiceInfo.practiceAddress) {
+                console.log('Setting practiceAddress:', data.practiceInfo.practiceAddress);
+                registerForm.setValue('practiceAddress', data.practiceInfo.practiceAddress);
+              }
+              if (data.practiceInfo.practiceCity) {
+                console.log('Setting practiceCity:', data.practiceInfo.practiceCity);
+                registerForm.setValue('practiceCity', data.practiceInfo.practiceCity);
+              }
+              if (data.practiceInfo.practiceState) {
+                console.log('Setting practiceState:', data.practiceInfo.practiceState);
+                registerForm.setValue('practiceState', data.practiceInfo.practiceState);
+              }
+              if (data.practiceInfo.practiceZipCode) {
+                console.log('Setting practiceZipCode:', data.practiceInfo.practiceZipCode);
+                registerForm.setValue('practiceZipCode', data.practiceInfo.practiceZipCode);
+              }
+              if (data.practiceInfo.practicePhone) {
+                console.log('Setting practicePhone:', data.practiceInfo.practicePhone);
+                registerForm.setValue('practicePhone', data.practiceInfo.practicePhone);
+              }
+            } else {
+              console.log('⚠️ No practice info in response');
+            }
+            
             // Store health system info for display
             console.log('Setting health system:', {
               id: data.healthSystemId,

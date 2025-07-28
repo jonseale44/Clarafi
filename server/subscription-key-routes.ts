@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { SubscriptionKeyService } from './subscription-key-service';
 import { db } from './db.js';
-import { users, healthSystems, subscriptionKeys } from '../shared/schema';
+import { users, healthSystems, subscriptionKeys, locations } from '../shared/schema';
 import { eq, and, or } from 'drizzle-orm';
 import { StripeService } from './stripe-service.js';
 import { TrialManagementService } from './trial-management-service.js';
@@ -281,6 +281,12 @@ router.get('/details/:key', async (req, res) => {
       .from(healthSystems)
       .where(eq(healthSystems.id, subscriptionKey.healthSystemId));
     
+    // Get the first location for the health system to get practice info
+    const [primaryLocation] = await db.select()
+      .from(locations)
+      .where(eq(locations.healthSystemId, subscriptionKey.healthSystemId))
+      .limit(1);
+    
     // Return key details including employee info if available
     const employeeInfo = subscriptionKey.metadata?.employeeInfo || {};
     
@@ -289,6 +295,15 @@ router.get('/details/:key', async (req, res) => {
       keyType: subscriptionKey.keyType,
       healthSystemId: subscriptionKey.healthSystemId,
       healthSystemName: healthSystem?.name || '',
+      // Include practice information from the primary location
+      practiceInfo: primaryLocation ? {
+        practiceName: primaryLocation.name,
+        practiceAddress: primaryLocation.address,
+        practiceCity: primaryLocation.city,
+        practiceState: primaryLocation.state,
+        practiceZipCode: primaryLocation.zipCode,
+        practicePhone: primaryLocation.phone
+      } : null,
       employeeInfo: {
         firstName: employeeInfo.firstName || '',
         lastName: employeeInfo.lastName || '',

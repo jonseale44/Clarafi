@@ -72,7 +72,7 @@ Successfully restored the subscription key workflow that allows new users to joi
 
 4. **Result**: Complete subscription key workflow restored - admins generate keys → distribute to staff → new users select "Join Existing Health System" → enter key → auto-assigned to correct role and billing tier
 
-### Simplified Subscription Key UX (July 28, 2025 - 12:18 AM) - IN PROGRESS
+### Simplified Subscription Key UX (July 28, 2025 - 12:18 AM) - COMPLETED
 Implementing simplified registration flow based on the fact that subscription keys are 100% unique across the system:
 
 1. **Insight**: Since subscription keys have a UNIQUE database constraint, there's no need to make users search for their clinic first
@@ -92,6 +92,29 @@ Implementing simplified registration flow based on the fact that subscription ke
    - Simpler user experience - just paste key and go
    - Eliminates risk of users selecting wrong clinic
    - Reduces registration steps from 3 (select type → search clinic → enter key) to 1 (enter key)
+
+### Fixed Practice Information Pre-filling (July 28, 2025 - 12:50 PM) - COMPLETED
+Fixed issue where practice information wasn't being pre-filled when users registered with subscription keys:
+
+1. **Problem Identified**:
+   - Clinic admins could pre-fill employee info (name, username, email) when sending subscription keys
+   - However, practice information (name, address, city, state, zip, phone) wasn't being included
+   - This forced new users to manually enter their clinic's address details
+
+2. **Solution Implemented**:
+   - Updated `/api/subscription-keys/details/:key` endpoint to fetch practice info from the health system's primary location
+   - Modified frontend to populate practice fields when subscription key details are loaded
+   - Practice information fields are now hidden when using a subscription key (since they're pre-filled)
+
+3. **Technical Details**:
+   - Backend now queries the `locations` table to get the first location for the health system
+   - Returns practice info in API response: practiceName, practiceAddress, practiceCity, practiceState, practiceZipCode, practicePhone
+   - Frontend automatically populates these fields when loading subscription key details
+
+4. **User Experience**:
+   - Clinic admins don't need to (and can't) enter practice info when sending keys - it's already in their system
+   - End users receive fully pre-filled forms with both employee AND practice information
+   - Streamlines the registration process and ensures consistency across the organization
 
 ## Recent Changes (July 27, 2025)
 
