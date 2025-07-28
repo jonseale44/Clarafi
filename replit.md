@@ -45,6 +45,31 @@ Both pathways feed into unified lab results database with:
 - Full audit trail and compliance tracking
 - Specimen tracking and barcode support (coming soon)
 
+## Recent Changes (July 28, 2025)
+
+### Restored "Join Existing Health System" Registration Flow (July 28, 2025 - 12:10 AM) - COMPLETED
+Successfully restored the subscription key workflow that allows new users to join existing health systems:
+
+1. **Problem Identified**:
+   - The entire registration type selection UI was commented out, forcing all users to create individual practices
+   - Users couldn't join existing health systems using subscription keys
+   - This broke the enterprise onboarding flow where admins distribute keys to their staff
+
+2. **Solution Implemented**:
+   - Restored RadioGroup selection between "Individual Practice Setup" and "Join Existing Health System"
+   - Clinic search (DynamicClinicSearch) now shows only when "Join Existing Health System" is selected
+   - Subscription key field appears only after selecting both "Join Existing" AND choosing a health system
+   - Added validation requiring subscription key when joining existing systems
+   - Clear visual separation between the two registration paths with descriptive text
+
+3. **Backend Already Supported**:
+   - Registration service already validates and processes subscription keys
+   - Keys are marked as used and linked to the new user
+   - User verification status set to 'tier3_verified' with key tracking
+   - Proper role assignment based on key type (provider/nurse/staff)
+
+4. **Result**: Complete subscription key workflow restored - admins generate keys → distribute to staff → new users select "Join Existing Health System" → enter key → auto-assigned to correct role and billing tier
+
 ## Recent Changes (July 27, 2025)
 
 ### Fixed Subscription Key Generation After Payment (July 27, 2025 - 9:56 PM) - COMPLETED
