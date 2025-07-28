@@ -1272,7 +1272,7 @@ export default function LandingPage() {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="text-lg px-10 py-6 border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                className="text-lg px-10 py-6 border-white/20 bg-black/20 text-white hover:bg-white/10 hover:border-white/30"
               >
                 Already Started? Sign In
               </Button>
