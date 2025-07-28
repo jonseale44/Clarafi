@@ -1,6 +1,6 @@
 import { Express } from "express";
 import { db } from "./db.js";
-import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs, userAcquisition } from "@shared/schema";
+import { users, userLocations, locations, healthSystems, organizations, encounters, patients, insertUserSchema, phiAccessLogs, authenticationLogs, userAcquisition, conversionEvents } from "@shared/schema";
 import { eq, sql, and, isNull, desc, or } from "drizzle-orm";
 import { z } from "zod";
 
@@ -707,6 +707,14 @@ export function registerAdminUserRoutes(app: Express) {
       // Delete authentication logs before deleting user
       console.log(`🗑️ [AdminUserRoutes] Deleting authentication logs for user ${userId}`);
       await db.delete(authenticationLogs).where(eq(authenticationLogs.userId, userId));
+      
+      // Delete conversion events before deleting user
+      console.log(`🗑️ [AdminUserRoutes] Deleting conversion events for user ${userId}`);
+      try {
+        await db.delete(conversionEvents).where(eq(conversionEvents.userId, userId));
+      } catch (e) {
+        console.log(`⚠️ [AdminUserRoutes] No conversion events to delete or table doesn't exist`);
+      }
       
       // Clear original_provider_id from any health systems owned by this user
       if (ownedHealthSystemsCount[0].count > 0) {
