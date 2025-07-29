@@ -40,6 +40,7 @@ import { formatDistanceToNow } from "date-fns";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AreaSelector } from "@/components/ui/area-selector";
 import { analytics } from "@/lib/analytics";
 
 // Enhanced Extracted Content Dialog Component
@@ -356,6 +357,8 @@ export function PatientAttachments({
   const [showScreenshotCapture, setShowScreenshotCapture] = useState(false);
   const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showAreaSelector, setShowAreaSelector] = useState(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -850,14 +853,15 @@ export function PatientAttachments({
       
       console.log('Screen capture API is available, requesting permission...');
       
-      // Request screen capture permission with more options
+      // Request screen capture permission with entire screen option to avoid tab switching
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          mediaSource: 'screen',
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
+          cursor: 'always'
         },
-        audio: false
+        audio: false,
+        preferCurrentTab: false
       });
       
       console.log('Screen capture stream obtained:', stream);
@@ -904,46 +908,13 @@ export function PatientAttachments({
         track.stop();
       });
       
-      // Convert to blob
-      const blob = await new Promise<Blob | null>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            console.log('Screenshot blob created:', { size: blob.size, type: blob.type });
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob from canvas'));
-          }
-        }, 'image/png', 0.95);
-      });
+      // Convert to data URL for area selection
+      const imageDataUrl = canvas.toDataURL('image/png', 0.95);
+      console.log('Screenshot captured, showing area selector');
       
-      if (!blob) {
-        throw new Error('Failed to capture screenshot blob');
-      }
-      
-      // Create file from blob (compatible approach)
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `emr-screenshot-${timestamp}.png`;
-      
-      // Create a File-like object that works across environments
-      const file = Object.assign(blob, {
-        name: filename,
-        lastModified: Date.now(),
-        webkitRelativePath: ''
-      }) as File;
-      
-      console.log('Screenshot file created:', { name: file.name, size: file.size, type: file.type });
-      
-      // Set the file for upload
-      setUploadFile(file);
-      setShowUploadForm(true);
-      setTitle('EMR Screenshot');
-      setDescription('Screenshot captured from external EMR system');
-      setUploadMode('single');
-      
-      toast({
-        title: "Screenshot Captured Successfully",
-        description: `Captured ${filename} (${Math.round(file.size / 1024)}KB). Review and upload below.`,
-      });
+      // Show area selector with the captured image
+      setCapturedImage(imageDataUrl);
+      setShowAreaSelector(true);
       
     } catch (error) {
       console.error('Failed to capture screenshot:', error);
@@ -972,6 +943,95 @@ export function PatientAttachments({
       setIsCapturing(false);
     }
   };
+
+  // Area selection handler
+  const handleAreaSelected = useCallback(async (selectedArea: { x: number; y: number; width: number; height: number }) => {
+    if (!capturedImage) return;
+
+    try {
+      // Create a canvas for the cropped image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+
+      // Create an image from the captured data URL
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = capturedImage;
+      });
+
+      // Set canvas size to the selected area
+      canvas.width = selectedArea.width;
+      canvas.height = selectedArea.height;
+
+      // Draw the selected area to the canvas
+      ctx.drawImage(
+        img, 
+        selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height,
+        0, 0, selectedArea.width, selectedArea.height
+      );
+
+      // Convert to blob
+      const blob = await new Promise<Blob | null>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            console.log('Cropped screenshot blob created:', { size: blob.size, type: blob.type });
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob from cropped canvas'));
+          }
+        }, 'image/png', 0.95);
+      });
+
+      if (!blob) {
+        throw new Error('Failed to create cropped screenshot blob');
+      }
+
+      // Create file from blob
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `emr-screenshot-area-${timestamp}.png`;
+      
+      const file = Object.assign(blob, {
+        name: filename,
+        lastModified: Date.now(),
+        webkitRelativePath: ''
+      }) as File;
+
+      console.log('Cropped screenshot file created:', { name: file.name, size: file.size, type: file.type });
+
+      // Set the file for upload
+      setUploadFile(file);
+      setShowUploadForm(true);
+      setTitle('EMR Screenshot (Selected Area)');
+      setDescription('Selected area from EMR screenshot');
+      setUploadMode('single');
+
+      // Hide area selector
+      setShowAreaSelector(false);
+      setCapturedImage(null);
+
+      toast({
+        title: "Screenshot Area Selected",
+        description: `Created ${filename} (${Math.round(file.size / 1024)}KB) from selected area.`,
+      });
+
+    } catch (error) {
+      console.error('Failed to crop screenshot:', error);
+      toast({
+        title: "Failed to Crop Screenshot",
+        description: "Could not create cropped image from selected area.",
+        variant: "destructive",
+      });
+    }
+  }, [capturedImage, toast]);
+
+  // Cancel area selection
+  const handleCancelAreaSelection = useCallback(() => {
+    setShowAreaSelector(false);
+    setCapturedImage(null);
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -1563,6 +1623,15 @@ export function PatientAttachments({
             );
           })}
         </div>
+      )}
+
+      {/* Area Selector Overlay */}
+      {showAreaSelector && capturedImage && (
+        <AreaSelector
+          imageUrl={capturedImage}
+          onAreaSelected={handleAreaSelected}
+          onCancel={handleCancelAreaSelection}
+        />
       )}
     </div>
   );
