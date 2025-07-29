@@ -352,6 +352,11 @@ export function PatientAttachments({
   const [isQrLoading, setIsQrLoading] = useState(false);
   const sessionPollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
+  // EMR screenshot capture states
+  const [showScreenshotCapture, setShowScreenshotCapture] = useState(false);
+  const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
@@ -822,6 +827,74 @@ export function PatientAttachments({
     }
   };
 
+  const startScreenshotCapture = async () => {
+    setIsCapturing(true);
+    
+    try {
+      // Request screen capture permission
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          displaySurface: 'window'
+        },
+        audio: false
+      });
+      
+      // Get video track
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.play();
+      
+      // Wait for video to load
+      await new Promise((resolve) => {
+        video.onloadedmetadata = resolve;
+      });
+      
+      // Create canvas and capture frame
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(video, 0, 0);
+      
+      // Stop the stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Convert to blob
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob(resolve, 'image/png');
+      });
+      
+      if (!blob) {
+        throw new Error('Failed to capture screenshot');
+      }
+      
+      // Create file from blob
+      const file = new File([blob], `emr-screenshot-${Date.now()}.png`, { type: 'image/png' });
+      
+      // Set the file for upload
+      setUploadFile(file);
+      setShowUploadForm(true);
+      setTitle('EMR Screenshot');
+      setDescription('Screenshot captured from external EMR system');
+      setUploadMode('single');
+      
+      toast({
+        title: "Screenshot Captured",
+        description: "Review and upload the captured screenshot",
+      });
+      
+    } catch (error) {
+      console.error('Failed to capture screenshot:', error);
+      toast({
+        title: "Error",
+        description: "Failed to capture screenshot. Make sure you allowed screen access.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -1070,16 +1143,29 @@ export function PatientAttachments({
                     <div className="text-xs text-gray-500">or</div>
                   </div>
                   
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={startPhotoCapture}
-                    disabled={isQrLoading}
-                    className="w-full"
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Capture Photo with Mobile Device
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={startPhotoCapture}
+                      disabled={isQrLoading}
+                      className="w-full"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Capture Photo with Mobile Device
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={startScreenshotCapture}
+                      disabled={isCapturing}
+                      className="w-full"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Capture EMR Screenshot
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : photoCaptureSession && qrCodeDataUrl ? (
