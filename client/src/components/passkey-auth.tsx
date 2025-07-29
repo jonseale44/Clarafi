@@ -101,56 +101,118 @@ export function PasskeyAuth() {
       
       const options = await optionsResponse.json();
       console.log('✅ [Frontend] Received registration options from server');
+      console.log('📋 [Frontend] Registration options:', {
+        challenge: options.challenge,
+        rpId: options.rp?.id,
+        rpName: options.rp?.name,
+        userId: options.user?.id,
+        userName: options.user?.name,
+        userDisplayName: options.user?.displayName,
+        attestation: options.attestation,
+        authenticatorSelection: options.authenticatorSelection,
+        timeout: options.timeout,
+        pubKeyCredParams: options.pubKeyCredParams,
+        excludeCredentials: options.excludeCredentials
+      });
+      
+      // Check browser environment
+      console.log('🌐 [Frontend] Browser environment:', {
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        publicKeyCredential: !!window.PublicKeyCredential,
+        isSecureContext: window.isSecureContext
+      });
       
       // 2. Use SimpleWebAuthn to create credential
       console.log('🔵 [Frontend] Starting WebAuthn registration...');
-      // For SimpleWebAuthn v13+, we need to pass options as an object
-      const registrationResponse = await startRegistration({ optionsJSON: options });
-      console.log('✅ [Frontend] WebAuthn registration completed');
+      console.log('📦 [Frontend] Calling startRegistration with:', { optionsJSON: options });
       
-      // 3. Send credential to server for verification
-      console.log('🔵 [Frontend] Sending credential to server for verification...');
-      const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          response: registrationResponse,
-          displayName: passkeyName
-        })
-      });
-      
-      if (!verifyResponse.ok) {
-        const error = await verifyResponse.json();
-        throw new Error(error.error || 'Failed to verify credential');
+      try {
+        // For SimpleWebAuthn v13+, we need to pass options as an object
+        const registrationResponse = await startRegistration({ optionsJSON: options });
+        console.log('✅ [Frontend] WebAuthn registration completed');
+        console.log('📋 [Frontend] Registration response:', {
+          id: registrationResponse.id,
+          type: registrationResponse.type,
+          hasAttestationObject: !!registrationResponse.response?.attestationObject,
+          hasClientDataJSON: !!registrationResponse.response?.clientDataJSON,
+          transports: registrationResponse.response?.transports
+        });
+        
+        // 3. Send credential to server for verification
+        console.log('🔵 [Frontend] Sending credential to server for verification...');
+        const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            response: registrationResponse,
+            displayName: passkeyName
+          })
+        });
+        
+        if (!verifyResponse.ok) {
+          const error = await verifyResponse.json();
+          throw new Error(error.error || 'Failed to verify credential');
+        }
+        
+        const result = await verifyResponse.json();
+        console.log('✅ [Frontend] Registration successful:', result);
+        
+        toast({
+          title: "Success",
+          description: "Passkey registered successfully!",
+        });
+        
+        // Refresh passkeys list
+        await fetchPasskeys();
+        
+        // Close dialog and reset state
+        setShowRegisterDialog(false);
+        setPasskeyName('');
+        
+      } catch (innerError: any) {
+        console.error('💥 [Frontend] Registration error details:', {
+          name: innerError.name,
+          message: innerError.message,
+          code: innerError.code,
+          cause: innerError.cause,
+          stack: innerError.stack
+        });
+        throw innerError;
       }
-      
-      const result = await verifyResponse.json();
-      console.log('✅ [Frontend] Registration successful:', result);
-      
-      toast({
-        title: "Success",
-        description: "Passkey registered successfully!",
-      });
-      
-      // Refresh passkeys list
-      await fetchPasskeys();
-      
-      // Close dialog and reset state
-      setShowRegisterDialog(false);
-      setPasskeyName('');
       
     } catch (error: any) {
       console.error('🔴 [Frontend] Passkey registration error:', error);
+      console.error('💥 [Frontend] Full error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        cause: error.cause
+      });
       
       if (error.name === 'NotAllowedError') {
-        toast({
-          title: "Registration Cancelled",
-          description: "You cancelled the registration or it timed out",
-          variant: "destructive"
-        });
+        // Check if this is the iframe permissions policy error
+        if (error.message?.includes('publickey-credentials-create') || 
+            error.message?.includes('Permissions Policy')) {
+          toast({
+            title: "Iframe Security Restriction",
+            description: "Passkey registration is blocked in the Replit preview. This feature works when deployed to a real domain outside of an iframe.",
+            variant: "destructive",
+            duration: 10000
+          });
+          console.warn('⚠️ [Frontend] Passkey creation blocked by iframe permissions policy. This is a Replit-specific limitation.');
+        } else {
+          toast({
+            title: "Registration Cancelled",
+            description: "You cancelled the registration or it timed out",
+            variant: "destructive"
+          });
+        }
       } else if (error.name === 'InvalidStateError') {
         toast({
           title: "Registration Failed",
