@@ -20,10 +20,19 @@ import type {
 export class WebAuthnService {
   // Relying Party configuration
   private static readonly RP_NAME = 'Clarafi EMR';
-  private static readonly RP_ID = process.env.REPLIT_DEV_DOMAIN?.replace('.replit.dev', '.replit.app') || 'localhost';
+  private static readonly RP_ID = process.env.REPLIT_DEV_DOMAIN || 'localhost';
   private static readonly ORIGIN = process.env.REPLIT_DEV_DOMAIN 
     ? `https://${process.env.REPLIT_DEV_DOMAIN}`
     : 'http://localhost:5000';
+
+  static {
+    console.log('🔑 [WebAuthn] Configuration:', {
+      RP_NAME: this.RP_NAME,
+      RP_ID: this.RP_ID,
+      ORIGIN: this.ORIGIN,
+      ENV_DOMAIN: process.env.REPLIT_DEV_DOMAIN
+    });
+  }
 
   /**
    * Generate registration options for a new passkey
@@ -64,13 +73,13 @@ export class WebAuthnService {
     let existingCredentials: any[] = [];
     try {
       // Use raw SQL to avoid column name mismatch between schema and database
-      existingCredentials = await db.execute(sql`
+      const credQuery = await db.execute(sql`
         SELECT id, user_id, credential_id, credential_public_key, counter, device_type, transports
         FROM webauthn_credentials
         WHERE user_id = ${userId}
       `);
       
-      existingCredentials = existingCredentials.rows || [];
+      existingCredentials = credQuery.rows || [];
       console.log('✅ [WebAuthn] Found existing credentials:', existingCredentials.length);
     } catch (error) {
       console.error('❌ [WebAuthn] Error fetching existing credentials:', error);
@@ -79,10 +88,10 @@ export class WebAuthnService {
       existingCredentials = [];
     }
 
-    const excludeCredentials = existingCredentials.map(cred => ({
-      id: cred.credentialId,
+    const excludeCredentials = existingCredentials.map((cred: any) => ({
+      id: cred.credential_id,
       type: 'public-key' as const,
-      transports: cred.transports as AuthenticatorTransport[] || []
+      transports: (typeof cred.transports === 'string' ? JSON.parse(cred.transports) : cred.transports) as AuthenticatorTransport[] || []
     }));
 
     const challenge = randomBytes(32).toString('base64url');
@@ -96,7 +105,7 @@ export class WebAuthnService {
       rpID: this.RP_ID,
       userID: userIdBuffer,
       userName: user.email,
-      userDisplayName: user.displayName || user.email,
+      userDisplayName: `${user.firstName} ${user.lastName}`.trim() || user.email,
       attestationType: 'none',
       excludeCredentials,
       authenticatorSelection: {
@@ -145,15 +154,15 @@ export class WebAuthnService {
         return { verified: false };
       }
 
-      const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+      const { credential } = verification.registrationInfo;
 
       // Store the credential
       console.log('📝 [WebAuthn] Storing credential with columns:', {
         userId,
-        credentialId: Buffer.from(credentialID).toString('base64url'),
-        credentialPublicKey: Buffer.from(credentialPublicKey).toString('base64'),
-        counter: Number(counter),
-        deviceType: credentialDeviceType || 'unknown',
+        credentialId: Buffer.from(credential.id).toString('base64url'),
+        credentialPublicKey: Buffer.from(credential.publicKey).toString('base64'),
+        counter: Number(credential.counter),
+        deviceType: credential.deviceType || 'unknown',
         transports: response.response.transports || []
       });
       
@@ -169,10 +178,10 @@ export class WebAuthnService {
           created_at
         ) VALUES (
           ${userId},
-          ${Buffer.from(credentialID).toString('base64url')},
-          ${Buffer.from(credentialPublicKey).toString('base64')},
-          ${Number(counter)},
-          ${credentialDeviceType || response.response.authenticatorAttachment || 'Security Key'},
+          ${Buffer.from(credential.id).toString('base64url')},
+          ${Buffer.from(credential.publicKey).toString('base64')},
+          ${Number(credential.counter)},
+          ${credential.deviceType || response.response.authenticatorAttachment || 'Security Key'},
           ${JSON.stringify(response.response.transports || [])}::jsonb,
           NOW()
         )
@@ -181,7 +190,7 @@ export class WebAuthnService {
       await db.execute(insertQuery);
 
       console.log(`✅ [WebAuthn] Passkey registered for user ${userId}`);
-      return { verified: true, credentialId: Buffer.from(credentialID).toString('base64url') };
+      return { verified: true, credentialId: Buffer.from(credential.id).toString('base64url') };
     } catch (error) {
       console.error('❌ [WebAuthn] Registration verification error:', error);
       return { verified: false };
@@ -273,10 +282,10 @@ export class WebAuthnService {
         expectedChallenge,
         expectedOrigin: this.ORIGIN,
         expectedRPID: this.RP_ID,
-        authenticator: {
-          credentialID: Buffer.from(credential.credential_id, 'base64url'),
-          credentialPublicKey: Buffer.from(credential.credential_public_key, 'base64'),
-          counter: credential.counter
+        credential: {
+          id: Buffer.from(credential.credential_id, 'base64url'),
+          publicKey: Buffer.from(credential.credential_public_key, 'base64'),
+          counter: Number(credential.counter)
         },
         requireUserVerification: false
       });
@@ -285,15 +294,15 @@ export class WebAuthnService {
         // Update counter using raw SQL
         const updateQuery = sql`
           UPDATE webauthn_credentials
-          SET counter = ${verification.authenticationInfo.newCounter},
+          SET counter = ${Number(verification.authenticationInfo.newCounter)},
               last_used_at = NOW()
-          WHERE id = ${credential.id}
+          WHERE id = ${Number(credential.id)}
         `;
         
         await db.execute(updateQuery);
 
-        console.log(`✅ [WebAuthn] Authentication successful for user ${credential.user_id}`);
-        return { verified: true, userId: credential.user_id };
+        console.log(`✅ [WebAuthn] Authentication successful for user ${Number(credential.user_id)}`);
+        return { verified: true, userId: Number(credential.user_id) };
       }
 
       return { verified: false };
@@ -357,7 +366,7 @@ export class WebAuthnService {
       const result = await db.execute(deleteQuery);
 
       console.log(`✅ [WebAuthn] Passkey ${passkeyId} deleted for user ${userId}`);
-      return result.rowCount > 0;
+      return (result.rowCount || 0) > 0;
     } catch (error) {
       console.error(`❌ [WebAuthn] Error deleting passkey ${passkeyId}:`, error);
       return false;
@@ -378,7 +387,7 @@ export class WebAuthnService {
     });
 
     // Clean up expired challenges
-    for (const [k, v] of this.challenges.entries()) {
+    for (const [k, v] of Array.from(this.challenges.entries())) {
       if (v.expires < Date.now()) {
         this.challenges.delete(k);
       }

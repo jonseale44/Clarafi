@@ -59,7 +59,7 @@ router.post('/webauthn/register/options', async (req: any, res) => {
     });
     
     // Store challenge in session
-    req.session.webauthnChallenge = challenge;
+    (req.session as any).webauthnChallenge = challenge;
     console.log('✅ [WebAuthn] Challenge stored in session:', challenge);
     
     console.log('📤 [WebAuthn] Sending registration options response');
@@ -107,7 +107,7 @@ router.post('/webauthn/register/verify', async (req: any, res) => {
       responseKeys: response ? Object.keys(response) : []
     });
 
-    const expectedChallenge = req.session.webauthnChallenge;
+    const expectedChallenge = (req.session as any).webauthnChallenge;
 
     if (!expectedChallenge) {
       return res.status(400).json({ error: 'No challenge found. Please start registration again.' });
@@ -120,7 +120,7 @@ router.post('/webauthn/register/verify', async (req: any, res) => {
     );
 
     // Clear challenge from session
-    delete req.session.webauthnChallenge;
+    delete (req.session as any).webauthnChallenge;
 
     if (result.verified) {
       res.json({ 
@@ -154,7 +154,7 @@ router.post('/webauthn/authenticate/options', async (req, res) => {
     const { options, challenge } = await WebAuthnService.generateAuthenticationOptions(email);
     
     // Store challenge in session
-    req.session.webauthnChallenge = challenge;
+    (req.session as any).webauthnChallenge = challenge;
     
     res.json(options);
   } catch (error) {
@@ -170,7 +170,7 @@ router.post('/webauthn/authenticate/options', async (req, res) => {
 router.post('/webauthn/authenticate/verify', async (req, res) => {
   try {
     const { response } = req.body;
-    const expectedChallenge = req.session.webauthnChallenge;
+    const expectedChallenge = (req.session as any).webauthnChallenge;
 
     if (!expectedChallenge) {
       return res.status(400).json({ error: 'No challenge found. Please start authentication again.' });
@@ -182,7 +182,7 @@ router.post('/webauthn/authenticate/verify', async (req, res) => {
     );
 
     // Clear challenge from session
-    delete req.session.webauthnChallenge;
+    delete (req.session as any).webauthnChallenge;
 
     if (result.verified && result.userId) {
       // Get user details
@@ -196,10 +196,10 @@ router.post('/webauthn/authenticate/verify', async (req, res) => {
       }
 
       // Log the user in
-      req.session.userId = user.id;
-      req.session.userRole = user.role;
-      req.session.userHealthSystemId = user.healthSystemId;
-      req.session.userName = user.displayName || user.email;
+      (req.session as any).userId = user.id;
+      (req.session as any).userRole = user.role;
+      (req.session as any).userHealthSystemId = user.healthSystemId;
+      (req.session as any).userName = `${user.firstName} ${user.lastName}`.trim() || user.email;
 
       console.log(`✅ [WebAuthn] User ${user.email} logged in successfully with passkey`);
 

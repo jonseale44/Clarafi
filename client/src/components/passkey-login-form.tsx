@@ -34,6 +34,15 @@ export function PasskeyLoginForm({ onSuccess }: PasskeyLoginFormProps) {
       
       const options = await optionsResponse.json();
       
+      console.log('🔍 [PasskeyLogin] Received options:', options);
+      console.log('🔍 [PasskeyLogin] Options structure:', {
+        hasChallenge: !!options.challenge,
+        hasRpId: !!options.rpId,
+        hasTimeout: !!options.timeout,
+        hasUserVerification: !!options.userVerification,
+        allowCredentials: options.allowCredentials
+      });
+      
       // 2. Use SimpleWebAuthn to authenticate
       const authenticationResponse = await startAuthentication(options);
       
