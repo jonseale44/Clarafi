@@ -19,6 +19,9 @@ const UploadContext = createContext<UploadContextType | undefined>(undefined);
 export const UploadProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingUpload, setPendingUpload] = useState<{ file: File; onConfirm: () => void } | null>(null);
   const [showAttestation, setShowAttestation] = useState(false);
   const [attestationCallback, setAttestationCallback] = useState<(() => void) | null>(null);
   const [manualConfirmed, setManualConfirmed] = useState(false);
@@ -46,52 +49,131 @@ export const UploadProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAttestationCallback(null);
   }, []);
 
-  const uploadFile = useCallback(async (file: File, onProgress?: (progress: number) => void) => {
-    const formData = new FormData();
-    formData.append('file', file);
+  const confirmUpload = (file: File, onConfirm: () => void) => {
+    setPendingUpload({ file, onConfirm });
+    setShowConfirmDialog(true);
+  };
 
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const result = await response.json();
-      setUploadProgress(100);
-
-      if (onProgress) {
-        onProgress(100);
-      }
-
-      return result;
-    } catch (error) {
-      console.error('Upload error:', error);
-      throw error;
-    } finally {
-      setIsUploading(false);
-      setTimeout(() => setUploadProgress(0), 1000);
+  const handleConfirmUpload = () => {
+    if (pendingUpload) {
+      pendingUpload.onConfirm();
+      setPendingUpload(null);
     }
-  }, []);
+    setShowConfirmDialog(false);
+  };
+
+  const uploadFile = async (file: File, patientId?: number): Promise<any> => {
+    if (!file) {
+      throw new Error('No file provided');
+    }
+
+    return new Promise((resolve, reject) => {
+      const performUpload = async () => {
+        setIsUploading(true);
+        setUploadProgress(0);
+        setUploadMessage('Preparing upload...');
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          if (patientId) {
+            formData.append('patientId', patientId.toString());
+          }
+
+          setUploadMessage('Uploading file...');
+
+          const response = await fetch('/api/attachments/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`Upload failed: ${response.statusText}`);
+          }
+
+          const result = await response.json();
+
+          setUploadProgress(100);
+          setUploadMessage('Upload complete!');
+
+          toast({
+            title: "Success",
+            description: "File uploaded successfully",
+          });
+
+          resolve(result);
+        } catch (error) {
+          console.error('Upload error:', error);
+          toast({
+            title: "Upload Error",
+            description: error instanceof Error ? error.message : "Failed to upload file",
+            variant: "destructive",
+          });
+          reject(error);
+        } finally {
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
+            setUploadMessage('');
+          }, 1000);
+        }
+      };
+
+      confirmUpload(file, performUpload);
+    });
+  };
 
   const canConfirm = manualConfirmed && authorizationConfirmed && complianceConfirmed;
 
+  const value = {
+    isUploading,
+    uploadProgress,
+    uploadMessage,
+    uploadFile,
+    showConfirmDialog,
+    setShowConfirmDialog,
+    handleConfirmUpload,
+    showUploadAttestation
+  };
+
   return (
-    <UploadContext.Provider value={{
-      isUploading,
-      uploadProgress,
-      setIsUploading,
-      setUploadProgress,
-      uploadFile,
-      showUploadAttestation
-    }}>
+    <UploadContext.Provider value={value}>
       {children}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              Confirm Manual Upload
+            </h3>
+            <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                By uploading this file or screenshot, I confirm that:
+              </p>
+              <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 ml-4">
+                <li>• Its selection was manually performed by me</li>
+                <li>• I am fully authorized to capture and submit this information</li>
+                <li>• I am complying with all applicable policies and laws</li>
+                <li>• I am not violating any third-party software agreements</li>
+              </ul>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmUpload}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                I Confirm - Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Dialog open={showAttestation} onOpenChange={() => {}}>
         <DialogContent className="max-w-2xl">
