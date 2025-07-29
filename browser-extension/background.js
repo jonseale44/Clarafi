@@ -55,35 +55,101 @@ async function handleCaptureRequest(captureType) {
   }
 }
 
-// Capture using screenshot API
+// Capture using desktop capture API (works with any application)
 async function captureWithScreenshotAPI(context) {
   try {
-    // Get the active tab
+    // Get the active tab for desktop capture dialog
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
     
-    // Capture the visible area of the active tab
-    const dataUrl = await chrome.tabs.captureVisibleTab(activeTab.windowId, {
-      format: 'png',
-      quality: 100
-    });
-    
-    // Convert to blob
-    const base64Response = await fetch(dataUrl);
-    const blob = await base64Response.blob();
-    
-    // Process capture
-    await processCapture(blob, context);
-    
-    // Show success notification
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'icons/icon.svg',
-      title: 'Screenshot Captured',
-      message: 'EMR screenshot has been sent to patient attachments for review'
-    });
+    // Use desktop capture to let user select screen or window
+    chrome.desktopCapture.chooseDesktopMedia(
+      ['screen', 'window'],
+      activeTab,
+      async (streamId) => {
+        if (!streamId) {
+          notifyError('No source selected - please try again');
+          return;
+        }
+        
+        // Create a hidden tab to capture the stream
+        const captureTab = await chrome.tabs.create({
+          url: 'data:text/html,<html><body><script>' +
+               'chrome.runtime.onMessage.addListener((msg, sender, respond) => {' +
+               '  if (msg.type === "GET_STREAM") {' +
+               '    navigator.mediaDevices.getUserMedia({' +
+               '      video: {' +
+               '        mandatory: {' +
+               '          chromeMediaSource: "desktop",' +
+               '          chromeMediaSourceId: msg.streamId' +
+               '        }' +
+               '      }' +
+               '    }).then(stream => {' +
+               '      const video = document.createElement("video");' +
+               '      video.srcObject = stream;' +
+               '      video.play();' +
+               '      video.onloadedmetadata = () => {' +
+               '        const canvas = document.createElement("canvas");' +
+               '        canvas.width = video.videoWidth;' +
+               '        canvas.height = video.videoHeight;' +
+               '        const ctx = canvas.getContext("2d");' +
+               '        ctx.drawImage(video, 0, 0);' +
+               '        stream.getTracks().forEach(track => track.stop());' +
+               '        canvas.toBlob(blob => {' +
+               '          const reader = new FileReader();' +
+               '          reader.onloadend = () => {' +
+               '            respond({ dataUrl: reader.result });' +
+               '          };' +
+               '          reader.readAsDataURL(blob);' +
+               '        }, "image/png");' +
+               '      };' +
+               '    }).catch(err => respond({ error: err.message }));' +
+               '    return true;' +
+               '  }' +
+               '});' +
+               '</script></body></html>',
+          active: false
+        });
+        
+        // Wait a moment for the tab to load
+        setTimeout(async () => {
+          try {
+            // Request capture from the hidden tab
+            const response = await chrome.tabs.sendMessage(captureTab.id, {
+              type: 'GET_STREAM',
+              streamId: streamId
+            });
+            
+            // Close the capture tab
+            await chrome.tabs.remove(captureTab.id);
+            
+            if (response.error) {
+              throw new Error(response.error);
+            }
+            
+            // Convert to blob
+            const base64Response = await fetch(response.dataUrl);
+            const blob = await base64Response.blob();
+            
+            // Process capture
+            await processCapture(blob, context);
+            
+            // Show success notification
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'icons/icon.svg',
+              title: 'Screenshot Captured',
+              message: 'EMR screenshot has been sent to patient attachments for review'
+            });
+          } catch (error) {
+            console.error('Capture tab error:', error);
+            notifyError('Failed to capture screen');
+          }
+        }, 1000);
+      }
+    );
   } catch (error) {
-    console.error('Screenshot capture error:', error);
-    notifyError('Failed to capture screen - make sure you are on the EMR tab');
+    console.error('Desktop capture error:', error);
+    notifyError('Failed to initiate capture');
   }
 }
 

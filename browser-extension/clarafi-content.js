@@ -60,30 +60,58 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handle screenshot preview in attachment upload area
 function handleCapturePreview(imageData, metadata) {
-  // Check if we're on the attachments section
-  const isOnAttachments = window.location.pathname.includes('/chart') && 
-                         (document.querySelector('[aria-selected="true"]')?.textContent?.includes('Attachments') ||
-                          document.querySelector('.flex.items-center.justify-between h2')?.textContent?.includes('Attachments'));
-  
-  if (!isOnAttachments) {
-    console.error('Not on attachments section');
-    showNotification('Please navigate to the patient attachments section first', 'error');
+  // Get patient context
+  const context = extractPatientContext();
+  if (!context.patientId) {
+    showNotification('No patient selected. Please select a patient first.', 'error');
     return;
   }
   
-  // Find the attachment upload component - look for the dropzone
-  const attachmentSection = document.querySelector('.border-dashed') ||
-                          document.querySelector('[role="button"]') ||
-                          document.querySelector('.flex.flex-col.items-center.justify-center');
+  // Show a notification that screenshot was captured
+  showNotification('Screenshot captured! Uploading to patient attachments...', 'success');
   
-  if (!attachmentSection) {
-    console.error('Could not find attachment upload area');
-    showNotification('Could not find attachment upload area', 'error');
-    return;
+  // Upload directly to the server
+  uploadScreenshot(imageData, metadata, context);
+}
+
+// Upload screenshot directly to server
+async function uploadScreenshot(imageData, metadata, context) {
+  try {
+    // Convert base64 to blob
+    const response = await fetch(imageData);
+    const blob = await response.blob();
+    
+    // Create FormData
+    const formData = new FormData();
+    const filename = `EMR_Screenshot_${new Date().toISOString().replace(/:/g, '-')}.png`;
+    formData.append('file', blob, filename);
+    formData.append('category', 'Clinical Documents');
+    formData.append('description', metadata.description || 'EMR Screenshot captured via browser extension');
+    
+    // Upload to server
+    const uploadResponse = await fetch(`${context.serverUrl}/api/patients/${context.patientId}/attachments`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData
+    });
+    
+    if (uploadResponse.ok) {
+      showNotification('Screenshot uploaded successfully!', 'success');
+      
+      // If we're on the attachments page, refresh it
+      if (window.location.pathname.includes('/attachments')) {
+        window.location.reload();
+      }
+    } else {
+      throw new Error('Upload failed');
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    showNotification('Failed to upload screenshot. Please try again.', 'error');
   }
-  
-  // Convert base64 to blob
-  fetch(imageData)
+}
+
+
     .then(res => res.blob())
     .then(blob => {
       // Create a file object
