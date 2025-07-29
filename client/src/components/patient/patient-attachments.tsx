@@ -1159,7 +1159,10 @@ export function PatientAttachments({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={startPhotoCapture}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startPhotoCapture();
+                      }}
                       disabled={isQrLoading}
                       className="w-full"
                     >
@@ -1170,7 +1173,10 @@ export function PatientAttachments({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={startScreenshotCapture}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startScreenshotCapture();
+                      }}
                       disabled={isCapturing}
                       className="w-full"
                     >
