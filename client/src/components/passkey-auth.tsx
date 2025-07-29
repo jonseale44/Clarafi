@@ -199,13 +199,26 @@ export function PasskeyAuth() {
         // Check if this is the iframe permissions policy error
         if (error.message?.includes('publickey-credentials-create') || 
             error.message?.includes('Permissions Policy')) {
-          toast({
-            title: "Iframe Security Restriction",
-            description: "Passkey registration is blocked in the Replit preview. This feature works when deployed to a real domain outside of an iframe.",
-            variant: "destructive",
-            duration: 10000
-          });
-          console.warn('⚠️ [Frontend] Passkey creation blocked by iframe permissions policy. This is a Replit-specific limitation.');
+          // Check if we're in production
+          const isProduction = window.location.hostname === 'clarafi.ai';
+          
+          if (isProduction) {
+            toast({
+              title: "Browser Security Restriction",
+              description: "Passkey registration is blocked by your browser's security settings. This can happen if the site is being accessed through certain proxies or security layers. Try accessing the site directly or check your browser settings.",
+              variant: "destructive",
+              duration: 15000
+            });
+            console.error('❌ [Frontend] Passkey creation blocked in production environment. Possible causes: browser security settings, proxy, or deployment infrastructure restrictions.');
+          } else {
+            toast({
+              title: "Development Environment Restriction",
+              description: "Passkey registration is blocked in the Replit preview. This feature works when deployed to production.",
+              variant: "destructive",
+              duration: 10000
+            });
+            console.warn('⚠️ [Frontend] Passkey creation blocked by iframe permissions policy in development.');
+          }
         } else {
           toast({
             title: "Registration Cancelled",

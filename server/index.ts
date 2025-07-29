@@ -19,13 +19,32 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add security headers for WebAuthn in iframes
+// Add security headers for WebAuthn
 app.use((req, res, next) => {
-  // Allow WebAuthn (publickey-credentials) in iframes
-  res.setHeader('Permissions-Policy', 'publickey-credentials-create=(self), publickey-credentials-get=(self)');
+  // Production domain configuration
+  const isProduction = process.env.PRODUCTION_DOMAIN === 'clarafi.ai';
   
-  // Add other security headers
-  res.setHeader('X-Frame-Options', 'ALLOWALL'); // Allow embedding in any iframe
+  if (isProduction) {
+    // For production, allow WebAuthn from the production domain
+    res.setHeader('Permissions-Policy', 
+      'publickey-credentials-create=(self "https://clarafi.ai"), ' +
+      'publickey-credentials-get=(self "https://clarafi.ai")'
+    );
+    
+    // Allow framing from same origin
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  } else {
+    // For development, allow WebAuthn in iframes
+    res.setHeader('Permissions-Policy', 
+      'publickey-credentials-create=(self), publickey-credentials-get=(self)'
+    );
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+  }
+  
+  // Add Feature-Policy header as well (for older browsers)
+  res.setHeader('Feature-Policy', 
+    'publickey-credentials-create \'self\'; publickey-credentials-get \'self\''
+  );
   
   next();
 });
