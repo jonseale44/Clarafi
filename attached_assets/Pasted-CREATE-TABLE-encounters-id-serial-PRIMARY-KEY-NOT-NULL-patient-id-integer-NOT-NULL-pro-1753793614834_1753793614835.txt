@@ -1,0 +1,4309 @@
+CREATE TABLE "encounters" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"provider_id" integer NOT NULL,
+	"encounter_type" text NOT NULL,
+	"encounter_subtype" text,
+	"start_time" timestamp DEFAULT now(),
+	"end_time" timestamp,
+	"encounter_status" text DEFAULT 'scheduled',
+	"chief_complaint" text,
+	"note" text,
+	"nurse_assessment" text,
+	"nurse_interventions" text,
+	"nurse_notes" text,
+	"transcription_raw" text,
+	"transcription_processed" text,
+	"ai_suggestions" jsonb DEFAULT '{}'::jsonb,
+	"draft_orders" jsonb DEFAULT '[]'::jsonb,
+	"draft_diagnoses" jsonb DEFAULT '[]'::jsonb,
+	"cpt_codes" jsonb DEFAULT '[]'::jsonb,
+	"location" text,
+	"appointment_id" integer,
+	"signature_id" integer,
+	"encounter_date" timestamp,
+	"template_id" integer,
+	"signed_by" integer,
+	"visit_reason" text,
+	"notes" text,
+	"location_id" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"last_chart_update" timestamp,
+	"chart_update_duration" integer
+);
+CREATE TABLE "health_systems" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"short_name" text,
+	"system_type" text NOT NULL,
+	"subscription_tier" integer DEFAULT 1,
+	"subscription_status" text DEFAULT 'active',
+	"subscription_start_date" timestamp,
+	"subscription_end_date" timestamp,
+	"merged_into_health_system_id" integer,
+	"merged_date" timestamp,
+	"original_provider_id" integer,
+	"primary_contact" text,
+	"phone" text,
+	"email" text,
+	"website" text,
+	"npi" text,
+	"tax_id" text,
+	"logo_url" text,
+	"brand_colors" jsonb,
+	"subscription_limits" jsonb DEFAULT '{"staffKeys":0,"totalUsers":0,"providerKeys":0}'::jsonb,
+	"active_user_count" jsonb DEFAULT '{"providers":0,"adminStaff":0,"lastUpdated":"2025-07-27T01:19:28.631Z","clinicalStaff":0}'::jsonb,
+	"trial_end_date" timestamp,
+	"grace_period_end_date" timestamp,
+	"stripe_customer_id" text,
+	"billing_details" jsonb DEFAULT '{"monthlyTotal":0,"providerRate":399,"adminStaffRate":49,"clinicalStaffRate":99}'::jsonb,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "gpt_lab_review_notes" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"result_ids" integer[] NOT NULL,
+	"clinical_review" text NOT NULL,
+	"patient_message" text NOT NULL,
+	"nurse_message" text NOT NULL,
+	"patient_context" jsonb,
+	"gpt_model" text DEFAULT 'gpt-4',
+	"prompt_version" text DEFAULT 'v1.0',
+	"revised_by" integer,
+	"revision_reason" text,
+	"processing_time" integer,
+	"tokens_used" integer,
+	"status" text DEFAULT 'draft',
+	"generated_by" integer NOT NULL,
+	"reviewed_by" integer,
+	"generated_at" timestamp DEFAULT now(),
+	"reviewed_at" timestamp,
+	"patient_message_sent" boolean DEFAULT false,
+	"nurse_message_sent" boolean DEFAULT false,
+	"patient_message_sent_at" timestamp,
+	"nurse_message_sent_at" timestamp,
+	"revision_history" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"conversation_review" text,
+	"conversation_review_generated_at" timestamp,
+	"conversation_closed" boolean DEFAULT false,
+	"conversation_closed_at" timestamp
+);
+CREATE TABLE "external_labs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"lab_name" text NOT NULL,
+	"lab_code" text,
+	"lab_identifier" text NOT NULL,
+	"interface_type" text NOT NULL,
+	"connection_details" jsonb,
+	"api_endpoint" text,
+	"api_key" text,
+	"hl7_endpoint" text,
+	"hl7_version" text,
+	"hl7_sending_facility" text,
+	"hl7_receiving_facility" text,
+	"sftp_host" text,
+	"sftp_username" text,
+	"sftp_password" text,
+	"sftp_directory" text,
+	"username_encrypted" text,
+	"ssl_certificate_path" text,
+	"account_number" text,
+	"operating_hours" jsonb,
+	"contact_phone" text,
+	"contact_email" text,
+	"technical_contact" text,
+	"supported_tests" jsonb,
+	"turnaround_times" jsonb,
+	"test_mapping" jsonb,
+	"result_mapping" jsonb,
+	"requires_patient_consent" boolean DEFAULT false,
+	"consent_form_url" text,
+	"billing_info" jsonb,
+	"last_connection_test" timestamp,
+	"connection_status" text,
+	"error_log" jsonb,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "external_labs_lab_identifier_unique" UNIQUE("lab_identifier")
+);
+CREATE TABLE "emergency_access_logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"user_name" text NOT NULL,
+	"user_role" text NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"patient_id" integer NOT NULL,
+	"patient_name" text NOT NULL,
+	"emergency_type" text NOT NULL,
+	"justification" text NOT NULL,
+	"authorizing_physician" text,
+	"access_start_time" timestamp DEFAULT now() NOT NULL,
+	"access_end_time" timestamp,
+	"accessed_resources" jsonb DEFAULT '[]'::jsonb,
+	"review_required" boolean DEFAULT true,
+	"reviewed_by" integer,
+	"reviewed_at" timestamp,
+	"review_outcome" text,
+	"review_notes" text,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "session" (
+	"sid" varchar PRIMARY KEY NOT NULL,
+	"sess" jsonb NOT NULL,
+	"expire" timestamp NOT NULL
+);
+CREATE TABLE "family_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"relationship" text NOT NULL,
+	"condition" text,
+	"last_updated_encounter_id" integer,
+	"visit_history" jsonb,
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"notes" text,
+	"extracted_from_attachment_id" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "hl7_messages" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"external_lab_id" integer,
+	"message_type" text NOT NULL,
+	"message_control_id" text,
+	"raw_message" text NOT NULL,
+	"direction" text DEFAULT 'inbound',
+	"processed_at" timestamp DEFAULT now(),
+	"processing_status" text,
+	"processing_error" text,
+	"metadata" jsonb,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "allergies" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"allergen" text NOT NULL,
+	"reaction" text,
+	"severity" text,
+	"allergy_type" text,
+	"onset_date" date,
+	"last_reaction_date" date,
+	"status" text DEFAULT 'active',
+	"verification_status" text DEFAULT 'unconfirmed',
+	"drug_class" text,
+	"cross_reactivity" text[],
+	"encounter_id" integer,
+	"notes" text,
+	"reaction_type" text,
+	"verified_by" integer,
+	"verified_at" timestamp,
+	"source_timestamp" timestamp,
+	"last_reaction" date,
+	"merged_ids" integer[],
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"source_notes" text,
+	"extracted_from_attachment_id" integer,
+	"last_updated_encounter_id" integer,
+	"entered_by" integer,
+	"consolidation_reasoning" text,
+	"extraction_notes" text,
+	"temporal_conflict_resolution" text,
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "appointment_duration_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"appointment_id" integer NOT NULL,
+	"ai_predicted_duration" integer NOT NULL,
+	"provider_scheduled_duration" integer NOT NULL,
+	"patient_visible_duration" integer NOT NULL,
+	"actual_duration" integer,
+	"actual_arrival_delta" integer,
+	"factors_used" jsonb,
+	"prediction_accuracy" numeric(5, 2),
+	"provider_feedback" text,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "admin_prompt_reviews" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"template_id" integer NOT NULL,
+	"original_prompt" text NOT NULL,
+	"reviewed_prompt" text,
+	"admin_user_id" integer,
+	"review_status" text DEFAULT 'pending',
+	"review_notes" text,
+	"is_active" boolean DEFAULT false,
+	"performance_metrics" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"reviewed_at" timestamp
+);
+CREATE TABLE "appointment_resource_requirements" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"appointment_type_id" integer,
+	"requires_room" boolean DEFAULT true,
+	"room_type" text,
+	"requires_equipment" text[],
+	"requires_staff" jsonb,
+	"prep_time" integer DEFAULT 0,
+	"cleanup_time" integer DEFAULT 0,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "appointment_types" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"location_id" integer,
+	"type_name" text NOT NULL,
+	"type_code" text NOT NULL,
+	"category" text NOT NULL,
+	"default_duration" integer NOT NULL,
+	"min_duration" integer NOT NULL,
+	"max_duration" integer NOT NULL,
+	"allow_online_scheduling" boolean DEFAULT true,
+	"requires_pre_auth" boolean DEFAULT false,
+	"requires_special_prep" boolean DEFAULT false,
+	"prep_instructions" text,
+	"default_resource_requirements" jsonb,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "article_generation_queue" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"topic" text,
+	"category" text NOT NULL,
+	"target_audience" text NOT NULL,
+	"keywords" text[],
+	"competitor_mentions" text[],
+	"custom_prompt" text,
+	"research_sources" jsonb,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"generated_article_id" integer,
+	"error" text,
+	"created_at" timestamp DEFAULT now(),
+	"processed_at" timestamp
+);
+CREATE TABLE "article_revisions" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"article_id" integer NOT NULL,
+	"content" text NOT NULL,
+	"revision_note" text,
+	"revision_type" text,
+	"created_by" integer,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "asymmetric_scheduling_config" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer,
+	"location_id" integer,
+	"health_system_id" integer,
+	"enabled" boolean DEFAULT true,
+	"patient_min_duration" integer DEFAULT 20,
+	"provider_min_duration" integer DEFAULT 10,
+	"rounding_interval" integer DEFAULT 10,
+	"default_buffer_minutes" integer DEFAULT 0,
+	"buffer_for_chronic_patients" integer DEFAULT 10,
+	"buffer_threshold_problem_count" integer DEFAULT 5,
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "articles" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"title" text NOT NULL,
+	"slug" text NOT NULL,
+	"content" text NOT NULL,
+	"excerpt" text,
+	"category" text NOT NULL,
+	"status" text DEFAULT 'draft' NOT NULL,
+	"author_name" text DEFAULT 'Clarafi Team',
+	"featured_image" text,
+	"meta_title" text,
+	"meta_description" text,
+	"keywords" text[],
+	"target_audience" text,
+	"reading_time" integer,
+	"view_count" integer DEFAULT 0,
+	"published_at" timestamp,
+	"scheduled_for" timestamp,
+	"generated_at" timestamp DEFAULT now(),
+	"reviewed_at" timestamp,
+	"reviewed_by" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "articles_slug_unique" UNIQUE("slug")
+);
+CREATE TABLE "authentication_logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer,
+	"username" text NOT NULL,
+	"email" text,
+	"health_system_id" integer,
+	"event_type" text NOT NULL,
+	"success" boolean NOT NULL,
+	"failure_reason" text,
+	"ip_address" text NOT NULL,
+	"user_agent" text,
+	"browser_info" text,
+	"device_info" text,
+	"geolocation" jsonb,
+	"session_id" text,
+	"session_duration" integer,
+	"logout_type" text,
+	"logout_reason" text,
+	"mfa_type" text,
+	"mfa_success" boolean,
+	"risk_score" integer,
+	"risk_factors" text[],
+	"event_time" timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE "clinic_admin_verifications" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"organization_name" text NOT NULL,
+	"verification_code" text NOT NULL,
+	"verification_data" jsonb NOT NULL,
+	"status" text DEFAULT 'pending',
+	"health_system_id" integer,
+	"submitted_at" timestamp DEFAULT now(),
+	"approved_at" timestamp,
+	"rejected_at" timestamp,
+	"rejection_reason" text,
+	"expires_at" timestamp NOT NULL,
+	"approved_by" integer,
+	"ip_address" text,
+	"user_agent" text
+);
+CREATE TABLE "conversion_events" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer,
+	"health_system_id" integer,
+	"event_type" text NOT NULL,
+	"event_timestamp" timestamp DEFAULT now(),
+	"session_id" text,
+	"device_type" text,
+	"browser_info" jsonb,
+	"acquisition_id" integer,
+	"event_data" jsonb,
+	"monetary_value" numeric(10, 2),
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "data_modification_logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"user_name" text NOT NULL,
+	"user_role" text NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"table_name" text NOT NULL,
+	"record_id" integer NOT NULL,
+	"patient_id" integer,
+	"operation" text NOT NULL,
+	"field_name" text,
+	"old_value" jsonb,
+	"new_value" jsonb,
+	"change_reason" text,
+	"encounter_id" integer,
+	"order_authority" text,
+	"validated" boolean DEFAULT false,
+	"validated_by" integer,
+	"validated_at" timestamp,
+	"modified_at" timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE "attachment_extracted_content" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"attachment_id" integer NOT NULL,
+	"page_number" integer,
+	"content_type" text NOT NULL,
+	"extracted_text" text,
+	"structured_data" jsonb,
+	"confidence_score" numeric(5, 2),
+	"extraction_method" text,
+	"ai_generated_title" text,
+	"document_type" text,
+	"processing_status" text DEFAULT 'pending',
+	"error_message" text,
+	"processed_at" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	CONSTRAINT "attachment_extracted_content_attachment_id_unique" UNIQUE("attachment_id")
+);
+CREATE TABLE "email_notifications" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer,
+	"health_system_id" integer,
+	"notification_type" varchar(50) NOT NULL,
+	"sent_at" timestamp DEFAULT now(),
+	"email_address" varchar(255) NOT NULL,
+	"subject" text,
+	"metadata" jsonb DEFAULT '{}'::jsonb
+);
+CREATE TABLE "document_processing_queue" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"attachment_id" integer NOT NULL,
+	"status" text DEFAULT 'queued',
+	"attempts" integer DEFAULT 0,
+	"priority" integer DEFAULT 100,
+	"processor_type" text DEFAULT 'document_analysis' NOT NULL,
+	"processing_metadata" jsonb,
+	"error_message" text,
+	"retry_count" integer DEFAULT 0,
+	"started_at" timestamp,
+	"completed_at" timestamp,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "electronic_signatures" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"encounter_id" integer,
+	"signature_type" text NOT NULL,
+	"signature_data" text NOT NULL,
+	"signature_method" text NOT NULL,
+	"two_factor_method" text,
+	"two_factor_verified" boolean DEFAULT false,
+	"two_factor_timestamp" timestamp,
+	"compliance_checks" jsonb DEFAULT '{}'::jsonb,
+	"dea_compliance_level" text,
+	"ip_address" text,
+	"user_agent" text,
+	"signed_at" timestamp DEFAULT now() NOT NULL,
+	"expires_at" timestamp,
+	"revoked_at" timestamp,
+	"revocation_reason" text,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "lab_orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer NOT NULL,
+	"order_set_id" text,
+	"loinc_code" text NOT NULL,
+	"cpt_code" text,
+	"test_code" text NOT NULL,
+	"test_name" text NOT NULL,
+	"test_category" text,
+	"priority" text DEFAULT 'routine',
+	"clinical_indication" text,
+	"icd10_codes" text[],
+	"ordered_by" integer NOT NULL,
+	"ordered_at" timestamp DEFAULT now(),
+	"target_lab_id" integer,
+	"external_order_id" text,
+	"hl7_message_id" text,
+	"requisition_number" text,
+	"order_status" text DEFAULT 'draft',
+	"transmitted_at" timestamp,
+	"acknowledged_at" timestamp,
+	"collected_at" timestamp,
+	"specimen_type" text,
+	"specimen_volume" text,
+	"container_type" text,
+	"collection_instructions" text,
+	"fasting_required" boolean DEFAULT false,
+	"fasting_hours" integer,
+	"timing_instructions" text,
+	"insurance_preauth" text,
+	"estimated_cost" numeric(10, 2),
+	"insurance_coverage" text,
+	"ai_suggested_tests" jsonb,
+	"risk_flags" jsonb,
+	"quality_measure" text,
+	"preventive_care_flag" boolean DEFAULT false,
+	"order_id" text,
+	"results" jsonb,
+	"external_lab" text,
+	"provider_notes" text,
+	"result_status" text,
+	"special_instructions" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "lab_results" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"lab_order_id" integer,
+	"patient_id" integer NOT NULL,
+	"loinc_code" text NOT NULL,
+	"test_code" text NOT NULL,
+	"test_name" text NOT NULL,
+	"test_category" text,
+	"result_value" text,
+	"result_numeric" numeric(15, 6),
+	"result_units" text,
+	"reference_range" text,
+	"age_gender_adjusted_range" text,
+	"abnormal_flag" text,
+	"critical_flag" boolean DEFAULT false,
+	"delta_flag" text,
+	"specimen_collected_at" timestamp,
+	"specimen_received_at" timestamp,
+	"result_available_at" timestamp,
+	"result_finalized_at" timestamp,
+	"received_at" timestamp DEFAULT now(),
+	"external_lab_id" integer,
+	"external_result_id" text,
+	"hl7_message_id" text,
+	"instrument_id" text,
+	"result_status" text DEFAULT 'pending',
+	"verification_status" text DEFAULT 'unverified',
+	"result_comments" text,
+	"reviewed_by" integer,
+	"reviewed_at" timestamp,
+	"provider_notes" text,
+	"needs_review" boolean DEFAULT true,
+	"review_status" text DEFAULT 'pending',
+	"review_note" text,
+	"review_template" text,
+	"review_history" jsonb DEFAULT '[]'::jsonb,
+	"communication_status" text DEFAULT 'none',
+	"communication_plan" jsonb,
+	"portal_release_status" text DEFAULT 'hold',
+	"portal_release_by" integer,
+	"portal_release_at" timestamp,
+	"block_portal_release" boolean DEFAULT false,
+	"ai_interpretation" jsonb,
+	"previous_value" numeric(15, 6),
+	"previous_date" timestamp,
+	"trend_direction" text,
+	"percent_change" numeric(5, 2),
+	"qc_flags" jsonb,
+	"source_system" text,
+	"interface_version" text,
+	"source_type" text DEFAULT 'lab_order',
+	"source_confidence" text,
+	"source_notes" text,
+	"extracted_from_attachment_id" integer,
+	"entered_by" integer,
+	"extraction_notes" text,
+	"consolidation_reasoning" text,
+	"merged_ids" integer[],
+	"visit_history" jsonb,
+	"patient_communication_sent" boolean DEFAULT false,
+	"patient_communication_method" text,
+	"patient_communication_sent_at" timestamp,
+	"patient_notified_by" integer,
+	"patient_message" text,
+	"patient_message_sent_at" timestamp,
+	"delta_check" jsonb,
+	"trend_indicators" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "lab_reference_ranges" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"loinc_code" text NOT NULL,
+	"test_name" text NOT NULL,
+	"test_category" text,
+	"gender" text,
+	"age_min" integer DEFAULT 0,
+	"age_max" integer DEFAULT 120,
+	"normal_low" numeric(15, 6),
+	"normal_high" numeric(15, 6),
+	"units" text NOT NULL,
+	"critical_low" numeric(15, 6),
+	"critical_high" numeric(15, 6),
+	"display_range" text,
+	"lab_source" text,
+	"last_verified" timestamp DEFAULT now(),
+	"active" boolean DEFAULT true,
+	"clinical_notes" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "magic_links" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer,
+	"email" text NOT NULL,
+	"token" text NOT NULL,
+	"purpose" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"used_at" timestamp,
+	"ip_address" text,
+	"user_agent" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "magic_links_token_unique" UNIQUE("token")
+);
+CREATE TABLE "imaging_orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer NOT NULL,
+	"provider_id" integer NOT NULL,
+	"imaging_type" text NOT NULL,
+	"body_part" text NOT NULL,
+	"laterality" text,
+	"indication" text NOT NULL,
+	"clinical_history" text,
+	"priority" text DEFAULT 'routine',
+	"status" text DEFAULT 'pending',
+	"facility_id" integer,
+	"scheduled_date" timestamp,
+	"completed_date" timestamp,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "marketing_automations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"description" text,
+	"automation_type" text NOT NULL,
+	"trigger_conditions" jsonb,
+	"actions" jsonb,
+	"enabled" boolean DEFAULT false,
+	"test_mode" boolean DEFAULT true,
+	"schedule" text,
+	"last_triggered" timestamp,
+	"last_executed" timestamp,
+	"execution_count" integer DEFAULT 0,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "marketing_campaigns" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"description" text,
+	"status" text DEFAULT 'draft',
+	"campaign_type" text,
+	"channel" text,
+	"budget" numeric(10, 2),
+	"spent_amount" numeric(10, 2) DEFAULT '0',
+	"target_audience" jsonb,
+	"performance_metrics" jsonb,
+	"start_date" timestamp,
+	"end_date" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "locations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"organization_id" integer,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"short_name" text,
+	"location_type" text NOT NULL,
+	"address" text NOT NULL,
+	"city" text NOT NULL,
+	"state" text NOT NULL,
+	"zip_code" text NOT NULL,
+	"phone" text,
+	"fax" text,
+	"facility_code" text,
+	"npi" text,
+	"operating_hours" jsonb,
+	"services" text[],
+	"has_lab" boolean DEFAULT false,
+	"has_imaging" boolean DEFAULT false,
+	"has_pharmacy" boolean DEFAULT false,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "imaging_results" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"imaging_order_id" integer,
+	"patient_id" integer NOT NULL,
+	"study_date" timestamp NOT NULL,
+	"study_type" text NOT NULL,
+	"modality" text NOT NULL,
+	"body_part" text,
+	"laterality" text,
+	"findings" text,
+	"impression" text,
+	"reading_radiologist" text,
+	"performing_facility" text,
+	"extracted_from_attachment_id" integer,
+	"pacs_study_uid" text,
+	"report_status" text DEFAULT 'preliminary',
+	"source_type" text DEFAULT 'pdf_extract',
+	"source_confidence" numeric(3, 2) DEFAULT '0.95',
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"encounter_id" integer,
+	"recommendations" text,
+	"technique" text,
+	"procedure_code" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "medical_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"condition_category" text NOT NULL,
+	"history_text" text NOT NULL,
+	"last_updated_encounter_id" integer,
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"source_notes" text,
+	"extracted_from_attachment_id" integer,
+	"entered_by" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "medical_problems" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"problem_title" text NOT NULL,
+	"current_icd10_code" text,
+	"problem_status" text DEFAULT 'active',
+	"first_encounter_id" integer,
+	"last_updated_encounter_id" integer,
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"change_log" jsonb DEFAULT '[]'::jsonb,
+	"last_ranked_encounter_id" integer,
+	"ranking_reason" text,
+	"ranking_factors" jsonb,
+	"encounter_id" integer,
+	"icd10_code" text,
+	"snomed_code" text,
+	"onset_date" date,
+	"resolution_date" date,
+	"notes" text,
+	"severity" text,
+	"source_type" text,
+	"source_confidence" numeric(5, 2),
+	"extracted_from_attachment_id" integer,
+	"extraction_notes" text,
+	"provider_id" integer,
+	"date_diagnosed" date,
+	"last_updated" timestamp,
+	"verification_status" text,
+	"verification_date" timestamp,
+	"verified_by" integer,
+	"clinical_status" text,
+	"body_site" text,
+	"body_site_laterality" text,
+	"category" text,
+	"last_reviewed_date" timestamp,
+	"reviewed_by" integer,
+	"patient_education_provided" boolean DEFAULT false,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "medications" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"medication_name" text NOT NULL,
+	"brand_name" text,
+	"generic_name" text,
+	"dosage" text NOT NULL,
+	"strength" text,
+	"dosage_form" text,
+	"route" text,
+	"frequency" text NOT NULL,
+	"quantity" integer,
+	"quantity_unit" text,
+	"days_supply" integer,
+	"refills_remaining" integer,
+	"total_refills" integer,
+	"sig" text,
+	"rxnorm_code" text,
+	"ndc_code" text,
+	"surescripts_id" text,
+	"clinical_indication" text,
+	"source_order_id" integer,
+	"problem_mappings" jsonb DEFAULT '[]'::jsonb,
+	"start_date" date NOT NULL,
+	"end_date" date,
+	"discontinued_date" date,
+	"status" text DEFAULT 'active',
+	"prescriber" text,
+	"prescriber_id" integer,
+	"first_encounter_id" integer,
+	"last_updated_encounter_id" integer,
+	"reason_for_change" text,
+	"medication_history" jsonb DEFAULT '[]'::jsonb,
+	"change_log" jsonb DEFAULT '[]'::jsonb,
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"source_type" text,
+	"source_confidence" numeric(3, 2),
+	"source_notes" text,
+	"extracted_from_attachment_id" integer,
+	"entered_by" integer,
+	"grouping_strategy" text DEFAULT 'medical_problem',
+	"related_medications" jsonb DEFAULT '[]'::jsonb,
+	"drug_interactions" jsonb DEFAULT '[]'::jsonb,
+	"pharmacy_order_id" text,
+	"insurance_auth_status" text,
+	"prior_auth_required" boolean DEFAULT false,
+	"dea_schedule" text,
+	"pharmacy_ncpdp_id" text,
+	"transmission_status" text,
+	"transmission_timestamp" timestamp,
+	"transmission_message_id" text,
+	"transmission_errors" jsonb DEFAULT '[]'::jsonb,
+	"electronic_signature_id" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "medication_formulary" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"generic_name" text NOT NULL,
+	"brand_names" text[],
+	"common_names" text[],
+	"standard_strengths" text[] NOT NULL,
+	"available_forms" text[] NOT NULL,
+	"form_routes" jsonb NOT NULL,
+	"sig_templates" jsonb NOT NULL,
+	"common_doses" text[],
+	"max_daily_dose" text,
+	"therapeutic_class" text NOT NULL,
+	"indication" text NOT NULL,
+	"black_box_warning" text,
+	"age_restrictions" text,
+	"prescription_type" text NOT NULL,
+	"is_controlled" boolean DEFAULT false,
+	"controlled_schedule" text,
+	"requires_prior_auth" boolean DEFAULT false,
+	"renal_adjustment" boolean DEFAULT false,
+	"hepatic_adjustment" boolean DEFAULT false,
+	"prescription_volume" integer DEFAULT 0,
+	"popularity_rank" integer,
+	"data_source" text NOT NULL,
+	"last_verified" timestamp DEFAULT now(),
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "migration_invitations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"invited_user_id" integer,
+	"invited_user_email" text NOT NULL,
+	"target_health_system_id" integer NOT NULL,
+	"created_by_user_id" integer NOT NULL,
+	"invitation_code" text NOT NULL,
+	"message" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"accepted_at" timestamp,
+	"rejected_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "migration_invitations_invitation_code_unique" UNIQUE("invitation_code")
+);
+CREATE TABLE "newsletter_subscribers" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"name" text,
+	"subscribed_at" timestamp DEFAULT now(),
+	"unsubscribed_at" timestamp,
+	"preferences" jsonb,
+	"source" text,
+	CONSTRAINT "newsletter_subscribers_email_unique" UNIQUE("email")
+);
+CREATE TABLE "marketing_insights" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"insight_type" text NOT NULL,
+	"insight_category" text,
+	"title" text NOT NULL,
+	"description" text,
+	"analysis_data" jsonb,
+	"recommendations" jsonb,
+	"status" text DEFAULT 'active',
+	"priority" integer DEFAULT 0,
+	"generated_at" timestamp DEFAULT now(),
+	"acknowledged_at" timestamp,
+	"implemented_at" timestamp,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "marketing_metrics" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"metric_date" date NOT NULL,
+	"metric_type" text NOT NULL,
+	"total_visits" integer DEFAULT 0,
+	"unique_visitors" integer DEFAULT 0,
+	"page_views" integer DEFAULT 0,
+	"bounce_rate" numeric(5, 2),
+	"avg_session_duration" integer,
+	"signups" integer DEFAULT 0,
+	"trials" integer DEFAULT 0,
+	"paid_conversions" integer DEFAULT 0,
+	"conversion_rate" numeric(5, 2),
+	"feature_usage" jsonb,
+	"user_flow_data" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "patient_order_preferences" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"provider_id" integer NOT NULL,
+	"order_type" text NOT NULL,
+	"preferences" jsonb,
+	"standing_orders" jsonb,
+	"lab_delivery_method" text DEFAULT 'mock_service',
+	"lab_service_provider" text,
+	"imaging_delivery_method" text DEFAULT 'print_pdf',
+	"imaging_service_provider" text,
+	"medication_delivery_method" text DEFAULT 'preferred_pharmacy',
+	"preferred_pharmacy" text,
+	"pharmacy_phone" text,
+	"pharmacy_fax" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"last_updated_by" integer,
+	CONSTRAINT "patient_order_preferences_patient_id_unique" UNIQUE("patient_id")
+);
+CREATE TABLE "orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"provider_id" integer NOT NULL,
+	"order_type" text NOT NULL,
+	"order_status" text DEFAULT 'draft',
+	"reference_id" integer,
+	"provider_notes" text,
+	"priority" text DEFAULT 'routine',
+	"clinical_indication" text,
+	"medication_name" text,
+	"dosage" text,
+	"quantity" integer,
+	"quantity_unit" text,
+	"sig" text,
+	"refills" integer,
+	"form" text,
+	"route_of_administration" text,
+	"days_supply" integer,
+	"diagnosis_code" text,
+	"requires_prior_auth" boolean DEFAULT false,
+	"prior_auth_number" text,
+	"lab_name" text,
+	"test_name" text,
+	"test_code" text,
+	"specimen_type" text,
+	"fasting_required" boolean DEFAULT false,
+	"study_type" text,
+	"region" text,
+	"laterality" text,
+	"contrast_needed" boolean DEFAULT false,
+	"specialty_type" text,
+	"provider_name" text,
+	"urgency" text,
+	"ordered_by" integer,
+	"ordered_at" timestamp DEFAULT now(),
+	"approved_by" integer,
+	"approved_at" timestamp,
+	"prescriber" text,
+	"prescriber_id" integer,
+	"order_date" timestamp DEFAULT now(),
+	"status" text DEFAULT 'pending',
+	"medication_dosage" text,
+	"medication_route" text,
+	"medication_frequency" text,
+	"medication_duration" text,
+	"medication_quantity" integer,
+	"medication_refills" integer,
+	"lab_test_name" text,
+	"lab_test_code" text,
+	"imaging_study_type" text,
+	"imaging_body_part" text,
+	"referral_specialty" text,
+	"referral_reason" text,
+	"instructions" text,
+	"diagnosis_codes" text[],
+	"ndc_code" text,
+	"route" text,
+	"frequency" text,
+	"start_date" timestamp,
+	"end_date" timestamp,
+	"indication" text,
+	"imaging_order_id" integer,
+	"external_order_id" text,
+	"body_part" text,
+	"duration" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "organizations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"short_name" text,
+	"organization_type" text NOT NULL,
+	"region" text,
+	"city" text,
+	"state" text,
+	"zip_code" text,
+	"phone" text,
+	"email" text,
+	"address" text,
+	"npi" text,
+	"tax_id" text,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "patient_physical_findings" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"exam_system" text NOT NULL,
+	"exam_component" text,
+	"finding_text" text NOT NULL,
+	"finding_type" text NOT NULL,
+	"confidence" numeric(3, 2) NOT NULL,
+	"confirmed_count" integer DEFAULT 0,
+	"contradicted_count" integer DEFAULT 0,
+	"first_noted_encounter" integer NOT NULL,
+	"last_confirmed_encounter" integer,
+	"last_seen_encounter" integer,
+	"status" text DEFAULT 'active',
+	"gpt_reasoning" text,
+	"clinical_context" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "patient_scheduling_patterns" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"avg_visit_duration" numeric(5, 2),
+	"avg_duration_by_type" jsonb,
+	"visit_duration_std_dev" numeric(5, 2),
+	"avg_arrival_delta" numeric(5, 2),
+	"arrival_consistency" numeric(5, 2),
+	"no_show_rate" numeric(5, 2),
+	"no_show_by_day_of_week" jsonb,
+	"no_show_by_time_of_day" jsonb,
+	"last_no_show_date" date,
+	"preferred_reminder_time" integer,
+	"response_rate" numeric(5, 2),
+	"preferred_contact_method" text,
+	"avg_question_count" numeric(5, 2),
+	"portal_message_frequency" numeric(5, 2),
+	"requires_interpreter" boolean DEFAULT false,
+	"mobility_issues" boolean DEFAULT false,
+	"cognitive_considerations" boolean DEFAULT false,
+	"last_calculated" timestamp DEFAULT now()
+);
+CREATE TABLE "pharmacies" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"ncpdp_id" text,
+	"npi" text,
+	"dea_number" text,
+	"google_place_id" text,
+	"name" text NOT NULL,
+	"dba_name" text,
+	"corporate_name" text,
+	"address" text NOT NULL,
+	"address2" text,
+	"city" text NOT NULL,
+	"state" text NOT NULL,
+	"zip_code" text NOT NULL,
+	"latitude" numeric(10, 8),
+	"longitude" numeric(11, 8),
+	"phone" text,
+	"fax" text,
+	"email" text,
+	"website" text,
+	"hours" jsonb DEFAULT '{}'::jsonb,
+	"is_24_hour" boolean DEFAULT false,
+	"services" text[] DEFAULT '{""}',
+	"accepts_eprescribing" boolean DEFAULT true,
+	"accepts_controlled_substances" boolean DEFAULT false,
+	"preferred_transmission_method" text DEFAULT 'surescripts',
+	"surescripts_version" text,
+	"specialty_types" text[] DEFAULT '{""}',
+	"insurance_networks" jsonb DEFAULT '[]'::jsonb,
+	"preferred_for_conditions" text[] DEFAULT '{""}',
+	"status" text DEFAULT 'active',
+	"verification_status" text DEFAULT 'pending',
+	"last_verified" timestamp,
+	"health_system_id" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "pharmacies_ncpdp_id_unique" UNIQUE("ncpdp_id"),
+	CONSTRAINT "pharmacies_google_place_id_unique" UNIQUE("google_place_id")
+);
+CREATE TABLE "patient_attachments" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"file_name" text NOT NULL,
+	"original_file_name" text NOT NULL,
+	"file_size" integer NOT NULL,
+	"mime_type" text NOT NULL,
+	"file_extension" text NOT NULL,
+	"file_path" text NOT NULL,
+	"thumbnail_path" text,
+	"category" text DEFAULT 'general' NOT NULL,
+	"title" text,
+	"description" text,
+	"tags" text[] DEFAULT '{""}',
+	"uploaded_by" integer NOT NULL,
+	"is_confidential" boolean DEFAULT false,
+	"access_level" text DEFAULT 'standard',
+	"content_hash" text,
+	"processing_status" text DEFAULT 'completed',
+	"virus_scan_status" text DEFAULT 'pending',
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "patients" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"mrn" varchar NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"first_name" text NOT NULL,
+	"last_name" text NOT NULL,
+	"middle_name" text,
+	"date_of_birth" date NOT NULL,
+	"gender" text NOT NULL,
+	"contact_number" text,
+	"email" text,
+	"address" text,
+	"city" text,
+	"state" text,
+	"zip" text,
+	"phone" text,
+	"phone_type" text,
+	"emergency_contact" text,
+	"emergency_contact_name" text,
+	"emergency_contact_phone" text,
+	"emergency_contact_relationship" text,
+	"preferred_language" text DEFAULT 'English',
+	"race" text,
+	"ethnicity" text,
+	"preferred_location_id" integer,
+	"primary_provider_id" integer,
+	"insurance_primary" text,
+	"insurance_secondary" text,
+	"policy_number" text,
+	"group_number" text,
+	"insurance_provider" text,
+	"insurance_verified" boolean DEFAULT false,
+	"external_id" text,
+	"consent_given" boolean DEFAULT false,
+	"assistant_id" text,
+	"assistant_thread_id" text,
+	"last_chart_summary" text,
+	"chart_last_updated" timestamp,
+	"active_problems" jsonb DEFAULT '[]'::jsonb,
+	"critical_alerts" jsonb DEFAULT '[]'::jsonb,
+	"data_origin_type" text DEFAULT 'emr_direct',
+	"original_facility_id" integer,
+	"created_by_provider_id" integer,
+	"creation_context" text,
+	"derivative_work_note" text,
+	"migration_consent" jsonb DEFAULT '{"consentGiven":false}'::jsonb,
+	"profile_photo_filename" text,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"last_accessed_at" timestamp,
+	"last_accessed_by" integer,
+	CONSTRAINT "patients_mrn_unique" UNIQUE("mrn")
+);
+CREATE TABLE "organization_documents" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"document_type" text NOT NULL,
+	"document_url" text NOT NULL,
+	"document_name" text,
+	"uploaded_at" timestamp DEFAULT now(),
+	"uploaded_by" integer,
+	"verified_at" timestamp,
+	"verified_by" integer,
+	"expires_at" timestamp,
+	"metadata" jsonb
+);
+CREATE TABLE "prescription_transmissions" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"medication_id" integer NOT NULL,
+	"order_id" integer,
+	"patient_id" integer NOT NULL,
+	"provider_id" integer NOT NULL,
+	"pharmacy_id" integer,
+	"electronic_signature_id" integer,
+	"transmission_type" text NOT NULL,
+	"transmission_method" text NOT NULL,
+	"message_id" text,
+	"ncpdp_transaction_id" text,
+	"ncpdp_version" text,
+	"ncpdp_message_type" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"status_history" jsonb DEFAULT '[]'::jsonb,
+	"pharmacy_response" jsonb DEFAULT '{}'::jsonb,
+	"pharmacy_notes" text,
+	"error_code" text,
+	"error_message" text,
+	"retry_count" integer DEFAULT 0,
+	"max_retries" integer DEFAULT 3,
+	"gpt_analysis" jsonb DEFAULT '{}'::jsonb,
+	"gpt_recommendations" text[] DEFAULT '{""}',
+	"queued_at" timestamp,
+	"transmitted_at" timestamp,
+	"acknowledged_at" timestamp,
+	"completed_at" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "prescription_transmissions_message_id_unique" UNIQUE("message_id")
+);
+CREATE TABLE "problem_rank_overrides" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"problem_id" integer NOT NULL,
+	"user_id" integer NOT NULL,
+	"preference_weight" text NOT NULL,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "provider_schedules" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer NOT NULL,
+	"location_id" integer NOT NULL,
+	"day_of_week" integer NOT NULL,
+	"start_time" text NOT NULL,
+	"end_time" text NOT NULL,
+	"schedule_type" text NOT NULL,
+	"appointment_types" text[],
+	"slot_duration" integer DEFAULT 30,
+	"buffer_time" integer DEFAULT 0,
+	"max_concurrent_appts" integer DEFAULT 1,
+	"advance_booking_days" integer DEFAULT 365,
+	"cancelation_policy_hours" integer DEFAULT 24,
+	"is_available_for_urgent" boolean DEFAULT true,
+	"allow_double_booking" boolean DEFAULT false,
+	"requires_referral" boolean DEFAULT false,
+	"effective_from" date,
+	"effective_until" date,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "provider_scheduling_patterns" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer NOT NULL,
+	"location_id" integer,
+	"avg_visit_duration" numeric(5, 2),
+	"avg_duration_by_type" jsonb,
+	"avg_duration_by_hour" jsonb,
+	"avg_transition_time" numeric(5, 2),
+	"documentation_lag" numeric(5, 2),
+	"on_time_percentage" numeric(5, 2),
+	"avg_running_behind" numeric(5, 2),
+	"catch_up_patterns" jsonb,
+	"preferred_patient_load" integer,
+	"max_complex_visits" integer,
+	"buffer_preferences" jsonb,
+	"last_calculated" timestamp DEFAULT now()
+);
+CREATE TABLE "realtime_schedule_status" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer NOT NULL,
+	"location_id" integer NOT NULL,
+	"schedule_date" date NOT NULL,
+	"current_patient_id" integer,
+	"current_appointment_id" integer,
+	"running_behind_minutes" integer DEFAULT 0,
+	"last_update_time" timestamp DEFAULT now(),
+	"day_started_at" timestamp,
+	"estimated_catch_up_time" text,
+	"ai_recommendations" jsonb
+);
+CREATE TABLE "resource_bookings" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"resource_id" integer NOT NULL,
+	"appointment_id" integer,
+	"booking_date" date NOT NULL,
+	"start_time" text NOT NULL,
+	"end_time" text NOT NULL,
+	"status" text DEFAULT 'reserved',
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "schedule_exceptions" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer NOT NULL,
+	"location_id" integer,
+	"exception_date" date NOT NULL,
+	"start_time" text,
+	"end_time" text,
+	"exception_type" text NOT NULL,
+	"reason" text,
+	"cancels_existing_appts" boolean DEFAULT false,
+	"allows_emergency_override" boolean DEFAULT true,
+	"is_recurring" boolean DEFAULT false,
+	"recurrence_pattern" text,
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "phi_access_logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"user_name" text NOT NULL,
+	"user_role" text NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"location_id" integer,
+	"patient_id" integer,
+	"patient_name" text,
+	"resource_type" text NOT NULL,
+	"resource_id" integer NOT NULL,
+	"action" text NOT NULL,
+	"access_method" text NOT NULL,
+	"http_method" text,
+	"api_endpoint" text,
+	"ip_address" text NOT NULL,
+	"user_agent" text,
+	"session_id" text,
+	"success" boolean NOT NULL,
+	"error_message" text,
+	"response_time" integer,
+	"access_reason" text,
+	"emergency_access" boolean DEFAULT false,
+	"break_glass_reason" text,
+	"accessed_at" timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE "scheduling_rules" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"rule_name" text NOT NULL,
+	"rule_type" text NOT NULL,
+	"provider_id" integer,
+	"location_id" integer,
+	"health_system_id" integer,
+	"rule_config" jsonb,
+	"priority" integer DEFAULT 0,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "scheduling_templates" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"provider_id" integer,
+	"location_id" integer,
+	"health_system_id" integer,
+	"slot_duration" integer NOT NULL,
+	"start_time" text NOT NULL,
+	"end_time" text NOT NULL,
+	"lunch_start" text,
+	"lunch_duration" integer,
+	"buffer_between_appts" integer DEFAULT 0,
+	"allow_double_booking" boolean DEFAULT false,
+	"max_patients_per_day" integer,
+	"days_of_week" integer[],
+	"is_default" boolean DEFAULT false,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "schedule_preferences" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"provider_id" integer NOT NULL,
+	"use_ai_scheduling" boolean DEFAULT true,
+	"ai_aggressiveness" numeric(5, 2) DEFAULT '50.00',
+	"preferred_start_time" text,
+	"preferred_end_time" text,
+	"preferred_lunch_time" text,
+	"preferred_lunch_duration" integer,
+	"ideal_patients_per_day" integer,
+	"max_patients_per_day" integer,
+	"preferred_buffer_minutes" integer DEFAULT 5,
+	"max_complex_visits_per_day" integer,
+	"complex_visit_spacing" text,
+	"allow_double_booking" boolean DEFAULT false,
+	"double_booking_rules" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "schedule_preferences_provider_id_unique" UNIQUE("provider_id")
+);
+CREATE TABLE "signed_orders" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"order_id" integer NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"order_type" varchar(50) NOT NULL,
+	"delivery_method" varchar(50) NOT NULL,
+	"delivery_status" varchar(50) DEFAULT 'pending' NOT NULL,
+	"delivery_attempts" integer DEFAULT 0 NOT NULL,
+	"last_delivery_attempt" timestamp,
+	"delivery_error" text,
+	"can_change_delivery" boolean DEFAULT true NOT NULL,
+	"delivery_lock_reason" varchar(255),
+	"original_delivery_method" varchar(50) NOT NULL,
+	"delivery_changes" jsonb DEFAULT '[]'::jsonb,
+	"signed_at" timestamp NOT NULL,
+	"signed_by" integer NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+CREATE TABLE "scheduling_resources" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"location_id" integer NOT NULL,
+	"resource_type" text NOT NULL,
+	"resource_name" text NOT NULL,
+	"resource_code" text,
+	"capabilities" text[],
+	"capacity" integer DEFAULT 1,
+	"requires_cleaning_minutes" integer DEFAULT 0,
+	"maintenance_schedule" jsonb,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "signatures" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"encounter_id" integer NOT NULL,
+	"signed_by" integer NOT NULL,
+	"signature_type" text NOT NULL,
+	"signed_at" timestamp DEFAULT now(),
+	"signature_data" text,
+	"ip_address" text,
+	"attestation_text" text
+);
+CREATE TABLE "scheduling_ai_factors" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"factor_category" text NOT NULL,
+	"factor_name" text NOT NULL,
+	"factor_description" text NOT NULL,
+	"data_type" text NOT NULL,
+	"default_enabled" boolean DEFAULT true,
+	"default_weight" numeric(5, 2) DEFAULT '50.00',
+	"calculation_method" text,
+	"source_table" text,
+	"update_frequency" text,
+	"impact_direction" text,
+	"max_impact_minutes" integer,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	CONSTRAINT "scheduling_ai_factors_factor_name_unique" UNIQUE("factor_name")
+);
+CREATE TABLE "subscription_keys" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"key" varchar(20) NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"key_type" text NOT NULL,
+	"subscription_tier" integer NOT NULL,
+	"status" text DEFAULT 'active',
+	"monthly_price" numeric(10, 2),
+	"created_at" timestamp DEFAULT now(),
+	"expires_at" timestamp NOT NULL,
+	"used_by" integer,
+	"used_at" timestamp,
+	"deactivated_by" integer,
+	"deactivated_at" timestamp,
+	"metadata" jsonb DEFAULT '{}'::jsonb,
+	CONSTRAINT "subscription_keys_key_unique" UNIQUE("key")
+);
+CREATE TABLE "surgical_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"procedure_name" text NOT NULL,
+	"procedure_date" date,
+	"surgeon_name" text,
+	"facility_name" text,
+	"indication" text,
+	"complications" text,
+	"anesthesia_type" text,
+	"cpt_code" text,
+	"icd10_procedure_code" text,
+	"anatomical_site" text,
+	"laterality" text,
+	"urgency_level" text,
+	"length_of_stay" text,
+	"blood_loss" text,
+	"transfusions_required" boolean DEFAULT false,
+	"implants_hardware" text,
+	"follow_up_required" text,
+	"recovery_status" text,
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"extracted_from_attachment_id" integer,
+	"last_updated_encounter_id" integer,
+	"entered_by" integer,
+	"consolidation_reasoning" text,
+	"extraction_notes" text,
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "template_shares" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"template_id" integer NOT NULL,
+	"shared_by" integer NOT NULL,
+	"shared_with" integer NOT NULL,
+	"status" text DEFAULT 'pending',
+	"shared_at" timestamp DEFAULT now(),
+	"responded_at" timestamp,
+	"share_message" text,
+	"can_modify" boolean DEFAULT false,
+	"active" boolean DEFAULT true
+);
+CREATE TABLE "template_versions" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"template_id" integer NOT NULL,
+	"version_number" integer NOT NULL,
+	"change_description" text,
+	"changed_by" integer NOT NULL,
+	"example_note_snapshot" text NOT NULL,
+	"generated_prompt_snapshot" text NOT NULL,
+	"change_type" text DEFAULT 'manual',
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_assistant_threads" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"thread_id" text NOT NULL,
+	"thread_type" text NOT NULL,
+	"is_active" boolean DEFAULT true,
+	"last_interaction" timestamp DEFAULT now(),
+	"message_count" integer DEFAULT 0,
+	"patterns_learned" integer DEFAULT 0,
+	"confidence_level" numeric(3, 2) DEFAULT '0.50',
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "user_assistant_threads_thread_id_unique" UNIQUE("thread_id")
+);
+CREATE TABLE "social_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"category" text NOT NULL,
+	"details" text NOT NULL,
+	"current_status" text NOT NULL,
+	"history_notes" text,
+	"last_updated_encounter_id" integer,
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"extracted_from_attachment_id" integer,
+	"entered_by" integer,
+	"consolidation_reasoning" text,
+	"extraction_notes" text,
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_edit_patterns" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"patient_id" integer,
+	"encounter_id" integer,
+	"original_text" text NOT NULL,
+	"edited_text" text NOT NULL,
+	"section_type" text NOT NULL,
+	"pattern_type" text NOT NULL,
+	"is_user_preference" boolean,
+	"confidence_score" numeric(3, 2),
+	"extracted_pattern" jsonb,
+	"applied" boolean DEFAULT false,
+	"reviewed_by_user" boolean DEFAULT false,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_acquisition" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer,
+	"health_system_id" integer,
+	"acquisition_date" timestamp DEFAULT now(),
+	"source" text,
+	"medium" text,
+	"campaign" text,
+	"utm_source" text,
+	"utm_medium" text,
+	"utm_campaign" text,
+	"utm_term" text,
+	"utm_content" text,
+	"referrer_url" text,
+	"landing_page" text,
+	"first_touch_attribution" jsonb,
+	"last_touch_attribution" jsonb,
+	"is_paid" boolean DEFAULT false,
+	"channel_group" text,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "subscription_history" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"previous_tier" integer,
+	"new_tier" integer,
+	"change_type" text,
+	"changed_at" timestamp DEFAULT now(),
+	"grace_period_ends" timestamp,
+	"data_expires_at" timestamp,
+	"metadata" jsonb DEFAULT '{}'::jsonb
+);
+CREATE TABLE "user_problem_list_preferences" (
+	"user_id" integer PRIMARY KEY NOT NULL,
+	"max_problems_displayed" integer DEFAULT 10,
+	"show_resolved_problems" boolean DEFAULT false,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"username" text NOT NULL,
+	"email" text NOT NULL,
+	"password" text NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"first_name" text NOT NULL,
+	"last_name" text NOT NULL,
+	"role" text NOT NULL,
+	"npi" text,
+	"credentials" text,
+	"specialties" text[],
+	"license_number" text,
+	"license_state" text,
+	"bio" text,
+	"profile_image_url" text,
+	"email_verified" boolean DEFAULT false,
+	"email_verification_token" text,
+	"email_verification_expires" timestamp,
+	"mfa_enabled" boolean DEFAULT false,
+	"mfa_secret" text,
+	"account_status" text DEFAULT 'active',
+	"last_login" timestamp,
+	"failed_login_attempts" integer DEFAULT 0,
+	"account_locked_until" timestamp,
+	"require_password_change" boolean DEFAULT false,
+	"baa_accepted" boolean DEFAULT false,
+	"baa_accepted_at" timestamp,
+	"baa_version" text,
+	"verification_status" text DEFAULT 'unverified',
+	"verified_with_key_id" integer,
+	"verified_at" timestamp,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "users_username_unique" UNIQUE("username"),
+	CONSTRAINT "users_email_unique" UNIQUE("email"),
+	CONSTRAINT "users_npi_unique" UNIQUE("npi")
+);
+CREATE TABLE "vitals" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer,
+	"recorded_at" timestamp DEFAULT now() NOT NULL,
+	"recorded_by" text NOT NULL,
+	"entry_type" text DEFAULT 'routine' NOT NULL,
+	"systolic_bp" integer,
+	"diastolic_bp" integer,
+	"heart_rate" integer,
+	"temperature" numeric,
+	"weight" numeric,
+	"height" numeric,
+	"bmi" numeric,
+	"oxygen_saturation" numeric,
+	"respiratory_rate" integer,
+	"pain_scale" integer,
+	"blood_glucose" integer,
+	"notes" text,
+	"parsed_from_text" boolean DEFAULT false,
+	"original_text" text,
+	"processing_notes" text,
+	"source_type" text DEFAULT 'manual_entry',
+	"source_confidence" numeric(3, 2) DEFAULT '1.00',
+	"source_notes" text,
+	"extracted_from_attachment_id" integer,
+	"extraction_notes" text,
+	"consolidation_reasoning" text,
+	"merged_ids" integer[],
+	"visit_history" jsonb DEFAULT '[]'::jsonb,
+	"entered_by" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_locations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"location_id" integer NOT NULL,
+	"role_at_location" text NOT NULL,
+	"is_primary" boolean DEFAULT false,
+	"work_schedule" jsonb,
+	"can_schedule" boolean DEFAULT true,
+	"can_view_all_patients" boolean DEFAULT true,
+	"can_create_orders" boolean DEFAULT true,
+	"active" boolean DEFAULT true,
+	"start_date" date,
+	"end_date" date,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "webauthn_credentials" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"credential_id" text NOT NULL,
+	"credential_public_key" text NOT NULL,
+	"counter" integer DEFAULT 0 NOT NULL,
+	"device_type" text,
+	"transports" jsonb,
+	"registered_device" text,
+	"display_name" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"last_used_at" timestamp,
+	CONSTRAINT "webauthn_credentials_credential_id_unique" UNIQUE("credential_id")
+);
+CREATE TABLE "user_note_preferences" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"default_soap_template" integer,
+	"default_apso_template" integer,
+	"default_progress_template" integer,
+	"default_h_and_p_template" integer,
+	"default_discharge_template" integer,
+	"default_procedure_template" integer,
+	"last_selected_note_type" text DEFAULT 'soap',
+	"global_ai_learning" boolean DEFAULT true,
+	"learning_aggressiveness" text DEFAULT 'moderate',
+	"remember_last_template" boolean DEFAULT true,
+	"show_template_preview" boolean DEFAULT true,
+	"auto_save_changes" boolean DEFAULT true,
+	"medical_problems_display_threshold" integer DEFAULT 100,
+	"ranking_weights" jsonb DEFAULT '{"clinical_severity":40,"patient_frequency":20,"clinical_relevance":10,"treatment_complexity":30}'::jsonb,
+	"chart_panel_width" integer DEFAULT 400,
+	"enable_dense_view" boolean DEFAULT false,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"ai_assistance_mode" text DEFAULT 'strict',
+	CONSTRAINT "user_note_preferences_user_id_unique" UNIQUE("user_id")
+);
+CREATE TABLE "user_note_templates" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"template_name" text NOT NULL,
+	"base_note_type" text NOT NULL,
+	"display_name" text NOT NULL,
+	"is_personal" boolean DEFAULT true,
+	"is_default" boolean DEFAULT false,
+	"created_by" integer NOT NULL,
+	"shared_by" integer,
+	"example_note" text NOT NULL,
+	"base_note_text" text,
+	"inline_comments" jsonb,
+	"has_comments" boolean DEFAULT false,
+	"generated_prompt" text NOT NULL,
+	"prompt_version" integer DEFAULT 1,
+	"enable_ai_learning" boolean DEFAULT true,
+	"learning_confidence" numeric(3, 2) DEFAULT '0.75',
+	"last_learning_update" timestamp,
+	"usage_count" integer DEFAULT 0,
+	"last_used" timestamp,
+	"version" integer DEFAULT 1,
+	"parent_template_id" integer,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_session_locations" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
+	"location_id" integer NOT NULL,
+	"session_id" text,
+	"selected_at" timestamp DEFAULT now(),
+	"is_active" boolean DEFAULT true,
+	"remember_selection" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "archive_access_logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"accessed_by" integer NOT NULL,
+	"accessed_by_name" text NOT NULL,
+	"accessed_by_role" text NOT NULL,
+	"access_type" text NOT NULL,
+	"access_reason" text NOT NULL,
+	"accessed_at" timestamp DEFAULT now() NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"tables_accessed" text[],
+	"record_count" integer,
+	"success" boolean NOT NULL,
+	"error_message" text,
+	"mfa_verified" boolean DEFAULT false,
+	"session_id" text
+);
+CREATE TABLE "archived_attachment_metadata" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"original_id" integer NOT NULL,
+	"patient_id" integer NOT NULL,
+	"file_name" text,
+	"file_type" text,
+	"file_size_bytes" integer,
+	"uploaded_at" timestamp,
+	"was_processed" boolean,
+	"document_type" text,
+	"has_extracted_content" boolean,
+	"original_storage_path" text,
+	"is_recoverable" boolean DEFAULT false,
+	"archived_at" timestamp DEFAULT now()
+);
+CREATE TABLE "archived_encounters" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"original_id" integer NOT NULL,
+	"patient_id" integer NOT NULL,
+	"provider_id" integer,
+	"encounter_type" text,
+	"chief_complaint" text,
+	"encounter_date" date,
+	"status" text,
+	"is_signed" boolean,
+	"signed_at" timestamp,
+	"has_vitals" boolean,
+	"has_soap_note" boolean,
+	"has_orders" boolean,
+	"attachment_count" integer,
+	"archived_at" timestamp DEFAULT now()
+);
+CREATE TABLE "archived_health_systems" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"original_id" integer NOT NULL,
+	"name" text NOT NULL,
+	"system_type" text,
+	"tax_id" text,
+	"npi" text,
+	"website" text,
+	"phone" text,
+	"fax" text,
+	"email" text,
+	"address" text,
+	"city" text,
+	"state" text,
+	"zip_code" text,
+	"subscription_status" text,
+	"subscription_tier" integer,
+	"stripe_customer_id" text,
+	"stripe_subscription_id" text,
+	"trial_end_date" timestamp,
+	"original_created_at" timestamp,
+	"original_updated_at" timestamp,
+	"archived_at" timestamp DEFAULT now()
+);
+CREATE TABLE "archived_patients" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"original_id" integer NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"mrn" text,
+	"year_of_birth" integer,
+	"gender" text,
+	"state_of_residence" text,
+	"has_allergies" boolean,
+	"has_medications" boolean,
+	"has_problems" boolean,
+	"encounter_count" integer,
+	"last_encounter_date" date,
+	"original_created_at" timestamp,
+	"archived_at" timestamp DEFAULT now()
+);
+CREATE TABLE "archived_users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid NOT NULL,
+	"original_id" integer NOT NULL,
+	"username" text NOT NULL,
+	"email_hash" text NOT NULL,
+	"health_system_id" integer,
+	"first_name_initial" text,
+	"last_name_initial" text,
+	"role" text,
+	"npi" text,
+	"credentials" text,
+	"specialties" text[],
+	"license_state" text,
+	"account_status" text,
+	"last_login" timestamp,
+	"email_verified" boolean,
+	"mfa_enabled" boolean,
+	"original_created_at" timestamp,
+	"archived_at" timestamp DEFAULT now()
+);
+CREATE TABLE "data_archives" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"archive_id" uuid DEFAULT gen_random_uuid() NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"health_system_name" text NOT NULL,
+	"archive_reason" text NOT NULL,
+	"archived_at" timestamp DEFAULT now() NOT NULL,
+	"archived_by" integer,
+	"retention_end_date" date NOT NULL,
+	"is_purged" boolean DEFAULT false,
+	"purged_at" timestamp,
+	"has_been_restored" boolean DEFAULT false,
+	"last_restored_at" timestamp,
+	"restored_by" integer,
+	"original_subscription_tier" integer,
+	"original_subscription_status" text,
+	"data_statistics" jsonb,
+	"legal_hold" boolean DEFAULT false,
+	"legal_hold_reason" text,
+	"compliance_notes" text,
+	CONSTRAINT "data_archives_archive_id_unique" UNIQUE("archive_id")
+);
+CREATE TABLE "article_comments" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"article_id" integer NOT NULL,
+	"author_name" text NOT NULL,
+	"author_email" text NOT NULL,
+	"content" text NOT NULL,
+	"is_approved" boolean DEFAULT false,
+	"parent_id" integer,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "appointments" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"provider_id" integer NOT NULL,
+	"location_id" integer NOT NULL,
+	"appointment_date" date NOT NULL,
+	"start_time" text NOT NULL,
+	"end_time" text NOT NULL,
+	"duration" integer NOT NULL,
+	"patient_visible_duration" integer,
+	"provider_scheduled_duration" integer,
+	"appointment_type" text NOT NULL,
+	"appointment_type_id" integer,
+	"chief_complaint" text,
+	"visit_reason" text,
+	"status" text DEFAULT 'scheduled',
+	"confirmation_status" text DEFAULT 'pending',
+	"checked_in_at" timestamp,
+	"checked_in_by" integer,
+	"room_assignment" text,
+	"urgency_level" text DEFAULT 'routine',
+	"scheduling_notes" text,
+	"patient_preferences" jsonb,
+	"ai_scheduling_data" jsonb,
+	"reminders_sent" integer DEFAULT 0,
+	"last_reminder_sent" timestamp,
+	"communication_preferences" jsonb,
+	"external_appointment_id" text,
+	"synced_at" timestamp,
+	"insurance_verified" boolean DEFAULT false,
+	"verified_by" integer,
+	"copay_amount" numeric(10, 2),
+	"actual_duration" integer,
+	"ai_predicted_duration" integer,
+	"billing_notes" text,
+	"cancellation_reason" text,
+	"cancelled_at" timestamp,
+	"cancelled_by" integer,
+	"chart_reviewed" boolean DEFAULT false,
+	"completed_at" timestamp,
+	"completed_by" integer,
+	"confirmation_sent" boolean DEFAULT false,
+	"confirmation_sent_at" timestamp,
+	"copay_collected" boolean DEFAULT false,
+	"duration_minutes" integer,
+	"forms_completed" boolean DEFAULT false,
+	"images_reviewed" boolean DEFAULT false,
+	"insurance_verification_notes" text,
+	"intake_completed_at" timestamp,
+	"interpreter_language" text,
+	"interpreter_needed" boolean DEFAULT false,
+	"labs_reviewed" boolean DEFAULT false,
+	"late_cancellation_reason" text,
+	"medications_reconciled" boolean DEFAULT false,
+	"no_show_reason" text,
+	"notes" text,
+	"parent_appointment_id" integer,
+	"patient_confirmed" boolean DEFAULT false,
+	"patient_confirmed_at" timestamp,
+	"post_appointment_notes" text,
+	"pre_appointment_notes" text,
+	"problems_reviewed" boolean DEFAULT false,
+	"provider_ready_at" timestamp,
+	"recurrence_exceptions" jsonb DEFAULT '[]'::jsonb,
+	"recurrence_rule" text,
+	"referral_reason" text,
+	"referring_provider" text,
+	"reminder_sent" boolean DEFAULT false,
+	"reminder_sent_at" timestamp,
+	"rescheduled_from" integer,
+	"rescheduled_reason" text,
+	"resource_requirements" jsonb DEFAULT '{}'::jsonb,
+	"room_number" text,
+	"special_instructions" text,
+	"tags" jsonb DEFAULT '[]'::jsonb,
+	"use_ai_scheduling" boolean DEFAULT true,
+	"visit_completed_at" timestamp,
+	"vital_signs_taken" boolean DEFAULT false,
+	"wait_list_priority" integer,
+	"wheelchair_accessible" boolean DEFAULT false,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL
+);
+CREATE TABLE "diagnoses" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"patient_id" integer NOT NULL,
+	"encounter_id" integer NOT NULL,
+	"diagnosis_code" text,
+	"diagnosis_description" text,
+	"diagnosis_type" text,
+	"status" text NOT NULL,
+	"onset_date" date,
+	"resolution_date" date,
+	"notes" text,
+	"severity" text,
+	"clinician_id" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "scheduling_ai_weights" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"factor_id" integer,
+	"factor_name" text,
+	"provider_id" integer,
+	"location_id" integer,
+	"health_system_id" integer,
+	"enabled" boolean,
+	"weight" numeric(5, 2) NOT NULL,
+	"is_active" boolean DEFAULT true,
+	"custom_parameters" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"created_by" integer NOT NULL,
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "analytics_events" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"user_id" integer,
+	"session_id" text NOT NULL,
+	"event_type" text NOT NULL,
+	"event_category" text,
+	"event_action" text,
+	"event_label" text,
+	"event_value" integer,
+	"event_data" jsonb,
+	"page_url" text,
+	"page_title" text,
+	"referrer" text,
+	"user_agent" text,
+	"device_type" text,
+	"browser_name" text,
+	"browser_version" text,
+	"os_name" text,
+	"os_version" text,
+	"screen_resolution" text,
+	"session_duration" integer,
+	"is_new_session" boolean DEFAULT false,
+	"utm_source" text,
+	"utm_medium" text,
+	"utm_campaign" text,
+	"utm_term" text,
+	"utm_content" text,
+	"timestamp" timestamp NOT NULL,
+	"processed_at" timestamp,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "feature_usage_stats" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"user_id" integer,
+	"feature_name" text NOT NULL,
+	"feature_category" text,
+	"usage_date" date NOT NULL,
+	"usage_count" integer DEFAULT 0,
+	"success_count" integer DEFAULT 0,
+	"error_count" integer DEFAULT 0,
+	"avg_processing_time" numeric,
+	"min_processing_time" numeric,
+	"max_processing_time" numeric,
+	"metadata" jsonb,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "ad_platform_accounts" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer NOT NULL,
+	"platform" text NOT NULL,
+	"account_id" text NOT NULL,
+	"account_name" text,
+	"credentials" jsonb,
+	"last_sync_at" timestamp,
+	"sync_status" text DEFAULT 'pending',
+	"sync_error" text,
+	"account_metrics" jsonb,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "ad_campaign_performance" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"account_id" integer NOT NULL,
+	"health_system_id" integer,
+	"external_campaign_id" text NOT NULL,
+	"campaign_name" text,
+	"campaign_type" text,
+	"date" date NOT NULL,
+	"impressions" integer DEFAULT 0,
+	"clicks" integer DEFAULT 0,
+	"cost" numeric(10, 2) DEFAULT '0',
+	"conversions" numeric(10, 2) DEFAULT '0',
+	"conversion_value" numeric(10, 2) DEFAULT '0',
+	"ctr" numeric(5, 2),
+	"cpc" numeric(10, 2),
+	"cpa" numeric(10, 2),
+	"roas" numeric(10, 2),
+	"ad_group_data" jsonb,
+	"keyword_data" jsonb,
+	"created_at" timestamp DEFAULT now()
+);
+CREATE TABLE "healthcare_marketing_intelligence" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"market_segment" text NOT NULL,
+	"competitor_analysis" jsonb,
+	"payer_mix_analysis" jsonb,
+	"referral_analysis" jsonb,
+	"procedure_profitability" jsonb,
+	"clinical_outcomes" jsonb,
+	"geographic_analysis" jsonb,
+	"analysis_date" date NOT NULL,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "user_cohorts" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"description" text,
+	"cohort_type" text NOT NULL,
+	"cohort_date" date NOT NULL,
+	"cohort_period" text,
+	"segment_criteria" jsonb,
+	"metrics" jsonb,
+	"user_ids" integer[],
+	"user_count" integer DEFAULT 0,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "ab_tests" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"health_system_id" integer,
+	"name" text NOT NULL,
+	"description" text,
+	"hypothesis" text,
+	"status" text DEFAULT 'draft',
+	"variants" jsonb NOT NULL,
+	"targeting_criteria" jsonb,
+	"primary_metric" text NOT NULL,
+	"secondary_metrics" text[],
+	"results" jsonb,
+	"start_date" timestamp,
+	"end_date" timestamp,
+	"completed_at" timestamp,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "ab_test_assignments" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"test_id" integer NOT NULL,
+	"user_id" integer,
+	"session_id" text,
+	"variant" text NOT NULL,
+	"assigned_at" timestamp DEFAULT now(),
+	"converted" boolean DEFAULT false,
+	"converted_at" timestamp,
+	"conversion_value" numeric(10, 2),
+	"metadata" jsonb
+);
+CREATE TABLE "lab_interface_mappings" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"external_lab_id" integer NOT NULL,
+	"direction" text NOT NULL,
+	"internal_code" text NOT NULL,
+	"external_code" text NOT NULL,
+	"external_name" text,
+	"mapping_type" text NOT NULL,
+	"mapping_notes" text,
+	"transform_rules" jsonb,
+	"valid_from" date,
+	"valid_to" date,
+	"active" boolean DEFAULT true,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+CREATE TABLE "lab_order_sets" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"set_code" text NOT NULL,
+	"set_name" text NOT NULL,
+	"category" text,
+	"test_components" jsonb NOT NULL,
+	"clinical_indications" text[],
+	"department" text,
+	"usage_count" integer DEFAULT 0,
+	"last_used" timestamp,
+	"active" boolean DEFAULT true,
+	"created_by" integer,
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "lab_order_sets_set_code_unique" UNIQUE("set_code")
+);
+CREATE TABLE "lab_test_catalog" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"loinc_code" text NOT NULL,
+	"loinc_name" text NOT NULL,
+	"loinc_short_name" text,
+	"quest_code" text,
+	"quest_name" text,
+	"labcorp_code" text,
+	"labcorp_name" text,
+	"hospital_code" text,
+	"category" text NOT NULL,
+	"subcategory" text,
+	"panel_components" jsonb,
+	"common_name" text NOT NULL,
+	"synonyms" text[],
+	"clinical_utility" text,
+	"expected_turnaround" integer,
+	"primary_specimen_type" text NOT NULL,
+	"alternate_specimen_types" text[],
+	"minimum_volume" text,
+	"container_type" text,
+	"storage_requirements" text,
+	"patient_preparation" text,
+	"collection_instructions" text,
+	"transport_instructions" text,
+	"stability_info" jsonb,
+	"cpt_code" text,
+	"medicare_fee_schedule" numeric(10, 2),
+	"requires_prior_auth" boolean DEFAULT false,
+	"ncd_lcd_coverage" text,
+	"available_at" jsonb,
+	"orderable" boolean DEFAULT true,
+	"obsolete" boolean DEFAULT false,
+	"replaced_by" text,
+	"last_validated" timestamp,
+	"validated_by" integer,
+	"source" text DEFAULT 'manual',
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now(),
+	CONSTRAINT "lab_test_catalog_loinc_code_unique" UNIQUE("loinc_code")
+);
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_appointment_id_appointments_id_fk" FOREIGN KEY ("appointment_id") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_signature_id_signatures_id_fk" FOREIGN KEY ("signature_id") REFERENCES "public"."signatures"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_signed_by_users_id_fk" FOREIGN KEY ("signed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "encounters" ADD CONSTRAINT "encounters_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "health_systems" ADD CONSTRAINT "health_systems_original_provider_id_users_id_fk" FOREIGN KEY ("original_provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "health_systems" ADD CONSTRAINT "health_systems_merged_into_health_system_id_health_systems_id_f" FOREIGN KEY ("merged_into_health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "gpt_lab_review_notes" ADD CONSTRAINT "gpt_lab_review_notes_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "gpt_lab_review_notes" ADD CONSTRAINT "gpt_lab_review_notes_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "gpt_lab_review_notes" ADD CONSTRAINT "gpt_lab_review_notes_revised_by_users_id_fk" FOREIGN KEY ("revised_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "gpt_lab_review_notes" ADD CONSTRAINT "gpt_lab_review_notes_generated_by_users_id_fk" FOREIGN KEY ("generated_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "gpt_lab_review_notes" ADD CONSTRAINT "gpt_lab_review_notes_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "emergency_access_logs" ADD CONSTRAINT "emergency_access_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "emergency_access_logs" ADD CONSTRAINT "emergency_access_logs_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "emergency_access_logs" ADD CONSTRAINT "emergency_access_logs_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "emergency_access_logs" ADD CONSTRAINT "emergency_access_logs_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "family_history" ADD CONSTRAINT "family_history_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "family_history" ADD CONSTRAINT "family_history_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "family_history" ADD CONSTRAINT "family_history_extracted_from_attachment_id_patient_attachments" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "hl7_messages" ADD CONSTRAINT "hl7_messages_external_lab_id_external_labs_id_fk" FOREIGN KEY ("external_lab_id") REFERENCES "public"."external_labs"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_verified_by_users_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "allergies" ADD CONSTRAINT "allergies_extracted_from_attachment_id_patient_attachments_id_f" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointment_duration_history" ADD CONSTRAINT "appointment_duration_history_appointment_id_appointments_id_fk" FOREIGN KEY ("appointment_id") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "admin_prompt_reviews" ADD CONSTRAINT "admin_prompt_reviews_template_id_user_note_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "admin_prompt_reviews" ADD CONSTRAINT "admin_prompt_reviews_admin_user_id_users_id_fk" FOREIGN KEY ("admin_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointment_types" ADD CONSTRAINT "appointment_types_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointment_types" ADD CONSTRAINT "appointment_types_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "article_generation_queue" ADD CONSTRAINT "article_generation_queue_generated_article_id_articles_id_fk" FOREIGN KEY ("generated_article_id") REFERENCES "public"."articles"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "article_revisions" ADD CONSTRAINT "article_revisions_article_id_articles_id_fk" FOREIGN KEY ("article_id") REFERENCES "public"."articles"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "article_revisions" ADD CONSTRAINT "article_revisions_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "asymmetric_scheduling_config" ADD CONSTRAINT "asymmetric_scheduling_config_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "asymmetric_scheduling_config" ADD CONSTRAINT "asymmetric_scheduling_config_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "asymmetric_scheduling_config" ADD CONSTRAINT "asymmetric_scheduling_config_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "asymmetric_scheduling_config" ADD CONSTRAINT "asymmetric_scheduling_config_health_system_id_health_systems_id" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "articles" ADD CONSTRAINT "articles_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "authentication_logs" ADD CONSTRAINT "authentication_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "authentication_logs" ADD CONSTRAINT "authentication_logs_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "clinic_admin_verifications" ADD CONSTRAINT "clinic_admin_verifications_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "clinic_admin_verifications" ADD CONSTRAINT "clinic_admin_verifications_health_system_id_health_systems_id_f" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "conversion_events" ADD CONSTRAINT "conversion_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "conversion_events" ADD CONSTRAINT "conversion_events_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "conversion_events" ADD CONSTRAINT "conversion_events_acquisition_id_user_acquisition_id_fk" FOREIGN KEY ("acquisition_id") REFERENCES "public"."user_acquisition"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "data_modification_logs" ADD CONSTRAINT "data_modification_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "data_modification_logs" ADD CONSTRAINT "data_modification_logs_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "data_modification_logs" ADD CONSTRAINT "data_modification_logs_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "data_modification_logs" ADD CONSTRAINT "data_modification_logs_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "data_modification_logs" ADD CONSTRAINT "data_modification_logs_validated_by_users_id_fk" FOREIGN KEY ("validated_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "attachment_extracted_content" ADD CONSTRAINT "attachment_extracted_content_attachment_id_patient_attachments_" FOREIGN KEY ("attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "email_notifications" ADD CONSTRAINT "email_notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "email_notifications" ADD CONSTRAINT "email_notifications_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "document_processing_queue" ADD CONSTRAINT "document_processing_queue_attachment_id_patient_attachments_id_" FOREIGN KEY ("attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "electronic_signatures" ADD CONSTRAINT "electronic_signatures_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "electronic_signatures" ADD CONSTRAINT "electronic_signatures_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_ordered_by_users_id_fk" FOREIGN KEY ("ordered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_orders" ADD CONSTRAINT "lab_orders_target_lab_id_external_labs_id_fk" FOREIGN KEY ("target_lab_id") REFERENCES "public"."external_labs"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_lab_order_id_lab_orders_id_fk" FOREIGN KEY ("lab_order_id") REFERENCES "public"."lab_orders"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_external_lab_id_external_labs_id_fk" FOREIGN KEY ("external_lab_id") REFERENCES "public"."external_labs"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_portal_release_by_users_id_fk" FOREIGN KEY ("portal_release_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_patient_notified_by_users_id_fk" FOREIGN KEY ("patient_notified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_results" ADD CONSTRAINT "lab_results_extracted_from_attachment_id_patient_attachments_id" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "magic_links" ADD CONSTRAINT "magic_links_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_orders" ADD CONSTRAINT "imaging_orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_orders" ADD CONSTRAINT "imaging_orders_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_orders" ADD CONSTRAINT "imaging_orders_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "marketing_automations" ADD CONSTRAINT "marketing_automations_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "marketing_campaigns" ADD CONSTRAINT "marketing_campaigns_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "locations" ADD CONSTRAINT "locations_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "locations" ADD CONSTRAINT "locations_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_results" ADD CONSTRAINT "imaging_results_imaging_order_id_imaging_orders_id_fk" FOREIGN KEY ("imaging_order_id") REFERENCES "public"."imaging_orders"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_results" ADD CONSTRAINT "imaging_results_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_results" ADD CONSTRAINT "imaging_results_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "imaging_results" ADD CONSTRAINT "imaging_results_extracted_from_attachment_id_patient_attachment" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_history" ADD CONSTRAINT "medical_history_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_history" ADD CONSTRAINT "medical_history_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_history" ADD CONSTRAINT "medical_history_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_history" ADD CONSTRAINT "medical_history_extracted_from_attachment_id_patient_attachment" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_first_encounter_id_encounters_id_fk" FOREIGN KEY ("first_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_last_ranked_encounter_id_encounters_id_fk" FOREIGN KEY ("last_ranked_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_verified_by_users_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_reviewed_by_users_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medical_problems" ADD CONSTRAINT "medical_problems_extracted_from_attachment_id_patient_attachmen" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_prescriber_id_users_id_fk" FOREIGN KEY ("prescriber_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_first_encounter_id_encounters_id_fk" FOREIGN KEY ("first_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_electronic_signature_id_electronic_signatures_id_fk" FOREIGN KEY ("electronic_signature_id") REFERENCES "public"."electronic_signatures"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "medications" ADD CONSTRAINT "medications_extracted_from_attachment_id_patient_attachments_id" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "migration_invitations" ADD CONSTRAINT "migration_invitations_invited_user_id_users_id_fk" FOREIGN KEY ("invited_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "migration_invitations" ADD CONSTRAINT "migration_invitations_created_by_user_id_users_id_fk" FOREIGN KEY ("created_by_user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "migration_invitations" ADD CONSTRAINT "migration_invitations_target_health_system_id_health_systems_id" FOREIGN KEY ("target_health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "marketing_insights" ADD CONSTRAINT "marketing_insights_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "marketing_metrics" ADD CONSTRAINT "marketing_metrics_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_order_preferences" ADD CONSTRAINT "patient_order_preferences_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_order_preferences" ADD CONSTRAINT "patient_order_preferences_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_order_preferences" ADD CONSTRAINT "patient_order_preferences_last_updated_by_users_id_fk" FOREIGN KEY ("last_updated_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_ordered_by_users_id_fk" FOREIGN KEY ("ordered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_approved_by_users_id_fk" FOREIGN KEY ("approved_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "orders" ADD CONSTRAINT "orders_prescriber_id_users_id_fk" FOREIGN KEY ("prescriber_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "organizations" ADD CONSTRAINT "organizations_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_physical_findings" ADD CONSTRAINT "patient_physical_findings_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_physical_findings" ADD CONSTRAINT "patient_physical_findings_last_seen_encounter_encounters_id_fk" FOREIGN KEY ("last_seen_encounter") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_physical_findings" ADD CONSTRAINT "patient_physical_findings_first_noted_encounter_encounters_id_f" FOREIGN KEY ("first_noted_encounter") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_physical_findings" ADD CONSTRAINT "patient_physical_findings_last_confirmed_encounter_encounters_i" FOREIGN KEY ("last_confirmed_encounter") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_scheduling_patterns" ADD CONSTRAINT "patient_scheduling_patterns_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "pharmacies" ADD CONSTRAINT "pharmacies_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_attachments" ADD CONSTRAINT "patient_attachments_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_attachments" ADD CONSTRAINT "patient_attachments_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patient_attachments" ADD CONSTRAINT "patient_attachments_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_preferred_location_id_locations_id_fk" FOREIGN KEY ("preferred_location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_primary_provider_id_users_id_fk" FOREIGN KEY ("primary_provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_original_facility_id_health_systems_id_fk" FOREIGN KEY ("original_facility_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_created_by_provider_id_users_id_fk" FOREIGN KEY ("created_by_provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "patients" ADD CONSTRAINT "patients_last_accessed_by_users_id_fk" FOREIGN KEY ("last_accessed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "organization_documents" ADD CONSTRAINT "organization_documents_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "organization_documents" ADD CONSTRAINT "organization_documents_uploaded_by_users_id_fk" FOREIGN KEY ("uploaded_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "organization_documents" ADD CONSTRAINT "organization_documents_verified_by_users_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_medication_id_medications_id_fk" FOREIGN KEY ("medication_id") REFERENCES "public"."medications"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_pharmacy_id_pharmacies_id_fk" FOREIGN KEY ("pharmacy_id") REFERENCES "public"."pharmacies"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "prescription_transmissions" ADD CONSTRAINT "prescription_transmissions_electronic_signature_id_electronic_s" FOREIGN KEY ("electronic_signature_id") REFERENCES "public"."electronic_signatures"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "problem_rank_overrides" ADD CONSTRAINT "problem_rank_overrides_problem_id_medical_problems_id_fk" FOREIGN KEY ("problem_id") REFERENCES "public"."medical_problems"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "problem_rank_overrides" ADD CONSTRAINT "problem_rank_overrides_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "provider_schedules" ADD CONSTRAINT "provider_schedules_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "provider_schedules" ADD CONSTRAINT "provider_schedules_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "provider_scheduling_patterns" ADD CONSTRAINT "provider_scheduling_patterns_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "provider_scheduling_patterns" ADD CONSTRAINT "provider_scheduling_patterns_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "realtime_schedule_status" ADD CONSTRAINT "realtime_schedule_status_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "realtime_schedule_status" ADD CONSTRAINT "realtime_schedule_status_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "realtime_schedule_status" ADD CONSTRAINT "realtime_schedule_status_current_patient_id_patients_id_fk" FOREIGN KEY ("current_patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "realtime_schedule_status" ADD CONSTRAINT "realtime_schedule_status_current_appointment_id_appointments_id" FOREIGN KEY ("current_appointment_id") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "resource_bookings" ADD CONSTRAINT "resource_bookings_resource_id_scheduling_resources_id_fk" FOREIGN KEY ("resource_id") REFERENCES "public"."scheduling_resources"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "resource_bookings" ADD CONSTRAINT "resource_bookings_appointment_id_appointments_id_fk" FOREIGN KEY ("appointment_id") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "resource_bookings" ADD CONSTRAINT "resource_bookings_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "schedule_exceptions" ADD CONSTRAINT "schedule_exceptions_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "schedule_exceptions" ADD CONSTRAINT "schedule_exceptions_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "schedule_exceptions" ADD CONSTRAINT "schedule_exceptions_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "phi_access_logs" ADD CONSTRAINT "phi_access_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "phi_access_logs" ADD CONSTRAINT "phi_access_logs_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "phi_access_logs" ADD CONSTRAINT "phi_access_logs_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "phi_access_logs" ADD CONSTRAINT "phi_access_logs_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_rules" ADD CONSTRAINT "scheduling_rules_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_rules" ADD CONSTRAINT "scheduling_rules_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_rules" ADD CONSTRAINT "scheduling_rules_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_rules" ADD CONSTRAINT "scheduling_rules_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_templates" ADD CONSTRAINT "scheduling_templates_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_templates" ADD CONSTRAINT "scheduling_templates_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_templates" ADD CONSTRAINT "scheduling_templates_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_templates" ADD CONSTRAINT "scheduling_templates_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "schedule_preferences" ADD CONSTRAINT "schedule_preferences_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_orders" ADD CONSTRAINT "signed_orders_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_orders" ADD CONSTRAINT "signed_orders_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_orders" ADD CONSTRAINT "signed_orders_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signed_orders" ADD CONSTRAINT "signed_orders_signed_by_users_id_fk" FOREIGN KEY ("signed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_resources" ADD CONSTRAINT "scheduling_resources_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signatures" ADD CONSTRAINT "signatures_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "signatures" ADD CONSTRAINT "signatures_signed_by_users_id_fk" FOREIGN KEY ("signed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "subscription_keys" ADD CONSTRAINT "subscription_keys_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "subscription_keys" ADD CONSTRAINT "subscription_keys_used_by_users_id_fk" FOREIGN KEY ("used_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "subscription_keys" ADD CONSTRAINT "subscription_keys_deactivated_by_users_id_fk" FOREIGN KEY ("deactivated_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "surgical_history" ADD CONSTRAINT "surgical_history_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "surgical_history" ADD CONSTRAINT "surgical_history_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "surgical_history" ADD CONSTRAINT "surgical_history_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "surgical_history" ADD CONSTRAINT "surgical_history_extracted_from_attachment_id_patient_attachmen" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "template_shares" ADD CONSTRAINT "template_shares_template_id_user_note_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."user_note_templates"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "template_shares" ADD CONSTRAINT "template_shares_shared_by_users_id_fk" FOREIGN KEY ("shared_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "template_shares" ADD CONSTRAINT "template_shares_shared_with_users_id_fk" FOREIGN KEY ("shared_with") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "template_versions" ADD CONSTRAINT "template_versions_template_id_user_note_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."user_note_templates"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "template_versions" ADD CONSTRAINT "template_versions_changed_by_users_id_fk" FOREIGN KEY ("changed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_assistant_threads" ADD CONSTRAINT "user_assistant_threads_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "social_history" ADD CONSTRAINT "social_history_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "social_history" ADD CONSTRAINT "social_history_last_updated_encounter_id_encounters_id_fk" FOREIGN KEY ("last_updated_encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "social_history" ADD CONSTRAINT "social_history_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "social_history" ADD CONSTRAINT "social_history_extracted_from_attachment_id_patient_attachments" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_edit_patterns" ADD CONSTRAINT "user_edit_patterns_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_edit_patterns" ADD CONSTRAINT "user_edit_patterns_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_edit_patterns" ADD CONSTRAINT "user_edit_patterns_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_acquisition" ADD CONSTRAINT "user_acquisition_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_acquisition" ADD CONSTRAINT "user_acquisition_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "subscription_history" ADD CONSTRAINT "subscription_history_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_problem_list_preferences" ADD CONSTRAINT "user_problem_list_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "users" ADD CONSTRAINT "users_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "vitals" ADD CONSTRAINT "vitals_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "vitals" ADD CONSTRAINT "vitals_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "vitals" ADD CONSTRAINT "vitals_extracted_from_attachment_id_patient_attachments_id_fk" FOREIGN KEY ("extracted_from_attachment_id") REFERENCES "public"."patient_attachments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "vitals" ADD CONSTRAINT "vitals_entered_by_users_id_fk" FOREIGN KEY ("entered_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_locations" ADD CONSTRAINT "user_locations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_locations" ADD CONSTRAINT "user_locations_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "webauthn_credentials" ADD CONSTRAINT "webauthn_credentials_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_soap_template_user_note_templates" FOREIGN KEY ("default_soap_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_apso_template_user_note_templates" FOREIGN KEY ("default_apso_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_progress_template_user_note_templ" FOREIGN KEY ("default_progress_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_h_and_p_template_user_note_templa" FOREIGN KEY ("default_h_and_p_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_discharge_template_user_note_temp" FOREIGN KEY ("default_discharge_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_preferences" ADD CONSTRAINT "user_note_preferences_default_procedure_template_user_note_temp" FOREIGN KEY ("default_procedure_template") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_templates" ADD CONSTRAINT "user_note_templates_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_note_templates" ADD CONSTRAINT "user_note_templates_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_templates" ADD CONSTRAINT "user_note_templates_shared_by_users_id_fk" FOREIGN KEY ("shared_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_note_templates" ADD CONSTRAINT "user_note_templates_parent_template_id_user_note_templates_id_f" FOREIGN KEY ("parent_template_id") REFERENCES "public"."user_note_templates"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_session_locations" ADD CONSTRAINT "user_session_locations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "user_session_locations" ADD CONSTRAINT "user_session_locations_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_article_id_articles_id_fk" FOREIGN KEY ("article_id") REFERENCES "public"."articles"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "article_comments" ADD CONSTRAINT "article_comments_parent_id_article_comments_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."article_comments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_appointment_type_id_appointment_types_id_fk" FOREIGN KEY ("appointment_type_id") REFERENCES "public"."appointment_types"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_checked_in_by_users_id_fk" FOREIGN KEY ("checked_in_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_verified_by_users_id_fk" FOREIGN KEY ("verified_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_cancelled_by_users_id_fk" FOREIGN KEY ("cancelled_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_completed_by_users_id_fk" FOREIGN KEY ("completed_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_parent_appointment_id_appointments_id_fk" FOREIGN KEY ("parent_appointment_id") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_rescheduled_from_appointments_id_fk" FOREIGN KEY ("rescheduled_from") REFERENCES "public"."appointments"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "appointments" ADD CONSTRAINT "appointments_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "diagnoses" ADD CONSTRAINT "diagnoses_patient_id_patients_id_fk" FOREIGN KEY ("patient_id") REFERENCES "public"."patients"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "diagnoses" ADD CONSTRAINT "diagnoses_encounter_id_encounters_id_fk" FOREIGN KEY ("encounter_id") REFERENCES "public"."encounters"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "diagnoses" ADD CONSTRAINT "diagnoses_clinician_id_users_id_fk" FOREIGN KEY ("clinician_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_ai_weights" ADD CONSTRAINT "scheduling_ai_weights_factor_id_scheduling_ai_factors_id_fk" FOREIGN KEY ("factor_id") REFERENCES "public"."scheduling_ai_factors"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_ai_weights" ADD CONSTRAINT "scheduling_ai_weights_provider_id_users_id_fk" FOREIGN KEY ("provider_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_ai_weights" ADD CONSTRAINT "scheduling_ai_weights_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_ai_weights" ADD CONSTRAINT "scheduling_ai_weights_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "scheduling_ai_weights" ADD CONSTRAINT "scheduling_ai_weights_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "analytics_events" ADD CONSTRAINT "analytics_events_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "analytics_events" ADD CONSTRAINT "analytics_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "feature_usage_stats" ADD CONSTRAINT "feature_usage_stats_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "feature_usage_stats" ADD CONSTRAINT "feature_usage_stats_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ad_platform_accounts" ADD CONSTRAINT "ad_platform_accounts_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ad_campaign_performance" ADD CONSTRAINT "ad_campaign_performance_account_id_ad_platform_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."ad_platform_accounts"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ad_campaign_performance" ADD CONSTRAINT "ad_campaign_performance_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "healthcare_marketing_intelligence" ADD CONSTRAINT "healthcare_marketing_intelligence_health_system_id_health_syste" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "user_cohorts" ADD CONSTRAINT "user_cohorts_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ab_tests" ADD CONSTRAINT "ab_tests_health_system_id_health_systems_id_fk" FOREIGN KEY ("health_system_id") REFERENCES "public"."health_systems"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ab_test_assignments" ADD CONSTRAINT "ab_test_assignments_test_id_ab_tests_id_fk" FOREIGN KEY ("test_id") REFERENCES "public"."ab_tests"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "ab_test_assignments" ADD CONSTRAINT "ab_test_assignments_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_interface_mappings" ADD CONSTRAINT "lab_interface_mappings_external_lab_id_external_labs_id_fk" FOREIGN KEY ("external_lab_id") REFERENCES "public"."external_labs"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_order_sets" ADD CONSTRAINT "lab_order_sets_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "lab_test_catalog" ADD CONSTRAINT "lab_test_catalog_validated_by_users_id_fk" FOREIGN KEY ("validated_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+CREATE INDEX "webauthn_credentials_created_idx" ON "webauthn_credentials" USING btree ("created_at");
+CREATE INDEX "webauthn_credentials_credential_idx" ON "webauthn_credentials" USING btree ("credential_id");
+CREATE INDEX "webauthn_credentials_user_idx" ON "webauthn_credentials" USING btree ("user_id");
+compared against
+Clarafi (2)
+Changed Files
+
+
+Unified
+
+Split
+Filter changed files
+Committed Changes
+Pasted-REPLIT-PROMPT-I-am-building-a-web-app-that-is-used-both-in-browsers-and-as-a-native-style-mobile-a-1753037486639_1753037486640.txt
+attached_assets
+Pasted-I-am-building-a-web-app-that-is-used-both-in-browsers-and-as-a-native-style-mobile-app-using-Median--1753269623528_1753269623529.txt
+attached_assets
+Copy
+admin-subscription-keys-page.tsx
+client/src/pages
+trial-upgrade-page.tsx
+client/src/pages
+Copy
+03fc42f0f6098bb545bf88d576fc6888.pdf
+uploads/attachments
+2d16f1835684e7b5ed3e7fd9bb6ae3c2.pdf
+uploads/attachments
+Copy
+7af45ba4770fd1d92a0e84ba34314ef3.pdf
+uploads/attachments
+386773472e13ba3ee8fe5fba720e9555.pdf
+uploads/attachments
+Copy
+03fc42f0f6098bb545bf88d576fc6888.pdf
+uploads/attachments
+3b26a83908f4fde7418d9e493d9306a6.pdf
+uploads/attachments
+Copy
+03fc42f0f6098bb545bf88d576fc6888.pdf
+uploads/attachments
+6c5d5e817cc10f6e6b9702eff9efd159.pdf
+uploads/attachments
+Copy
+03fc42f0f6098bb545bf88d576fc6888.pdf
+uploads/attachments
+8c41ff7e5acb85c11bff6611001a4b02.pdf
+uploads/attachments
+Copy
+.env.local
+Added
+.replit
+Modified
+LAB_SYSTEM_TECHNICAL_DEBT_REPORT.md
+Added
+Landing page
+Added
+MEDIAN_APP_TAGS.md
+Modified
+SUBSCRIPTION_KEY_TECHNICAL_DEBT.md
+Added
+1950s Nurse copy Large_1753477880884.png
+attached_assets
+Added
+Favorite-Aragon-Photo-1_1753409906439.jpeg
+attached_assets
+Added
+Pasted---1753554977490_1753554977491.txt
+attached_assets
+Added
+Pasted--CSS-Examples-css-Hide-elements-on-mobile-data-median-hide-on-mobile-app-displ-1753363423975_1753363423975.txt
+attached_assets
+Added
+Pasted--IntelligentGrouping-Created-9-intelligent-groups-MedGrouping-Error-grouping-medications-Ba-1753287501188_1753287501188.txt
+attached_assets
+Added
+Pasted--LabResultsMatrix-Processing-result-for-date-columns-07-26-25-LabResultsMatrix-Generated-d-1753620242309_1753620242310.txt
+attached_assets
+Added
+Pasted--api-parse-patient-info-PatientParser-Parsing-patient-information-Patient-parsing-error-Ba-1753282597793_1753282597793.txt
+attached_assets
+Added
+Pasted--api-parse-patient-info-PatientParser-Parsing-patient-information-Patient-parsing-error-Ba-1753282611053_1753282611053.txt
+attached_assets
+Added
+Pasted-1-Mission-Statement-To-empower-clinicians-to-deliver-their-best-care-by-harnessing-advanced-AI-to-c-1753392634488_1753392634488.txt
+attached_assets
+Added
+Pasted-1-The-note-that-gets-sent-to-the-patient-is-the-one-that-should-show-up-here-Maybe-we-need-to-clar-1753556733103_1753556733103.txt
+attached_assets
+Added
+Pasted-1-The-note-that-gets-sent-to-the-patient-is-the-one-that-should-show-up-here-Maybe-we-need-to-clar-1753556740175_1753556740175.txt
+attached_assets
+Added
+Pasted-8-448-442-434-531-524-503-469-449-443-435-536-509-488-474-454-527-520-499-465-445-439-431-535-508-48-1753381332852_1753381332853.txt
+attached_assets
+Added
+Pasted-About-me-personal-story-I-want-to-create-a-robust-about-us-page-but-I-m-not-sure-how-to-go-about-1753409480203_1753409480203.txt
+attached_assets
+Added
+Pasted-Before-you-build-it-let-s-brainstorm-some-more-I-want-the-landing-page-to-be-spectacular-and-profes-1753392593806_1753392593806.txt
+attached_assets
+Added
+Pasted-Explain-more-about-the-filterDuplicateVisitEntries-preventing-duplicate-encounter-IDs-What-if-the-u-1753464057911_1753464057911.txt
+attached_assets
+Added
+Pasted-First-create-a-clear-document-to-guide-you-and-future-AI-agents-through-this-multiphase-approach-I--1753558171379_1753558171380.txt
+attached_assets
+Added
+Pasted-GA-Debug-Environment-variables-Object-BASE-URL-DEV-true-MODE-development-PROD-fals-1753531743333_1753531743334.txt
+attached_assets
+Added
+Pasted-Patient-parsing-error-BadRequestError-400-Invalid-MIME-type-Only-image-types-are-supported-a-1753281139384_1753281139385.txt
+attached_assets
+Added
+Pasted-Rendered-more-hooks-than-during-the-previous-render-The-above-error-occurred-in-the-LabResultsMatr-1753619981565_1753619981565.txt
+attached_assets
+Added
+Pasted-ST-POST-api-parse-patient-info-PatientParser-Parsing-patient-information-Patient-parsing-e-1753280668304_1753280668305.txt
+attached_assets
+Added
+Pasted-Skip-to-main-content-Help-Center-Community-Announcements-Analytics-Contact-us-Get-started-with-Analy-1753495714615_1753495714616.txt
+attached_assets
+Added
+Pasted-Welcome-Welcome-to-Median-co-Architecture-Security-Reporting-A-Problematic-App-App-Licenses-App-Upd-1753446305572_1753446305573.txt
+attached_assets
+Added
+Pasted-Yes-but-it-s-going-to-need-to-be-incredibly-sophisticated-Lab-Data-Table-Review-Ul-1-Unified-T-1753554917545_1753554917545.txt
+attached_assets
+Added
+Pasted-no-no-no-I-need-to-further-clarify-because-I-think-you-re-still-confused-With-regard-to-the-lab-re-1753578930878_1753578930878.txt
+attached_assets
+Added
+Pasted-ntParser-Parsing-patient-information-Patient-parsing-error-BadRequestError-400-You-uploaded-an-1753279975082_1753279975082.txt
+attached_assets
+Added
+Pasted-ts-providers-1-clinicalStaff-2-adminStaff-1-readOnly-0-Stripe-Per-user-billing-che-1753655379770_1753655379771.txt
+attached_assets
+Added
+Screenshot 2025-07-23 at 10.08.10 AM_1753283292691.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 10.08.13 AM_1753283295578.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 11.05.10 AM_1753286712495.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 11.42.00 AM_1753288921943.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 2.13.34 PM_1753298016509.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 2.14.16 PM_1753298057738.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 7.11.07 AM_1753272670013.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 7.11.17 AM_1753272680081.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 7.12.21 AM_1753272742900.png
+attached_assets
+Added
+Screenshot 2025-07-23 at 9.12.44 AM_1753279966531.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 10.32.19 AM_1753371141169.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 10.48.30 AM_1753372112089.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 10.49.11 AM_1753372152771.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 10.50.41 AM_1753372243289.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 10.51.08 AM_1753372270890.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 11.13.52 AM_1753373634099.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 11.14.00 AM_1753373642673.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.34.32 PM_1753400076138.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.34.47 PM_1753400090753.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.36.22 PM_1753400185450.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.37.12 PM_1753400236001.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.37.37 PM_1753400259784.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.40.35 PM_1753400438423.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.41.42 PM_1753400505154.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.42.22 PM_1753400545634.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.44.18 PM_1753400661478.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.45.25 PM_1753400728278.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.46.51 PM_1753400814229.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.48.45 PM_1753400928251.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.51.38 PM_1753401101725.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.52.50 PM_1753401173238.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.55.43 PM_1753401346435.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 6.58.20 PM_1753401503409.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.00.29 PM_1753401631896.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.24.18 AM_1753359860221.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.27.51 PM_1753403273601.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.34.58 AM_1753360499763.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.35.42 AM_1753360544625.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.39.01 AM_1753360742865.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.45.39 PM_1753404341913.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.49.27 AM_1753361369616.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.49.59 AM_1753361400840.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.52.50 PM_1753404773830.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.55.51 PM_1753404953713.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 7.57.34 PM_1753405056181.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 8.03.21 PM_1753405404163.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 8.08.18 PM_1753405701248.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 8.24.47 AM_1753363489009.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 8.25.15 AM_1753363517031.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 9.19.45 PM_1753409991187.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 9.29.31 PM_1753410574602.png
+attached_assets
+Added
+Screenshot 2025-07-24 at 9.32.09 PM_1753410732603.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 1.30.25 PM_1753468226612.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 11.13.01 AM_1753459983128.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 11.48.58 AM_1753462139706.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 3.16.01 PM_1753474563238.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 3.25.10 PM_1753475111598.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 3.26.09 PM_1753475171883.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 3.42.06 PM_1753476129119.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 4.46.03 PM_1753479964960.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 4.47.04 PM_1753480026625.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 4.48.22 PM_1753480105645.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 4.49.49 PM_1753480191525.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 4.50.50 PM_1753480252498.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.21.15 PM_1753482077691.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.24.33 PM_1753482275626.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.25.41 PM_1753482343319.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.27.29 PM_1753482451610.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.28.13 PM_1753482494853.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.31.14 PM_1753482676204.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 5.33.20 PM_1753482801681.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 6.25.19 PM_1753485920487.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 7.12.00 PM_1753488723417.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 8.03.37 AM_1753448618847.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 8.32.33 PM_1753493554502.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.12.12 AM_1753452733734.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.16.36 PM_1753496199479.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.20.09 PM_1753496410991.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.20.56 AM_1753453258530.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.32.06 PM_1753497129439.png
+attached_assets
+Added
+Screenshot 2025-07-25 at 9.36.09 PM_1753497372708.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 12.20.33 PM_1753550438122.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.06.38 PM_1753560399399.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.18.38 PM_1753561120763.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.19.09 PM_1753561150812.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.23.59 PM_1753561442317.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.24.09 PM_1753561450976.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.24.21 PM_1753561463300.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.37.38 PM_1753562260677.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 3.58.07 PM_1753563489520.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.11.59 AM_1753524722150.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.20.12 AM_1753525216884.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.24.53 PM_1753568696649.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.31.33 AM_1753525897049.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.35.34 PM_1753569336491.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 5.57.09 AM_1753527431504.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 6.02.57 PM_1753570980092.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 6.06.38 AM_1753527999919.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 6.18.18 PM_1753571899867.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 6.18.22 PM_1753571903604.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.01.15 AM_1753531277517.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.15.11 PM_1753575312751.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.24.24 PM_1753575867054.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.39.49 PM_1753576792562.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.46.10 PM_1753577173089.png
+attached_assets
+Added
+Screenshot 2025-07-26 at 7.49.39 PM_1753577381858.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 1.14.26 PM_1753640067815.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 1.21.45 PM_1753640507577.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 1.48.37 PM_1753642119340.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 1.59.07 PM_1753642749626.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 11.46.24 AM_1753634787209.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.04.47 PM_1753635889340.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.07.27 PM_1753636051083.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.10.45 PM_1753636247543.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.22.35 PM_1753636957072.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.22.48 PM_1753636970770.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 12.37.50 PM_1753637872572.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 2.17.02 PM_1753643825315.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 2.17.11 PM_1753643833613.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 2.48.18 PM_1753645699906.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 2.48.22 PM_1753645704507.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 3.41.43 PM_1753648907115.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 3.55.08 PM_1753649709815.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 4.21.42 PM_1753651304677.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 4.21.51 PM_1753651312883.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 5.08.59 PM_1753654141365.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 5.15.10 PM_1753654512640.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 5.30.12 PM_1753655414390.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 7.07.06 PM_1753661229035.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 7.37.14 PM_1753663037531.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 8.06.30 AM_1753621591681.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 8.19.38 AM_1753622380828.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 8.21.21 AM_1753622483198.png
+attached_assets
+Added
+Screenshot 2025-07-27 at 8.27.29 PM_1753666052508.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 10.24.49 AM_1753716290718.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 10.25.26 AM_1753716328062.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 11.36.14 AM_1753720576784.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.03.59 PM_1753722241530.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.04.15 PM_1753722259197.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.04.32 PM_1753722277345.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.05.01 PM_1753722302544.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.15.08 PM_1753722909788.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.16.07 PM_1753722969865.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.18.22 PM_1753723105257.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 12.21.02 PM_1753723265790.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.26.08 PM_1753730771436.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.27.45 PM_1753730870410.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.39.25 PM_1753731567735.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.39.32 PM_1753731573764.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.39.39 PM_1753731582793.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.43.07 PM_1753731789852.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.43.13 PM_1753731795682.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 2.46.50 PM_1753732012601.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.03.52 PM_1753733033756.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.04.41 PM_1753733084004.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.04.49 PM_1753733091187.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.21.23 PM_1753734086722.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.21.38 PM_1753734101404.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 3.36.34 PM_1753734996793.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 5.58.00 PM_1753743482774.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 5.59.13 PM_1753743556247.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 6.00.46 PM_1753743648903.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 6.03.41 PM_1753743824025.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 6.29.47 PM_1753745389496.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 6.39.15 PM_1753745958441.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 6.41.41 PM_1753746106258.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 7.41.58 AM_1753706522027.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 7.46.34 AM_1753706798021.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 7.52.31 PM_1753750353778.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 7.56.36 PM_1753750599481.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 8.13.18 PM_1753751601177.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 8.15.19 PM_1753751722368.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 8.15.28 PM_1753751731219.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 8.17.28 PM_1753751850922.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 8.58.50 PM_1753754332624.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 9.02.13 PM_1753754536031.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 9.17.38 PM_1753755460459.png
+attached_assets
+Added
+Screenshot 2025-07-28 at 9.23.31 PM_1753755813492.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 6.35.23 AM_1753788926587.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 6.43.33 AM_1753789415213.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 6.58.17 AM_1753790300014.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 6.59.47 AM_1753790388830.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 7.02.17 AM_1753790541704.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 7.31.47 AM_1753792311147.png
+attached_assets
+Added
+Screenshot 2025-07-29 at 7.32.02 AM_1753792326458.png
+attached_assets
+Added
+https5e9e6592-e6d7-4a5e-b4ad-b4306616333d-00-3mc7egdcnbory.kirk.replit.devcapture76fd965dab34d653803e1e905af2b829_1753276391738.jpeg
+attached_assets
+Added
+screenshot-1753446278894.png
+attached_assets
+Added
+targeted_element_1753545356502.png
+attached_assets
+Added
+README-SIMPLIFIED.md
+browser-extension
+Added
+README.md
+browser-extension
+Added
+UPDATE_INSTRUCTIONS.md
+browser-extension
+Added
+background.js
+browser-extension
+Added
+capture-overlay.html
+browser-extension
+Added
+capture-overlay.js
+browser-extension
+Added
+clarafi-content.js
+browser-extension
+Added
+icon.svg
+browser-extension/icons
+Added
+manifest.json
+browser-extension
+Added
+offscreen.html
+browser-extension
+Added
+offscreen.js
+browser-extension
+Added
+popup.html
+browser-extension
+Added
+popup.js
+browser-extension
+Added
+check-admin.ts
+Added
+check-lab-orders-status.ts
+Added
+check-lab-results.ts
+Added
+check-nancy-lynn-labs.ts
+Added
+check-orders.ts
+Added
+check-practice-info.ts
+Added
+check-subscription-key-data.ts
+Added
+check-user-orders.ts
+Added
+check-will-rogers-location.ts
+Added
+check-ztest3-reviews.ts
+Added
+env.d.ts
+client
+Added
+index.html
+client
+Modified
+App.tsx
+client/src
+Modified
+NoteTypeSelector.tsx
+client/src/components
+Modified
+PatientParser.tsx
+client/src/components
+Modified
+RealtimeSOAPIntegration.tsx
+client/src/components
+Modified
+admin-subscription-keys.tsx
+client/src/components
+Modified
+HealthcareDataManagement.tsx
+client/src/components/admin
+Modified
+HealthcareUpdateSettings.tsx
+client/src/components/admin
+Modified
+patient-table.tsx
+client/src/components/dashboard
+Modified
+electronic-signature-dialog.tsx
+client/src/components/eprescribing
+Modified
+pharmacy-selection-dialog.tsx
+client/src/components/eprescribing
+Modified
+deployment-readiness-dashboard.tsx
+client/src/components/lab
+Added
+comprehensive-lab-table.tsx
+client/src/components/labs
+Modified
+integrated-lab-view.tsx
+client/src/components/labs
+Modified
+lab-results-matrix.tsx
+client/src/components/labs
+Modified
+standard-lab-matrix.tsx
+client/src/components/labs
+Deleted
+app-header.tsx
+client/src/components/layout
+Added
+app-layout.tsx
+client/src/components/layout
+Added
+ab-testing-dashboard.tsx
+client/src/components/marketing
+Added
+acquisition-tracking.tsx
+client/src/components/marketing
+Modified
+ad-platform-dashboard.tsx
+client/src/components/marketing
+Added
+advanced-analytics-dashboard.tsx
+client/src/components/marketing
+Added
+campaigns-roi-tracker.tsx
+client/src/components/marketing
+Added
+cohort-analysis-dashboard.tsx
+client/src/components/marketing
+Added
+conversion-events.tsx
+client/src/components/marketing
+Modified
+healthcare-marketing-intelligence.tsx
+client/src/components/marketing
+Added
+marketing-automations.tsx
+client/src/components/marketing
+Modified
+marketing-campaigns.tsx
+client/src/components/marketing
+Modified
+marketing-insights.tsx
+client/src/components/marketing
+Modified
+marketing-metrics-dashboard.tsx
+client/src/components/marketing
+Modified
+marketing-status-tracker.tsx
+client/src/components/marketing
+Modified
+seo-dashboard.tsx
+client/src/components/marketing
+Added
+passkey-auth.tsx
+client/src/components
+Modified
+passkey-login-form.tsx
+client/src/components
+Modified
+passkey-setup-prompt.tsx
+client/src/components
+Modified
+allergy-section.tsx
+client/src/components/patient
+Modified
+appointments-section.tsx
+client/src/components/patient
+Modified
+billing-summary.tsx
+client/src/components/patient
+Modified
+cpt-codes-diagnoses.tsx
+client/src/components/patient
+Modified
+draft-orders.tsx
+client/src/components/patient
+Modified
+embedded-pdf-viewer.tsx
+client/src/components/patient
+Modified
+encounter-detail-view.tsx
+client/src/components/patient
+Modified
+encounter-signature-panel.tsx
+client/src/components/patient
+Modified
+encounters-tab.tsx
+client/src/components/patient
+Modified
+enhanced-medical-problems-dialog.tsx
+client/src/components/patient
+Modified
+enhanced-medical-problems-list.tsx
+client/src/components/patient
+Modified
+enhanced-medications-list.tsx
+client/src/components/patient
+Modified
+family-history-section.tsx
+client/src/components/patient
+Modified
+fast-medication-intelligence.tsx
+client/src/components/patient
+Modified
+medical-problems-section.tsx
+client/src/components/patient
+Modified
+nursing-encounter-view.tsx
+client/src/components/patient
+Modified
+order-preferences-dialog.tsx
+client/src/components/patient
+Modified
+patient-attachments.tsx
+client/src/components/patient
+Modified
+patient-chart-view.tsx
+client/src/components/patient
+Modified
+patient-header.tsx
+client/src/components/patient
+Modified
+surgical-history-section.tsx
+client/src/components/patient
+Modified
+unified-chart-panel.tsx
+client/src/components/patient
+Modified
+calendar-view.tsx
+client/src/components/scheduling
+Modified
+schedule-appointment-dialog.tsx
+client/src/components/scheduling
+Modified
+TemplateManager.tsx
+client/src/components/templates
+Modified
+trial-status-banner.tsx
+client/src/components
+Added
+trial-upgrade.tsx
+client/src/components
+Added
+area-selector.tsx
+client/src/components/ui
+Added
+vitals-flowsheet.tsx
+client/src/components/vitals
+Modified
+use-analytics.tsx
+client/src/hooks
+Added
+use-auth.tsx
+client/src/hooks
+Modified
+index.css
+client/src
+Modified
+ai-marketing-insights.ts
+client/src/lib
+Added
+analytics.ts
+client/src/lib
+Added
+answer-engine-optimization.ts
+client/src/lib
+Added
+behavior-analytics-service.ts
+client/src/lib
+Added
+median-auth.ts
+client/src/lib
+Added
+median-background-audio.ts
+client/src/lib
+Added
+navigation-config.ts
+client/src/lib
+Added
+queryClient.ts
+client/src/lib
+Modified
+roi-tracking-service.ts
+client/src/lib
+Added
+about-us.tsx
+client/src/pages
+Added
+admin-dashboard.tsx
+client/src/pages
+Modified
+admin-invite-staff.tsx
+client/src/pages
+Added
+admin-marketing-dashboard.tsx
+client/src/pages
+Modified
+admin-subscription-keys-page.tsx
+client/src/pages
+Modified
+admin-subscription.tsx
+client/src/pages
+Added
+auth-page.tsx
+client/src/pages
+Modified
+billing-management.tsx
+client/src/pages
+Added
+blog.tsx
+client/src/pages
+Modified
+clinic-admin-dashboard.tsx
+client/src/pages
+Modified
+clinic-admin-locations.tsx
+client/src/pages
+Added
+clinic-admin-users.tsx
+client/src/pages
+Added
+dashboard.tsx
+client/src/pages
+Modified
+encounter-view.tsx
+client/src/pages
+Modified
+gpt-lab-demo.tsx
+client/src/pages
+Added
+landing-page.tsx
+client/src/pages
+Added
+business-associate-agreement.tsx
+client/src/pages/legal
+Modified
+terms-of-service.tsx
+client/src/pages/legal
+Modified
+marketing-analytics-dashboard.tsx
+client/src/pages
+Added
+median-background-audio-demo.tsx
+client/src/pages
+Added
+median-demo.tsx
+client/src/pages
+Added
+patient-lab-results.tsx
+client/src/pages
+Modified
+patient-view.tsx
+client/src/pages
+Modified
+pricing.tsx
+client/src/pages
+Modified
+privacy-policy.tsx
+client/src/pages
+Modified
+system-admin-test-patients.tsx
+client/src/pages
+Modified
+terms-of-service.tsx
+client/src/pages
+Modified
+LAB_RESULTS_MATRIX_IMPLEMENTATION_GUIDE.md
+docs
+Added
+LAB_WORKFLOW_CLARIFICATION.md
+docs
+Added
+GPT_LAB_PRODUCTION_INTEGRATION.md
+docs/guides
+Added
+fix-lab-orders-provider.ts
+Added
+fix-lab-orders.ts
+Added
+navigate-to-subscription-keys.js
+Added
+package-lock.json
+Modified
+package.json
+Modified
+replit.md
+Modified
+direct-lab-catalog-populate.ts
+scripts
+Added
+populate-lab-catalog.ts
+scripts
+Added
+acquisition-routes.ts
+server
+Modified
+admin-user-routes.ts
+server
+Modified
+advanced-analytics-routes.ts
+server
+Added
+advanced-marketing-routes.ts
+server
+Added
+archive-routes.ts
+server
+Added
+attachment-chart-processor.ts
+server
+Modified
+auth.ts
+server
+Modified
+billing-routes.ts
+server
+Added
+clinic-admin-locations-routes.ts
+server
+Added
+clinic-admin-routes.ts
+server
+Modified
+clinic-admin-verification-service.ts
+server
+Modified
+consolidated-lab-routes.ts
+server
+Added
+data-archive-service.ts
+server
+Added
+efax-routes.ts
+server
+Added
+efax-service.ts
+server
+Added
+email-service.ts
+server
+Added
+email-verification-service.ts
+server
+Modified
+enhanced-medication-routes.ts
+server
+Modified
+enhanced-note-generation-service.ts
+server
+Modified
+fhir-lab-resources.ts
+server
+Added
+fhir-lab-routes.ts
+server
+Added
+gpt-interface-engine.ts
+server
+Added
+gpt-lab-api-routes.ts
+server
+Added
+gpt-lab-enhanced-workflows.ts
+server
+Added
+gpt-lab-intelligence.ts
+server
+Added
+gpt-lab-review-routes.ts
+server
+Modified
+gpt-lab-review-service.ts
+server
+Modified
+hl7-parser.ts
+server
+Added
+hl7-receiver-service.ts
+server
+Added
+hl7-routes.ts
+server
+Added
+index.ts
+server
+Modified
+lab-catalog-routes.ts
+server
+Added
+lab-catalog-service.ts
+server
+Added
+lab-deployment-readiness.ts
+server
+Added
+lab-deployment-routes.ts
+server
+Added
+lab-order-background-processor.ts
+server
+Modified
+lab-order-processor.ts
+server
+Modified
+lab-requisition-service.ts
+server
+Added
+magic-link-service.ts
+server
+Modified
+marketing-analytics-routes.ts
+server
+Modified
+medication-delta-service.ts
+server
+Modified
+medication-grouping-intelligence-service.ts
+server
+Added
+parse-routes.ts
+server
+Modified
+patient-notification-service.ts
+server
+Added
+patient-parser-service.ts
+server
+Modified
+payment-automation-service.ts
+server
+Added
+pdf-service.ts
+server
+Modified
+photo-capture-routes.ts
+server
+Added
+registration-service.ts
+server
+Modified
+routes.ts
+server
+Modified
+ab-testing-service.ts
+server/services
+Added
+marketing-automation-service.ts
+server/services
+Added
+marketing-insights-ai-service.ts
+server/services
+Added
+predictive-analytics-service.ts
+server/services
+Added
+realtime-analytics-service.ts
+server/services
+Added
+seo-monitoring-service.ts
+server/services
+Added
+specimen-tracking-routes.ts
+server
+Added
+specimen-tracking-service.ts
+server
+Added
+storage.ts
+server
+Modified
+stripe-service.ts
+server
+Modified
+subscription-key-routes.ts
+server
+Modified
+subscription-key-service.ts
+server
+Modified
+test-patient-generator.ts
+server
+Modified
+test-patient-routes.ts
+server
+Modified
+trial-management-service.ts
+server
+Added
+trial-middleware.ts
+server
+Added
+trial-routes.ts
+server
+Added
+unified-allergy-parser.ts
+server
+Modified
+unified-lab-parser.ts
+server
+Modified
+unified-lab-processor.ts
+server
+Added
+unified-medical-problems-api.ts
+server
+Modified
+unified-medical-problems-parser.ts
+server
+Modified
+get-base-url.ts
+server/utils
+Added
+webauthn-routes.ts
+server
+Modified
+webauthn-service.ts
+server
+Modified
+websocket-analytics.ts
+server
+Added
+archive-schema.ts
+shared
+Added
+feature-gates.ts
+shared
+Modified
+schema (copy).ts
+shared
+Deleted
+schema.ts
+shared
+Modified
+subscription-config.json
+Modified
+test-consolidated-lab-orders.ts
+Added
+test-dashboard-query.ts
+Added
+test-lab-cycle.ts
+Added
+test-patient-chart-data.ts
+Added
+test-subscription-key-api.ts
+Added
+test-trial-status.ts
+Added
+0152458d8a61b4727c635e92a0440aa7
+uploads/attachments
+Added
+02766c87f044144b3c473a1ff24f320e.png
+uploads/attachments
+Added
+05166da55e98cdd0e6aa1749c7e5d0b8
+uploads/attachments
+Added
+09b5b00f8deff50439ca5d7a733b10ec.png
+uploads/attachments
+Added
+114939b914c10e3d9e62f0a63e23b17c.png
+uploads/attachments
+Added
+14bd5b128ee18d1725786d3b755f7d79.png
+uploads/attachments
+Added
+18013b3db37b994d4722708886bee985
+uploads/attachments
+Added
+1d6b3bdad6e601f7c605e1965d4d7148.png
+uploads/attachments
+Added
+2de903efbdfd6a6f5fa5ad2dc0355ea4.png
+uploads/attachments
+Added
+3282ef1c6c10a6c2021be5b1b02b92de
+uploads/attachments
+Added
+40bc3c9d7f7224f0b454d7f0614ef1ec.png
+uploads/attachments
+Added
+40e204bdede67f1073a094d1ec738617.png
+uploads/attachments
+Added
+466e3260ba993f6cc24e06275de5a85e.png
+uploads/attachments
+Added
+4840a221f506b3881da57e9b26b7fed9.png
+uploads/attachments
+Added
+4a9ab0ffc792f5b3ace8c3a441a8d2be.png
+uploads/attachments
+Added
+50a6ba61babc22a75afee002f26185ed.png
+uploads/attachments
+Added
+521c83ae713337db8945e8bc3b44cfb5.png
+uploads/attachments
+Added
+6a2adf0592f76bdabcf48879eba3d746.png
+uploads/attachments
+Added
+6ddd36e4bacec6b3227d65c6810a44af
+uploads/attachments
+Added
+72af8286063ba62ac1db202295cc4f22.png
+uploads/attachments
+Added
+76e00d345ab99c443af229357fa70b07.jpg
+uploads/attachments
+Added
+794c86b72dd069e3dbd58504cccc0499
+uploads/attachments
+Added
+7b451363901e402138c0188f3864b4b7
+uploads/attachments
+Added
+7b50fef92b2f587a7072d42309736095.png
+uploads/attachments
+Added
+7d65d591c872594ef51cd6b9fb725f26.png
+uploads/attachments
+Added
+7fefb5a81840caaf16b9cd4b954f30ae.png
+uploads/attachments
+Added
+813306696f8d27270d2440a2022f186d.png
+uploads/attachments
+Added
+82f4de957a244157d9c02ae88aefe69e.png
+uploads/attachments
+Added
+84cc7b4c82ceb176ad7b90129a4c8d67.png
+uploads/attachments
+Added
+8e64828fa6e1d84f69335562f0c787aa.png
+uploads/attachments
+Added
+91eac60cd11ebffe7215c409607ce750.png
+uploads/attachments
+Added
+92f7c72f06fadd057f9a94d2614dcacd
+uploads/attachments
+Added
+9408511e73a5364529fe1a24f77d2893.png
+uploads/attachments
+Added
+96895430523e4d8efc7632a3782588ca.png
+uploads/attachments
+Added
+968bc343256885e413d96230b91a86b7
+uploads/attachments
+Added
+996442fca0f3f3943630113b03fe6688.png
+uploads/attachments
+Added
+a008c5d098aa7f5bd5b99b88b36a5ada.png
+uploads/attachments
+Added
+a1b5ad938a2f02ca26e9e2165c262bd8.png
+uploads/attachments
+Added
+a50c152cff6af1e5ad4efea5ac7b805d.png
+uploads/attachments
+Added
+a597749a8d259673faefe5c4eb1194a1.png
+uploads/attachments
+Added
+a5c5fffeb228b8abc8e62de19cfd4e0e.png
+uploads/attachments
+Added
+a6e9b18e089ad3bbb13bad6d991577e5.png
+uploads/attachments
+Added
+b27c4a9664d5ee6a350622f1c337b3d0
+uploads/attachments
+Added
+b57b18f125d8ed9547f82dd71097b0b1.png
+uploads/attachments
+Added
+b8b2f23af0715a8bf2fa4dc9c6bdb78b.png
+uploads/attachments
+Added
+be3028041177f1baaac3b3f3689feef0.png
+uploads/attachments
+Added
+c13a40f27dc180697d619294aebed1ed.png
+uploads/attachments
+Added
+c59b2ea8151afadc1a5f066a6b5d5e23.png
+uploads/attachments
+Added
+c958b4caad9217951b52ca3e984e0169.png
+uploads/attachments
+Added
+c9e32115fc6e68b8e741155d6303d3b5.png
+uploads/attachments
+Added
+cc0147507886bb4032ec3352ea227077.png
+uploads/attachments
+Added
+cc3cd1708b92b9c8168a817720061c4c.png
+uploads/attachments
+Added
+cdf7fe9b9acef5bbd313cc0b2d75deb2.png
+uploads/attachments
+Added
+d2f1997c448762b75e8399131f55eda6.png
+uploads/attachments
+Added
+d5cee87994ca3b466822489dbf521690.png
+uploads/attachments
+Added
+d5fa75ff59c7c959c11a99dd48eb70c2.png
+uploads/attachments
+Added
+d8262eb3a4cd38011600119049f97162.png
+uploads/attachments
+Added
+e261ae278be0f05ce546c0fd4e6d4dc8
+uploads/attachments
+Added
+e3d10c76aae297dd1a0ca522de5e422e
+uploads/attachments
+Added
+e82ac271f7cc408933c9b8ccd9349560
+uploads/attachments
+Added
+e8f24389155f854bef35a2e6854e7e52.png
+uploads/attachments
+Added
+ea01d0ca99c9eb6314c245602a568e88.png
+uploads/attachments
+Added
+ee77b03cc096a69ea44dcc6f7cc5ef83
+uploads/attachments
+Added
+f9f1be329fe493bf9fcd241df5fd1f88
+uploads/attachments
+Added
+ff784db64d06480679125eea3d822afa.png
+uploads/attachments
+Added
+lab-order-100-1753571181995.pdf
+uploads/lab-orders
+Added
+lab-order-99-1753571182002.pdf
+uploads/lab-orders
+Added
+photo_1cf68c3ab00b5361236a8d89607955b2.jpg
+uploads/photo-capture
+Added
+photo_3655bbb8cbc69e78030846a9d51f4083.jpg
+uploads/photo-capture
+Added
+photo_71d9b874677cef36d6cbc606fc46c894.jpg
+uploads/photo-capture
+Added
+photo_8feffa06b69e1d85776792072432468f.jpg
+uploads/photo-capture
+Added
+photo_90ec0e6efb7a8eccdf495cb6d11a67a3.jpg
+uploads/photo-capture
+Added
+photo_92e29bfaf2322faf6890b0f7b7c8b09b.jpg
+uploads/photo-capture
+Added
+photo_950cf60173058a7ba56b404484f779d9.jpg
+uploads/photo-capture
+Added
+photo_b5189dd62d5ac0a6f8c7fb0f7af2be08.jpg
+uploads/photo-capture
+Added
+photo_bec99f758ee34f473500534ef0de7862.jpg
+uploads/photo-capture
+Added
+photo_c66a39360eda56726a378518b3945381.jpg
+uploads/photo-capture
+Added
+photo_f2ce3b29aea064442ba2f076dfee7760.jpg
+uploads/photo-capture
+Added
+0152458d8a61b4727c635e92a0440aa7_thumb.jpg
+uploads/thumbnails
+Added
+02766c87f044144b3c473a1ff24f320e_thumb.jpg
+uploads/thumbnails
+Added
+05166da55e98cdd0e6aa1749c7e5d0b8_thumb.jpg
+uploads/thumbnails
+Added
+09b5b00f8deff50439ca5d7a733b10ec_thumb.jpg
+uploads/thumbnails
+Added
+114939b914c10e3d9e62f0a63e23b17c_thumb.jpg
+uploads/thumbnails
+Added
+14bd5b128ee18d1725786d3b755f7d79_thumb.jpg
+uploads/thumbnails
+Added
+18013b3db37b994d4722708886bee985_thumb.jpg
+uploads/thumbnails
+Added
+1d6b3bdad6e601f7c605e1965d4d7148_thumb.jpg
+uploads/thumbnails
+Added
+2de903efbdfd6a6f5fa5ad2dc0355ea4_thumb.jpg
+uploads/thumbnails
+Added
+3282ef1c6c10a6c2021be5b1b02b92de_thumb.jpg
+uploads/thumbnails
+Added
+40bc3c9d7f7224f0b454d7f0614ef1ec_thumb.jpg
+uploads/thumbnails
+Added
+40e204bdede67f1073a094d1ec738617_thumb.jpg
+uploads/thumbnails
+Added
+466e3260ba993f6cc24e06275de5a85e_thumb.jpg
+uploads/thumbnails
+Added
+4840a221f506b3881da57e9b26b7fed9_thumb.jpg
+uploads/thumbnails
+Added
+4a9ab0ffc792f5b3ace8c3a441a8d2be_thumb.jpg
+uploads/thumbnails
+Added
+50a6ba61babc22a75afee002f26185ed_thumb.jpg
+uploads/thumbnails
+Added
+521c83ae713337db8945e8bc3b44cfb5_thumb.jpg
+uploads/thumbnails
+Added
+6a2adf0592f76bdabcf48879eba3d746_thumb.jpg
+uploads/thumbnails
+Added
+6ddd36e4bacec6b3227d65c6810a44af_thumb.jpg
+uploads/thumbnails
+Added
+72af8286063ba62ac1db202295cc4f22_thumb.jpg
+uploads/thumbnails
+Added
+76e00d345ab99c443af229357fa70b07_thumb.jpg
+uploads/thumbnails
+Added
+794c86b72dd069e3dbd58504cccc0499_thumb.jpg
+uploads/thumbnails
+Added
+7b451363901e402138c0188f3864b4b7_thumb.jpg
+uploads/thumbnails
+Added
+7b50fef92b2f587a7072d42309736095_thumb.jpg
+uploads/thumbnails
+Added
+7d65d591c872594ef51cd6b9fb725f26_thumb.jpg
+uploads/thumbnails
+Added
+7fefb5a81840caaf16b9cd4b954f30ae_thumb.jpg
+uploads/thumbnails
+Added
+813306696f8d27270d2440a2022f186d_thumb.jpg
+uploads/thumbnails
+Added
+82f4de957a244157d9c02ae88aefe69e_thumb.jpg
+uploads/thumbnails
+Added
+84cc7b4c82ceb176ad7b90129a4c8d67_thumb.jpg
+uploads/thumbnails
+Added
+8e64828fa6e1d84f69335562f0c787aa_thumb.jpg
+uploads/thumbnails
+Added
+91eac60cd11ebffe7215c409607ce750_thumb.jpg
+uploads/thumbnails
+Added
+92f7c72f06fadd057f9a94d2614dcacd_thumb.jpg
+uploads/thumbnails
+Added
+9408511e73a5364529fe1a24f77d2893_thumb.jpg
+uploads/thumbnails
+Added
+96895430523e4d8efc7632a3782588ca_thumb.jpg
+uploads/thumbnails
+Added
+968bc343256885e413d96230b91a86b7_thumb.jpg
+uploads/thumbnails
+Added
+996442fca0f3f3943630113b03fe6688_thumb.jpg
+uploads/thumbnails
+Added
+a008c5d098aa7f5bd5b99b88b36a5ada_thumb.jpg
+uploads/thumbnails
+Added
+a1b5ad938a2f02ca26e9e2165c262bd8_thumb.jpg
+uploads/thumbnails
+Added
+a50c152cff6af1e5ad4efea5ac7b805d_thumb.jpg
+uploads/thumbnails
+Added
+a597749a8d259673faefe5c4eb1194a1_thumb.jpg
+uploads/thumbnails
+Added
+a5c5fffeb228b8abc8e62de19cfd4e0e_thumb.jpg
+uploads/thumbnails
+Added
+a6e9b18e089ad3bbb13bad6d991577e5_thumb.jpg
+uploads/thumbnails
+Added
+b27c4a9664d5ee6a350622f1c337b3d0_thumb.jpg
+uploads/thumbnails
+Added
+b57b18f125d8ed9547f82dd71097b0b1_thumb.jpg
+uploads/thumbnails
+Added
+b8b2f23af0715a8bf2fa4dc9c6bdb78b_thumb.jpg
+uploads/thumbnails
+Added
+be3028041177f1baaac3b3f3689feef0_thumb.jpg
+uploads/thumbnails
+Added
+c13a40f27dc180697d619294aebed1ed_thumb.jpg
+uploads/thumbnails
+Added
+c59b2ea8151afadc1a5f066a6b5d5e23_thumb.jpg
+uploads/thumbnails
+Added
+c958b4caad9217951b52ca3e984e0169_thumb.jpg
+uploads/thumbnails
+Added
+c9e32115fc6e68b8e741155d6303d3b5_thumb.jpg
+uploads/thumbnails
+Added
+cc0147507886bb4032ec3352ea227077_thumb.jpg
+uploads/thumbnails
+Added
+cc3cd1708b92b9c8168a817720061c4c_thumb.jpg
+uploads/thumbnails
+Added
+cdf7fe9b9acef5bbd313cc0b2d75deb2_thumb.jpg
+uploads/thumbnails
+Added
+d2f1997c448762b75e8399131f55eda6_thumb.jpg
+uploads/thumbnails
+Added
+d5cee87994ca3b466822489dbf521690_thumb.jpg
+uploads/thumbnails
+Added
+d5fa75ff59c7c959c11a99dd48eb70c2_thumb.jpg
+uploads/thumbnails
+Added
+d8262eb3a4cd38011600119049f97162_thumb.jpg
+uploads/thumbnails
+Added
+e261ae278be0f05ce546c0fd4e6d4dc8_thumb.jpg
+uploads/thumbnails
+Added
+e3d10c76aae297dd1a0ca522de5e422e_thumb.jpg
+uploads/thumbnails
+Added
+e82ac271f7cc408933c9b8ccd9349560_thumb.jpg
+uploads/thumbnails
+Added
+e8f24389155f854bef35a2e6854e7e52_thumb.jpg
+uploads/thumbnails
+Added
+ea01d0ca99c9eb6314c245602a568e88_thumb.jpg
+uploads/thumbnails
+Added
+ee77b03cc096a69ea44dcc6f7cc5ef83_thumb.jpg
+uploads/thumbnails
+Added
+f9f1be329fe493bf9fcd241df5fd1f88_thumb.jpg
+uploads/thumbnails
+Added
+ff784db64d06480679125eea3d822afa_thumb.jpg
+uploads/thumbnails
+Added
