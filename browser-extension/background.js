@@ -38,17 +38,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Handle capture request
 async function handleCaptureRequest(captureType) {
   try {
-    // Get stored patient context
-    const storage = await chrome.storage.local.get(['patientContext']);
-    const context = storage.patientContext || patientContext;
-    
-    if (!context?.patientId) {
-      notifyError('Please open a patient record in Clarafi first');
-      return;
-    }
-
-    // Use screenshot API for both capture types
-    await captureWithScreenshotAPI(context);
+    // Simplified - no patient context required
+    await captureWithScreenshotAPI();
   } catch (error) {
     console.error('Capture error:', error);
     notifyError('Failed to initiate capture');
@@ -56,7 +47,7 @@ async function handleCaptureRequest(captureType) {
 }
 
 // Capture using desktop capture API (works with any application)
-async function captureWithScreenshotAPI(context) {
+async function captureWithScreenshotAPI() {
   try {
     // For full screen capture, use the tabs API first
     const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -65,19 +56,22 @@ async function captureWithScreenshotAPI(context) {
     try {
       const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
       
-      // Convert to blob
-      const base64Response = await fetch(dataUrl);
-      const blob = await base64Response.blob();
+      // Download the screenshot
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `clarafi-capture-${timestamp}.png`;
       
-      // Process capture
-      await processCapture(blob, context);
+      chrome.downloads.download({
+        url: dataUrl,
+        filename: filename,
+        saveAs: true
+      });
       
       // Show success notification
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon.svg',
         title: 'Screenshot Captured',
-        message: 'EMR screenshot has been sent to patient attachments for review'
+        message: 'Screenshot saved to downloads folder'
       });
       
       return;
@@ -117,19 +111,22 @@ async function captureWithScreenshotAPI(context) {
             throw new Error(response.error);
           }
           
-          // Convert to blob
-          const base64Response = await fetch(response.dataUrl);
-          const blob = await base64Response.blob();
+          // Download the screenshot
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `clarafi-capture-${timestamp}.png`;
           
-          // Process capture
-          await processCapture(blob, context);
+          chrome.downloads.download({
+            url: response.dataUrl,
+            filename: filename,
+            saveAs: true
+          });
           
           // Show success notification
           chrome.notifications.create({
             type: 'basic',
             iconUrl: 'icons/icon.svg',
             title: 'Screenshot Captured',
-            message: 'EMR screenshot has been sent to patient attachments for review'
+            message: 'Screenshot saved to downloads folder'
           });
         } catch (error) {
           console.error('Desktop capture error:', error);
@@ -143,129 +140,7 @@ async function captureWithScreenshotAPI(context) {
   }
 }
 
-// Capture desktop stream (works with any application)
-async function captureDesktopStream(streamId, context) {
-  try {
-    // Create offscreen document for capturing
-    await chrome.offscreen.createDocument({
-      url: 'offscreen.html',
-      reasons: ['USER_MEDIA'],
-      justification: 'Capturing EMR screen for HIPAA-compliant processing'
-    });
-
-    // Send capture request to offscreen document
-    const response = await chrome.runtime.sendMessage({
-      type: 'CAPTURE_STREAM',
-      streamId: streamId
-    });
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    // Convert base64 to blob
-    const base64Response = await fetch(response.dataUrl);
-    const blob = await base64Response.blob();
-
-    // Process capture
-    await processCapture(blob, context);
-
-    // Close offscreen document
-    await chrome.offscreen.closeDocument();
-  } catch (error) {
-    console.error('Desktop capture error:', error);
-    notifyError('Failed to capture screen');
-  }
-}
-
-// Capture with area selection
-async function captureDesktopStreamWithCrop(streamId, context) {
-  try {
-    // First capture full screen
-    await chrome.offscreen.createDocument({
-      url: 'offscreen.html',
-      reasons: ['USER_MEDIA'],
-      justification: 'Capturing EMR screen for area selection'
-    });
-
-    const response = await chrome.runtime.sendMessage({
-      type: 'CAPTURE_STREAM',
-      streamId: streamId
-    });
-
-    if (response.error) {
-      throw new Error(response.error);
-    }
-
-    // Open area selector in new tab
-    const tab = await chrome.tabs.create({
-      url: chrome.runtime.getURL('capture-overlay.html'),
-      active: true
-    });
-
-    // Send image to selector
-    chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
-      if (tabId === tab.id && info.status === 'complete') {
-        chrome.tabs.onUpdated.removeListener(listener);
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'INIT_SELECTOR',
-          imageData: response.dataUrl,
-          context: context
-        });
-      }
-    });
-
-    // Close offscreen document
-    await chrome.offscreen.closeDocument();
-  } catch (error) {
-    console.error('Area capture error:', error);
-    notifyError('Failed to capture for area selection');
-  }
-}
-
-// Process and send capture to Clarafi
-async function processCapture(blob, context) {
-  try {
-    // Create form data matching existing attachment upload
-    const formData = new FormData();
-    formData.append('file', blob, `emr_capture_${Date.now()}.png`);
-    formData.append('title', 'EMR Screenshot');
-    formData.append('description', `Captured from EMR for ${context.patientName || 'patient'}`);
-    formData.append('isConfidential', 'true');
-    
-    if (context.encounterId) {
-      formData.append('encounterId', context.encounterId);
-    }
-
-    // Send to Clarafi tab for preview (not direct upload)
-    const tabs = await chrome.tabs.query({ url: `${context.serverUrl}/*` });
-    if (tabs.length > 0) {
-      // Convert blob to base64 for message passing
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'PREVIEW_CAPTURE',
-          imageData: reader.result,
-          metadata: {
-            title: 'EMR Screenshot',
-            description: `Captured from EMR for ${context.patientName || 'patient'}`,
-            patientId: context.patientId,
-            encounterId: context.encounterId
-          }
-        });
-      };
-      reader.readAsDataURL(blob);
-    } else {
-      notifyError('Clarafi tab not found. Please open Clarafi first.');
-    }
-
-    // Clear blob from memory
-    blob = null;
-  } catch (error) {
-    console.error('Process capture error:', error);
-    notifyError('Failed to process capture');
-  }
-}
+// Removed unused functions - extension now downloads screenshots locally
 
 // Send notification
 function notifyError(message) {

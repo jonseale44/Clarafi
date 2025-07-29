@@ -8,6 +8,7 @@
     "storage",
     "tabs",
     "desktopCapture",
+    "downloads",
     "notifications",
     "<all_urls>"
   ],
@@ -21,13 +22,7 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": ["http://localhost:*/*", "https://*.replit.app/*", "https://*.replit.dev/*", "https://*.clarafi.com/*"],
-      "js": ["clarafi-content.js"],
-      "run_at": "document_end"
-    }
-  ],
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

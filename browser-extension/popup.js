@@ -8,40 +8,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const captureFullBtn = document.getElementById('captureFullBtn');
   const captureAreaBtn = document.getElementById('captureAreaBtn');
   
-  // Get patient context from background script
-  try {
-    const response = await chrome.runtime.sendMessage({ type: 'GET_PATIENT_CONTEXT' });
-    
-    if (response && response.patientId) {
-      // Show patient info
-      patientInfo.innerHTML = `
-        <div class="patient-name">${response.patientName || 'Patient'}</div>
-        <div class="patient-id">ID: ${response.patientId}</div>
-      `;
-      patientInfo.classList.remove('not-connected');
-      
-      // Show capture buttons
-      captureButtons.style.display = 'flex';
-    } else {
-      // No patient context
-      patientInfo.innerHTML = `
-        <div class="patient-name">No Patient Selected</div>
-        <div class="patient-id">Please open a patient record in Clarafi first</div>
-      `;
-      patientInfo.classList.add('not-connected');
-      
-      // Show warning
-      warningText.textContent = 'Open a patient record in Clarafi before capturing EMR data';
-      warningMessage.style.display = 'flex';
-    }
-  } catch (error) {
-    console.error('Failed to get patient context:', error);
-    patientInfo.innerHTML = `
-      <div class="patient-name">Connection Error</div>
-      <div class="patient-id">Unable to connect to Clarafi</div>
-    `;
-    patientInfo.classList.add('not-connected');
-  }
+  // Simplified - no patient context required
+  patientInfo.innerHTML = `
+    <div class="patient-name">Clarafi Secure Capture</div>
+    <div class="patient-id">Ready to capture EMR screenshots</div>
+  `;
+  patientInfo.classList.remove('not-connected');
+  
+  // Always show capture buttons
+  captureButtons.style.display = 'flex';
+  
+  // Hide warning message
+  warningMessage.style.display = 'none';
   
   // Handle capture full window
   captureFullBtn.addEventListener('click', async () => {
