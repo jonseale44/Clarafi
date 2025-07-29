@@ -920,14 +920,16 @@ export function PatientAttachments({
         throw new Error('Failed to capture screenshot blob');
       }
       
-      // Create file from blob
+      // Create file from blob (compatible approach)
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `emr-screenshot-${timestamp}.png`;
       
-      const file = new File([blob], filename, { 
-        type: 'image/png',
-        lastModified: Date.now()
-      });
+      // Create a File-like object that works across environments
+      const file = Object.assign(blob, {
+        name: filename,
+        lastModified: Date.now(),
+        webkitRelativePath: ''
+      }) as File;
       
       console.log('Screenshot file created:', { name: file.name, size: file.size, type: file.type });
       
