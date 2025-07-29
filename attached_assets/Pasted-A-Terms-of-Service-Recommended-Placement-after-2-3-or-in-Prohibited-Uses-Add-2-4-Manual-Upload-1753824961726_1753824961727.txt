@@ -1,0 +1,35 @@
+A. Terms of Service (Recommended Placement: after 2.3 or in Prohibited Uses)
+Add:
+
+2.4 Manual Upload Requirement and No Automated Extraction
+
+All uploads of patient data to Clarafi—including documents, screenshots, or scanned images—must be manually selected and submitted by the user. Clarafi does not provide or allow any automated, scripted, or background extraction ("scraping") of content from EMRs or other software platforms.
+
+Add to Prohibited Uses or as its own clause:
+
+You will not use Clarafi to upload, capture, or extract data from any third-party EMR or software in violation of that system’s terms of service, license, or use policy.
+
+You are solely responsible for compliance with third-party agreements when using Clarafi to capture or upload data.
+
+Add to Indemnification Section:
+
+You further agree to indemnify Clarafi against all claims, damages, or losses arising from your violation of third-party software or EMR vendor agreements when capturing or uploading data to Clarafi.
+
+Optional (under Privacy and Security or Prohibited Uses):
+
+Clarafi may use technical controls, including rate limiting or monitoring, to prevent excessive, automated, or unauthorized uploads to the service.
+
+B. BAA (Suggested after "Important Limitations" or in Attestation section):
+Add:
+
+All uploads, including screenshots and scanned documents, must be manually performed and submitted by you, the user. Clarafi does not enable or allow any automated or scripted data extraction from other electronic medical record systems or software.
+
+Add (in Attestation):
+
+By clicking "I Accept", you also attest that you are not violating any policies, licenses, or contracts of other software or EMR systems when submitting data to Clarafi.
+
+C. Privacy Policy (Section 4 or Data Collection/Sharing):
+Add:
+
+All uploads (including patient records, screenshots, and medical documents) to Clarafi must be manually performed by the user. Clarafi does not conduct any automated, bot-driven, or background data extraction from other EMRs or third-party platforms.
+
