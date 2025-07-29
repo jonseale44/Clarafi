@@ -23,51 +23,41 @@ export class WebAuthnService {
   
   // Get RP ID dynamically based on environment
   private static getRPID(origin?: string): string {
-    // If origin is provided (from request), extract hostname - prioritize actual domain
+    // If we have a production domain environment variable, use it
+    if (process.env.PRODUCTION_DOMAIN) {
+      return process.env.PRODUCTION_DOMAIN;
+    }
+    
+    // If origin is provided (from request), extract hostname
     if (origin) {
       try {
         const url = new URL(origin);
-        const hostname = url.hostname;
-        console.log('🔑 [WebAuthn] Using hostname from origin:', hostname);
-        return hostname;
+        return url.hostname;
       } catch (e) {
         console.error('🔑 [WebAuthn] Failed to parse origin:', origin);
       }
     }
     
-    // If we have a production domain environment variable and no origin, use it
-    if (process.env.PRODUCTION_DOMAIN) {
-      console.log('🔑 [WebAuthn] Using PRODUCTION_DOMAIN:', process.env.PRODUCTION_DOMAIN);
-      return process.env.PRODUCTION_DOMAIN;
-    }
-    
     // Fallback to Replit dev domain or localhost
-    const fallback = process.env.REPLIT_DEV_DOMAIN || 'localhost';
-    console.log('🔑 [WebAuthn] Using fallback domain:', fallback);
-    return fallback;
+    return process.env.REPLIT_DEV_DOMAIN || 'localhost';
   }
   
   // Get origin dynamically based on environment
   private static getOrigin(origin?: string): string {
-    // If origin is provided (from request), use it - prioritize actual domain
+    // If origin is provided (from request), use it
     if (origin) {
-      console.log('🔑 [WebAuthn] Using origin from request:', origin);
       return origin;
     }
     
-    // If we have a production domain and no origin, use it with https
+    // If we have a production domain, use it with https
     if (process.env.PRODUCTION_DOMAIN) {
-      const prodOrigin = `https://${process.env.PRODUCTION_DOMAIN}`;
-      console.log('🔑 [WebAuthn] Using PRODUCTION_DOMAIN origin:', prodOrigin);
-      return prodOrigin;
+      return `https://${process.env.PRODUCTION_DOMAIN}`;
     }
     
     // Fallback to Replit dev domain or localhost
-    const fallbackOrigin = process.env.REPLIT_DEV_DOMAIN 
+    return process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}`
       : 'http://localhost:5000';
-    console.log('🔑 [WebAuthn] Using fallback origin:', fallbackOrigin);
-    return fallbackOrigin;
   }
 
   static {
