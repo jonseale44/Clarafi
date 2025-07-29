@@ -956,18 +956,28 @@ export function PatientAttachments({
     console.log('Starting area selection with:', { selectedArea, imageDataLength: capturedImage.length });
 
     try {
+      console.log('Step 1: Validating input parameters...');
+      
+      // Validate inputs
+      if (!selectedArea.width || !selectedArea.height) {
+        throw new Error('Invalid selection area dimensions');
+      }
+      
+      console.log('Step 2: Creating canvas element...');
       // Create a canvas for the cropped image
       const canvas = document.createElement('canvas');
+      console.log('Step 3: Getting canvas context...');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         throw new Error('Could not get canvas context');
       }
 
+      console.log('Step 4: Creating image element...');
       // Create an image from the captured data URL
-      const img = new Image();
+      const img = document.createElement('img');
       img.crossOrigin = 'anonymous'; // Prevent CORS issues
       
-      console.log('Loading image from data URL...');
+      console.log('Step 5: Loading image from data URL...');
       await new Promise<void>((resolve, reject) => {
         img.onload = () => {
           console.log('Image loaded successfully:', { naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
@@ -1070,7 +1080,20 @@ export function PatientAttachments({
 
     } catch (error) {
       console.error('Failed to crop screenshot:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Error type:', typeof error);
+      console.error('Error constructor:', error?.constructor?.name);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
+      
+      let errorMessage = 'Unknown error occurred during screenshot cropping';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else {
+        errorMessage = JSON.stringify(error);
+      }
+      
       toast({
         title: "Failed to Crop Screenshot",
         description: `Error: ${errorMessage}`,
