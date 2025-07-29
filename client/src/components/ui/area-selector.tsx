@@ -77,8 +77,16 @@ export function AreaSelector({ imageUrl, onAreaSelected, onCancel }: AreaSelecto
   }, [isSelecting, startPoint, getImageCoordinates]);
 
   const handleConfirmSelection = useCallback(() => {
+    console.log('AreaSelector handleConfirmSelection called with:', { selectionRect });
     if (selectionRect) {
-      onAreaSelected(selectionRect);
+      console.log('Calling onAreaSelected with:', selectionRect);
+      try {
+        onAreaSelected(selectionRect);
+      } catch (error) {
+        console.error('Error in onAreaSelected callback:', error);
+      }
+    } else {
+      console.error('No selection rectangle available for confirmation');
     }
   }, [selectionRect, onAreaSelected]);
 

@@ -944,45 +944,96 @@ export function PatientAttachments({
     }
   };
 
-  // Area selection handler
+  // Area selection handler  
   const handleAreaSelected = useCallback(async (selectedArea: { x: number; y: number; width: number; height: number }) => {
-    if (!capturedImage) return;
+    console.log('handleAreaSelected called with:', { selectedArea });
+    
+    if (!capturedImage) {
+      console.error('No captured image available for cropping');
+      return;
+    }
+
+    console.log('Starting area selection with:', { selectedArea, imageDataLength: capturedImage.length });
 
     try {
       // Create a canvas for the cropped image
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get canvas context');
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
+      }
 
       // Create an image from the captured data URL
       const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+      img.crossOrigin = 'anonymous'; // Prevent CORS issues
+      
+      console.log('Loading image from data URL...');
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          console.log('Image loaded successfully:', { naturalWidth: img.naturalWidth, naturalHeight: img.naturalHeight });
+          resolve();
+        };
+        img.onerror = (error: any) => {
+          console.error('Image load error:', error);
+          reject(new Error('Failed to load captured image'));
+        };
         img.src = capturedImage;
       });
 
+      console.log('Image loading complete, proceeding with validation...');
+
+      // Validate selection area
+      const maxWidth = img.naturalWidth;
+      const maxHeight = img.naturalHeight;
+      
+      console.log('Validating selection area:', {
+        selectedArea,
+        imageSize: { width: maxWidth, height: maxHeight }
+      });
+
+      if (selectedArea.x < 0 || selectedArea.y < 0 || 
+          selectedArea.x + selectedArea.width > maxWidth || 
+          selectedArea.y + selectedArea.height > maxHeight) {
+        throw new Error('Selected area is outside image bounds');
+      }
+
+      if (selectedArea.width <= 0 || selectedArea.height <= 0) {
+        throw new Error('Selected area has invalid dimensions');
+      }
+
       // Set canvas size to the selected area
-      canvas.width = selectedArea.width;
-      canvas.height = selectedArea.height;
+      canvas.width = Math.floor(selectedArea.width);
+      canvas.height = Math.floor(selectedArea.height);
+
+      console.log('Drawing cropped area to canvas:', {
+        canvasSize: { width: canvas.width, height: canvas.height },
+        sourceArea: selectedArea
+      });
 
       // Draw the selected area to the canvas
       ctx.drawImage(
         img, 
-        selectedArea.x, selectedArea.y, selectedArea.width, selectedArea.height,
-        0, 0, selectedArea.width, selectedArea.height
+        Math.floor(selectedArea.x), Math.floor(selectedArea.y), Math.floor(selectedArea.width), Math.floor(selectedArea.height),
+        0, 0, Math.floor(selectedArea.width), Math.floor(selectedArea.height)
       );
 
       // Convert to blob
+      console.log('Converting canvas to blob...');
       const blob = await new Promise<Blob | null>((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            console.log('Cropped screenshot blob created:', { size: blob.size, type: blob.type });
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create blob from cropped canvas'));
-          }
-        }, 'image/png', 0.95);
+        try {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              console.log('Cropped screenshot blob created:', { size: blob.size, type: blob.type });
+              resolve(blob);
+            } else {
+              console.error('Canvas toBlob returned null');
+              reject(new Error('Failed to create blob from cropped canvas'));
+            }
+          }, 'image/png', 0.95);
+        } catch (blobError) {
+          console.error('Error during toBlob operation:', blobError);
+          reject(blobError);
+        }
       });
 
       if (!blob) {
@@ -993,11 +1044,11 @@ export function PatientAttachments({
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `emr-screenshot-area-${timestamp}.png`;
       
-      const file = Object.assign(blob, {
-        name: filename,
-        lastModified: Date.now(),
-        webkitRelativePath: ''
-      }) as File;
+      console.log('Creating File object from blob...');
+      const file = new File([blob], filename, {
+        type: 'image/png',
+        lastModified: Date.now()
+      });
 
       console.log('Cropped screenshot file created:', { name: file.name, size: file.size, type: file.type });
 
@@ -1019,9 +1070,10 @@ export function PatientAttachments({
 
     } catch (error) {
       console.error('Failed to crop screenshot:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Failed to Crop Screenshot",
-        description: "Could not create cropped image from selected area.",
+        description: `Error: ${errorMessage}`,
         variant: "destructive",
       });
     }
