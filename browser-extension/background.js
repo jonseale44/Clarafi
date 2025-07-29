@@ -38,8 +38,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Handle capture request
 async function handleCaptureRequest(captureType) {
   try {
-    // Simplified - no patient context required
-    await captureWithScreenshotAPI();
+    // Load patient context from storage
+    const result = await chrome.storage.local.get(['patientContext']);
+    patientContext = result.patientContext;
+    
+    if (!patientContext || !patientContext.patientId) {
+      notifyError('No patient selected. Please open a patient in Clarafi first.');
+      return;
+    }
+    
+    serverUrl = patientContext.serverUrl;
+    
+    if (captureType === 'desktop') {
+      await captureWithScreenshotAPI();
+    } else if (captureType === 'area') {
+      await captureAreaWithScreenshotAPI();
+    }
   } catch (error) {
     console.error('Capture error:', error);
     notifyError('Failed to initiate capture');
