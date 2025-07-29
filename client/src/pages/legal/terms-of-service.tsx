@@ -64,8 +64,25 @@ export default function TermsOfService() {
                   <li>You are a licensed healthcare professional in good standing;</li>
                   <li>You will only use the Service for legitimate medical documentation purposes;</li>
                   <li>You will comply with all applicable healthcare laws and regulations, including HIPAA;</li>
-                  <li>You will maintain the confidentiality of all patient information.</li>
+                  <li>You will maintain the confidentiality of all patient information;</li>
+                  <li>You will not violate the terms of service, licensing agreements, or policies of any source electronic medical record (EMR) or software when capturing and uploading content to the Service;</li>
                 </ul>
+                
+                <h3>3A. Manual Upload Requirements and User Responsibilities</h3>
+                <p>
+                  All document, image, and screenshot uploads to the Service must be manually selected and initiated by the user. The Service does not perform automated or scripted extraction from third-party systems. By using the upload functionality, you agree that:
+                </p>
+                <ul>
+                  <li>All files, documents, images, and screenshots are manually selected and uploaded by you;</li>
+                  <li>You have full authorization to capture and submit the uploaded information according to all applicable policies and laws;</li>
+                  <li>You are not violating any third-party software vendor agreements, EMR licensing terms, or organizational policies;</li>
+                  <li>You accept full responsibility for ensuring compliance with all source system terms of service and policies;</li>
+                </ul>
+                
+                <h3>3B. Technical Controls</h3>
+                <p>
+                  The Service may enforce technical controls, including rate limits and usage monitoring, to prevent bulk or automated data extraction and ensure compliance with licensing agreements and terms of service.
+                </p>
                 
                 <h3>4. Data Processing and Privacy</h3>
                 <p>
@@ -75,7 +92,9 @@ export default function TermsOfService() {
                   <li>All data is encrypted in transit and at rest;</li>
                   <li>We comply with HIPAA and other applicable healthcare privacy regulations;</li>
                   <li>Patient data is processed solely for the purpose of providing transcription and documentation services;</li>
-                  <li>We do not sell or share patient data with third parties except as required by law.</li>
+                  <li>We do not sell or share patient data with third parties except as required by law;</li>
+                  <li>We use AI and automated systems for parsing and processing uploaded files, but do not perform automated data extraction from external systems;</li>
+                  <li>We will cooperate with lawful requests from covered entities or regulators for patient access or breach investigation purposes;</li>
                 </ul>
                 
                 <h3>5. Medical Disclaimer</h3>
@@ -111,8 +130,14 @@ export default function TermsOfService() {
                 
                 <h3>9. Indemnification</h3>
                 <p>
-                  You agree to defend, indemnify, and hold harmless the company and its licensees and licensors, and their employees, contractors, agents, officers and directors, from and against any and all claims, damages, obligations, losses, liabilities, costs or debt, and expenses (including but not limited to attorney's fees).
+                  You agree to defend, indemnify, and hold harmless the company and its licensees and licensors, and their employees, contractors, agents, officers and directors, from and against any and all claims, damages, obligations, losses, liabilities, costs or debt, and expenses (including but not limited to attorney's fees), including specifically any claims arising from:
                 </p>
+                <ul>
+                  <li>Your use of the Service in violation of these Terms;</li>
+                  <li>Violations of third-party software vendor agreements, EMR licensing terms, or organizational policies resulting from content you upload to the Service;</li>
+                  <li>Any breach of your representations and warranties regarding authorization to upload and submit information;</li>
+                  <li>Claims related to your compliance or non-compliance with source system terms of service and policies;</li>
+                </ul>
                 
                 <h3>10. Termination</h3>
                 <p>
