@@ -36,6 +36,10 @@ A comprehensive medical transcription and lab management platform designed to st
 
 **Environment Variable**: Set `PRODUCTION_DOMAIN` to your production domain (e.g., `myapp.com`) to ensure proper passkey functionality in production.
 
+**Important Note about Iframe Deployment**: Passkeys will not work when the site is accessed through an iframe (such as Replit's deployment preview) due to browser security restrictions. The parent frame must explicitly allow `publickey-credentials-create` and `publickey-credentials-get` permissions in its Permissions-Policy header. For full passkey functionality, the site must be:
+1. Accessed directly (not through an iframe), OR
+2. Embedded in an iframe that includes: `Permissions-Policy: publickey-credentials-create=(self "https://yourdomain.com"), publickey-credentials-get=(self "https://yourdomain.com")`
+
 ## Project Architecture
 
 ### Frontend Architecture

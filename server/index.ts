@@ -19,6 +19,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add security headers for WebAuthn in iframes
+app.use((req, res, next) => {
+  // Allow WebAuthn (publickey-credentials) in iframes
+  res.setHeader('Permissions-Policy', 'publickey-credentials-create=(self), publickey-credentials-get=(self)');
+  
+  // Add other security headers
+  res.setHeader('X-Frame-Options', 'ALLOWALL'); // Allow embedding in any iframe
+  
+  next();
+});
+
 // Parse JSON for all routes except Stripe webhook
 app.use((req, res, next) => {
   if (req.path === '/api/stripe/webhook') {
