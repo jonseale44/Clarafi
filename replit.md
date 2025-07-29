@@ -31,6 +31,7 @@ A comprehensive medical transcription and lab management platform designed to st
 2. Created comprehensive deployment guides:
    - `AWS_DEPLOYMENT_GUIDE.md` - Full step-by-step instructions
    - `AWS_DEPLOYMENT_CHECKLIST.md` - Quick reference checklist
+   - `HIPAA_HOSTING_ALTERNATIVES.md` - Backup options if AWS issues arise
 3. Configured for HIPAA compliance with encryption, audit logging, and security headers
 4. Set up build and deployment scripts compatible with EB
 
@@ -40,6 +41,10 @@ A comprehensive medical transcription and lab management platform designed to st
 - `.ebextensions/environment.config` - Environment variable configuration
 - `.ebextensions/healthcheck.config` - Health monitoring setup
 - `Procfile` - EB process configuration
+
+**Progress**: 
+- AWS account created with Business support plan
+- BAA accepted in AWS Artifact (HIPAA compliance active)
 
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.
