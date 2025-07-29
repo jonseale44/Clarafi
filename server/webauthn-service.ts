@@ -20,24 +20,60 @@ import type {
 export class WebAuthnService {
   // Relying Party configuration
   private static readonly RP_NAME = 'Clarafi EMR';
-  private static readonly RP_ID = process.env.REPLIT_DEV_DOMAIN || 'localhost';
-  private static readonly ORIGIN = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : 'http://localhost:5000';
+  
+  // Get RP ID dynamically based on environment
+  private static getRPID(origin?: string): string {
+    // If we have a production domain environment variable, use it
+    if (process.env.PRODUCTION_DOMAIN) {
+      return process.env.PRODUCTION_DOMAIN;
+    }
+    
+    // If origin is provided (from request), extract hostname
+    if (origin) {
+      try {
+        const url = new URL(origin);
+        return url.hostname;
+      } catch (e) {
+        console.error('🔑 [WebAuthn] Failed to parse origin:', origin);
+      }
+    }
+    
+    // Fallback to Replit dev domain or localhost
+    return process.env.REPLIT_DEV_DOMAIN || 'localhost';
+  }
+  
+  // Get origin dynamically based on environment
+  private static getOrigin(origin?: string): string {
+    // If origin is provided (from request), use it
+    if (origin) {
+      return origin;
+    }
+    
+    // If we have a production domain, use it with https
+    if (process.env.PRODUCTION_DOMAIN) {
+      return `https://${process.env.PRODUCTION_DOMAIN}`;
+    }
+    
+    // Fallback to Replit dev domain or localhost
+    return process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : 'http://localhost:5000';
+  }
 
   static {
     console.log('🔑 [WebAuthn] Configuration:', {
       RP_NAME: this.RP_NAME,
-      RP_ID: this.RP_ID,
-      ORIGIN: this.ORIGIN,
-      ENV_DOMAIN: process.env.REPLIT_DEV_DOMAIN
+      DEFAULT_RP_ID: this.getRPID(),
+      DEFAULT_ORIGIN: this.getOrigin(),
+      ENV_DOMAIN: process.env.REPLIT_DEV_DOMAIN,
+      PRODUCTION_DOMAIN: process.env.PRODUCTION_DOMAIN
     });
   }
 
   /**
    * Generate registration options for a new passkey
    */
-  static async generateRegistrationOptions(userId: number): Promise<{
+  static async generateRegistrationOptions(userId: number, origin?: string): Promise<{
     options: PublicKeyCredentialCreationOptionsJSON;
     challenge: string;
   }> {
@@ -105,7 +141,7 @@ export class WebAuthnService {
 
     const options = await generateRegistrationOptions({
       rpName: this.RP_NAME,
-      rpID: this.RP_ID,
+      rpID: this.getRPID(origin),
       userID: userIdBuffer,
       userName: user.email,
       userDisplayName: `${user.firstName} ${user.lastName}`.trim() || user.email,
@@ -133,7 +169,8 @@ export class WebAuthnService {
   static async verifyRegistrationResponse(
     userId: number,
     response: RegistrationResponseJSON,
-    expectedChallenge: string
+    expectedChallenge: string,
+    origin?: string
   ): Promise<{ verified: boolean; credentialId?: string }> {
     console.log('📝 [WebAuthn] verifyRegistrationResponse called with:', {
       userId,
@@ -142,16 +179,16 @@ export class WebAuthnService {
       hasAttestationObject: !!response?.response?.attestationObject,
       hasClientDataJSON: !!response?.response?.clientDataJSON,
       expectedChallenge: expectedChallenge?.substring(0, 10) + '...',
-      rpOrigin: this.ORIGIN,
-      rpId: this.RP_ID
+      rpOrigin: this.getOrigin(origin),
+      rpId: this.getRPID(origin)
     });
 
     try {
       const verification = await verifyRegistrationResponse({
         response,
         expectedChallenge,
-        expectedOrigin: this.ORIGIN,
-        expectedRPID: this.RP_ID,
+        expectedOrigin: this.getOrigin(origin),
+        expectedRPID: this.getRPID(origin),
         requireUserVerification: false
       });
 
@@ -205,11 +242,11 @@ export class WebAuthnService {
   /**
    * Generate authentication options for passkey login
    */
-  static async generateAuthenticationOptions(email?: string): Promise<{
+  static async generateAuthenticationOptions(email?: string, origin?: string): Promise<{
     options: PublicKeyCredentialRequestOptionsJSON;
     challenge: string;
   }> {
-    let allowCredentials = [];
+    let allowCredentials: { id: string; type: 'public-key'; transports?: AuthenticatorTransport[] }[] = [];
 
     if (email) {
       // Get user and their credentials
@@ -239,7 +276,7 @@ export class WebAuthnService {
     const challenge = randomBytes(32).toString('base64url');
 
     const options = await generateAuthenticationOptions({
-      rpID: this.RP_ID,
+      rpID: this.getRPID(origin),
       allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined,
       userVerification: 'preferred',
       timeout: 60000 // 60 seconds
@@ -256,7 +293,8 @@ export class WebAuthnService {
    */
   static async verifyAuthenticationResponse(
     response: AuthenticationResponseJSON,
-    expectedChallenge: string
+    expectedChallenge: string,
+    origin?: string
   ): Promise<{ verified: boolean; userId?: number }> {
     try {
       // Find the credential using raw SQL
@@ -285,8 +323,8 @@ export class WebAuthnService {
       const verification = await verifyAuthenticationResponse({
         response,
         expectedChallenge,
-        expectedOrigin: this.ORIGIN,
-        expectedRPID: this.RP_ID,
+        expectedOrigin: this.getOrigin(origin),
+        expectedRPID: this.getRPID(origin),
         credential: {
           id: Buffer.from(credential.credential_id, 'base64url'),
           publicKey: Buffer.from(credential.credential_public_key, 'base64'),

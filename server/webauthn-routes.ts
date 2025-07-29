@@ -42,7 +42,11 @@ router.post('/webauthn/register/options', async (req: any, res) => {
       email: req.user!.email
     });
     
-    const { options, challenge } = await WebAuthnService.generateRegistrationOptions((req as any).user!.id);
+    // Get origin from request headers
+    const origin = req.get('origin') || req.get('referer');
+    console.log('🔍 [WebAuthn] Request origin:', origin);
+    
+    const { options, challenge } = await WebAuthnService.generateRegistrationOptions((req as any).user!.id, origin);
     
     console.log('📋 [WebAuthn] Generated options:', {
       challenge: challenge,
@@ -113,10 +117,14 @@ router.post('/webauthn/register/verify', async (req: any, res) => {
       return res.status(400).json({ error: 'No challenge found. Please start registration again.' });
     }
 
+    // Get origin from request headers
+    const origin = req.get('origin') || req.get('referer');
+    
     const result = await WebAuthnService.verifyRegistrationResponse(
       (req as any).user!.id,
       response,
-      expectedChallenge
+      expectedChallenge,
+      origin
     );
 
     // Clear challenge from session
@@ -151,7 +159,10 @@ router.post('/webauthn/authenticate/options', async (req, res) => {
   try {
     const { email } = req.body;
     
-    const { options, challenge } = await WebAuthnService.generateAuthenticationOptions(email);
+    // Get origin from request headers
+    const origin = req.get('origin') || req.get('referer');
+    
+    const { options, challenge } = await WebAuthnService.generateAuthenticationOptions(email, origin);
     
     // Store challenge in session
     (req.session as any).webauthnChallenge = challenge;
@@ -176,9 +187,13 @@ router.post('/webauthn/authenticate/verify', async (req, res) => {
       return res.status(400).json({ error: 'No challenge found. Please start authentication again.' });
     }
 
+    // Get origin from request headers
+    const origin = req.get('origin') || req.get('referer');
+    
     const result = await WebAuthnService.verifyAuthenticationResponse(
       response,
-      expectedChallenge
+      expectedChallenge,
+      origin
     );
 
     // Clear challenge from session
@@ -210,7 +225,7 @@ router.post('/webauthn/authenticate/verify', async (req, res) => {
           email: user.email,
           role: user.role,
           healthSystemId: user.healthSystemId,
-          displayName: user.displayName
+          displayName: `${user.firstName} ${user.lastName}`.trim() || user.email
         }
       });
     } else {
