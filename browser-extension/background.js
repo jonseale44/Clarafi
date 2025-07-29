@@ -70,22 +70,19 @@ async function captureWithScreenshotAPI() {
     try {
       const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
       
-      // Download the screenshot
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `clarafi-capture-${timestamp}.png`;
+      // Convert dataUrl to blob for upload
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
       
-      chrome.downloads.download({
-        url: dataUrl,
-        filename: filename,
-        saveAs: true
-      });
+      // Process and upload to Clarafi
+      await processCapture(blob, patientContext);
       
       // Show success notification
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon.svg',
-        title: 'Screenshot Captured',
-        message: 'Screenshot saved to downloads folder'
+        title: 'Screenshot Uploaded',
+        message: 'Screenshot sent to patient attachments'
       });
       
       return;
