@@ -1055,10 +1055,12 @@ export function PatientAttachments({
       const filename = `emr-screenshot-area-${timestamp}.png`;
       
       console.log('Creating File object from blob...');
-      const file = new File([blob], filename, {
-        type: 'image/png',
-        lastModified: Date.now()
-      });
+      // Create a File-like object since File constructor may not be available in all environments
+      const file = Object.assign(blob, {
+        name: filename,
+        lastModified: Date.now(),
+        webkitRelativePath: ''
+      }) as File;
 
       console.log('Cropped screenshot file created:', { name: file.name, size: file.size, type: file.type });
 
