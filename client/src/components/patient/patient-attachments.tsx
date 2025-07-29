@@ -832,55 +832,104 @@ export function PatientAttachments({
     setIsCapturing(true);
     
     try {
-      // Check if Screen Capture API is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        throw new Error('Screen capture is not supported in this browser');
+      console.log('Starting screenshot capture...');
+      
+      // Check if we're in a secure context (HTTPS or localhost)
+      if (!window.isSecureContext) {
+        throw new Error('Screen capture requires a secure context (HTTPS)');
       }
       
-      // Request screen capture permission
+      // Check if Screen Capture API is supported
+      if (!navigator.mediaDevices) {
+        throw new Error('MediaDevices API is not supported in this browser');
+      }
+      
+      if (!navigator.mediaDevices.getDisplayMedia) {
+        throw new Error('Screen capture (getDisplayMedia) is not supported in this browser');
+      }
+      
+      console.log('Screen capture API is available, requesting permission...');
+      
+      // Request screen capture permission with more options
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          mediaSource: 'screen'
+          mediaSource: 'screen',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
         },
         audio: false
       });
       
+      console.log('Screen capture stream obtained:', stream);
+      
       // Get video track
+      const videoTracks = stream.getVideoTracks();
+      if (videoTracks.length === 0) {
+        throw new Error('No video track available in the capture stream');
+      }
+      
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.play();
+      video.muted = true; // Important for autoplay
       
       // Wait for video to load
-      await new Promise((resolve) => {
-        video.onloadedmetadata = resolve;
+      await new Promise((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          console.log('Video metadata loaded:', { width: video.videoWidth, height: video.videoHeight });
+          resolve(void 0);
+        };
+        video.onerror = (e) => {
+          console.error('Video error:', e);
+          reject(new Error('Failed to load video stream'));
+        };
+        video.play().catch(reject);
       });
       
       // Create canvas and capture frame
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth || 1920;
+      canvas.height = video.videoHeight || 1080;
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0);
+      
+      if (!ctx) {
+        throw new Error('Could not get canvas 2D context');
       }
       
-      // Stop the stream
-      stream.getTracks().forEach(track => track.stop());
+      console.log('Drawing video to canvas...', { width: canvas.width, height: canvas.height });
+      ctx.drawImage(video, 0, 0);
+      
+      // Stop the stream immediately after capture
+      stream.getTracks().forEach(track => {
+        console.log('Stopping track:', track.kind);
+        track.stop();
+      });
       
       // Convert to blob
-      const blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, 'image/png');
+      const blob = await new Promise<Blob | null>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            console.log('Screenshot blob created:', { size: blob.size, type: blob.type });
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create blob from canvas'));
+          }
+        }, 'image/png', 0.95);
       });
       
       if (!blob) {
-        throw new Error('Failed to capture screenshot');
+        throw new Error('Failed to capture screenshot blob');
       }
       
-      // Create file from blob with proper File constructor
-      const file = new File([blob], `emr-screenshot-${Date.now()}.png`, { 
+      // Create file from blob
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `emr-screenshot-${timestamp}.png`;
+      
+      const file = new File([blob], filename, { 
         type: 'image/png',
         lastModified: Date.now()
       });
+      
+      console.log('Screenshot file created:', { name: file.name, size: file.size, type: file.type });
       
       // Set the file for upload
       setUploadFile(file);
@@ -890,16 +939,31 @@ export function PatientAttachments({
       setUploadMode('single');
       
       toast({
-        title: "Screenshot Captured",
-        description: "Review and upload the captured screenshot",
+        title: "Screenshot Captured Successfully",
+        description: `Captured ${filename} (${Math.round(file.size / 1024)}KB). Review and upload below.`,
       });
       
     } catch (error) {
       console.error('Failed to capture screenshot:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      let errorMessage = 'Unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Screen capture permission was denied. Please allow screen sharing to capture screenshots.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No screen or window was selected for capture.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage = 'Screen capture is not supported in this browser or environment.';
+        } else {
+          errorMessage = `Browser error: ${error.name} - ${error.message}`;
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: `Failed to capture screenshot: ${errorMessage}`,
+        title: "Screenshot Capture Failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
