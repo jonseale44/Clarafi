@@ -220,13 +220,16 @@ export class WebAuthnService {
 
       const { credential } = verification.registrationInfo;
 
+      // Determine device type from transports or default
+      const deviceType = response.response.transports?.includes('internal') ? 'Platform' : 'Security Key';
+
       // Store the credential
       console.log('📝 [WebAuthn] Storing credential with columns:', {
         userId,
         credentialId: Buffer.from(credential.id).toString('base64url'),
         credentialPublicKey: Buffer.from(credential.publicKey).toString('base64'),
         counter: Number(credential.counter),
-        deviceType: credential.deviceType || 'unknown',
+        deviceType,
         transports: response.response.transports || []
       });
       
@@ -245,7 +248,7 @@ export class WebAuthnService {
           ${Buffer.from(credential.id).toString('base64url')},
           ${Buffer.from(credential.publicKey).toString('base64')},
           ${Number(credential.counter)},
-          ${credential.deviceType || response.response.authenticatorAttachment || 'Security Key'},
+          ${deviceType},
           ${JSON.stringify(response.response.transports || [])}::jsonb,
           NOW()
         )
@@ -363,8 +366,8 @@ export class WebAuthnService {
         expectedOrigin: this.getOrigin(origin),
         expectedRPID: this.getRPID(origin),
         credential: {
-          id: Buffer.from(credential.credential_id, 'base64url'),
-          publicKey: Buffer.from(credential.credential_public_key, 'base64'),
+          id: Buffer.from(credential.credential_id as string, 'base64url'),
+          publicKey: Buffer.from(credential.credential_public_key as string, 'base64'),
           counter: Number(credential.counter)
         },
         requireUserVerification: false
