@@ -184,15 +184,37 @@ export class WebAuthnService {
     });
 
     try {
+      const expectedOrigin = this.getOrigin(origin);
+      const expectedRPID = this.getRPID(origin);
+      
+      console.log('🔍 [WebAuthn] Verification parameters:', {
+        expectedOrigin,
+        expectedRPID,
+        expectedChallenge: expectedChallenge.substring(0, 20) + '...',
+        responseChallenge: response?.response?.clientDataJSON ? 
+          JSON.parse(Buffer.from(response.response.clientDataJSON, 'base64').toString()).challenge?.substring(0, 20) + '...' : 
+          'N/A'
+      });
+      
       const verification = await verifyRegistrationResponse({
         response,
         expectedChallenge,
-        expectedOrigin: this.getOrigin(origin),
-        expectedRPID: this.getRPID(origin),
+        expectedOrigin,
+        expectedRPID,
         requireUserVerification: false
       });
 
+      console.log('📝 [WebAuthn] Verification result:', {
+        verified: verification.verified,
+        hasRegistrationInfo: !!verification.registrationInfo,
+        errorMessage: (verification as any).error
+      });
+
       if (!verification.verified || !verification.registrationInfo) {
+        console.error('❌ [WebAuthn] Verification failed:', {
+          verified: verification.verified,
+          verificationData: verification
+        });
         return { verified: false };
       }
 
@@ -233,8 +255,23 @@ export class WebAuthnService {
 
       console.log(`✅ [WebAuthn] Passkey registered for user ${userId}`);
       return { verified: true, credentialId: Buffer.from(credential.id).toString('base64url') };
-    } catch (error) {
-      console.error('❌ [WebAuthn] Registration verification error:', error);
+    } catch (error: any) {
+      console.error('❌ [WebAuthn] Registration verification error:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        details: error
+      });
+      
+      // Log specific error details for debugging
+      if (error.message?.includes('origin')) {
+        console.error('🔍 [WebAuthn] Origin mismatch error - check deployed domain configuration');
+      } else if (error.message?.includes('challenge')) {
+        console.error('🔍 [WebAuthn] Challenge mismatch error - session might have expired');
+      } else if (error.message?.includes('rpId')) {
+        console.error('🔍 [WebAuthn] RP ID mismatch error - domain configuration issue');
+      }
+      
       return { verified: false };
     }
   }
