@@ -60,14 +60,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Handle screenshot preview in attachment upload area
 function handleCapturePreview(imageData, metadata) {
-  // Find the attachment upload component
-  const attachmentSection = document.querySelector('[data-attachment-upload]') ||
-                          document.querySelector('.patient-attachments') ||
-                          document.querySelector('#attachments');
+  // Check if we're on the attachments section
+  const isOnAttachments = window.location.pathname.includes('/chart') && 
+                         (document.querySelector('[aria-selected="true"]')?.textContent?.includes('Attachments') ||
+                          document.querySelector('.flex.items-center.justify-between h2')?.textContent?.includes('Attachments'));
+  
+  if (!isOnAttachments) {
+    console.error('Not on attachments section');
+    showNotification('Please navigate to the patient attachments section first', 'error');
+    return;
+  }
+  
+  // Find the attachment upload component - look for the dropzone
+  const attachmentSection = document.querySelector('.border-dashed') ||
+                          document.querySelector('[role="button"]') ||
+                          document.querySelector('.flex.flex-col.items-center.justify-center');
   
   if (!attachmentSection) {
-    console.error('Could not find attachment upload section');
-    showNotification('Please navigate to the patient attachments section first', 'error');
+    console.error('Could not find attachment upload area');
+    showNotification('Could not find attachment upload area', 'error');
     return;
   }
   
