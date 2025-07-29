@@ -1,14 +1,25 @@
-# Clarafi Secure Capture Browser Extension
+# Clarafi HIPAA-Compliant EMR Screenshot Extension
 
-HIPAA-compliant EMR screenshot capture extension that works with any EMR system - browser-based (Athena, Cerner) or desktop applications (Epic via Citrix).
+Zero PHI storage browser extension that captures screenshots from ANY EMR system and uploads directly to Clarafi's secure servers.
+
+## HIPAA Compliance
+
+- **Zero Local Storage**: Screenshots never touch your computer's hard drive
+- **Direct Server Upload**: Images stream from memory directly to Clarafi's secure servers
+- **Patient Context Required**: Screenshots are automatically linked to the correct patient's chart
+- **Encrypted Transfer**: All uploads use secure HTTPS connections
+- **Audit Trail**: Every capture is logged with user and timestamp information
 
 ## Features
 
-- **Universal EMR Support**: Works with both browser-based and desktop EMR applications
-- **HIPAA Compliant**: Zero local PHI storage - screenshots stream directly to secure servers
-- **Area Selection**: Select specific regions of your screen to capture
-- **Patient Context Detection**: Optional GPT verification when capturing from Clarafi pages
-- **Direct Integration**: Screenshots appear in Clarafi's attachment preview for confirmation
+- **Universal EMR Support**: Works with ALL EMR systems:
+  - Browser-based EMRs (Athena, Cerner, eClinicalWorks)
+  - Desktop EMRs (Epic via Citrix, NextGen, AllScripts)
+  - Any application on your screen
+- **Smart Capture Modes**:
+  - Full Desktop: Capture entire EMR windows
+  - Area Selection: Select specific regions (lab results, imaging, notes)
+- **Direct Patient Integration**: Screenshots appear instantly in patient's attachment section
 
 ## Installation
 
@@ -20,16 +31,28 @@ HIPAA-compliant EMR screenshot capture extension that works with any EMR system 
 
 ## Usage
 
-### Basic Screenshot Capture
+### Prerequisites
+**IMPORTANT**: You must have a patient open in Clarafi before capturing screenshots. This ensures HIPAA compliance by linking screenshots to the correct patient record.
 
-1. Click the Clarafi extension icon in your toolbar
-2. Choose capture mode:
-   - **Current Tab**: Captures the active browser tab
-   - **Full Desktop**: Captures any application window (for desktop EMRs)
-3. If using Full Desktop mode, select the window you want to capture
-4. Click and drag to select the area you want to capture
-5. Click "Capture Selected Area"
-6. The screenshot will automatically appear in your Clarafi patient attachments
+### Capturing Screenshots
+
+1. **Open a patient in Clarafi** - Navigate to any patient's chart
+2. Click the Clarafi extension icon in your toolbar
+3. Choose capture mode:
+   - **Full Desktop**: For capturing entire EMR windows
+   - **Area Selection**: For capturing specific regions
+4. Select what to capture:
+   - For browser EMRs: The current tab is captured
+   - For desktop EMRs: Choose the application window
+5. For area selection: Click and drag to select the region
+6. Screenshot is automatically uploaded to the patient's attachments
+
+### Security Features
+
+- Patient context verification prevents accidental PHI exposure
+- No local file downloads - everything streams directly to secure servers
+- Session-based authentication ensures only authorized users can upload
+- Automatic timeout after 30 minutes of inactivity
 
 ### Patient Context Detection
 

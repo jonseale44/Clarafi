@@ -8,18 +8,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   const captureFullBtn = document.getElementById('captureFullBtn');
   const captureAreaBtn = document.getElementById('captureAreaBtn');
   
-  // Simplified - no patient context required
-  patientInfo.innerHTML = `
-    <div class="patient-name">Clarafi Secure Capture</div>
-    <div class="patient-id">Ready to capture EMR screenshots</div>
-  `;
-  patientInfo.classList.remove('not-connected');
+  // Check if we have patient context
+  const response = await chrome.runtime.sendMessage({ type: 'GET_PATIENT_CONTEXT' });
   
-  // Always show capture buttons
-  captureButtons.style.display = 'flex';
-  
-  // Hide warning message
-  warningMessage.style.display = 'none';
+  if (response && response.patientId) {
+    // We have patient context - show patient info and enable capture
+    patientInfo.innerHTML = `
+      <div class="patient-name">${response.patientName}</div>
+      <div class="patient-id">ID: ${response.patientId}</div>
+    `;
+    patientInfo.classList.remove('not-connected');
+    
+    // Show capture buttons
+    captureButtons.style.display = 'flex';
+    
+    // Hide warning message
+    warningMessage.style.display = 'none';
+  } else {
+    // No patient context - show warning
+    patientInfo.innerHTML = `
+      <div class="patient-name">No Patient Selected</div>
+      <div class="patient-id">Open a patient in Clarafi first</div>
+    `;
+    patientInfo.classList.add('not-connected');
+    
+    // Hide capture buttons
+    captureButtons.style.display = 'none';
+    
+    // Show warning message
+    warningMessage.style.display = 'block';
+    warningText.textContent = 'Please open a patient in Clarafi before capturing screenshots. This ensures HIPAA compliance by linking screenshots to the correct patient record.';
+  }
   
   // Handle capture full window
   captureFullBtn.addEventListener('click', async () => {

@@ -122,23 +122,12 @@ async function captureWithScreenshotAPI() {
             throw new Error(response.error);
           }
           
-          // Download the screenshot
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const filename = `clarafi-capture-${timestamp}.png`;
+          // Convert base64 to blob for upload
+          const base64Response = await fetch(response.dataUrl);
+          const blob = await base64Response.blob();
           
-          chrome.downloads.download({
-            url: response.dataUrl,
-            filename: filename,
-            saveAs: true
-          });
-          
-          // Show success notification
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icons/icon.svg',
-            title: 'Screenshot Captured',
-            message: 'Screenshot saved to downloads folder'
-          });
+          // Process capture and upload to Clarafi
+          await processCapture(blob, patientContext);
         } catch (error) {
           console.error('Desktop capture error:', error);
           notifyError('Failed to capture screen');
@@ -151,7 +140,94 @@ async function captureWithScreenshotAPI() {
   }
 }
 
-// Removed unused functions - extension now downloads screenshots locally
+// Capture area selection
+async function captureAreaWithScreenshotAPI() {
+  try {
+    // First capture the current visible screen
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    
+    // Capture current screen
+    const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' });
+    
+    // Open area selection overlay
+    const overlayTab = await chrome.tabs.create({
+      url: chrome.runtime.getURL('capture-overlay.html'),
+      active: true
+    });
+    
+    // Wait for overlay to load, then send screenshot and context
+    chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+      if (tabId === overlayTab.id && changeInfo.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(listener);
+        
+        // Send screenshot and patient context to overlay
+        chrome.tabs.sendMessage(overlayTab.id, {
+          type: 'INIT_OVERLAY',
+          screenshot: dataUrl,
+          context: patientContext
+        });
+      }
+    });
+    
+  } catch (error) {
+    console.error('Area capture error:', error);
+    notifyError('Failed to initiate area capture');
+  }
+}
+
+// Process captured screenshot and upload to Clarafi
+async function processCapture(blob, context) {
+  try {
+    // Create form data for upload
+    const formData = new FormData();
+    const timestamp = new Date().toISOString();
+    const filename = `emr-capture-${timestamp.replace(/[:.]/g, '-')}.png`;
+    
+    formData.append('file', blob, filename);
+    formData.append('patientId', context.patientId.toString());
+    formData.append('encounterId', context.encounterId?.toString() || '');
+    formData.append('uploadSource', 'browser-extension');
+    formData.append('documentType', 'emr-screenshot');
+    
+    // Upload to Clarafi server
+    const response = await fetch(`${context.serverUrl}/api/attachments/upload`, {
+      method: 'POST',
+      headers: {
+        'Cookie': context.authCookie
+      },
+      body: formData,
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    // Show success notification
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icons/icon.svg',
+      title: 'Screenshot Uploaded',
+      message: `Screenshot added to ${context.patientName}'s attachments`
+    });
+    
+    // Send success message to Clarafi tab if open
+    const tabs = await chrome.tabs.query({ url: `${context.serverUrl}/*` });
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, {
+        type: 'ATTACHMENT_UPLOADED',
+        patientId: context.patientId,
+        attachmentId: result.id
+      });
+    }
+    
+  } catch (error) {
+    console.error('Upload error:', error);
+    notifyError('Failed to upload screenshot: ' + error.message);
+  }
+}
 
 // Send notification
 function notifyError(message) {

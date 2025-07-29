@@ -10,6 +10,25 @@ const selectionOverlay = document.getElementById('selection-overlay');
 const selectionBox = document.getElementById('selection-box');
 const dimensions = document.getElementById('dimensions');
 const captureBtn = document.getElementById('captureBtn');
+
+// Listen for initialization from background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'INIT_OVERLAY') {
+    // Set screenshot
+    screenshot.src = request.screenshot;
+    
+    // Store patient context
+    patientContext = request.context;
+    
+    // Update instructions with patient name
+    if (patientContext && patientContext.patientName) {
+      const instructions = document.querySelector('.instructions h3');
+      instructions.textContent = `Select area to capture for ${patientContext.patientName}`;
+    }
+    
+    sendResponse({ success: true });
+  }
+});
 const cancelBtn = document.getElementById('cancelBtn');
 
 // Listen for initialization message
