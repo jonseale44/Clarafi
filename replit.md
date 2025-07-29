@@ -16,6 +16,31 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
+### July 29, 2025 - AWS Deployment Migration Preparation
+**Decision**: Migrating from Replit/Network Solutions to AWS for HIPAA compliance.
+
+**Reason**: Medical EMR applications require HIPAA-compliant hosting with signed Business Associate Agreement (BAA). AWS provides:
+- Self-service BAA acceptance (no sales calls required)
+- Full HIPAA compliance for protected health information (PHI)
+- Proper support for WebAuthn/passkeys
+- Scalability for thousands of users
+- Cost-effective pricing ($100-500/month)
+
+**Implementation**:
+1. Created AWS Elastic Beanstalk configuration files in `.ebextensions/`
+2. Created comprehensive deployment guides:
+   - `AWS_DEPLOYMENT_GUIDE.md` - Full step-by-step instructions
+   - `AWS_DEPLOYMENT_CHECKLIST.md` - Quick reference checklist
+3. Configured for HIPAA compliance with encryption, audit logging, and security headers
+4. Set up build and deployment scripts compatible with EB
+
+**Key Files Added**:
+- `.ebextensions/nodecommand.config` - Node.js configuration
+- `.ebextensions/https-instance.config` - Security headers and HTTPS setup
+- `.ebextensions/environment.config` - Environment variable configuration
+- `.ebextensions/healthcheck.config` - Health monitoring setup
+- `Procfile` - EB process configuration
+
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.
 
