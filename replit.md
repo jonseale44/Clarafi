@@ -46,6 +46,7 @@ A comprehensive medical transcription and lab management platform designed to st
 - AWS account created with Business support plan
 - BAA accepted in AWS Artifact (HIPAA compliance active)
 - SSH keypair created with passphrase: Yregru$44
+- Database credentials: clarafi_admin / Yregru$55555
 
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.
