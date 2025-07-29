@@ -96,9 +96,12 @@ export class WebAuthnService {
 
     const challenge = randomBytes(32).toString('base64url');
     
-    // Convert userId to Uint8Array as required by SimpleWebAuthn v10+
-    const userIdBuffer = new TextEncoder().encode(userId.toString());
-    console.log('🔍 [WebAuthn] Converting userID:', userId, 'to Uint8Array:', userIdBuffer);
+    // Convert userId to Uint8Array - use a more robust encoding
+    // Create a buffer with the numeric user ID (4 bytes for a 32-bit integer)
+    const userIdBuffer = new Uint8Array(4);
+    const view = new DataView(userIdBuffer.buffer);
+    view.setUint32(0, userId, false); // false = big-endian
+    console.log('🔍 [WebAuthn] Converting userID:', userId, 'to Uint8Array:', Array.from(userIdBuffer));
 
     const options = await generateRegistrationOptions({
       rpName: this.RP_NAME,
@@ -115,6 +118,8 @@ export class WebAuthnService {
       },
       supportedAlgorithmIDs: [-7, -257] // ES256, RS256
     });
+
+    console.log('📋 [WebAuthn] Generated options:', JSON.stringify(options, null, 2));
 
     // Store challenge in session or temporary storage
     await this.storeChallenge(userId, challenge, 'registration');

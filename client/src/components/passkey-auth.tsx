@@ -104,7 +104,8 @@ export function PasskeyAuth() {
       
       // 2. Use SimpleWebAuthn to create credential
       console.log('🔵 [Frontend] Starting WebAuthn registration...');
-      const registrationResponse = await startRegistration(options);
+      // For SimpleWebAuthn v13+, we need to pass options as an object
+      const registrationResponse = await startRegistration({ optionsJSON: options });
       console.log('✅ [Frontend] WebAuthn registration completed');
       
       // 3. Send credential to server for verification

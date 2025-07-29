@@ -80,8 +80,8 @@ export function PasskeySetupPrompt({ userId }: PasskeySetupPromptProps) {
 
       const options = await optionsResponse.json();
       
-      // Use SimpleWebAuthn to create credential
-      const registrationResponse = await startRegistration(options);
+      // Use SimpleWebAuthn to create credential (v13+ syntax)
+      const registrationResponse = await startRegistration({ optionsJSON: options });
       
       // Send to server for verification
       const verifyResponse = await fetch('/api/auth/webauthn/register/verify', {
