@@ -800,9 +800,10 @@ export function PatientAttachments({
         const blob = await response.blob();
         
         // Create file from blob - use a safer approach for TypeScript
-        const file = new (window.File || (window as any).File)([blob], photo.filename, { 
-          type: blob.type || 'image/jpeg' 
-        }) as File;
+        const file = new File([blob], photo.filename, { 
+          type: blob.type || 'image/jpeg',
+          lastModified: Date.now()
+        });
         
         // Create FormData for upload
         const formData = new FormData();
@@ -831,10 +832,15 @@ export function PatientAttachments({
     setIsCapturing(true);
     
     try {
+      // Check if Screen Capture API is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        throw new Error('Screen capture is not supported in this browser');
+      }
+      
       // Request screen capture permission
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          displaySurface: 'window'
+          mediaSource: 'screen'
         },
         audio: false
       });
@@ -854,7 +860,9 @@ export function PatientAttachments({
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0);
+      if (ctx) {
+        ctx.drawImage(video, 0, 0);
+      }
       
       // Stop the stream
       stream.getTracks().forEach(track => track.stop());
@@ -868,8 +876,11 @@ export function PatientAttachments({
         throw new Error('Failed to capture screenshot');
       }
       
-      // Create file from blob
-      const file = new File([blob], `emr-screenshot-${Date.now()}.png`, { type: 'image/png' });
+      // Create file from blob with proper File constructor
+      const file = new File([blob], `emr-screenshot-${Date.now()}.png`, { 
+        type: 'image/png',
+        lastModified: Date.now()
+      });
       
       // Set the file for upload
       setUploadFile(file);
@@ -885,9 +896,10 @@ export function PatientAttachments({
       
     } catch (error) {
       console.error('Failed to capture screenshot:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error",
-        description: "Failed to capture screenshot. Make sure you allowed screen access.",
+        description: `Failed to capture screenshot: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
