@@ -7,8 +7,9 @@
     "activeTab",
     "storage",
     "tabs",
-    "desktopCapture",
-    "notifications"
+    "tabCapture",
+    "notifications",
+    "<all_urls>"
   ],
   "host_permissions": [
     "http://localhost:*/*",

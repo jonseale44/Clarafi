@@ -47,34 +47,56 @@ async function handleCaptureRequest(captureType) {
       return;
     }
 
+    // For manifest v3, we need to use tab capture API instead
     if (captureType === 'fullscreen') {
-      // Use desktop capture API for any window/screen
-      chrome.desktopCapture.chooseDesktopMedia(
-        ['screen', 'window'],
-        async (streamId) => {
-          if (!streamId) {
-            notifyError('Capture cancelled');
-            return;
-          }
-          await captureDesktopStream(streamId, context);
+      // Get the active tab
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Use tab capture API
+      chrome.tabCapture.getMediaStreamId({
+        targetTabId: activeTab.id
+      }, async (streamId) => {
+        if (chrome.runtime.lastError) {
+          console.error('Tab capture error:', chrome.runtime.lastError);
+          // Fallback to screenshot API
+          await captureWithScreenshotAPI(context);
+          return;
         }
-      );
+        
+        if (!streamId) {
+          notifyError('Capture cancelled');
+          return;
+        }
+        await captureDesktopStream(streamId, context);
+      });
     } else if (captureType === 'area') {
-      // For area selection, first capture full screen then allow cropping
-      chrome.desktopCapture.chooseDesktopMedia(
-        ['screen', 'window'],
-        async (streamId) => {
-          if (!streamId) {
-            notifyError('Capture cancelled');
-            return;
-          }
-          await captureDesktopStreamWithCrop(streamId, context);
-        }
-      );
+      // For area selection, use screenshot API with visible tab
+      await captureWithScreenshotAPI(context);
     }
   } catch (error) {
     console.error('Capture error:', error);
     notifyError('Failed to initiate capture');
+  }
+}
+
+// Fallback capture using screenshot API
+async function captureWithScreenshotAPI(context) {
+  try {
+    // Capture visible tab
+    const dataUrl = await chrome.tabs.captureVisibleTab(null, {
+      format: 'png',
+      quality: 100
+    });
+    
+    // Convert to blob
+    const base64Response = await fetch(dataUrl);
+    const blob = await base64Response.blob();
+    
+    // Process capture
+    await processCapture(blob, context);
+  } catch (error) {
+    console.error('Screenshot capture error:', error);
+    notifyError('Failed to capture screen - please check permissions');
   }
 }
 
