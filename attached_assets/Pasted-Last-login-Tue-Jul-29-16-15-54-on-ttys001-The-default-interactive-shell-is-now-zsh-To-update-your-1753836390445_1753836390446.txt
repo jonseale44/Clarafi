@@ -1,0 +1,160 @@
+Last login: Tue Jul 29 16:15:54 on ttys001
+
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+macbook-pro-2:~ jonathanseale$ # Navigate to your extracted project
+macbook-pro-2:~ jonathanseale$ cd ~/clarafi-deployment
+macbook-pro-2:clarafi-deployment jonathanseale$ ls -la | grep jonathanseale
+drwxr-xr-x    150 jonathanseale  staff        4800 Jul 29 16:13 .
+drwxr-xr-x+ 11729 jonathanseale  staff      375328 Jul 29 16:24 ..
+-rw-r--r--@     1 jonathanseale  staff      394367 Jul 29 15:16 1081405493_peopleeverywhere.zip
+-rw-r--r--@     1 jonathanseale  staff      504306 Jul 29 15:16 1990280769_American_Suburban_style.zip
+-rw-r--r--@     1 jonathanseale  staff     1406343 Jul 29 15:16 2023 Pricing Data Guidelines and Calendar (V 06 30 22) (ZIP).zip
+-rw-r--r--@     1 jonathanseale  staff  2084090704 Jul 29 15:16 3_dsm_ortho-20220315T224343Z-001.zip
+-rw-r--r--@     1 jonathanseale  staff   139012551 Jul 29 15:16 3d_mesh-20220315T193438Z-001.zip
+-rw-r--r--@     1 jonathanseale  staff   294917873 Jul 29 15:16 Archive.zip
+-rw-r--r--@     1 jonathanseale  staff    25185783 Jul 29 15:16 Atlanta_Ecopia_Smart_Site_Sample.zip
+-rw-r--r--@     1 jonathanseale  staff       35634 Jul 29 15:16 Bookman BoldItalic.zip
+-rw-r--r--@     1 jonathanseale  staff       40211 Jul 29 15:16 Bookman Italic (1).zip
+-rw-r--r--@     1 jonathanseale  staff       40211 Jul 29 15:16 Bookman Italic.zip
+-rw-r--r--@     1 jonathanseale  staff       33417 Jul 29 15:16 CMS-1734-P_2021_Outpatient Prospective Payment System (OPPS) Cap List.zip
+-rw-r--r--@     1 jonathanseale  staff   165324261 Jul 29 15:16 CRL.zip
+-rw-r--r--@     1 jonathanseale  staff       58352 Jul 29 15:16 CesiumPlotTool (1).zip
+-rw-r--r--@     1 jonathanseale  staff       58352 Jul 29 15:16 CesiumPlotTool.zip
+-rw-r--r--@     1 jonathanseale  staff        5259 Jul 29 15:16 ChtFrmla.zip
+-rw-r--r--@     1 jonathanseale  staff    94909588 Jul 29 15:16 CityBLD Installer - Version 0.2 - UE5.1.zip
+-rw-r--r--@     1 jonathanseale  staff    75117534 Jul 29 15:16 CityBLD Installer_0.2.1_patch1.zip
+-rw-r--r--@     1 jonathanseale  staff   650321934 Jul 29 15:16 CityBLD_Alpha004_5_1_Patch1.zip
+-rw-r--r--@     1 jonathanseale  staff  1173192238 Jul 29 15:16 CityBLD_Beta0_1_0_UE5_2_Patch5.zip
+-rw-r--r--@     1 jonathanseale  staff   524201451 Jul 29 15:16 CityEngine_2020_1_Mac.zip
+-rw-r--r--@     1 jonathanseale  staff     9305901 Jul 29 15:16 DEM_EARTH_4_MAC (1).zip
+-rw-r--r--@     1 jonathanseale  staff     2803017 Jul 29 15:16 DEM_EARTH_4_MAC (2).zip
+-rw-r--r--@     1 jonathanseale  staff     9305901 Jul 29 15:16 DEM_EARTH_4_MAC.zip
+-rw-r--r--@     1 jonathanseale  staff     2752559 Jul 29 15:16 DRG.zip
+-rw-r--r--@     1 jonathanseale  staff      658106 Jul 29 15:16 Documents.zip
+-rw-r--r--@     1 jonathanseale  staff     1402228 Jul 29 15:16 FBX.zip
+-rw-r--r--@     1 jonathanseale  staff     6477598 Jul 29 15:16 FastScripts2.8.3 (1).zip
+-rw-r--r--@     1 jonathanseale  staff     6477598 Jul 29 15:16 FastScripts2.8.3.zip
+-rw-r--r--@     1 jonathanseale  staff    31186287 Jul 29 15:16 FxFactory-8.0.5-7401.zip
+-rw-r--r--@     1 jonathanseale  staff     6061571 Jul 29 15:16 GlanceGuestMac_4.17.1.zip
+-rw-r--r--@     1 jonathanseale  staff    43792147 Jul 29 15:16 HAMILTON-C6.zip
+-rw-r--r--@     1 jonathanseale  staff       90893 Jul 29 15:16 HeightmapExport-0.5.0.zip
+-rw-r--r--@     1 jonathanseale  staff        1080 Jul 29 15:16 Hillsboro Terrain Party terrain.zip
+-rw-r--r--@     1 jonathanseale  staff   501260791 Jul 29 15:16 Homesite2_Orthomosaic_SunApr16203757836866.zip
+-rw-r--r--@     1 jonathanseale  staff      623346 Jul 29 15:16 House_d.zip
+-rw-r--r--@     1 jonathanseale  staff   125120550 Jul 29 15:16 House_of_Set16.zip
+-rw-r--r--@     1 jonathanseale  staff   352699971 Jul 29 15:16 INSYDIUM_1253.zip
+-rw-r--r--@     1 jonathanseale  staff     8684433 Jul 29 15:16 InstallSetapp (1).zip
+-rw-r--r--@     1 jonathanseale  staff     6693480 Jul 29 15:16 InstallSetapp (2).zip
+-rw-r--r--@     1 jonathanseale  staff     6693480 Jul 29 15:16 InstallSetapp (3).zip
+-rw-r--r--@     1 jonathanseale  staff     8684433 Jul 29 15:16 InstallSetapp.zip
+-rw-r--r--@     1 jonathanseale  staff   129894402 Jul 29 15:16 Luma_Homesite_textured_mesh_obj (1).zip
+-rw-r--r--@     1 jonathanseale  staff   129894402 Jul 29 15:16 Luma_Homesite_textured_mesh_obj.zip
+-rw-r--r--@     1 jonathanseale  staff    88265401 Jul 29 15:16 MapPlan3_Orthomosaic_MonFeb14235345092501.zip
+-rw-r--r--@     1 jonathanseale  staff   522216000 Jul 29 15:16 MapPlan4_3DModel_SunApr16231210807970 (1).zip
+-rw-r--r--@     1 jonathanseale  staff   522216000 Jul 29 15:16 MapPlan4_3DModel_SunApr16231210807970.zip
+-rw-r--r--@     1 jonathanseale  staff    68048447 Jul 29 15:16 MapPlan4_ElevationToolbox_TueApr18005404787502 (1).zip
+-rw-r--r--@     1 jonathanseale  staff    68048447 Jul 29 15:16 MapPlan4_ElevationToolbox_TueApr18005404787502.zip
+-rw-r--r--@     1 jonathanseale  staff    89145059 Jul 29 15:16 MapPlan4_Orthomosaic_SatApr13204515590629.zip
+-rw-r--r--@     1 jonathanseale  staff   344856794 Jul 29 15:16 MapPlan4_Orthomosaic_SunApr16231242906338 (1).zip
+-rw-r--r--@     1 jonathanseale  staff   344856794 Jul 29 15:16 MapPlan4_Orthomosaic_SunApr16231242906338.zip
+-rw-r--r--@     1 jonathanseale  staff    12533349 Jul 29 15:16 MapPlan_ElevationToolbox_MonApr01145630286941.zip
+-rw-r--r--@     1 jonathanseale  staff     1296000 Jul 29 15:16 MapPlan_ElevationToolbox_SatMar16144707862156 (1).zip
+-rw-r--r--@     1 jonathanseale  staff     1296000 Jul 29 15:16 MapPlan_ElevationToolbox_SatMar16144707862156.zip
+-rw-r--r--@     1 jonathanseale  staff     5172772 Jul 29 15:16 MapPlan_ElevationToolbox_SatMar16145044310392.zip
+-rw-r--r--@     1 jonathanseale  staff  1165462500 Jul 29 15:16 MapPlan_Orthomosaic_FriFeb18131126952037 (1).zip
+-rw-r--r--@     1 jonathanseale  staff  1165462500 Jul 29 15:16 MapPlan_Orthomosaic_FriFeb18131126952037.zip
+-rw-r--r--@     1 jonathanseale  staff   216355979 Jul 29 15:16 MapPlan_Orthomosaic_FriFeb18205741707642.zip
+-rw-r--r--@     1 jonathanseale  staff   216355979 Jul 29 15:16 MapPlan_Orthomosaic_SatMar26193853870844.zip
+-rw-r--r--@     1 jonathanseale  staff  1165462520 Jul 29 15:16 MapPlan_Orthomosaic_WedMay08163524872430.zip
+-rw-r--r--@     1 jonathanseale  staff        1317 Jul 29 15:16 Map_A.zip
+-rw-r--r--@     1 jonathanseale  staff    41477028 Jul 29 15:16 Maxon_App_3.1_Mac.zip
+-rw-r--r--@     1 jonathanseale  staff    58019235 Jul 29 15:16 Medieval_house3(Unreal) (1).zip
+-rw-r--r--@     1 jonathanseale  staff    58019235 Jul 29 15:16 Medieval_house3(Unreal).zip
+-rw-r--r--@     1 jonathanseale  staff  1072293654 Jul 29 15:16 NPPES_Data_Dissemination_July_2025_V2.zip
+-rw-r--r--@     1 jonathanseale  staff        1295 Jul 29 15:16 New Map_POLYGON (1).zip
+-rw-r--r--@     1 jonathanseale  staff        1295 Jul 29 15:16 New Map_POLYGON.zip
+-rw-r--r--@     1 jonathanseale  staff  1661929357 Jul 29 15:16 Oak Forest Biome - Summer.zip
+-rw-r--r--@     1 jonathanseale  staff     4036445 Jul 29 15:16 Pixel Film Studios - ProBubble.zip
+-rw-r--r--@     1 jonathanseale  staff    80251958 Jul 29 15:16 PropertyAssessment_Orthomosaic_SatMar26220312098300.zip
+-rw-r--r--@     1 jonathanseale  staff     3305681 Jul 29 15:16 RVU21A (1).zip
+-rw-r--r--@     1 jonathanseale  staff     3305681 Jul 29 15:16 RVU21A.zip
+-rw-r--r--@     1 jonathanseale  staff     4149434 Jul 29 15:16 SiriMote.zip
+-rw-r--r--@     1 jonathanseale  staff       37087 Jul 29 15:16 SizeUp AppleScripts Anchors.zip
+-rw-r--r--@     1 jonathanseale  staff       24973 Jul 29 15:16 SizeUp AppleScripts Thirds.zip
+-rw-r--r--@     1 jonathanseale  staff     3069982 Jul 29 15:16 SizeUp.zip
+-rw-r--r--@     1 jonathanseale  staff       16269 Jul 29 15:16 SizeUpTileScripts.zip
+-rw-r--r--@     1 jonathanseale  staff     5622192 Jul 29 15:16 SketchupCityGenerator-master.zip
+-rw-r--r--@     1 jonathanseale  staff      801849 Jul 29 15:16 SpotifyInstaller (2).zip
+-rw-r--r--@     1 jonathanseale  staff      801849 Jul 29 15:16 SpotifyInstaller (3).zip
+-rw-r--r--@     1 jonathanseale  staff     1273557 Jul 29 15:16 Suburban_Planning_Kit_001_FBX2015 (1).zip
+-rw-r--r--@     1 jonathanseale  staff     1273557 Jul 29 15:16 Suburban_Planning_Kit_001_FBX2015.zip
+-rw-r--r--@     1 jonathanseale  staff   179573676 Jul 29 15:16 Suburban_Planning_Kit_001_Modo.zip
+-rw-r--r--@     1 jonathanseale  staff   575776785 Jul 29 15:16 SummerCamp-0.1.6.-mac.zip
+-rw-r--r--@     1 jonathanseale  staff     2241456 Jul 29 15:16 Tree_Cloud.zip
+-rw-r--r--@     1 jonathanseale  staff    43180978 Jul 29 15:16 USDPython-pkg.zip
+-rw-r--r--@     1 jonathanseale  staff    90801354 Jul 29 15:16 UnrealDatasmithSketchUpExporter_Mac_5_0_2 (1).zip
+-rw-r--r--@     1 jonathanseale  staff    90801354 Jul 29 15:16 UnrealDatasmithSketchUpExporter_Mac_5_0_2 (2).zip
+-rw-r--r--@     1 jonathanseale  staff    90801354 Jul 29 15:16 UnrealDatasmithSketchUpExporter_Mac_5_0_2 (3).zip
+-rw-r--r--@     1 jonathanseale  staff    90801354 Jul 29 15:16 UnrealDatasmithSketchUpExporter_Mac_5_0_2.zip
+-rw-r--r--@     1 jonathanseale  staff    11271995 Jul 29 15:16 Untitled_Scan_14_14_29.zip
+-rw-r--r--@     1 jonathanseale  staff    14198337 Jul 29 15:16 Untitled_Scan_20_59_24 2.zip
+-rw-r--r--@     1 jonathanseale  staff    14198337 Jul 29 15:16 Untitled_Scan_20_59_24.zip
+-rw-r--r--@     1 jonathanseale  staff    14198337 Jul 29 15:16 Untitled_Scan_21_02_24.zip
+-rw-r--r--@     1 jonathanseale  staff     6339202 Jul 29 15:16 VECTOR_Hillsboro_East_TX_7_5_Min_Shape (1).zip
+-rw-r--r--@     1 jonathanseale  staff     6339202 Jul 29 15:16 VECTOR_Hillsboro_East_TX_7_5_Min_Shape (2).zip
+-rw-r--r--@     1 jonathanseale  staff     6339202 Jul 29 15:16 VECTOR_Hillsboro_East_TX_7_5_Min_Shape.zip
+-rw-r--r--@     1 jonathanseale  staff   210950860 Jul 29 15:16 VSCode-darwin-universal.zip
+-rw-r--r--@     1 jonathanseale  staff   271808134 Jul 29 15:16 Wood_Plank_uikibeis_8K_surface_ms.zip
+-rw-r--r--@     1 jonathanseale  staff     1143818 Jul 29 15:16 audiojungle-5TEALTHJ-cinematic-trailer-whoosh-transition.zip
+-rw-r--r--@     1 jonathanseale  staff   171558264 Jul 29 15:16 austin.zip
+-rw-r--r--@     1 jonathanseale  staff   105277678 Jul 29 15:16 bowser.zip
+-rw-r--r--@     1 jonathanseale  staff    81328729 Jul 29 15:16 c4d_physical.zip
+-rw-r--r--@     1 jonathanseale  staff      172972 Jul 29 15:16 cesium-procedural-foliage-ue5-main.zip
+-rw-r--r--@     1 jonathanseale  staff      877420 Jul 29 15:16 doc07212020240412040145.zip
+-rw-r--r--@     1 jonathanseale  staff     8581694 Jul 29 15:16 dwg.zip
+-rw-r--r--@     1 jonathanseale  staff    10291604 Jul 29 15:16 graphicriver-8YQQ9KRW-3d-map-generator-3d-mapper-photoshop-plugin.zip
+-rw-r--r--@     1 jonathanseale  staff    10291604 Jul 29 15:16 graphicriver-vVPeNywR-3d-map-generator-3d-mapper-photoshop-plugin.zip
+-rw-r--r--@     1 jonathanseale  staff     5920929 Jul 29 15:16 hitpaw-video-converter-mac_11733022662970318501.zip
+-rw-r--r--@     1 jonathanseale  staff     5920929 Jul 29 15:16 hitpaw-video-converter-mac_11733022662970318502.zip
+-rw-r--r--@     1 jonathanseale  staff   249007723 Jul 29 15:16 house_of_set16fbx.zip
+drwxr-xr-x@    93 jonathanseale  staff        2976 Jul 29 19:40 jonathanseale-07-29
+-rw-r--r--@     1 jonathanseale  staff   673021052 Jul 29 16:13 jonathanseale-07-29.zip
+-rw-r--r--@     1 jonathanseale  staff      125715 Jul 29 15:16 loan.zip
+-rw-r--r--@     1 jonathanseale  staff     4618742 Jul 29 15:16 mario_star.zip
+-rw-r--r--@     1 jonathanseale  staff      169488 Jul 29 15:16 mixkit-zoom-backwards-transition-667.zip
+-rw-r--r--@     1 jonathanseale  staff   157623889 Jul 29 15:16 modelFriFeb18131359541526 (1).zip
+-rw-r--r--@     1 jonathanseale  staff   157623889 Jul 29 15:16 modelFriFeb18131359541526.zip
+-rw-r--r--@     1 jonathanseale  staff   160147200 Jul 29 15:16 modelSatFeb19024849853599.zip
+-rw-r--r--@     1 jonathanseale  staff       28234 Jul 29 15:16 mygeodata (1).zip
+-rw-r--r--@     1 jonathanseale  staff       31275 Jul 29 15:16 mygeodata (2).zip
+-rw-r--r--@     1 jonathanseale  staff         723 Jul 29 15:16 mygeodata (3).zip
+-rw-r--r--@     1 jonathanseale  staff     2524093 Jul 29 15:16 mygeodata.zip
+-rw-r--r--@     1 jonathanseale  staff     1047800 Jul 29 15:16 package.zip
+-rw-r--r--@     1 jonathanseale  staff      373834 Jul 29 15:16 pdf2png.zip
+-rw-r--r--@     1 jonathanseale  staff   227842485 Jul 29 15:16 photographybycecy_jen-seale-family_2025-04-25_2005.zip
+-rw-r--r--@     1 jonathanseale  staff    88044668 Jul 29 15:16 photographybycecy_jen-seale-lucia-newborn_2025-07-23_2042.zip
+-rw-r--r--@     1 jonathanseale  staff   585606045 Jul 29 15:16 photographybycecy_jennifer-seale_2023-12-05_0337.zip
+-rw-r--r--@     1 jonathanseale  staff  1970916546 Jul 29 15:16 photographybycecy_jennifer-seale_2024-11-13_1519.zip
+-rw-r--r--@     1 jonathanseale  staff     4924549 Jul 29 15:16 rerestofcharges.zip
+-rw-r--r--@     1 jonathanseale  staff     4309882 Jul 29 15:16 restofcharges.zip
+-rw-r--r--@     1 jonathanseale  staff    13016736 Jul 29 15:16 sealeresidenceexporttodwg.zip
+-rw-r--r--@     1 jonathanseale  staff    77532378 Jul 29 15:16 silverton.zip
+-rw-r--r--@     1 jonathanseale  staff      536965 Jul 29 15:16 terraformfx-alps_r20-r25.zip
+-rw-r--r--@     1 jonathanseale  staff      303063 Jul 29 15:16 tex-gyre-bonum.zip
+-rw-r--r--@     1 jonathanseale  staff    62571700 Jul 29 15:16 textures.zip
+-rw-r--r--@     1 jonathanseale  staff    12341919 Jul 29 15:16 uploads_files_2221435_city_road_moc_1.c4d.zip
+-rw-r--r--@     1 jonathanseale  staff    10591230 Jul 29 15:16 uploads_files_2432711_FBX+Trees.zip
+-rw-r--r--@     1 jonathanseale  staff     8279805 Jul 29 15:16 uploads_files_2432711_OBJ.zip
+-rw-r--r--@     1 jonathanseale  staff    83836547 Jul 29 15:16 uploads_files_2432711_Textures.zip
+-rw-r--r--@     1 jonathanseale  staff      189712 Jul 29 15:16 uploads_files_4479699_OBJ_MTL.zip
+-rw-r--r--@     1 jonathanseale  staff     1048371 Jul 29 15:16 urban_design2-attachments.zip
+-rw-r--r--@     1 jonathanseale  staff   326993903 Jul 29 15:16 wetransfer_christmas-photos_2022-12-08_2027.zip
+-rw-r--r--@     1 jonathanseale  staff   239506341 Jul 29 15:16 wetransfer_final_2022-05-04_2132.zip
+-rw-r--r--@     1 jonathanseale  staff   316526534 Jul 29 15:16 wetransfer_final__2021-12-05_0152.zip
+-rw-r--r--@     1 jonathanseale  staff   164309207 Jul 29 15:16 wetransfer_jen-seale-family-bluebonnets-bf_2023-05-08_1931.zip
+-rw-r--r--@     1 jonathanseale  staff   137837023 Jul 29 15:16 wetransfer_joseph-seale-newborn_2023-08-26_1913.zip
+-rw-r--r--@     1 jonathanseale  staff      742047 Jul 29 15:16 zillium-master.zip
+macbook-pro-2:clarafi-deployment jonathanseale$ cd jonathanseale-07-29  # or whatever the exact folder name is
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
