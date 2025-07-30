@@ -1,0 +1,66 @@
+ ! [remote rejected] main2 -> main2 (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/jonseale44/Clarafi'
+~/workspace$ git rm attached_assets/Pasted-Last-login-Tue-Jul-29-14-08-16-on-ttys000-The-default-interactive-shell-is-now-zsh-To-update-your-1753836047617_1753836047620.txt
+rm 'attached_assets/Pasted-Last-login-Tue-Jul-29-14-08-16-on-ttys000-The-default-interactive-shell-is-now-zsh-To-update-your-1753836047617_1753836047620.txt'
+~/workspace$ git rm attached_assets/Pasted-Skip-to-Main-Content-Search-Option-S-United-States-Ohio-Clarafi-App-Runner-Services-clara-1753873782264_1753873782264.txt
+rm 'attached_assets/Pasted-Skip-to-Main-Content-Search-Option-S-United-States-Ohio-Clarafi-App-Runner-Services-clara-1753873782264_1753873782264.txt'
+~/workspace$ echo "attached_assets/" >> .gitignore
+~/workspace$ git add .gitignore
+git commit -m "Remove files with exposed secrets and ignore attached_assets folder"
+[main2 2c27ed5] Remove files with exposed secrets and ignore attached_assets folder
+ 3 files changed, 1 insertion(+), 12924 deletions(-)
+ delete mode 100644 attached_assets/Pasted-Last-login-Tue-Jul-29-14-08-16-on-ttys000-The-default-interactive-shell-is-now-zsh-To-update-your-1753836047617_1753836047620.txt
+ delete mode 100644 attached_assets/Pasted-Skip-to-Main-Content-Search-Option-S-United-States-Ohio-Clarafi-App-Runner-Services-clara-1753873782264_1753873782264.txt
+~/workspace$ git push origin main2 --force
+Enumerating objects: 322, done.
+Counting objects: 100% (299/299), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (205/205), done.
+Writing objects: 100% (258/258), 7.37 MiB | 5.55 MiB/s, done.
+Total 258 (delta 151), reused 90 (delta 51), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (151/151), completed with 18 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main2.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Amazon AWS Access Key ID ——————————————————————————
+remote:        locations:
+remote:          - commit: 7a562470c49b630c1cf132daa3ca8e673ce10e15
+remote:            path: attached_assets/Pasted-Last-login-Tue-Jul-29-14-08-16-on-ttys000-The-default-interactive-shell-is-now-zsh-To-update-your-1753836047617_1753836047620.txt:19
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/jonseale44/Clarafi/security/secret-scanning/unblock-secret/30ZaMUBuEsAjTr8mfAYp55jqbJq
+remote:     
+remote:     
+remote:       —— Amazon AWS Secret Access Key ——————————————————————
+remote:        locations:
+remote:          - commit: 7a562470c49b630c1cf132daa3ca8e673ce10e15
+remote:            path: attached_assets/Pasted-Last-login-Tue-Jul-29-14-08-16-on-ttys000-The-default-interactive-shell-is-now-zsh-To-update-your-1753836047617_1753836047620.txt:20
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/jonseale44/Clarafi/security/secret-scanning/unblock-secret/30ZaMQMMbZXHwLVoMnYNhRhrKQe
+remote:     
+remote:     
+remote:       —— OpenAI API Key ————————————————————————————————————
+remote:        locations:
+remote:          - commit: d9e4ac04f661f67382342d62fa74d4b01ea0fad5
+remote:            path: attached_assets/Pasted-Skip-to-Main-Content-Search-Option-S-United-States-Ohio-Clarafi-App-Runner-Services-clara-1753873782264_1753873782264.txt:113
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/jonseale44/Clarafi/security/secret-scanning/unblock-secret/30azFsPBfVcWraVHBbO0cOVFYoI
+remote:     
+remote: 
+remote: 
+To https://github.com/jonseale44/Clarafi
+ ! [remote rejected] main2 -> main2 (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/jonseale44/Clarafi'
+~/workspace$ 
