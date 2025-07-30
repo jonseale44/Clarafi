@@ -62,7 +62,12 @@
 - **BLOCKED**: AWS Account 098819595270 temporarily restricted
   - Error: "Account 098819595270 is temporarily restricted"
   - Unable to create App Runner service
-  - Needs AWS Support intervention
+  - **Root Cause Found**: AWS credentials exposed in GitHub repository
+  - File: `attached_assets/Pasted-Last-login-Tue-Jul-29...txt`
+  - Required Actions:
+    1. Remove exposed file from GitHub
+    2. Rotate AWS access keys
+    3. Contact AWS Support for restriction removal
 
 ## Key Configuration Notes
 
