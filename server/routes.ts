@@ -25,6 +25,7 @@ import { tenantIsolation } from "./tenant-isolation";
 import { APIResponseHandler } from "./api-response-handler.js";
 import { trialStatusMiddleware, injectTrialStatus } from "./trial-middleware.js";
 import { setupTrialRoutes } from "./trial-routes.js";
+import { getUploadsDir } from "./utils/paths.js";
 import patientOrderPreferencesRoutes from "./patient-order-preferences-routes.js";
 import {
   insertPatientSchema,
@@ -621,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', injectTrialStatus);
   
   // Serve static files from uploads directory with proper MIME types
-  const uploadsPath = path.join(process.cwd(), 'uploads');
+  const uploadsPath = getUploadsDir();
   app.use('/uploads', express.static(uploadsPath, {
     setHeaders: (res, filePath) => {
       // Set proper MIME types based on file extension

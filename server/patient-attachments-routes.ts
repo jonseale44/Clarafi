@@ -10,6 +10,7 @@ import sharp from "sharp";
 import { createHash } from "crypto";
 import { createReadStream } from "fs";
 import { documentAnalysisService } from "./document-analysis-service.js";
+import { getUploadsDir } from "./utils/paths.js";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ const router = Router();
 
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
-    const uploadsDir = path.join(process.cwd(), 'uploads', 'attachments');
+    const uploadsDir = getUploadsDir('attachments');
     await fs.mkdir(uploadsDir, { recursive: true });
     cb(null, uploadsDir);
   },
@@ -65,7 +66,7 @@ const upload = multer({
 // Generate thumbnail for images and PDFs
 async function generateThumbnail(filePath: string, mimeType: string): Promise<string | null> {
   try {
-    const thumbnailsDir = path.join(process.cwd(), 'uploads', 'thumbnails');
+    const thumbnailsDir = getUploadsDir('thumbnails');
     await fs.mkdir(thumbnailsDir, { recursive: true });
     
     const filename = path.basename(filePath, path.extname(filePath));

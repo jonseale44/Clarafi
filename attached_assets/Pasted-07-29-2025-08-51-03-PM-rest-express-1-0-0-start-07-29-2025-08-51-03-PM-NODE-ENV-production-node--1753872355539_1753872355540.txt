@@ -1,0 +1,62 @@
+07-29-2025 08:51:03 PM > rest-express@1.0.0 start
+07-29-2025 08:51:03 PM > NODE_ENV=production node dist/index.js
+07-29-2025 08:51:05 PM file:///app/dist/index.js:28345
+07-29-2025 08:51:05 PM       throw new Error("OPENAI_API_KEY environment variable is required");
+07-29-2025 08:51:05 PM             ^
+07-29-2025 08:51:05 PM Error: OPENAI_API_KEY environment variable is required
+07-29-2025 08:51:05 PM     at new PatientParserService (file:///app/dist/index.js:28345:13)
+07-29-2025 08:51:05 PM     at file:///app/dist/index.js:28530:21
+07-29-2025 08:51:05 PM     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+07-29-2025 08:51:05 PM     at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+07-29-2025 08:51:05 PM     at async loadESM (node:internal/process/esm_loader:34:7)
+07-29-2025 08:51:05 PM     at async handleMainPromise (node:internal/modules/run_main:106:12)
+07-29-2025 08:51:05 PM Node.js v18.20.8
+07-29-2025 08:51:05 PM npm notice
+07-29-2025 08:51:05 PM npm notice New major version of npm available! 10.8.2 -> 11.5.1
+07-29-2025 08:51:05 PM npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+07-29-2025 08:51:05 PM npm notice To update run: npm install -g npm@11.5.1
+07-29-2025 08:51:05 PM npm notice
+07-30-2025 05:20:29 AM > rest-express@1.0.0 start
+07-30-2025 05:20:29 AM > NODE_ENV=production node dist/index.js
+07-30-2025 05:20:31 AM file:///app/dist/index.js:28345
+07-30-2025 05:20:31 AM       throw new Error("OPENAI_API_KEY environment variable is required");
+07-30-2025 05:20:31 AM             ^
+07-30-2025 05:20:31 AM Error: OPENAI_API_KEY environment variable is required
+07-30-2025 05:20:31 AM     at new PatientParserService (file:///app/dist/index.js:28345:13)
+07-30-2025 05:20:31 AM     at file:///app/dist/index.js:28530:21
+07-30-2025 05:20:31 AM     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+07-30-2025 05:20:31 AM     at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+07-30-2025 05:20:31 AM     at async loadESM (node:internal/process/esm_loader:34:7)
+07-30-2025 05:20:31 AM     at async handleMainPromise (node:internal/modules/run_main:106:12)
+07-30-2025 05:20:31 AM Node.js v18.20.8
+07-30-2025 05:20:31 AM npm notice
+07-30-2025 05:20:31 AM npm notice New major version of npm available! 10.8.2 -> 11.5.1
+07-30-2025 05:20:31 AM npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+07-30-2025 05:20:31 AM npm notice To update run: npm install -g npm@11.5.1
+07-30-2025 05:20:31 AM npm notice
+07-30-2025 05:31:17 AM > rest-express@1.0.0 start
+07-30-2025 05:31:17 AM > NODE_ENV=production node dist/index.js
+07-30-2025 05:31:19 AM ✅ [MigrationRoutes] Migration routes registered
+07-30-2025 05:31:19 AM 📅 [HealthcareDataScheduler] Automatic updates disabled (manual trigger only)
+07-30-2025 05:31:19 AM 🔥 [IMAGING WORKFLOW DEBUG] AttachmentChartProcessor constructor - initializing all parsers including imaging
+07-30-2025 05:31:19 AM 🔥 [IMAGING WORKFLOW DEBUG] All 9 chart processors initialized successfully: vitals, medical problems, surgical history, family history, social history, allergies, medications, imaging, labs
+07-30-2025 05:31:19 AM node:internal/errors:496
+07-30-2025 05:31:19 AM     ErrorCaptureStackTrace(err);
+07-30-2025 05:31:19 AM     ^
+07-30-2025 05:31:19 AM TypeError [ERR_INVALID_ARG_TYPE]: The "paths[0]" argument must be of type string. Received undefined
+07-30-2025 05:31:19 AM     at new NodeError (node:internal/errors:405:5)
+07-30-2025 05:31:19 AM     at validateString (node:internal/validators:162:11)
+07-30-2025 05:31:19 AM     at Object.resolve (node:path:1115:7)
+07-30-2025 05:31:19 AM     at file:///app/dist/index.js:49114:18
+07-30-2025 05:31:19 AM     at ModuleJob.run (node:internal/modules/esm/module_job:195:25)
+07-30-2025 05:31:19 AM     at async ModuleLoader.import (node:internal/modules/esm/loader:337:24)
+07-30-2025 05:31:19 AM     at async loadESM (node:internal/process/esm_loader:34:7)
+07-30-2025 05:31:19 AM     at async handleMainPromise (node:internal/modules/run_main:106:12) {
+07-30-2025 05:31:19 AM   code: 'ERR_INVALID_ARG_TYPE'
+07-30-2025 05:31:19 AM }
+07-30-2025 05:31:19 AM Node.js v18.20.8
+07-30-2025 05:31:19 AM npm notice
+07-30-2025 05:31:19 AM npm notice New major version of npm available! 10.8.2 -> 11.5.1
+07-30-2025 05:31:19 AM npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.5.1
+07-30-2025 05:31:19 AM npm notice To update run: npm install -g npm@11.5.1
+07-30-2025 05:31:19 AM npm notice
