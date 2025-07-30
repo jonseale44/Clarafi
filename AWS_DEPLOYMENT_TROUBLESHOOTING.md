@@ -52,15 +52,29 @@ The issue persists despite local fixes, suggesting:
 
 3. **Application archive issue** - The uploaded archive might contain files we're not seeing locally
 
-## Next Steps to Try
+## SOLUTION FOUND
 
-### Option 1: Complete AWS Cleanup
+The issue is that AWS Elastic Beanstalk is caching configuration from previous failed deployments at the APPLICATION level, not the environment level.
+
+## Immediate Fix - Nuclear Option
+
+### Step 1: Delete the Application from AWS Console
+1. Go to https://console.aws.amazon.com/elasticbeanstalk
+2. Select region: us-east-1
+3. Find application named "clarafi-emr"
+4. Click on it, then Actions → Delete Application
+5. Confirm deletion (this removes ALL cached configs)
+
+### Step 2: Create Fresh Application with New Name
 ```bash
-# 1. Delete the entire application from AWS Console
-# 2. Create brand new application
-eb init --interactive
-# Choose: Create new application
-# Name it: clarafi-emr-v2
+# Navigate to your project directory
+cd ~/clarafi-deployment/jonathanseale-07-29  # or wherever your project is
+
+# Initialize with a NEW application name
+eb init clarafi-medical --platform "Node.js 20 running on 64bit Amazon Linux 2023" --region us-east-1
+
+# Create environment
+eb create production --database.engine postgres --single
 ```
 
 ### Option 2: Inspect the uploaded archive
