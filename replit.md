@@ -46,6 +46,9 @@ This occurred even with:
 - AWS account created with Business support plan
 - BAA accepted in AWS Artifact (HIPAA compliance active)
 - SSH keypair created with passphrase: Yregru$44
+- Database credentials: clarafiadmin / Yregru$55555
+- BAA accepted in AWS Artifact (HIPAA compliance active)
+- SSH keypair created with passphrase: Yregru$44
 - Database credentials: clarafi_admin / Yregru$55555
 
 ### July 29, 2025 - WebAuthn Passkey Fix
