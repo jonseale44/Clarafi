@@ -22,26 +22,26 @@ export async function initializeDatabase() {
       
       if (!healthSystemId) {
         // Create a default health system if none exists
-        const [newHealthSystem] = await db.insert(healthSystems).values({
+        const newHealthSystems = await db.insert(healthSystems).values({
           name: "Default Health System",
-          short_name: "Default",
-          system_type: "individual_provider"
+          shortName: "Default",
+          systemType: "individual_provider"
         }).returning();
-        healthSystemId = newHealthSystem.id;
+        healthSystemId = newHealthSystems[0].id;
       }
       
       await db.insert(users).values({
         username: "admin",
         email: "admin@clarafi.ai", 
         password: hashedPassword,
-        health_system_id: healthSystemId,
-        first_name: "System",
-        last_name: "Administrator",
+        healthSystemId: healthSystemId,
+        firstName: "System",
+        lastName: "Administrator",
         role: "admin",
         npi: "1234567890",
         credentials: "MD",
         specialties: ["Internal Medicine"],
-        license_number: "MD123456"
+        licenseNumber: "MD123456"
       });
       
       console.log("Default admin user created (username: admin, password: admin123)");

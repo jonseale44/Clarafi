@@ -12,7 +12,7 @@ import { labResults, labOrders, hl7Messages, externalLabs } from '@shared/schema
 import { eq } from 'drizzle-orm';
 
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export interface GPTInterfaceRequest {

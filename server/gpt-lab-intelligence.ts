@@ -12,7 +12,7 @@ import { labResults, labOrders, patients, medicalProblems, medications } from '@
 import { eq, and, desc, gte, sql } from 'drizzle-orm';
 
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export class GPTLabIntelligence {
