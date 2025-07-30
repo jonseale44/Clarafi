@@ -24,11 +24,11 @@ run:
     - name: JWT_SECRET
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/jwt-secret"
     - name: STRIPE_SECRET_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/stripe-secret-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/STRIPE_SECRET_KEY"
     - name: OPENAI_API_KEY
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/openai-api-key"
     - name: SENDGRID_API_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/sendgrid-api-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/SENDGRID_API_KEY"
     - name: TWILIO_ACCOUNT_SID
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/twilio-account-sid"
     - name: TWILIO_AUTH_TOKEN
@@ -38,18 +38,18 @@ run:
     - name: PRODUCTION_DOMAIN
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/production-domain"
     - name: SENDGRID_FROM_EMAIL
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/sendgrid-from-email"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/SENDGRID_FROM_EMAIL"
     - name: STRIPE_WEBHOOK_SECRET
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/stripe-webhook-secret"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/STRIPE_WEBHOOK_SECRET"
     - name: GOOGLE_PLACES_API_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/google-places-api-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/GOOGLE_PLACES_API_KEY"
     - name: HUNTER_IO_API_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/hunter-io-api-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/HUNTER_IO_API_KEY"
     - name: MELISSA_DATA_API_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/melissa-data-api-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/MELISSA_DATA_API_KEY"
     - name: VITE_OPENAI_API_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/vite-openai-api-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/VITE_OPENAI_API_KEY"
     - name: VITE_GA_MEASUREMENT_ID
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/vite-ga-measurement-id"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/VITE_GA_MEASUREMENT_ID"
     - name: VITE_STRIPE_PUBLISHABLE_KEY
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/vite-stripe-publishable-key"
+      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/STRIPE_PUBLISHABLE_KEY"
