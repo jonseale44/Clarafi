@@ -16,31 +16,31 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
-### July 29, 2025 - AWS Deployment Migration Preparation
-**Decision**: Migrating from Replit/Network Solutions to AWS for HIPAA compliance.
+### July 29-30, 2025 - AWS Deployment Migration - MAJOR CHANGE
+**Decision**: After 2.5+ hours of failed Elastic Beanstalk attempts, switching to AWS App Runner.
 
-**Reason**: Medical EMR applications require HIPAA-compliant hosting with signed Business Associate Agreement (BAA). AWS provides:
-- Self-service BAA acceptance (no sales calls required)
-- Full HIPAA compliance for protected health information (PHI)
-- Proper support for WebAuthn/passkeys
-- Scalability for thousands of users
-- Cost-effective pricing ($100-500/month)
+**Reason**: Elastic Beanstalk has a critical bug with Node.js 20 platform repeatedly failing with:
+- "Unknown or duplicate parameter: NodeVersion"
+- "Unknown or duplicate parameter: NodeCommand"
 
-**Implementation**:
-1. Created AWS Elastic Beanstalk configuration files in `.ebextensions/`
-2. Created comprehensive deployment guides:
-   - `AWS_DEPLOYMENT_GUIDE.md` - Full step-by-step instructions
-   - `AWS_DEPLOYMENT_CHECKLIST.md` - Quick reference checklist
-   - `HIPAA_HOSTING_ALTERNATIVES.md` - Backup options if AWS issues arise
-3. Configured for HIPAA compliance with encryption, audit logging, and security headers
-4. Set up build and deployment scripts compatible with EB
+This occurred even with:
+- Brand new applications
+- Minimal configurations
+- Clean files with no NodeVersion/NodeCommand parameters
 
-**Key Files Added**:
-- `.ebextensions/nodecommand.config` - Node.js configuration
-- `.ebextensions/https-instance.config` - Security headers and HTTPS setup
-- `.ebextensions/environment.config` - Environment variable configuration
-- `.ebextensions/healthcheck.config` - Health monitoring setup
-- `Procfile` - EB process configuration
+**New Implementation**: AWS App Runner
+- No configuration files needed (no .ebextensions)
+- Still HIPAA compliant with BAA
+- Simpler deployment (5 minutes vs hours of debugging)
+- Automatic scaling and HTTPS included
+- GitHub integration for auto-deployment
+
+**Key Files**:
+- `AWS_DEPLOYMENT_TROUBLESHOOTING.md` - Complete documentation of EB failures
+- `AWS_APP_RUNNER_DEPLOYMENT.md` - New deployment guide
+- `.ebextensions/` - Now in `.ebextensions.full-backup` (not needed for App Runner)
+
+**Status**: Proceeding with App Runner deployment
 
 **Progress**: 
 - AWS account created with Business support plan
