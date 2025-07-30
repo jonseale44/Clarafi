@@ -140,11 +140,12 @@ export function EnhancedMedicalProblemsList({
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { navigateWithContext } = useNavigationContext();
-  const { uploadState } = useUpload();
+  const uploadContext = useUpload();
   const { isDenseView } = useDenseView();
   
-  // Check if upload is for current patient to show loading overlay
-  const isUploadingForThisPatient = uploadState.isUploading && uploadState.patientId === patientId;
+  // Check if upload is happening (simplified since context doesn't track per patient)
+  const isUploading = uploadContext?.isUploading || false;
+  const uploadProgress = uploadContext?.uploadProgress || 0;
 
   // Load medical problems data using unified API
   const { data: medicalProblems = [], isLoading, error } = useQuery<MedicalProblem[]>({
@@ -1150,10 +1151,10 @@ export function EnhancedMedicalProblemsList({
       
       {/* Upload Loading Overlay */}
       <UploadLoadingOverlay
-        isVisible={isUploadingForThisPatient}
-        progress={uploadState.progress}
-        fileName={uploadState.fileName}
-        stage={uploadState.stage}
+        isVisible={isUploading}
+        progress={uploadProgress}
+        fileName="Medical document"
+        stage={uploadProgress < 100 ? 'uploading' : 'complete'}
       />
     </div>
   );
