@@ -33,8 +33,8 @@ run:
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/twilio-account-sid"
     - name: TWILIO_AUTH_TOKEN
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/twilio-auth-token"
-    - name: TWILIO_PHONE_NUMBER
-      value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/twilio-phone-number"
+    # - name: TWILIO_PHONE_NUMBER
+    #   value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/twilio-phone-number"
     - name: PRODUCTION_DOMAIN
       value_from: "arn:aws:secretsmanager:us-east-2:098819595270:secret:clarafi/production-domain"
     - name: SENDGRID_FROM_EMAIL
