@@ -33,7 +33,7 @@ export class GPTLabIntelligence {
     ]);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -89,7 +89,7 @@ Please provide:
       ));
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -145,7 +145,7 @@ Recommend appropriate lab tests with:
       .orderBy(labResults.resultDate);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -207,7 +207,7 @@ Provide:
     const patientAge = patient[0] ? new Date().getFullYear() - new Date(patient[0].dateOfBirth).getFullYear() : null;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -256,7 +256,7 @@ Assess:
     educationalPoints: string[];
   }> {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -314,7 +314,7 @@ Provide:
     ]);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
