@@ -53,6 +53,7 @@ This occurred even with:
 - ✅ Production path resolution fixed (replaced process.cwd() with safe path utilities)
 - ✅ Code pushed to GitHub for automatic deployment
 - 🔄 App Runner deployment in progress
+- ⚠️ Fixed port configuration - app now uses PORT env variable instead of hardcoded 5000
 
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.
