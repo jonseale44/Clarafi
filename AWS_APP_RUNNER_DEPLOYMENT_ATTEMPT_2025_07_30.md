@@ -48,7 +48,7 @@
    - Deployment trigger: Automatic ✓
    - Build configuration: Use configuration file (apprunner.yaml) ✓
 
-### Current Status (1:18 PM)
+### Current Status (1:18 PM) - BLOCKED
 - On "Review and create" page
 - Completed configurations:
   - Service name: clarafi-production ✓
@@ -59,7 +59,10 @@
   - Networking: Public endpoint ✓
   - Build: Using apprunner.yaml configuration file ✓
 - **Key Finding**: Environment variables not available during creation when using configuration file
-- Ready to deploy (will add env vars post-creation)
+- **BLOCKED**: AWS Account 098819595270 temporarily restricted
+  - Error: "Account 098819595270 is temporarily restricted"
+  - Unable to create App Runner service
+  - Needs AWS Support intervention
 
 ## Key Configuration Notes
 
