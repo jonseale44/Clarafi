@@ -5,13 +5,23 @@ config();
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
 import "./lab-order-background-processor.js"; // Auto-start background processor
 import { initializeSystemData } from "./system-initialization";
 
 const app = express();
+
+// Simple log function
+function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
 
 // Simple request logging middleware
 app.use((req, res, next) => {
@@ -114,9 +124,20 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
+    const { setupVite } = await import("./vite");
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    // In production, serve static files
+    const pathModule = await import("path");
+    
+    const distPath = pathModule.default.resolve(process.cwd(), "public");
+    
+    app.use(express.static(distPath));
+    
+    // Fall through to index.html for client-side routing
+    app.use("*", (_req, res) => {
+      res.sendFile(pathModule.default.resolve(distPath, "index.html"));
+    });
   }
 
   // Use PORT from environment variable for production deployments
