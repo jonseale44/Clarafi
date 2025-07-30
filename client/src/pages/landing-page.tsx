@@ -146,23 +146,18 @@ export default function LandingPage() {
                   Start Free for 30 Days
                 </Button>
               </Link>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="text-lg px-10 py-6 border-2 border-white/30 bg-transparent text-white hover:bg-white/10 backdrop-blur-sm"
-                onClick={() => {
-                  // TODO: Open demo video modal
-                  toast({
-                    title: "Demo Video Coming Soon",
-                    description: "We're putting the finishing touches on our demo video.",
-                  });
-                }}
-              >
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                </svg>
-                Watch 2-Min Demo
-              </Button>
+              <Link href="/learn">
+                <Button 
+                  size="lg" 
+                  variant="outline" 
+                  className="text-lg px-10 py-6 border-2 border-white/30 bg-transparent text-white hover:bg-white/10 backdrop-blur-sm"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
+                  </svg>
+                  Watch Demo Videos
+                </Button>
+              </Link>
             </div>
             
             {/* Trust line */}
@@ -370,12 +365,14 @@ export default function LandingPage() {
                     </div>
                   </div>
                   
-                  <Button 
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
-                  >
-                    See It In Action →
-                  </Button>
+                  <Link href="/learn">
+                    <Button 
+                      size="lg"
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold"
+                    >
+                      See It In Action →
+                    </Button>
+                  </Link>
                 </div>
                 
                 {/* Right side - Visual demonstration */}

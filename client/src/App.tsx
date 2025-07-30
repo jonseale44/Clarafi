@@ -66,6 +66,7 @@ import AboutUs from "@/pages/about-us";
 import MedianDemoPage from "@/pages/median-demo";
 import MedianBackgroundAudioDemo from "@/pages/median-background-audio-demo";
 import { GPTLabDemo } from "@/pages/gpt-lab-demo";
+import LearnPage from "@/pages/learn";
 
 function Router() {
   // Track page views when routes change
@@ -75,6 +76,9 @@ function Router() {
     <Switch>
       {/* Public landing page as root */}
       <Route path="/" component={LandingPage} />
+      
+      {/* Public pages */}
+      <Route path="/learn" component={LearnPage} />
       
       {/* Protected dashboard route */}
       <ProtectedRoute path="/dashboard" component={Dashboard} />

@@ -7,7 +7,8 @@ import {
   Bell,
   Search,
   Menu,
-  ChevronDown
+  ChevronDown,
+  PlayCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -175,6 +176,13 @@ export function AppHeader({ className, showSearch = true, onMenuClick }: AppHead
                       <Link href="/account-settings">
                         <Settings className="mr-2 h-4 w-4" />
                         Account Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/learn">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Help & Videos
                       </Link>
                     </DropdownMenuItem>
                     
