@@ -1,0 +1,38 @@
+  Platform: arn:aws:elasticbeanstalk:us-east-1::platform/Node.js 20 running on 64bit Amazon Linux 2023/6.6.1
+  Tier: WebServer-Standard-1.0
+  CNAME: UNKNOWN
+  Updated: 2025-07-30 00:33:08.298000+00:00
+Printing Status:
+2025-07-30 00:33:06    INFO    createEnvironment is starting.
+2025-07-30 00:33:08    INFO    Using elasticbeanstalk-us-east-1-098819595270 as Amazon S3 storage bucket for environment data.
+2025-07-30 00:33:22    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
+2025-07-30 00:33:22    ERROR   Unknown or duplicate parameter: NodeVersion 
+2025-07-30 00:33:22    ERROR   Unknown or duplicate parameter: NodeCommand 
+2025-07-30 00:33:22    ERROR   Failed to launch environment.
+                                
+ERROR: ServiceError - Failed to launch environment.
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # Search for NodeVersion or NodeCommand in all config files
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ grep -n "NodeVersion\|NodeCommand" .ebextensions/*.config
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # List all files including hidden ones
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ ls -la .ebextensions/
+total 32
+drwxr-xr-x@  6 jonathanseale  staff   192 Jul 29 19:29 .
+drwxr-xr-x@ 92 jonathanseale  staff  2944 Jul 29 18:12 ..
+-rw-r--r--@  1 jonathanseale  staff   452 Jul 29 10:58 environment.config
+-rw-r--r--@  1 jonathanseale  staff   324 Jul 29 10:59 healthcheck.config
+-rw-r--r--@  1 jonathanseale  staff   888 Jul 29 10:58 https-instance.config
+-rw-r--r--   1 jonathanseale  staff   137 Jul 29 19:29 nodecommand.config
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # Check environment.config
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ cat .ebextensions/environment.config
+option_settings:
+  aws:elasticbeanstalk:application:environment:
+    # These will be configured in AWS Console or EB CLI
+    # DATABASE_URL: configured_in_aws_console
+    # SESSION_SECRET: configured_in_aws_console
+    # PRODUCTION_DOMAIN: clarafi.ai
+    # Add other environment variables as needed
+    PORT: 8080
+  aws:elasticbeanstalk:environment:proxy:
+    ProxyServer: nginx
+  aws:elasticbeanstalk:environment:proxy:staticfiles:
+    /public: publicMacBook-Pro-2:jonathanseale-07-29 jonathanseale$ 
