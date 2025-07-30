@@ -1,0 +1,26 @@
+07-29-2025 08:45:39 PM [AppRunner] Deployment with ID : 4b1c4d91f90340bbbad40f5b93045c41 started. Triggering event : SERVICE_CREATE
+07-29-2025 08:45:39 PM [AppRunner] Deployment Artifact: [Repo Type: Source], [Repository: https://github.com/jonseale44/Clarafi], [Branch: main], [SourceDirectory: /]
+07-29-2025 08:46:26 PM [AppRunner] Creating pipeline for automatic deployments.
+07-29-2025 08:46:26 PM [AppRunner] Successfully created pipeline for automatic deployments.
+07-29-2025 08:46:27 PM [AppRunner] Pulling source code from GITHUB Repository ( https://github.com/jonseale44/Clarafi ).
+07-29-2025 08:46:45 PM [AppRunner] Successfully pulled your application source code.
+07-29-2025 08:46:45 PM [AppRunner] Successfully validate configuration file.
+07-29-2025 08:46:46 PM [AppRunner] Starting source code build.
+07-29-2025 08:50:02 PM [AppRunner] Successfully built your application source code.
+07-29-2025 08:50:12 PM [AppRunner] Provisioning instances and deploying image for publicly accessible service.
+07-29-2025 08:50:22 PM [AppRunner] Performing health check on protocol `TCP` [Port: '8080'].
+07-29-2025 08:51:30 PM [AppRunner] Your application stopped or failed to start. See logs for more information.  Container exit code: 1
+07-29-2025 08:51:47 PM [AppRunner] Deployment with ID : 4b1c4d91f90340bbbad40f5b93045c41 failed.
+07-30-2025 05:15:13 AM [AppRunner] Deployment with ID : 540012b738ec4ab6aeb195c8aa1bda55 started. Triggering event : SERVICE_UPDATE
+07-30-2025 05:15:13 AM [AppRunner] Deployment Artifact: [Repo Type: Source], [Repository: https://github.com/jonseale44/Clarafi], [Branch: main], [SourceDirectory: /]
+07-30-2025 05:16:02 AM [AppRunner] Creating pipeline for automatic deployments.
+07-30-2025 05:16:02 AM [AppRunner] Successfully created pipeline for automatic deployments.
+07-30-2025 05:16:03 AM [AppRunner] Pulling source code from GITHUB Repository ( https://github.com/jonseale44/Clarafi ).
+07-30-2025 05:16:20 AM [AppRunner] Successfully pulled your application source code.
+07-30-2025 05:16:20 AM [AppRunner] Successfully validate configuration file.
+07-30-2025 05:16:21 AM [AppRunner] Starting source code build.
+07-30-2025 05:19:34 AM [AppRunner] Successfully built your application source code.
+07-30-2025 05:19:47 AM [AppRunner] Provisioning instances and deploying image for publicly accessible service.
+07-30-2025 05:19:57 AM [AppRunner] Performing health check on protocol `TCP` [Port: '8080'].
+07-30-2025 05:20:56 AM [AppRunner] Your application stopped or failed to start. See logs for more information.  Container exit code: 1
+07-30-2025 05:21:14 AM [AppRunner] Deployment with ID : 540012b738ec4ab6aeb195c8aa1bda55 failed.
