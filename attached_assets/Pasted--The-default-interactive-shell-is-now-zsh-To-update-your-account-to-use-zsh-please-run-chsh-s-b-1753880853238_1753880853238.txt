@@ -1,0 +1,58 @@
+
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+macbook-pro-2:~ jonathanseale$ cd ~/clarafi-deployment/jonathanseale-07-29
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git add -A
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git commit -m "Fix port configuration for App Runner - use PORT env variable"
+On branch main2
+Your branch is ahead of 'origin/main2' by 230 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main
+Everything up-to-date
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main2
+Enumerating objects: 1810, done.
+Counting objects: 100% (1783/1783), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (1664/1664), done.
+Writing objects: 100% (1670/1670), 35.07 MiB | 1.69 MiB/s, done.
+Total 1670 (delta 1231), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (1231/1231), completed with 64 local objects.
+To https://github.com/jonseale44/Clarafi
+   2f90aa6..c0c5980  main2 -> main2
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ cd ~/clarafi-deployment/jonathanseale-07-29
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main2
+Everything up-to-date
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ cd ~/clarafi-deployment/jonathanseale-07-29
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git pull origin main2
+From https://github.com/jonseale44/Clarafi
+ * branch            main2      -> FETCH_HEAD
+Already up to date.
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git add -A
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git commit -m "Fix production deployment - remove import.meta.dirname error"
+On branch main2
+Your branch is up to date with 'origin/main2'.
+
+nothing to commit, working tree clean
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main2
+Everything up-to-date
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git add server/vite-wrapper.ts server/index.ts server/efax-service.ts
+fatal: pathspec 'server/vite-wrapper.ts' did not match any files
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git commit -m "Fix production deployment path.resolve error"
+On branch main2
+Your branch is up to date with 'origin/main2'.
+
+nothing to commit, working tree clean
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main2
+Everything up-to-date
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git pull origin main2
+From https://github.com/jonseale44/Clarafi
+ * branch            main2      -> FETCH_HEAD
+Already up to date.
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ git push origin main2
+Everything up-to-date
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ cd ~/clarafi
+-bash: cd: /Users/jonathanseale/clarafi: No such file or directory
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
