@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
 import multer from "multer";
-import path from "path";
 import fs from "fs/promises";
 import { db } from "./db.js";
 import { patientAttachments, insertPatientAttachmentSchema, attachmentExtractedContent, documentProcessingQueue, vitals, medicalProblems } from "../shared/schema.js";
@@ -11,6 +10,12 @@ import { createHash } from "crypto";
 import { createReadStream } from "fs";
 import { documentAnalysisService } from "./document-analysis-service.js";
 import { getUploadsDir } from "./utils/paths.js";
+
+// Dynamic imports for path module to avoid bundling issues
+const getPathModule = async () => {
+  const pathModule = await import("path");
+  return pathModule.default;
+};
 
 const router = Router();
 
@@ -27,8 +32,9 @@ const storage = multer.diskStorage({
     await fs.mkdir(uploadsDir, { recursive: true });
     cb(null, uploadsDir);
   },
-  filename: (req, file, cb) => {
+  filename: async (req, file, cb) => {
     // Generate secure filename: hash + timestamp + extension
+    const path = await getPathModule();
     const hash = createHash('md5').update(file.originalname + Date.now()).digest('hex');
     const ext = path.extname(file.originalname);
     cb(null, `${hash}${ext}`);
@@ -66,6 +72,7 @@ const upload = multer({
 // Generate thumbnail for images and PDFs
 async function generateThumbnail(filePath: string, mimeType: string): Promise<string | null> {
   try {
+    const path = await getPathModule();
     const thumbnailsDir = getUploadsDir('thumbnails');
     await fs.mkdir(thumbnailsDir, { recursive: true });
     
@@ -504,6 +511,7 @@ router.get('/:patientId/attachments/:attachmentId/download', async (req: Request
     res.setHeader('Content-Type', attachment.mimeType);
     
     // Send file
+    const path = await getPathModule();
     res.sendFile(path.resolve(attachment.filePath));
     
     console.log(`📎 [Attachments] File downloaded: ${attachment.originalFileName} by user ${req.user!.id}`);
@@ -536,6 +544,7 @@ router.get('/:patientId/attachments/:attachmentId/thumbnail', async (req: Reques
     
     try {
       await fs.access(attachment.thumbnailPath);
+      const path = await getPathModule();
       res.sendFile(path.resolve(attachment.thumbnailPath));
     } catch {
       return res.status(404).json({ error: 'Thumbnail file not found' });
