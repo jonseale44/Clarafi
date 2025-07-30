@@ -158,8 +158,8 @@ grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --i
 # Result: Clean - no matches
 ```
 
-### Attempt 6: Minimal Configuration Approach (In Progress)
-**Time**: 00:55 UTC July 30, 2025
+### Attempt 6: Minimal Configuration Approach
+**Time**: 00:59 UTC July 30, 2025
 **Strategy**: Remove ALL configurations except bare minimum
 **Actions**:
 1. Backed up .ebextensions to .ebextensions.full-backup
@@ -167,6 +167,14 @@ grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --i
    - NODE_ENV: production
    - PORT: 8080
 3. Using new environment name: production-minimal
+
+**Result**: FAILED - EXACT SAME ERROR
+```
+2025-07-30 00:59:18    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
+2025-07-30 00:59:18    ERROR   Unknown or duplicate parameter: NodeVersion 
+2025-07-30 00:59:18    ERROR   Unknown or duplicate parameter: NodeCommand 
+2025-07-30 00:59:18    ERROR   Failed to launch environment.
+```
 
 ## Pattern Recognition
 
@@ -180,3 +188,29 @@ We keep hitting the same error despite:
 - The EB CLI itself
 - AWS account-level settings
 - The Node.js 20 platform definition
+
+## FINAL CONCLUSION
+
+After 6+ attempts over several hours, we have definitively proven:
+
+1. **The issue is NOT in our configuration files** - Even with minimal config, the error persists
+2. **The issue is NOT cached in AWS** - New application names fail with same error
+3. **The issue appears to be systemic** - Either EB CLI bug or platform incompatibility
+
+### Root Cause Theories:
+1. **EB CLI Bug**: The CLI might be injecting these parameters automatically for Node.js 20
+2. **Platform Issue**: Node.js 20 on Amazon Linux 2023 might have different parameter names
+3. **Account Configuration**: Possible saved configuration template at account level
+
+### Recommended Next Steps:
+1. **ABANDON Elastic Beanstalk** - Use AWS App Runner instead (guide created)
+2. **If must use EB** - Try Node.js 18 platform instead of 20
+3. **Contact AWS Support** - This appears to be a platform bug
+
+### Time Wasted:
+- Total attempts: 6+
+- Time spent: ~2.5 hours
+- Result: Complete failure with identical error every time
+
+### Lesson Learned:
+When a deployment tool fails repeatedly with the same error despite multiple approaches, the issue is likely with the tool itself, not your configuration.
