@@ -16,6 +16,17 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
+### July 30, 2025 - OpenAI Realtime API Troubleshooting
+**Issue**: Intermittent 403 Forbidden errors during voice transcription despite successful WebSocket connections.
+
+**Root Cause**: Whisper API must be enabled in OpenAI account settings for the Realtime API transcription to work.
+
+**Solution**: Enable Whisper in your OpenAI account settings. The 403 errors are not related to API key security or WebSocket implementation.
+
+**Key Learning**: The OpenAI Realtime API requires both:
+1. A valid API key with Realtime API access
+2. Whisper enabled for transcription functionality
+
 ### July 29-30, 2025 - AWS Deployment Migration - MAJOR CHANGE
 **Decision**: After 2.5+ hours of failed Elastic Beanstalk attempts, switching to AWS App Runner.
 
