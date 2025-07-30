@@ -1,0 +1,38 @@
+# If there are failed environments, terminate them
+eb terminate clarafi-deploy --force
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ 
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # If there are failed environments, terminate them
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ eb terminate clarafi-deploy --force
+ERROR: InvalidParameterValueError - No Environment found for EnvironmentName = 'clarafi-deploy'.
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # Remove any local EB configuration that might be cached
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ rm -rf .elasticbeanstalk/
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ 
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # Reinitialize the EB application
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ eb init clarafi-emr --platform "Node.js 20 running on 64bit Amazon Linux 2023" --region us-east-1
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ # Now create the environment
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ eb create clarafi-deploy --database.engine postgres --single
+
+Enter an RDS DB username (default is "ebroot"): clarafiadmin
+Enter an RDS DB master password: 
+Retype password to confirm: 
+Creating application version archive "app-56de-250729_193700317471".
+Uploading: [##################################################] 100% Done...
+Environment details for: clarafi-deploy
+  Application name: clarafi-emr
+  Region: us-east-1
+  Deployed Version: app-56de-250729_193700317471
+  Environment ID: e-m7twbs2bjp
+  Platform: arn:aws:elasticbeanstalk:us-east-1::platform/Node.js 20 running on 64bit Amazon Linux 2023/6.6.1
+  Tier: WebServer-Standard-1.0
+  CNAME: UNKNOWN
+  Updated: 2025-07-30 00:38:38.365000+00:00
+Printing Status:
+2025-07-30 00:38:37    INFO    createEnvironment is starting.
+2025-07-30 00:38:38    INFO    Using elasticbeanstalk-us-east-1-098819595270 as Amazon S3 storage bucket for environment data.
+2025-07-30 00:38:49    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
+2025-07-30 00:38:49    ERROR   Unknown or duplicate parameter: NodeVersion 
+2025-07-30 00:38:49    ERROR   Unknown or duplicate parameter: NodeCommand 
+2025-07-30 00:38:49    ERROR   Failed to launch environment.
+                                
+ERROR: ServiceError - Failed to launch environment.
+MacBook-Pro-2:jonathanseale-07-29 jonathanseale$ 
