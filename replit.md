@@ -57,6 +57,8 @@ This occurred even with:
 - 🔄 Ready for App Runner deployment - user needs to change branch to main2 and save
 - ⚠️ Fixed port configuration - app now uses PORT env variable instead of hardcoded 5000
 - ✅ Fixed production path resolution - removed import.meta.dirname error by using dynamic imports
+- ✅ Fixed EFaxService path.resolve error - made uploads directory resolution lazy
+- ✅ Created vite-wrapper.ts to prevent vite.ts from being bundled in production
 
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.

@@ -124,19 +124,8 @@ app.use((req, res, next) => {
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
   if (app.get("env") === "development") {
-    try {
-      const { setupVite } = await import("./vite");
-      await setupVite(app, server);
-    } catch (error) {
-      console.error("Failed to load Vite in development mode:", error);
-      // Fall back to production serving in case of error
-      const pathModule = await import("path");
-      const distPath = pathModule.default.resolve(process.cwd(), "public");
-      app.use(express.static(distPath));
-      app.use("*", (_req, res) => {
-        res.sendFile(pathModule.default.resolve(distPath, "index.html"));
-      });
-    }
+    const { setupVite } = await import("./vite-wrapper");
+    await setupVite(app, server);
   } else {
     // In production, serve static files
     const pathModule = await import("path");

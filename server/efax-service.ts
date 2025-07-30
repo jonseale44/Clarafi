@@ -24,15 +24,24 @@ interface LabOrderFaxData {
 }
 
 export class EFaxService {
-  private uploadsDir = path.join(process.cwd(), 'uploads', 'lab-orders');
+  private uploadsDir: string;
 
   constructor() {
-    this.ensureUploadsDir();
+    // Defer path resolution to avoid issues during module loading
+    this.uploadsDir = '';
+  }
+
+  private getUploadsDir(): string {
+    if (!this.uploadsDir) {
+      this.uploadsDir = path.join(process.cwd() || '.', 'uploads', 'lab-orders');
+      this.ensureUploadsDir();
+    }
+    return this.uploadsDir;
   }
 
   private async ensureUploadsDir() {
     try {
-      await fs.mkdir(this.uploadsDir, { recursive: true });
+      await fs.mkdir(this.getUploadsDir(), { recursive: true });
     } catch (error) {
       console.error('[EFax] Error creating uploads directory:', error);
     }
@@ -44,7 +53,7 @@ export class EFaxService {
   async generateLabOrderPDF(data: LabOrderFaxData): Promise<string> {
     const doc = new PDFDocument();
     const filename = `lab-order-${data.orderId}-${Date.now()}.pdf`;
-    const filepath = path.join(this.uploadsDir, filename);
+    const filepath = path.join(this.getUploadsDir(), filename);
     
     doc.pipe(createWriteStream(filepath));
 
