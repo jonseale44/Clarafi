@@ -48,10 +48,16 @@
    - Deployment trigger: Automatic ✓
    - Build configuration: Use configuration file (apprunner.yaml) ✓
 
-### Current Status (1:00 PM)
-- On "Configure build" page
-- Selected "Use a configuration file"
-- Ready to proceed to service configuration
+### Current Status (1:05 PM)
+- On "Configure service" page
+- Completed configurations:
+  - Service name: clarafi-production ✓
+  - Virtual CPU: 1 vCPU ✓
+  - Virtual memory: 2 GB ✓
+  - Health check: /api/health ✓
+  - Security: Default IAM role ✓
+  - Networking: Public endpoint ✓
+- Looking for Environment Variables section (needs to scroll down further)
 
 ## Key Configuration Notes
 
