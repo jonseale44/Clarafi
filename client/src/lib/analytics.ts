@@ -433,9 +433,7 @@ declare global {
 export const initGA = () => {
   const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
   
-  // Debug logging
-  console.log('GA Debug - Environment variables:', import.meta.env);
-  console.log('GA Debug - Measurement ID:', measurementId);
+  // Removed debug logging to prevent exposing sensitive environment variables
 
   if (!measurementId) {
     console.warn('Missing required Google Analytics key: VITE_GA_MEASUREMENT_ID');
