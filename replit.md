@@ -55,6 +55,7 @@ This occurred even with:
 - ✅ Code successfully pushed to GitHub main2 branch
 - ✅ All environment variables configured in App Runner (including STRIPE_SECRET_KEY)
 - 🔄 Ready for App Runner deployment - user needs to change branch to main2 and save
+- ⚠️ IMPORTANT: Automatic deployments from GitHub do NOT work - must manually press "Rebuild" in App Runner console after each push
 - ⚠️ Fixed port configuration - app now uses PORT env variable instead of hardcoded 5000
 - ✅ Fixed production path resolution - removed import.meta.dirname error by using dynamic imports
 - ✅ Fixed EFaxService path.resolve error - made uploads directory resolution lazy
