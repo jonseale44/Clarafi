@@ -113,23 +113,34 @@ eb create clarafi-deploy --platform "Node.js 18 running on 64bit Amazon Linux 20
 | Procfile | ✅ Exists | `web: npm start` |
 
 ## Current Deployment Attempt (NEW APPLICATION)
-**Time**: ~19:49 UTC July 29, 2025
+**Time**: 00:51 UTC July 30, 2025
 **Application Name**: clarafi-medical (NEW - not clarafi-emr)
 **Command**: `eb create production --database.engine postgres --single`
 **Platform**: Node.js 20 running on 64bit Amazon Linux 2023
-**Status**: IN PROGRESS...
+**Status**: FAILED - SAME ERROR
 
-### What We're Watching For:
-1. **Build failures** - Missing dependencies, incorrect build scripts
-2. **Health check failures** - Application not starting on correct port
-3. **Database connection issues** - RDS security groups, connection strings
-4. **File permission errors** - Incorrect ownership or permissions
-5. **Memory issues** - Instance too small for build process
-6. **npm install failures** - Package conflicts or missing packages
+### Failure Details:
+```
+2025-07-30 00:51:24    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
+2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeVersion 
+2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeCommand 
+2025-07-30 00:51:24    ERROR   Failed to launch environment.
+```
 
-### Key Things to Document When It Fails:
-- Exact error message and timestamp
-- What stage of deployment it failed at
-- Whether it's the same NodeVersion error or something new
-- Log output from `eb logs`
-- Any AWS Console error messages
+## CRITICAL FINDING
+
+The SAME NodeVersion/NodeCommand errors persist even with:
+- Completely new application name
+- Deleted .elasticbeanstalk directory
+- Fresh eb init
+- Verified clean config files locally
+
+**This means AWS is finding these parameters in the uploaded archive itself**
+
+## Investigation Needed
+
+The parameters must be coming from:
+1. A hidden file being included in the archive
+2. EB CLI adding these parameters automatically
+3. Saved configuration templates at the account level
+4. The platform itself expecting different parameter names
