@@ -1,0 +1,33 @@
+cbook-pro-2:jonathanseale-07-29 jonathanseale$ # After it fails, capture the logs
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ eb logs --zip
+ERROR: InvalidParameterValueError - No Environment found for EnvironmentName = 'production'.
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Check if there are any hidden ebextensions files
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ find . -name "*.config" -type f | grep -i node
+./.ebextensions/nodecommand.config
+./temp_check/.ebextensions/nodecommand.config
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Look for any other config files that might contain these parameters
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --include="*.yaml" --include="*.yml" 2>/dev/null
+./temp_check/.ebextensions/nodecommand.config:    NodeCommand: "npm start"
+./temp_check/.ebextensions/nodecommand.config:    NodeVersion: "20.x"
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Remove the temp_check directory that has the bad config
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ rm -rf temp_check
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Now let's check if there are any other instances
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --include="*.yaml" --include="*.yml" 2>/dev/null
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Backup current ebextensions and create minimal config
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ mv .ebextensions .ebextensions.full-backup
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ mkdir .ebextensions
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Create minimal config with ONLY environment variables
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ cat > .ebextensions/01_environment.config << 'EOF'
+> option_settings:
+>   aws:elasticbeanstalk:application:environment:
+>     NODE_ENV: production
+>     PORT: 8080
+> EOF
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Try creating the environment again with minimal config
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ eb create production-minimal --database.engine postgres --single
+
+Enter an RDS DB username (default is "ebroot"): 

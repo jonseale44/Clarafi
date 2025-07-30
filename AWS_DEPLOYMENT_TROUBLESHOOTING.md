@@ -144,3 +144,39 @@ The parameters must be coming from:
 2. EB CLI adding these parameters automatically
 3. Saved configuration templates at the account level
 4. The platform itself expecting different parameter names
+
+### Attempt 5: Investigation of uploaded files
+**Time**: 00:53 UTC July 30, 2025
+**Actions**:
+- Found `temp_check/.ebextensions/nodecommand.config` containing the bad parameters
+- This was from a previous debugging attempt
+- Removed temp_check directory
+- Verified no other files contain NodeVersion/NodeCommand
+
+```bash
+grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --include="*.yaml" --include="*.yml"
+# Result: Clean - no matches
+```
+
+### Attempt 6: Minimal Configuration Approach (In Progress)
+**Time**: 00:55 UTC July 30, 2025
+**Strategy**: Remove ALL configurations except bare minimum
+**Actions**:
+1. Backed up .ebextensions to .ebextensions.full-backup
+2. Created new minimal .ebextensions with only:
+   - NODE_ENV: production
+   - PORT: 8080
+3. Using new environment name: production-minimal
+
+## Pattern Recognition
+
+We keep hitting the same error despite:
+1. New application names
+2. Clean local files
+3. No AWS Console configurations
+4. Fresh EB CLI initialization
+
+**This suggests the issue is NOT in our files but in:**
+- The EB CLI itself
+- AWS account-level settings
+- The Node.js 20 platform definition
