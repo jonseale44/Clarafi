@@ -3,4 +3,13 @@ dist
 .DS_Store
 server/public
 vite.config.ts.*
-*.tar.gzattached_assets/
+*.tar.gz
+
+# Security - prevent accidental credential exposure
+attached_assets/
+*.pem
+*.key
+.env*
+*credentials*
+*secret*
+AWS_*
