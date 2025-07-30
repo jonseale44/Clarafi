@@ -9,6 +9,7 @@ import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
 import "./lab-order-background-processor.js"; // Auto-start background processor
 import { initializeSystemData } from "./system-initialization";
+import path from "path";
 
 const app = express();
 
@@ -75,10 +76,37 @@ app.use((req, res, next) => {
     // Skip URL encoding parsing for Stripe webhook
     next();
   } else {
-    express.urlencoded({ extended: false, limit: '50mb' })(req, res, next);
+    express.urlencoded({ extended: false })(req, res, next);
   }
 });
 
+// Setup a store for managing sessions
+import session from "express-session";
+import connectPgSimple from 'connect-pg-simple';
+
+const PostgresStore = connectPgSimple(session);
+
+const sessionStore = new PostgresStore({
+  conString: process.env.DATABASE_URL,
+  createTableIfMissing: true,
+  tableName: 'clarafi_sessions',
+});
+
+app.use(
+  session({
+    store: sessionStore,
+    secret: process.env.REPL_ID || "clarafi-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      sameSite: "lax",
+      secure: false, // Note: Set to true when using HTTPS
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    },
+  }),
+);
+
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -120,36 +148,15 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    try {
-      const { setupVite } = await import("./vite");
-      await setupVite(app, server);
-    } catch (error) {
-      console.error("Failed to load Vite in development mode:", error);
-      // Fall back to production serving in case of error
-      const pathModule = await import("path");
-      const distPath = pathModule.default.resolve(process.cwd(), "public");
-      app.use(express.static(distPath));
-      app.use("*", (_req, res) => {
-        res.sendFile(pathModule.default.resolve(distPath, "index.html"));
-      });
-    }
-  } else {
-    // In production, serve static files
-    const pathModule = await import("path");
-    
-    const distPath = pathModule.default.resolve(process.cwd(), "public");
-    
-    app.use(express.static(distPath));
-    
-    // Fall through to index.html for client-side routing
-    app.use("*", (_req, res) => {
-      res.sendFile(pathModule.default.resolve(distPath, "index.html"));
-    });
-  }
+  // Production static file serving
+  const distPath = path.resolve(process.cwd(), "public");
+  
+  app.use(express.static(distPath));
+  
+  // Fall through to index.html for client-side routing
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
 
   // Use PORT from environment variable for production deployments
   // Default to 5000 for local development
