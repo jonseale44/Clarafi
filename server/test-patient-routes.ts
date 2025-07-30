@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { tenantIsolation } from "./tenant-isolation-middleware";
+import { tenantIsolation } from "./tenant-isolation";
 import { TestPatientGenerator, TestPatientConfig } from "./test-patient-generator";
 import { storage } from "./storage";
 
