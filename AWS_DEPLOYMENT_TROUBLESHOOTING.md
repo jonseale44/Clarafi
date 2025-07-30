@@ -106,18 +106,30 @@ eb create clarafi-deploy --platform "Node.js 18 running on 64bit Amazon Linux 20
 
 | File | Status | Content |
 |------|--------|---------|
-| .ebextensions/nodecommand.config | ✅ Fixed | No NodeVersion/NodeCommand |
-| .ebextensions/environment.config | ✅ Clean | Only has PORT and proxy settings |
-| .ebextensions/healthcheck.config | ❓ Not checked | Need to verify |
-| .ebextensions/https-instance.config | ❓ Not checked | Need to verify |
+| .ebextensions/nodecommand.config | ✅ Created locally | No NodeVersion/NodeCommand |
+| .ebextensions/environment.config | ✅ Verified | Only has PORT and proxy settings |
+| .ebextensions/healthcheck.config | ✅ Verified | Clean, no Node params |
+| .ebextensions/https-instance.config | ✅ Verified | Only nginx config |
 | Procfile | ✅ Exists | `web: npm start` |
 
-## Error Pattern
-Every attempt shows:
-```
-ERROR   "option_settings" in one of the configuration files failed validation.
-ERROR   Unknown or duplicate parameter: NodeVersion 
-ERROR   Unknown or duplicate parameter: NodeCommand
-```
+## Current Deployment Attempt (NEW APPLICATION)
+**Time**: ~19:49 UTC July 29, 2025
+**Application Name**: clarafi-medical (NEW - not clarafi-emr)
+**Command**: `eb create production --database.engine postgres --single`
+**Platform**: Node.js 20 running on 64bit Amazon Linux 2023
+**Status**: IN PROGRESS...
 
-This is consistent, suggesting the issue is not random but systematic.
+### What We're Watching For:
+1. **Build failures** - Missing dependencies, incorrect build scripts
+2. **Health check failures** - Application not starting on correct port
+3. **Database connection issues** - RDS security groups, connection strings
+4. **File permission errors** - Incorrect ownership or permissions
+5. **Memory issues** - Instance too small for build process
+6. **npm install failures** - Package conflicts or missing packages
+
+### Key Things to Document When It Fails:
+- Exact error message and timestamp
+- What stage of deployment it failed at
+- Whether it's the same NodeVersion error or something new
+- Log output from `eb logs`
+- Any AWS Console error messages

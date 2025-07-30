@@ -1,0 +1,42 @@
+-rw-r--r--@     1 jonathanseale  staff   316526534 Jul 29 15:16 wetransfer_final__2021-12-05_0152.zip
+-rw-r--r--@     1 jonathanseale  staff   164309207 Jul 29 15:16 wetransfer_jen-seale-family-bluebonnets-bf_2023-05-08_1931.zip
+-rw-r--r--@     1 jonathanseale  staff   137837023 Jul 29 15:16 wetransfer_joseph-seale-newborn_2023-08-26_1913.zip
+-rw-r--r--@     1 jonathanseale  staff      742047 Jul 29 15:16 zillium-master.zip
+macbook-pro-2:clarafi-deployment jonathanseale$ cd jonathanseale-07-29  # or whatever the exact folder name is
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Make sure you're in the project directory
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ cd ~/clarafi-deployment/jonathanseale-07-29
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Initialize with a NEW application name
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ eb init clarafi-medical --platform "Node.js 20 running on 64bit Amazon Linux 2023" --region us-east-1
+Application clarafi-medical has been created.
+
+# Create the environment
+eb create production --database.engine postgres --single
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ # Create the environment
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ eb create production --database.engine postgres --single
+
+Enter an RDS DB username (default is "ebroot"): clarafiadmin
+Enter an RDS DB master password: 
+Retype password to confirm: 
+Creating application version archive "app-56de-250729_194941994009".
+Uploading: [##################################################] 100% Done...
+Environment details for: production
+  Application name: clarafi-medical
+  Region: us-east-1
+  Deployed Version: app-56de-250729_194941994009
+  Environment ID: e-utaprgbdqd
+  Platform: arn:aws:elasticbeanstalk:us-east-1::platform/Node.js 20 running on 64bit Amazon Linux 2023/6.6.1
+  Tier: WebServer-Standard-1.0
+  CNAME: UNKNOWN
+  Updated: 2025-07-30 00:51:08.568000+00:00
+Printing Status:
+2025-07-30 00:51:07    INFO    createEnvironment is starting.
+2025-07-30 00:51:08    INFO    Using elasticbeanstalk-us-east-1-098819595270 as Amazon S3 storage bucket for environment data.
+2025-07-30 00:51:24    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
+2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeVersion 
+2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeCommand 
+2025-07-30 00:51:24    ERROR   Failed to launch environment.
+                                
+ERROR: ServiceError - Failed to launch environment.
+macbook-pro-2:jonathanseale-07-29 jonathanseale$ 
