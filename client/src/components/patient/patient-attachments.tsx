@@ -1191,6 +1191,12 @@ export function PatientAttachments({
   };
 
   const handleUpload = () => {
+    console.log('📎 [Frontend] handleUpload called!', {
+      uploadMode,
+      hasUploadFile: !!uploadFile,
+      uploadFilesCount: uploadFiles.length
+    });
+    
     if (uploadMode === 'single' && !uploadFile) {
       console.log('📎 [Frontend] No file selected for single upload');
       return;
