@@ -340,7 +340,7 @@ export function UnifiedChartPanel({
             <ProfilePhotoManager
               patient={patient}
               size="sm"
-              editable={false}
+              editable={true}
             />
 
             <div className="flex-1 min-w-0">

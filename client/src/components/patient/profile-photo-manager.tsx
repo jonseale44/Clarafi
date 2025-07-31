@@ -35,7 +35,7 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Debug logging
-  console.log('[ProfilePhotoManager] Props:', { 
+  console.log('[ProfilePhotoManager] Initial props:', { 
     patient, 
     size, 
     editable,
