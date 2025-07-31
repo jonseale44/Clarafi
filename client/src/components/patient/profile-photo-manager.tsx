@@ -11,12 +11,9 @@ import {
   Trash2, 
   X,
   Maximize2,
-  Check,
-  RotateCw
+  Check
 } from "lucide-react";
 import QRCode from 'qrcode';
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 
 interface ProfilePhotoManagerProps {
   patient: {
@@ -49,20 +46,6 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
   const [qrSessionId, setQrSessionId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
-  // Cropping state
-  const [showCropDialog, setShowCropDialog] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
-  const [crop, setCrop] = useState<Crop>({
-    unit: '%',
-    width: 90,
-    height: 90,
-    x: 5,
-    y: 5
-  });
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
-  const [rotation, setRotation] = useState(0);
-  const imgRef = useRef<HTMLImageElement>(null);
 
   // Size configurations
   const sizeConfig = {
@@ -96,8 +79,6 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
         title: "Success",
         description: "Profile photo updated successfully",
       });
-      setShowCropDialog(false);
-      setImageToCrop(null);
     },
     onError: (error) => {
       toast({
@@ -229,14 +210,9 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
       return;
     }
     
-    // Read file and show crop dialog
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImageToCrop(e.target?.result as string);
-      setShowCropDialog(true);
-    };
-    reader.readAsDataURL(file);
-  }, []);
+    // Upload the file directly
+    uploadMutation.mutate(file);
+  }, [uploadMutation, toast]);
 
   // Handle drag and drop
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -262,52 +238,7 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
     }
   }, [handleFileSelect]);
 
-  // Crop and upload image
-  const handleCropComplete = useCallback(async () => {
-    if (!completedCrop || !imgRef.current || !imageToCrop) return;
-    
-    const image = imgRef.current;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    // Use the actual crop dimensions to prevent distortion
-    canvas.width = completedCrop.width;
-    canvas.height = completedCrop.height;
-    
-    // Apply rotation
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(-canvas.width / 2, -canvas.height / 2);
-    
-    // Draw the cropped image without reshaping
-    ctx.drawImage(
-      image,
-      completedCrop.x,
-      completedCrop.y,
-      completedCrop.width,
-      completedCrop.height,
-      0,
-      0,
-      completedCrop.width,
-      completedCrop.height
-    );
-    
-    ctx.restore();
-    
-    // Convert to blob and upload
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
-          uploadMutation.mutate(file);
-        }
-      },
-      'image/jpeg',
-      0.9
-    );
-  }, [completedCrop, imageToCrop, rotation, uploadMutation]);
+
 
   return (
     <>
@@ -423,58 +354,6 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
           if (file) handleFileSelect(file);
         }}
       />
-
-
-
-      {/* Crop Dialog */}
-      <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Crop Profile Photo</DialogTitle>
-          </DialogHeader>
-          
-          {imageToCrop && (
-            <div className="space-y-4">
-              <div className="relative max-h-[500px] overflow-auto">
-                <ReactCrop
-                  crop={crop}
-                  onChange={(c) => setCrop(c)}
-                  onComplete={(c) => setCompletedCrop(c)}
-                >
-                  <img
-                    ref={imgRef}
-                    src={imageToCrop}
-                    alt="Crop preview"
-                    style={{ transform: `rotate(${rotation}deg)` }}
-                    className="max-w-full"
-                  />
-                </ReactCrop>
-              </div>
-              
-              <div className="flex justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setRotation((r) => (r - 90) % 360)}
-                >
-                  <RotateCw className="h-4 w-4 mr-2" />
-                  Rotate
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCropDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropComplete} disabled={!completedCrop}>
-              <Check className="h-4 w-4 mr-2" />
-              Apply
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
