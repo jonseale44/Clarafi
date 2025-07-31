@@ -196,6 +196,9 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     // Generate thumbnail if applicable
     const thumbnailPath = await generateThumbnail(req.file.path, req.file.mimetype);
     
+    // Get path module for file extension
+    const pathModule = await getPathModule();
+    
     const attachmentData = {
       patientId,
       encounterId: encounterId ? parseInt(encounterId) : undefined,
@@ -203,7 +206,7 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
       originalFileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      fileExtension: path.extname(req.file.originalname).toLowerCase(),
+      fileExtension: pathModule.extname(req.file.originalname).toLowerCase(),
       filePath: req.file.path,
       thumbnailPath,
       title: title || req.file.originalname,
@@ -356,6 +359,9 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
         // Generate thumbnail if applicable
         const thumbnailPath = await generateThumbnail(file.path, file.mimetype);
         
+        // Get path module for file extension
+        const pathModule = await getPathModule();
+        
         const attachmentData = {
           patientId,
           encounterId: encounterId ? parseInt(encounterId) : undefined,
@@ -363,7 +369,7 @@ router.post('/:patientId/attachments/bulk', upload.array('files', 10), async (re
           originalFileName: file.originalname,
           fileSize: file.size,
           mimeType: file.mimetype,
-          fileExtension: path.extname(file.originalname).toLowerCase(),
+          fileExtension: pathModule.extname(file.originalname).toLowerCase(),
           filePath: file.path,
           thumbnailPath,
           title: file.originalname, // Use original filename as title for bulk uploads

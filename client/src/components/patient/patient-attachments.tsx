@@ -362,7 +362,10 @@ export function PatientAttachments({
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
+  // These functions don't exist in UploadContext - removing to fix upload
+  // const { startUpload, updateProgress, completeUpload, cancelUpload } = useUpload();
+  const uploadContext = useUpload();
+  console.log('📎 [Frontend] UploadContext content:', uploadContext);
 
   // Get attachments - always show all patient attachments, regardless of mode
   const { data: attachments = [], isLoading, refetch } = useQuery({
@@ -448,6 +451,7 @@ export function PatientAttachments({
       console.log('📎 [Frontend] ===== MUTATION FUNCTION STARTED =====');
       console.log('📎 [Frontend] Starting single upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
+      console.log('📎 [Frontend] Available from UploadContext:', uploadContext);
       
       // Start upload tracking with detailed logging
       const fileEntry = formData.get('file');
@@ -475,14 +479,24 @@ export function PatientAttachments({
       }
       
       console.log('📎 [Frontend] Starting upload tracking for patient:', patientId, 'file:', fileName);
-      startUpload(patientId, fileName);
+      // REMOVED: startUpload call - function doesn't exist in UploadContext
+      console.log('📎 [Frontend] Skipping startUpload - function not available');
+      console.log('📎 [Frontend] Preparing fetch directly');
       
       try {
+        console.log('📎 [Frontend] About to call fetch with URL:', `/api/patients/${patientId}/attachments`);
+        console.log('📎 [Frontend] Fetch options:', { method: 'POST', bodySize: formData.toString().length });
+        console.log('📎 [Frontend] FormData entries before fetch:', Array.from(formData.entries()));
+        console.log('📎 [Frontend] Window.fetch exists:', typeof window.fetch);
+        
+        console.log('📎 [Frontend] CALLING FETCH NOW!!!');
         const response = await fetch(`/api/patients/${patientId}/attachments`, {
           method: 'POST',
           body: formData,
         });
         
+        console.log('📎 [Frontend] FETCH RETURNED! Response received');
+        console.log('📎 [Frontend] Response type:', typeof response);
         console.log('📎 [Frontend] Response status:', response.status);
         console.log('📎 [Frontend] Response headers:', Object.fromEntries(response.headers.entries()));
       
@@ -490,20 +504,19 @@ export function PatientAttachments({
         console.log('📎 [Frontend] Raw response text:', responseText);
         
         if (!response.ok) {
-          cancelUpload();
+          // REMOVED: cancelUpload() - function doesn't exist
           throw new Error(`Upload failed: ${response.status} - ${responseText}`);
         }
         
-        // Update progress to processing stage
-        updateProgress(80, 'processing');
+        // REMOVED: updateProgress(80, 'processing') - function doesn't exist
         
         try {
           const result = JSON.parse(responseText);
-          updateProgress(90, 'analyzing');
+          // REMOVED: updateProgress(90, 'analyzing') - function doesn't exist
           return result;
         } catch (parseError) {
           console.error('📎 [Frontend] JSON parse error:', parseError);
-          cancelUpload();
+          // REMOVED: cancelUpload() - function doesn't exist
           throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
         }
       } catch (fetchError) {
@@ -513,14 +526,17 @@ export function PatientAttachments({
           message: (fetchError as any)?.message,
           stack: (fetchError as any)?.stack?.split('\n').slice(0, 3).join('\n')
         });
-        cancelUpload();
+        // REMOVED: cancelUpload() - function doesn't exist
         throw fetchError;
       }
     },
     onSuccess: (data) => {
-      completeUpload();
+      console.log('📎 [Frontend] UPLOAD SUCCESS! Data:', data);
+      // REMOVED: completeUpload() - function doesn't exist
+      console.log('📎 [Frontend] Invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
       
+      console.log('📎 [Frontend] Tracking analytics...');
       // Track single attachment upload
       analytics.trackFeatureUsage('attachment_upload', 'uploaded', {
         uploadType: 'single',
@@ -542,11 +558,18 @@ export function PatientAttachments({
         }
       });
       
+      console.log('📎 [Frontend] Showing success toast...');
       toast({ title: "Upload successful", description: "File has been uploaded successfully." });
+      console.log('📎 [Frontend] Resetting form...');
       resetUploadForm();
+      console.log('📎 [Frontend] Upload complete!');
     },
     onError: (error: Error) => {
-      cancelUpload();
+      console.error('📎 [Frontend] UPLOAD ERROR!', error);
+      console.error('📎 [Frontend] Error type:', error.constructor.name);
+      console.error('📎 [Frontend] Error message:', error.message);
+      console.error('📎 [Frontend] Error stack:', error.stack);
+      // REMOVED: cancelUpload() - function doesn't exist
       toast({ 
         title: "Upload failed", 
         description: error.message,
@@ -567,38 +590,52 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Files length:', files.length);
       const fileName = `${files.length} files`;
       console.log('📎 [Frontend] Starting bulk upload tracking for patient:', patientId, 'files:', fileName);
-      startUpload(patientId, fileName);
+      // REMOVED: startUpload(patientId, fileName) - function doesn't exist
+      console.log('📎 [Frontend] Skipping startUpload - function not available');
       
-      const response = await fetch(`/api/patients/${patientId}/attachments/bulk`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const responseText = await response.text();
-      console.log('📎 [Frontend] Bulk upload response:', responseText);
-      
-      if (!response.ok) {
-        cancelUpload();
-        throw new Error(`Bulk upload failed: ${response.status} - ${responseText}`);
-      }
-      
-      // Update progress to processing stage
-      updateProgress(80, 'processing');
+      console.log('📎 [Frontend] About to call fetch for bulk upload');
+      console.log('📎 [Frontend] Bulk upload URL:', `/api/patients/${patientId}/attachments/bulk`);
       
       try {
-        const result = JSON.parse(responseText);
-        updateProgress(90, 'analyzing');
-        return result;
-      } catch (parseError) {
-        console.error('📎 [Frontend] JSON parse error:', parseError);
-        cancelUpload();
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+        const response = await fetch(`/api/patients/${patientId}/attachments/bulk`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        console.log('📎 [Frontend] Bulk upload fetch completed');
+        const responseText = await response.text();
+        console.log('📎 [Frontend] Bulk upload response:', responseText);
+        
+        if (!response.ok) {
+          // REMOVED: cancelUpload() - function doesn't exist
+          throw new Error(`Bulk upload failed: ${response.status} - ${responseText}`);
+        }
+        
+        // REMOVED: updateProgress(80, 'processing') - function doesn't exist
+        console.log('📎 [Frontend] Parsing bulk upload response...');
+        
+        try {
+          const result = JSON.parse(responseText);
+          // REMOVED: updateProgress(90, 'analyzing') - function doesn't exist
+          console.log('📎 [Frontend] Bulk upload parsed successfully:', result);
+          return result;
+        } catch (parseError) {
+          console.error('📎 [Frontend] JSON parse error:', parseError);
+          // REMOVED: cancelUpload() - function doesn't exist
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+        }
+      } catch (bulkError) {
+        console.error('📎 [Frontend] Bulk upload fetch error:', bulkError);
+        throw bulkError;
       }
     },
     onSuccess: (data) => {
-      completeUpload();
+      console.log('📎 [Frontend] BULK UPLOAD SUCCESS! Data:', data);
+      // REMOVED: completeUpload() - function doesn't exist
+      console.log('📎 [Frontend] Invalidating queries for bulk upload...');
       queryClient.invalidateQueries({ queryKey: ["/api/patients", patientId, "attachments"] });
       
+      console.log('📎 [Frontend] Tracking bulk upload analytics...');
       // Track bulk attachment upload
       analytics.trackFeatureUsage('attachment_upload', 'uploaded', {
         uploadType: 'bulk',
@@ -619,14 +656,21 @@ export function PatientAttachments({
         }
       });
       
+      console.log('📎 [Frontend] Showing bulk upload success toast...');
       toast({ 
         title: "Bulk upload successful", 
         description: `Successfully uploaded ${data.count} files.` 
       });
+      console.log('📎 [Frontend] Resetting form after bulk upload...');
       resetUploadForm();
+      console.log('📎 [Frontend] Bulk upload complete!');
     },
     onError: (error: Error) => {
-      cancelUpload();
+      console.error('📎 [Frontend] BULK UPLOAD ERROR!', error);
+      console.error('📎 [Frontend] Bulk error type:', error.constructor.name);
+      console.error('📎 [Frontend] Bulk error message:', error.message);
+      console.error('📎 [Frontend] Bulk error stack:', error.stack);
+      // REMOVED: cancelUpload() - function doesn't exist
       toast({ 
         title: "Bulk upload failed", 
         description: error.message,
