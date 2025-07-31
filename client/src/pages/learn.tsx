@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { AppLayout } from '@/components/layout/app-layout';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +22,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import { toast } from '@/hooks/use-toast';
 
 interface VideoData {
   id: string;
@@ -207,6 +207,15 @@ export default function LearnPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  // Track page view
+  useEffect(() => {
+    import('@/lib/analytics').then(({ analytics }) => {
+      analytics.trackPageView({
+        page: '/learn'
+      });
+    });
+  }, []);
+
   const filteredVideos = videos.filter(video => {
     const matchesSearch = 
       video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -315,8 +324,85 @@ export default function LearnPage() {
   );
 
   return (
-    <AppLayout>
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen">
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 w-full z-50 bg-gray-900/95 backdrop-blur-xl border-b border-white/10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            {/* Logo with custom color scheme */}
+            <Link href="/">
+              <div className="font-black text-3xl tracking-tight cursor-pointer">
+                <span style={{ color: '#1e3a8a' }}>CLAR</span>
+                <span className="text-yellow-500">A</span>
+                <span style={{ color: '#1e3a8a' }}>F</span>
+                <span className="text-yellow-500">I</span>
+              </div>
+            </Link>
+            
+            {/* Desktop Navigation Links */}
+            <div className="hidden md:flex items-center gap-8">
+              <a href="/#solution" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
+                Features
+              </a>
+              <a href="/#pricing" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
+                Pricing
+              </a>
+              <Link href="/about-us" className="text-gray-100 hover:text-white transition-colors font-medium text-lg">
+                About
+              </Link>
+              <Link href="/learn" className="text-white font-medium text-lg border-b-2 border-yellow-500">
+                Learn
+              </Link>
+            </div>
+            
+            {/* Auth CTAs */}
+            <div className="flex items-center gap-4">
+              {user ? (
+                <Link href="/dashboard">
+                  <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-lg">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/auth">
+                    <Button 
+                      variant="ghost" 
+                      className="text-gray-300 hover:text-white hover:bg-white/10"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link href="/auth?tab=register">
+                    <Button className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold shadow-lg">
+                      Start Free Trial
+                    </Button>
+                  </Link>
+                </>
+              )}
+              
+              {/* Mobile menu button */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden text-white hover:bg-white/10"
+                onClick={() => {
+                  toast({
+                    title: "Mobile Menu",
+                    description: "Mobile menu coming soon",
+                  });
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="pt-16 min-h-screen bg-gradient-to-b from-gray-50 to-white">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white">
           <div className="container mx-auto px-4 py-12">
@@ -460,6 +546,6 @@ export default function LearnPage() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </div>
   );
 }
