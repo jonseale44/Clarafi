@@ -476,33 +476,44 @@ export function PatientAttachments({
       console.log('📎 [Frontend] Starting upload tracking for patient:', patientId, 'file:', fileName);
       startUpload(patientId, fileName);
       
-      const response = await fetch(`/api/patients/${patientId}/attachments`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      console.log('📎 [Frontend] Response status:', response.status);
-      console.log('📎 [Frontend] Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      const responseText = await response.text();
-      console.log('📎 [Frontend] Raw response text:', responseText);
-      
-      if (!response.ok) {
-        cancelUpload();
-        throw new Error(`Upload failed: ${response.status} - ${responseText}`);
-      }
-      
-      // Update progress to processing stage
-      updateProgress(80, 'processing');
-      
       try {
-        const result = JSON.parse(responseText);
-        updateProgress(90, 'analyzing');
-        return result;
-      } catch (parseError) {
-        console.error('📎 [Frontend] JSON parse error:', parseError);
+        const response = await fetch(`/api/patients/${patientId}/attachments`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        console.log('📎 [Frontend] Response status:', response.status);
+        console.log('📎 [Frontend] Response headers:', Object.fromEntries(response.headers.entries()));
+      
+        const responseText = await response.text();
+        console.log('📎 [Frontend] Raw response text:', responseText);
+        
+        if (!response.ok) {
+          cancelUpload();
+          throw new Error(`Upload failed: ${response.status} - ${responseText}`);
+        }
+        
+        // Update progress to processing stage
+        updateProgress(80, 'processing');
+        
+        try {
+          const result = JSON.parse(responseText);
+          updateProgress(90, 'analyzing');
+          return result;
+        } catch (parseError) {
+          console.error('📎 [Frontend] JSON parse error:', parseError);
+          cancelUpload();
+          throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+        }
+      } catch (fetchError) {
+        console.error('📎 [Frontend] Fetch error:', fetchError);
+        console.error('📎 [Frontend] Error details:', {
+          name: (fetchError as any)?.name,
+          message: (fetchError as any)?.message,
+          stack: (fetchError as any)?.stack?.split('\n').slice(0, 3).join('\n')
+        });
         cancelUpload();
-        throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}...`);
+        throw fetchError;
       }
     },
     onSuccess: (data) => {
