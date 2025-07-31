@@ -44,11 +44,20 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || "fallback-secret-for-development-only";
+  const isProduction = process.env.NODE_ENV === "production";
+  
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    cookie: {
+      secure: isProduction, // Required for HTTPS
+      httpOnly: true,
+      sameSite: "lax", // Allows cookies to work with form submissions
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      // Don't set domain - let the browser handle it automatically
+    }
   };
 
   app.set("trust proxy", 1);
