@@ -53,6 +53,36 @@ function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Health check endpoint - must be before authentication
+app.get("/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
+    port: process.env.PORT || 3001
+  });
+});
+
+// AWS ALB health check endpoint
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    status: "healthy",
+    service: "clarafi-backend",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Simple test endpoint for AWS deployment debugging
+app.get("/api/test", (req, res) => {
+  res.status(200).json({
+    message: "Server is running",
+    environment: process.env.NODE_ENV || "development",
+    port: process.env.PORT || 5000,
+    nodeVersion: process.version,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Simple request logging middleware
 app.use((req, res, next) => {
   console.log(`📍 [FIRST] ${req.method} ${req.url}`);
@@ -178,15 +208,29 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, async () => {
+    console.log(`🚀 [STARTUP] Server listening on http://0.0.0.0:${port}`);
+    console.log(`🚀 [STARTUP] Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`🚀 [STARTUP] Database URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Missing"}`);
+    console.log(`🚀 [STARTUP] Health check endpoints:`);
+    console.log(`   - GET /health`);
+    console.log(`   - GET /api/health`);
+    
     log(`serving on port ${port}`);
     log("Database ready - you can register a new account or use admin/admin123 if already created");
     
-    // Initialize system data (import real clinics from NPPES)
-    await initializeSystemData();
-    
-    // Initialize archive maintenance scheduling
-    const { TrialManagementService } = await import("./trial-management-service.js");
-    await TrialManagementService.scheduleArchiveMaintenance();
-    log("Archive maintenance scheduled for weekly purging of expired archives");
+    try {
+      // Initialize system data (import real clinics from NPPES)
+      await initializeSystemData();
+      
+      // Initialize archive maintenance scheduling
+      const { TrialManagementService } = await import("./trial-management-service.js");
+      await TrialManagementService.scheduleArchiveMaintenance();
+      log("Archive maintenance scheduled for weekly purging of expired archives");
+      
+      console.log(`✅ [STARTUP] Server startup complete`);
+    } catch (error) {
+      console.error(`❌ [STARTUP] Error during initialization:`, error);
+      // Don't exit - let the server continue running for health checks
+    }
   });
 })();

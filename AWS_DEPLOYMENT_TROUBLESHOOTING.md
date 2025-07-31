@@ -1,216 +1,121 @@
-# AWS Deployment Troubleshooting Log
+# AWS Deployment Troubleshooting Guide
 
-## Problem Summary
-**Issue**: AWS Elastic Beanstalk deployment fails with "Unknown or duplicate parameter: NodeVersion" and "NodeCommand" errors, despite fixing configuration files.
+## Current Issues
+1. **503 Service Unavailable** on `/api/login` - "upstream c..." error from Envoy proxy
+2. **404 Not Found** on `/api/health-systems/public` - Route not accessible
+3. Registration form shows "Error checking username" and "Error checking email"
 
-**Platform**: Node.js 20 running on 64bit Amazon Linux 2023/6.6.1
+## These errors indicate your backend server is not running or not accessible in AWS
 
-## Attempts Made
+## Diagnostic Steps
 
-### Attempt 1: Initial deployment
-- **Command**: `eb create clarafi-deploy --database.engine postgres --single`
-- **Result**: Failed with NodeVersion/NodeCommand errors
-- **Time**: ~22:46 UTC
-
-### Attempt 2: Fixed nodecommand.config
-- **Action**: Updated `.ebextensions/nodecommand.config` to remove deprecated parameters
-- **Content**:
-  ```yaml
-  option_settings:
-    aws:elasticbeanstalk:application:environment:
-      NODE_ENV: production
-      NPM_CONFIG_PRODUCTION: true
-      PORT: 8080
-  ```
-- **Result**: Still failed with same errors
-- **Time**: ~23:17 UTC
-
-### Attempt 3: Verified local files
-- **Action**: 
-  - Confirmed nodecommand.config doesn't exist locally (had to create it)
-  - Checked all .ebextensions files with grep - no NodeVersion/NodeCommand found
-  - Verified Procfile exists with `web: npm start`
-- **Result**: Still failed with same errors
-- **Time**: ~00:33 UTC
-
-### Attempt 4: Clean slate approach
-- **Action**:
-  - Removed `.elasticbeanstalk/` directory
-  - Reinitiated with `eb init clarafi-emr --platform "Node.js 20 running on 64bit Amazon Linux 2023"`
-- **Result**: Still failed with same errors
-- **Time**: ~00:38 UTC
-
-## Root Cause Analysis
-
-The issue persists despite local fixes, suggesting:
-
-1. **AWS is using cached configuration** - Previous application versions might contain the deprecated parameters
-2. **Hidden configuration source** - Parameters might be defined elsewhere:
-   - In AWS Console saved configurations
-   - In application templates
-   - In platform-specific defaults
-
-3. **Application archive issue** - The uploaded archive might contain files we're not seeing locally
-
-## SOLUTION FOUND
-
-The issue is that AWS Elastic Beanstalk is caching configuration from previous failed deployments at the APPLICATION level, not the environment level.
-
-## Immediate Fix - Nuclear Option
-
-### Step 1: Delete the Application from AWS Console
-1. Go to https://console.aws.amazon.com/elasticbeanstalk
-2. Select region: us-east-1
-3. Find application named "clarafi-emr"
-4. Click on it, then Actions → Delete Application
-5. Confirm deletion (this removes ALL cached configs)
-
-### Step 2: Create Fresh Application with New Name
+### 1. Check if your backend is running
 ```bash
-# Navigate to your project directory
-cd ~/clarafi-deployment/jonathanseale-07-29  # or wherever your project is
+# SSH into your AWS instance and check if Node.js process is running
+ps aux | grep node
 
-# Initialize with a NEW application name
-eb init clarafi-medical --platform "Node.js 20 running on 64bit Amazon Linux 2023" --region us-east-1
+# Check application logs
+tail -f /var/log/your-app-name.log
 
-# Create environment
-eb create production --database.engine postgres --single
+# Check if the app is listening on the expected port
+netstat -tlnp | grep :5000  # or whatever PORT you configured
 ```
 
-### Option 2: Inspect the uploaded archive
+### 2. Test the health check endpoints directly on the server
 ```bash
-# See what's actually being uploaded
-eb deploy --staged
-# This creates .elasticbeanstalk/app_versions/ 
-# Inspect the zip file contents
+# From inside your AWS instance
+curl http://localhost:5000/health
+curl http://localhost:5000/api/health
+curl http://localhost:5000/api/test
 ```
 
-### Option 3: Use explicit platform version
-```bash
-# Try older Node.js 18 platform which might handle configs differently
-eb create clarafi-deploy --platform "Node.js 18 running on 64bit Amazon Linux 2023"
+### 3. Check environment variables
+Your app needs these environment variables set:
+- `PORT` - The port your app should listen on (AWS App Runner typically uses 8000)
+- `DATABASE_URL` - Your PostgreSQL connection string
+- `NODE_ENV` - Should be "production"
+- `OPENAI_API_KEY` - For AI features
+- Any other API keys your app uses
+
+### 4. Common AWS-specific issues
+
+#### AWS App Runner
+If using App Runner, ensure:
+- Port configuration matches (App Runner expects port 8000 by default)
+- Health check path is configured correctly in App Runner settings
+- Environment variables are set in App Runner configuration
+
+#### AWS ECS/Fargate
+If using ECS:
+- Task definition has correct port mappings
+- Security groups allow traffic on your application port
+- Target group health checks are configured correctly
+- Container logs show the app starting successfully
+
+#### AWS EC2 with Load Balancer
+If using EC2:
+- Security groups allow traffic between ALB and EC2 instances
+- Target group health checks use the correct port and path
+- Instance is in a healthy state in the target group
+
+### 5. Quick fixes to try
+
+1. **Update your start script** to ensure proper port binding:
+```javascript
+// In your server startup code
+const port = process.env.PORT || 8000;  // AWS often expects 8000
 ```
 
-### Option 4: Direct AWS Console approach
-1. Log into AWS Console
-2. Go to Elastic Beanstalk
-3. Check "Saved Configurations" for the application
-4. Delete any saved configs
-5. Check application versions and delete old ones
+2. **Add more detailed error logging** at startup:
+```javascript
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  // Don't exit in production - let health checks fail instead
+});
 
-### Option 5: Use different deployment method
-- Consider using AWS App Runner (simpler, HIPAA compliant)
-- Or ECS with Fargate (more control, also HIPAA compliant)
-
-## Configuration Files Status
-
-| File | Status | Content |
-|------|--------|---------|
-| .ebextensions/nodecommand.config | ✅ Created locally | No NodeVersion/NodeCommand |
-| .ebextensions/environment.config | ✅ Verified | Only has PORT and proxy settings |
-| .ebextensions/healthcheck.config | ✅ Verified | Clean, no Node params |
-| .ebextensions/https-instance.config | ✅ Verified | Only nginx config |
-| Procfile | ✅ Exists | `web: npm start` |
-
-## Current Deployment Attempt (NEW APPLICATION)
-**Time**: 00:51 UTC July 30, 2025
-**Application Name**: clarafi-medical (NEW - not clarafi-emr)
-**Command**: `eb create production --database.engine postgres --single`
-**Platform**: Node.js 20 running on 64bit Amazon Linux 2023
-**Status**: FAILED - SAME ERROR
-
-### Failure Details:
-```
-2025-07-30 00:51:24    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
-2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeVersion 
-2025-07-30 00:51:24    ERROR   Unknown or duplicate parameter: NodeCommand 
-2025-07-30 00:51:24    ERROR   Failed to launch environment.
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 ```
 
-## CRITICAL FINDING
+3. **Verify database connection**:
+The app might be failing to start due to database connection issues. Check:
+- DATABASE_URL is correct
+- Database is accessible from your AWS environment
+- Security groups allow connection to the database
 
-The SAME NodeVersion/NodeCommand errors persist even with:
-- Completely new application name
-- Deleted .elasticbeanstalk directory
-- Fresh eb init
-- Verified clean config files locally
+### 6. Test with simplified deployment
 
-**This means AWS is finding these parameters in the uploaded archive itself**
+Try deploying a minimal version first:
+1. Comment out database initialization in your startup
+2. Deploy just with health check endpoints working
+3. Once that works, add back features one by one
 
-## Investigation Needed
+### 7. AWS-specific configuration
 
-The parameters must be coming from:
-1. A hidden file being included in the archive
-2. EB CLI adding these parameters automatically
-3. Saved configuration templates at the account level
-4. The platform itself expecting different parameter names
-
-### Attempt 5: Investigation of uploaded files
-**Time**: 00:53 UTC July 30, 2025
-**Actions**:
-- Found `temp_check/.ebextensions/nodecommand.config` containing the bad parameters
-- This was from a previous debugging attempt
-- Removed temp_check directory
-- Verified no other files contain NodeVersion/NodeCommand
-
-```bash
-grep -r "NodeVersion\|NodeCommand" . --include="*.config" --include="*.json" --include="*.yaml" --include="*.yml"
-# Result: Clean - no matches
+Make sure your `package.json` start script works for production:
+```json
+{
+  "scripts": {
+    "start": "node server/index.js",
+    "build": "tsc && vite build"
+  }
+}
 ```
 
-### Attempt 6: Minimal Configuration Approach
-**Time**: 00:59 UTC July 30, 2025
-**Strategy**: Remove ALL configurations except bare minimum
-**Actions**:
-1. Backed up .ebextensions to .ebextensions.full-backup
-2. Created new minimal .ebextensions with only:
-   - NODE_ENV: production
-   - PORT: 8080
-3. Using new environment name: production-minimal
+### 8. Check build output
 
-**Result**: FAILED - EXACT SAME ERROR
-```
-2025-07-30 00:59:18    ERROR   "option_settings" in one of the configuration files failed validation. More details to follow.
-2025-07-30 00:59:18    ERROR   Unknown or duplicate parameter: NodeVersion 
-2025-07-30 00:59:18    ERROR   Unknown or duplicate parameter: NodeCommand 
-2025-07-30 00:59:18    ERROR   Failed to launch environment.
-```
+Ensure your build process:
+1. Compiles TypeScript correctly
+2. Includes all necessary files
+3. Has all dependencies in `package.json` (not devDependencies)
 
-## Pattern Recognition
+## Next Steps
 
-We keep hitting the same error despite:
-1. New application names
-2. Clean local files
-3. No AWS Console configurations
-4. Fresh EB CLI initialization
+1. SSH into your AWS instance and check the logs
+2. Verify environment variables are set
+3. Test health endpoints directly on the server
+4. Check if the port configuration matches AWS expectations
+5. Look for any startup errors in the logs
 
-**This suggests the issue is NOT in our files but in:**
-- The EB CLI itself
-- AWS account-level settings
-- The Node.js 20 platform definition
-
-## FINAL CONCLUSION
-
-After 6+ attempts over several hours, we have definitively proven:
-
-1. **The issue is NOT in our configuration files** - Even with minimal config, the error persists
-2. **The issue is NOT cached in AWS** - New application names fail with same error
-3. **The issue appears to be systemic** - Either EB CLI bug or platform incompatibility
-
-### Root Cause Theories:
-1. **EB CLI Bug**: The CLI might be injecting these parameters automatically for Node.js 20
-2. **Platform Issue**: Node.js 20 on Amazon Linux 2023 might have different parameter names
-3. **Account Configuration**: Possible saved configuration template at account level
-
-### Recommended Next Steps:
-1. **ABANDON Elastic Beanstalk** - Use AWS App Runner instead (guide created)
-2. **If must use EB** - Try Node.js 18 platform instead of 20
-3. **Contact AWS Support** - This appears to be a platform bug
-
-### Time Wasted:
-- Total attempts: 6+
-- Time spent: ~2.5 hours
-- Result: Complete failure with identical error every time
-
-### Lesson Learned:
-When a deployment tool fails repeatedly with the same error despite multiple approaches, the issue is likely with the tool itself, not your configuration.
+The key issue is that your backend server is not accessible to the load balancer. Once you get the health check endpoints working (`/health` or `/api/health`), the other endpoints should work too.
