@@ -8,7 +8,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
-import "./lab-order-background-processor.js"; // Auto-start background processor
+// import "./lab-order-background-processor.js"; // Auto-start background processor - temporarily disabled due to missing file
 import { initializeSystemData } from "./system-initialization";
 
 const app = express();
