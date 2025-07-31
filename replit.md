@@ -14,7 +14,36 @@ A comprehensive medical transcription and lab management platform designed to st
 - Tailwind CSS for responsive design
 - Shadcn UI component library
 
+## Deployment Workflow
+
+### Production Environment
+- **Live URL**: https://clarafi.ai
+- **AWS Region**: us-east-2 (Ohio)
+- **Infrastructure**: AWS App Runner (HIPAA compliant with BAA)
+- **Database**: RDS PostgreSQL at clarafi-db.ca54qe20gs6u.us-east-1.rds.amazonaws.com
+- **DNS**: Route 53 managing clarafi.ai domain
+
+### Deployment Process
+1. **Development**: Make changes in Replit and test locally
+2. **Commit**: Push changes to GitHub `main2` branch (NOT main)
+3. **Deploy**: Manually trigger deployment in AWS App Runner console
+   - Log into AWS Console → App Runner → clarafi service → Click "Deploy"
+   - Automatic GitHub deployments are NOT working - must be done manually
+4. **Monitor**: Check deployment logs and verify at https://clarafi.ai
+
+### Important Notes
+- Full deployment guide: See `AWS_DEPLOYMENT_WORKFLOW_GUIDE.md`
+- Emergency rollback: Use App Runner's "Deploy this version" feature
+- Environment variables: Managed in App Runner configuration
+- Cost: ~$25-45/month (App Runner + RDS)
+
 ## Recent Changes
+
+### July 31, 2025 - Deployment Workflow Documentation
+- ✅ Created comprehensive AWS deployment workflow guide
+- ✅ Documented GitHub to AWS App Runner deployment process
+- ✅ Confirmed production deployment at https://clarafi.ai
+- ✅ Verified Route 53 DNS configuration for clarafi.ai domain
 
 ### July 30, 2025 - OpenAI Realtime API Troubleshooting
 **Issue**: Intermittent 403 Forbidden errors during voice transcription despite successful WebSocket connections.
@@ -66,11 +95,12 @@ This occurred even with:
 - ✅ Code successfully pushed to GitHub main2 branch
 - ✅ All environment variables configured in App Runner (including STRIPE_SECRET_KEY)
 - 🔄 Ready for App Runner deployment - user needs to change branch to main2 and save
-- ⚠️ IMPORTANT: Automatic deployments from GitHub do NOT work - must manually press "Rebuild" in App Runner console after each push
+- ⚠️ IMPORTANT: Automatic deployments from GitHub do NOT work - must manually press "Deploy" in App Runner console after each push
 - ⚠️ Fixed port configuration - app now uses PORT env variable instead of hardcoded 5000
 - ✅ Fixed production path resolution - removed import.meta.dirname error by using dynamic imports
 - ✅ Fixed EFaxService path.resolve error - made uploads directory resolution lazy
-- ✅ Created vite-wrapper.ts to prevent vite.ts from being bundled in production
+- ✅ Created vite-wrapper.ts to prevent vite bundling in production
+- ✅ Successfully deployed to production at https://clarafi.ai
 
 ### July 29, 2025 - WebAuthn Passkey Fix
 **Issue**: Passkey registration failed when deployed due to hardcoded RP ID (Relying Party ID) set to Replit development domain.
