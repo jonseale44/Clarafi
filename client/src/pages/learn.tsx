@@ -44,25 +44,28 @@ const videos: VideoData[] = [
     id: 'intro-clarafi',
     title: 'Welcome to CLARAFI',
     description: 'See how CLARAFI transforms your practice in under 3 minutes',
-    duration: '2:45',
+    duration: '',
     category: 'getting-started',
     isNew: true,
+    comingSoon: true,
     tags: ['overview', 'benefits']
   },
   {
     id: 'first-patient',
     title: 'Your First Patient Visit',
     description: 'Complete documentation in minutes, not hours',
-    duration: '3:20',
+    duration: '',
     category: 'getting-started',
+    comingSoon: true,
     tags: ['workflow', 'basics']
   },
   {
     id: 'ai-assistant',
     title: 'Meet Your AI Assistant',
     description: 'Understanding how AI suggestions work to save you time',
-    duration: '2:15',
+    duration: '',
     category: 'getting-started',
+    comingSoon: true,
     tags: ['AI', 'automation']
   },
 
@@ -71,33 +74,37 @@ const videos: VideoData[] = [
     id: 'voice-to-soap',
     title: 'Voice to SOAP in Seconds',
     description: 'Just talk naturally - AI captures everything and creates perfect documentation',
-    duration: '2:30',
+    duration: '',
     category: 'core-features',
     isNew: true,
+    comingSoon: true,
     tags: ['voice', 'SOAP', 'documentation']
   },
   {
     id: 'attachment-magic',
     title: 'Attachment Processing Magic',
     description: 'Upload any document format and watch it transform into structured data',
-    duration: '2:00',
+    duration: '',
     category: 'core-features',
+    comingSoon: true,
     tags: ['attachments', 'OCR', 'data extraction']
   },
   {
     id: 'auto-coding',
     title: 'Automated CPT Coding',
     description: 'Never miss billing opportunities with AI-powered code suggestions',
-    duration: '2:45',
+    duration: '',
     category: 'core-features',
+    comingSoon: true,
     tags: ['billing', 'CPT', 'revenue']
   },
   {
     id: 'lab-intelligence',
     title: 'Lab Intelligence Revolution',
     description: 'Natural language queries across all patient lab results',
-    duration: '3:00',
+    duration: '',
     category: 'core-features',
+    comingSoon: true,
     tags: ['labs', 'analytics', 'insights']
   },
 
@@ -106,24 +113,27 @@ const videos: VideoData[] = [
     id: 'bulk-processing',
     title: 'Bulk Document Processing',
     description: 'Process hundreds of documents in minutes',
-    duration: '2:15',
+    duration: '',
     category: 'time-savers',
+    comingSoon: true,
     tags: ['efficiency', 'batch', 'migration']
   },
   {
     id: 'smart-orders',
     title: 'Smart Order Sets',
     description: 'AI learns your preferences and suggests complete order sets',
-    duration: '2:30',
+    duration: '',
     category: 'time-savers',
+    comingSoon: true,
     tags: ['orders', 'AI', 'personalization']
   },
   {
     id: 'pre-visit-planning',
     title: 'Pre-Visit Planning AI',
     description: 'Start every visit prepared with AI-generated summaries',
-    duration: '2:00',
+    duration: '',
     category: 'time-savers',
+    comingSoon: true,
     tags: ['planning', 'efficiency', 'preparation']
   },
 
@@ -132,25 +142,27 @@ const videos: VideoData[] = [
     id: 'custom-templates',
     title: 'Custom Templates & Workflows',
     description: 'Tailor CLARAFI to your specific practice needs',
-    duration: '3:15',
+    duration: '',
     category: 'advanced',
     isPremium: true,
+    comingSoon: true,
     tags: ['customization', 'templates', 'workflows']
   },
   {
     id: 'analytics-insights',
     title: 'Practice Analytics & Insights',
     description: 'Data-driven insights to optimize your practice',
-    duration: '3:00',
+    duration: '',
     category: 'advanced',
     isPremium: true,
+    comingSoon: true,
     tags: ['analytics', 'reporting', 'insights']
   },
   {
     id: 'team-collaboration',
     title: 'Team Collaboration Features',
     description: 'Seamless coordination between providers and staff',
-    duration: '2:45',
+    duration: '',
     category: 'advanced',
     comingSoon: true,
     tags: ['team', 'collaboration', 'communication']
@@ -209,8 +221,10 @@ export default function LearnPage() {
   const VideoCard = ({ video }: { video: VideoData }) => (
     <Card 
       className={cn(
-        "group hover:shadow-lg transition-all duration-300 overflow-hidden",
-        video.comingSoon && "opacity-75"
+        "group transition-all duration-300 overflow-hidden",
+        video.comingSoon 
+          ? "opacity-75 cursor-not-allowed" 
+          : "hover:shadow-lg cursor-pointer"
       )}
     >
       {/* Video Thumbnail Area */}
@@ -235,31 +249,34 @@ export default function LearnPage() {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
-          {video.isNew && (
+          {video.isNew && !video.comingSoon && (
             <Badge className="bg-yellow-500 text-black border-0">
               New
             </Badge>
           )}
-          {video.isPremium && (
+          {video.isPremium && !video.comingSoon && (
             <Badge variant="secondary" className="bg-purple-600 text-white border-0">
               <Star className="w-3 h-3 mr-1" />
               Premium
             </Badge>
           )}
           {video.comingSoon && (
-            <Badge variant="secondary" className="bg-gray-600 text-white border-0">
+            <Badge variant="secondary" className="bg-gray-700 text-gray-200 border-0">
+              <Clock className="w-3 h-3 mr-1" />
               Coming Soon
             </Badge>
           )}
         </div>
 
-        {/* Duration */}
-        <div className="absolute bottom-3 right-3">
-          <Badge variant="secondary" className="bg-black/70 text-white border-0">
-            <Clock className="w-3 h-3 mr-1" />
-            {video.duration}
-          </Badge>
-        </div>
+        {/* Duration - Only show if not coming soon and duration exists */}
+        {!video.comingSoon && video.duration && (
+          <div className="absolute bottom-3 right-3">
+            <Badge variant="secondary" className="bg-black/70 text-white border-0">
+              <Clock className="w-3 h-3 mr-1" />
+              {video.duration}
+            </Badge>
+          </div>
+        )}
 
         {/* Category Icon */}
         <div className="absolute top-3 right-3">
@@ -343,6 +360,25 @@ export default function LearnPage() {
                   <Users className="w-4 h-4 text-yellow-400" />
                   <span>Updated Weekly</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Coming Soon Notice */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Clock className="w-3 h-3 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-blue-900 font-medium">
+                  Video tutorials are currently in production
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  We're creating comprehensive video content to help you master CLARAFI. Check back soon or explore our interactive demo and documentation in the meantime.
+                </p>
               </div>
             </div>
           </div>
