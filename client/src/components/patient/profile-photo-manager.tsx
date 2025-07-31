@@ -66,9 +66,9 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
 
   // Size configurations
   const sizeConfig = {
-    sm: { avatar: "w-12 h-12", text: "text-sm", qr: 150 },
-    md: { avatar: "w-20 h-20", text: "text-lg", qr: 200 },
-    lg: { avatar: "w-32 h-32", text: "text-2xl", qr: 250 }
+    sm: { avatar: "w-20 h-20", text: "text-lg", qr: 150 },
+    md: { avatar: "w-24 h-24", text: "text-xl", qr: 200 },
+    lg: { avatar: "w-40 h-40", text: "text-3xl", qr: 250 }
   };
 
   const config = sizeConfig[size];
@@ -312,28 +312,30 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
 
   return (
     <>
-      <div className="relative inline-block">
+      <div className={`relative inline-block transition-all duration-300 ${isExpanded ? 'z-50 mb-20' : ''}`}>
         <div
           ref={dropZoneRef}
-          className={`relative ${editable && isDragging ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+          className={`relative transition-all duration-300 ${editable && isDragging ? 'ring-2 ring-primary ring-offset-2' : ''}`}
           onDragOver={editable ? handleDragOver : undefined}
           onDragLeave={editable ? handleDragLeave : undefined}
           onDrop={editable ? handleDrop : undefined}
         >
           <Avatar 
-            className={`${config.avatar} border-2 border-gray-200 cursor-pointer transition-transform hover:scale-105`}
-            onClick={() => setIsExpanded(true)}
+            className={`${config.avatar} border-2 border-gray-200 cursor-pointer transition-all duration-300 ${
+              isExpanded ? 'w-48 h-48 transform scale-125' : 'hover:scale-105'
+            }`}
+            onClick={() => setIsExpanded(!isExpanded)}
           >
             <AvatarImage 
               src={patient.profilePhotoFilename ? `/uploads/profile-photos/${patient.profilePhotoFilename}` : undefined}
               alt={`${patient.firstName} ${patient.lastName}`}
             />
-            <AvatarFallback className={`${config.text} bg-gray-100`}>
+            <AvatarFallback className={`${config.text} bg-gray-100 ${isExpanded ? 'text-5xl' : ''} transition-all duration-300`}>
               {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
             </AvatarFallback>
           </Avatar>
           
-          {editable && (
+          {editable && !isExpanded && (
             <Button
               size="icon"
               variant="secondary"
@@ -345,6 +347,50 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
             >
               <Camera className="h-4 w-4" />
             </Button>
+          )}
+          
+          {editable && isExpanded && (
+            <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2 bg-white p-2 rounded-lg shadow-lg">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                Upload
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  createQRSession();
+                }}
+              >
+                <QrCode className="h-4 w-4 mr-1" />
+                QR
+              </Button>
+              
+              {patient.profilePhotoFilename && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Remove profile photo?')) {
+                      deleteMutation.mutate();
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -379,66 +425,7 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
         }}
       />
 
-      {/* Expanded Photo Dialog */}
-      <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Profile Photo</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <Avatar className="w-64 h-64 border-4 border-gray-200">
-                <AvatarImage 
-                  src={patient.profilePhotoFilename ? `/uploads/profile-photos/${patient.profilePhotoFilename}` : undefined}
-                  alt={`${patient.firstName} ${patient.lastName}`}
-                />
-                <AvatarFallback className="text-6xl bg-gray-100">
-                  {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            
-            {console.log('[ProfilePhotoManager] Dialog render - editable:', editable)}
-            {editable ? (
-              <div className="flex justify-center gap-2">
-                {console.log('[ProfilePhotoManager] Rendering buttons')}
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Photo
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={createQRSession}
-                >
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Use Mobile Camera
-                </Button>
-                
-                {patient.profilePhotoFilename && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (confirm('Remove profile photo?')) {
-                        deleteMutation.mutate();
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Remove
-                  </Button>
-                )}
-              </div>
-            ) : (
-              console.log('[ProfilePhotoManager] Not editable, buttons hidden')
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Crop Dialog */}
       <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
