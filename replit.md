@@ -39,6 +39,14 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
+### July 31, 2025 - Email Verification Technical Debt Analysis
+- ✅ Identified critical technical debt in email verification systems
+- ✅ Documented differences between tier 1 and tier 2 registration flows
+- ✅ Created comprehensive plan to address email verification issues
+- ✅ **Important Discovery**: Tier 1 now offers 30-day free trial (NO immediate payment required)
+- ✅ Found three separate email systems: standard verification, magic links, and admin verification
+- ✅ Identified legacy tier 3 references throughout codebase
+
 ### July 31, 2025 - Deployment Workflow Documentation
 - ✅ Created comprehensive AWS deployment workflow guide
 - ✅ Documented GitHub to AWS App Runner deployment process
@@ -125,6 +133,35 @@ This occurred even with:
 **Important Note about Iframe Deployment**: Passkeys will not work when the site is accessed through an iframe (such as Replit's deployment preview) due to browser security restrictions. The parent frame must explicitly allow `publickey-credentials-create` and `publickey-credentials-get` permissions in its Permissions-Policy header. For full passkey functionality, the site must be:
 1. Accessed directly (not through an iframe), OR
 2. Embedded in an iframe that includes: `Permissions-Policy: publickey-credentials-create=(self "https://yourdomain.com"), publickey-credentials-get=(self "https://yourdomain.com")`
+
+## Registration & Payment Flows (CURRENT STATE - July 31, 2025)
+
+### Tier 1 (Individual Provider) - $149/month
+1. **Registration**: Select "Create my own individual practice"
+2. **Trial Period**: 30-day FREE trial (NO immediate payment)
+3. **Email Verification**: Standard verification email with yellow button
+4. **After Trial**: Optional upgrade to paid plan via `/api/trial/upgrade`
+5. **Status**: `subscriptionStatus: 'trial'` during trial period
+
+### Tier 2 (Enterprise) - Custom Pricing
+**Path A - New Organization:**
+1. Apply at `/admin-verification`
+2. AI/manual review process
+3. Receive 6-character verification CODE (not a link)
+4. Enter code at `/admin-verification-complete`
+5. Receive temporary password
+
+**Path B - Join Existing:**
+1. Admin generates subscription keys
+2. Staff receives invitation email with key
+3. Register with key (no payment required)
+4. Standard email verification
+5. Access granted after verification
+
+### Email Systems (3 Separate Systems)
+1. **Standard Email Verification**: Yellow button, dev environment notice
+2. **Magic Links**: Alternative login (currently broken - route mismatch)
+3. **Admin Verification**: 6-character codes for enterprise admins
 
 ## Project Architecture
 
