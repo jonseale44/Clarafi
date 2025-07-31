@@ -101,6 +101,8 @@ import {
 } from "../shared/schema.js";
 
 import { eq, desc, and, ne, sql } from "drizzle-orm";
+import fs from "fs/promises";
+import crypto from "crypto";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -1278,6 +1280,306 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ message: "Patient access tracked successfully" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Profile Photo Routes
+  const profilePhotoUpload = multer({
+    storage: multer.diskStorage({
+      destination: async (req, file, cb) => {
+        const uploadsDir = path.join(process.cwd(), 'uploads', 'profile-photos');
+        await fs.mkdir(uploadsDir, { recursive: true });
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        const hash = crypto.createHash('md5').update(file.originalname + Date.now()).digest('hex');
+        const ext = path.extname(file.originalname);
+        cb(null, `profile_${hash}${ext}`);
+      }
+    }),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heif', 'image/heic', 'image/webp'];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only JPEG, PNG, HEIF/HEIC, and WebP images are allowed'));
+      }
+    }
+  });
+
+  // Upload profile photo
+  app.post("/api/patients/:id/profile-photo", tenantIsolation, profilePhotoUpload.single('photo'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const healthSystemId = req.userHealthSystemId!;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No photo uploaded' });
+      }
+      
+      // Get the patient to verify access and get old photo
+      const patient = await storage.getPatient(patientId, healthSystemId);
+      if (!patient) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+      
+      // Delete old profile photo if exists
+      if (patient.profilePhotoFilename) {
+        const oldPhotoPath = path.join(process.cwd(), 'uploads', 'profile-photos', patient.profilePhotoFilename);
+        try {
+          await fs.unlink(oldPhotoPath);
+        } catch (error) {
+          console.log('Failed to delete old profile photo:', error);
+        }
+      }
+      
+      // Update patient with new photo filename
+      await db.update(patients)
+        .set({ 
+          profilePhotoFilename: req.file.filename,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(patients.id, patientId),
+          eq(patients.healthSystemId, healthSystemId)
+        ));
+      
+      console.log(`📸 [ProfilePhoto] Updated profile photo for patient ${patientId}`);
+      
+      res.json({
+        success: true,
+        filename: req.file.filename,
+        url: `/uploads/profile-photos/${req.file.filename}`
+      });
+    } catch (error: any) {
+      console.error('❌ [ProfilePhoto] Upload error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delete profile photo
+  app.delete("/api/patients/:id/profile-photo", tenantIsolation, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const healthSystemId = req.userHealthSystemId!;
+      
+      // Get the patient to verify access and get photo
+      const patient = await storage.getPatient(patientId, healthSystemId);
+      if (!patient) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+      
+      // Delete photo file if exists
+      if (patient.profilePhotoFilename) {
+        const photoPath = path.join(process.cwd(), 'uploads', 'profile-photos', patient.profilePhotoFilename);
+        try {
+          await fs.unlink(photoPath);
+        } catch (error) {
+          console.log('Failed to delete profile photo file:', error);
+        }
+      }
+      
+      // Clear profile photo from database
+      await db.update(patients)
+        .set({ 
+          profilePhotoFilename: null,
+          updatedAt: new Date()
+        })
+        .where(and(
+          eq(patients.id, patientId),
+          eq(patients.healthSystemId, healthSystemId)
+        ));
+      
+      console.log(`📸 [ProfilePhoto] Deleted profile photo for patient ${patientId}`);
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error('❌ [ProfilePhoto] Delete error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Profile photo capture session management (for QR code mobile capture)
+  const profilePhotoSessions = new Map<string, {
+    sessionId: string;
+    patientId: number;
+    createdAt: Date;
+    uploadedPhoto: {
+      filename: string;
+      originalName: string;
+      mimetype: string;
+      size: number;
+    } | null;
+    status: 'active' | 'completed' | 'expired';
+  }>();
+
+  // Clean up expired sessions every 5 minutes
+  setInterval(() => {
+    const now = new Date();
+    for (const [sessionId, session] of Array.from(profilePhotoSessions.entries())) {
+      const sessionAge = now.getTime() - session.createdAt.getTime();
+      if (sessionAge > 10 * 60 * 1000) { // 10 minutes
+        session.status = 'expired';
+        setTimeout(() => profilePhotoSessions.delete(sessionId), 5 * 60 * 1000);
+      }
+    }
+  }, 5 * 60 * 1000);
+
+  // Create profile photo capture session
+  app.post("/api/patients/:id/profile-photo/session", tenantIsolation, async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) return res.sendStatus(401);
+      
+      const patientId = parseInt(req.params.id);
+      const healthSystemId = req.userHealthSystemId!;
+      
+      // Verify patient exists
+      const patient = await storage.getPatient(patientId, healthSystemId);
+      if (!patient) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+      
+      const sessionId = crypto.randomBytes(16).toString('hex');
+      
+      profilePhotoSessions.set(sessionId, {
+        sessionId,
+        patientId,
+        createdAt: new Date(),
+        uploadedPhoto: null,
+        status: 'active'
+      });
+      
+      // Generate the capture URL
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const captureUrl = `${protocol}://${host}/capture-profile/${sessionId}`;
+      
+      console.log(`📸 [ProfilePhoto] Created capture session ${sessionId} for patient ${patientId}`);
+      
+      res.json({
+        sessionId,
+        captureUrl,
+        expiresIn: 600 // 10 minutes
+      });
+    } catch (error: any) {
+      console.error('❌ [ProfilePhoto] Session creation error:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get profile photo session status
+  app.get("/api/profile-photo/sessions/:sessionId", async (req, res) => {
+    const { sessionId } = req.params;
+    const session = profilePhotoSessions.get(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    res.json({
+      sessionId: session.sessionId,
+      status: session.status,
+      hasPhoto: !!session.uploadedPhoto,
+      photo: session.uploadedPhoto ? {
+        filename: session.uploadedPhoto.filename,
+        size: session.uploadedPhoto.size
+      } : null
+    });
+  });
+
+  // Upload photo to profile session
+  app.post("/api/profile-photo/sessions/:sessionId/upload", profilePhotoUpload.single('photo'), async (req, res) => {
+    const { sessionId } = req.params;
+    const session = profilePhotoSessions.get(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    if (session.status !== 'active') {
+      return res.status(400).json({ error: 'Session is no longer active' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No photo uploaded' });
+    }
+    
+    // Store photo info in session
+    session.uploadedPhoto = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    };
+    
+    console.log(`📸 [ProfilePhoto] Photo uploaded to session ${sessionId}`);
+    
+    res.json({
+      success: true,
+      filename: req.file.filename
+    });
+  });
+
+  // Complete profile photo session
+  app.post("/api/profile-photo/sessions/:sessionId/complete", async (req, res) => {
+    const { sessionId } = req.params;
+    const session = profilePhotoSessions.get(sessionId);
+    
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+    
+    if (!session.uploadedPhoto) {
+      return res.status(400).json({ error: 'No photo uploaded in this session' });
+    }
+    
+    try {
+      // Get the patient
+      const patient = await db.select()
+        .from(patients)
+        .where(eq(patients.id, session.patientId))
+        .limit(1);
+      
+      if (!patient[0]) {
+        return res.status(404).json({ error: 'Patient not found' });
+      }
+      
+      // Delete old profile photo if exists
+      if (patient[0].profilePhotoFilename) {
+        const oldPhotoPath = path.join(process.cwd(), 'uploads', 'profile-photos', patient[0].profilePhotoFilename);
+        try {
+          await fs.unlink(oldPhotoPath);
+        } catch (error) {
+          console.log('Failed to delete old profile photo:', error);
+        }
+      }
+      
+      // Update patient with new photo
+      await db.update(patients)
+        .set({ 
+          profilePhotoFilename: session.uploadedPhoto.filename,
+          updatedAt: new Date()
+        })
+        .where(eq(patients.id, session.patientId));
+      
+      session.status = 'completed';
+      
+      console.log(`📸 [ProfilePhoto] Session ${sessionId} completed, photo set for patient ${session.patientId}`);
+      
+      res.json({
+        success: true,
+        photoUrl: `/uploads/profile-photos/${session.uploadedPhoto.filename}`
+      });
+    } catch (error: any) {
+      console.error('❌ [ProfilePhoto] Session completion error:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

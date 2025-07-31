@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ProfilePhotoManager } from "./profile-photo-manager";
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -337,20 +337,11 @@ export function UnifiedChartPanel({
       <div className="p-4 bg-white border-b border-gray-200">
         <div className="flex items-start justify-between">
           <div className="flex items-start space-x-3 flex-1 min-w-0">
-            <Avatar className="w-12 h-12 border-2 border-gray-200 flex-shrink-0">
-              <AvatarImage
-                src={
-                  patient.profilePhotoFilename
-                    ? `/uploads/${patient.profilePhotoFilename}`
-                    : undefined
-                }
-                alt={`${patient.firstName} ${patient.lastName}`}
-              />
-              <AvatarFallback className="text-sm bg-gray-100">
-                {patient.firstName?.[0] || "P"}
-                {patient.lastName?.[0] || "P"}
-              </AvatarFallback>
-            </Avatar>
+            <ProfilePhotoManager
+              patient={patient}
+              size="sm"
+              editable={false}
+            />
 
             <div className="flex-1 min-w-0">
               <h3 className="text-lg font-semibold text-gray-900 truncate">
