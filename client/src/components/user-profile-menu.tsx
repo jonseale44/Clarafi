@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   User as UserIcon, 
@@ -6,7 +6,10 @@ import {
   Settings, 
   Shield, 
   ChevronDown,
-  Edit3
+  Edit3,
+  Camera,
+  Upload,
+  QrCode
 } from "lucide-react";
 import type { User as UserType } from "@shared/schema";
 import {
@@ -23,6 +26,13 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EditProfileDialog } from "./edit-profile-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UserProfileMenuProps {
   className?: string;
@@ -32,6 +42,10 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [zoomDialogOpen, setZoomDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch current user data
   const { data: user, isLoading } = useQuery<UserType>({
@@ -62,6 +76,69 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
 
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  // Upload mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/user/profile-photo', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+      toast({
+        title: "Profile photo updated",
+        description: "Your profile photo has been successfully uploaded.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message,
+      });
+    },
+  });
+
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadPhotoMutation.mutate(file);
+    }
+  };
+
+  // Generate QR code for mobile upload
+  const handleGenerateQRCode = async () => {
+    try {
+      const response = await fetch('/api/user/profile-photo/qr-code', {
+        method: 'POST',
+      });
+      
+      if (!response.ok) throw new Error('Failed to generate QR code');
+      
+      const data = await response.json();
+      setQrCodeUrl(data.qrCodeUrl);
+      setUploadDialogOpen(true);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Failed to generate QR code",
+        description: "Please try again later.",
+      });
+    }
   };
 
   if (isLoading || !user) {
@@ -110,7 +187,21 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
             className={`flex items-center space-x-3 px-3 py-2 hover:bg-gray-100 ${className}`}
             data-median="mobile-compact-profile"
           >
-            <Avatar className="w-8 h-8">
+            <Avatar 
+              className="w-8 h-8 cursor-pointer hover:ring-2 hover:ring-primary" 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (user?.profileImageUrl) {
+                  setZoomDialogOpen(true);
+                }
+              }}
+            >
+              {user?.profileImageUrl && (
+                <AvatarImage 
+                  src={user.profileImageUrl} 
+                  alt={`${user.firstName} ${user.lastName}`}
+                />
+              )}
               <AvatarFallback className="text-xs bg-primary text-white">
                 {user?.firstName?.[0] || 'U'}{user?.lastName?.[0] || 'U'}
               </AvatarFallback>
@@ -166,6 +257,22 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
             <Edit3 className="w-4 h-4 mr-2" />
             Edit Profile
           </DropdownMenuItem>
+
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Upload Profile Photo
+          </DropdownMenuItem>
+
+          <DropdownMenuItem 
+            className="cursor-pointer"
+            onClick={handleGenerateQRCode}
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            Upload via Mobile (QR Code)
+          </DropdownMenuItem>
           
           <DropdownMenuItem 
             className="cursor-pointer" 
@@ -215,6 +322,57 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
           }}
         />
       )}
+
+      {/* Hidden file input for photo upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {/* Zoom Dialog for Profile Photo */}
+      <Dialog open={zoomDialogOpen} onOpenChange={setZoomDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Profile Photo</DialogTitle>
+          </DialogHeader>
+          {user?.profileImageUrl && (
+            <div className="flex justify-center p-4">
+              <img 
+                src={user.profileImageUrl} 
+                alt={`${user.firstName} ${user.lastName}`}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code Dialog for Mobile Upload */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Profile Photo via Mobile</DialogTitle>
+            <DialogDescription>
+              Scan this QR code with your mobile device to upload a profile photo
+            </DialogDescription>
+          </DialogHeader>
+          {qrCodeUrl && (
+            <div className="flex flex-col items-center space-y-4 p-4">
+              <img 
+                src={qrCodeUrl} 
+                alt="QR Code for profile photo upload"
+                className="w-64 h-64"
+              />
+              <p className="text-sm text-gray-600 text-center">
+                This QR code is valid for 10 minutes. After scanning, you can upload multiple photos from your device.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

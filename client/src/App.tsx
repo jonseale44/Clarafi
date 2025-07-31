@@ -67,6 +67,7 @@ import MedianDemoPage from "@/pages/median-demo";
 import MedianBackgroundAudioDemo from "@/pages/median-background-audio-demo";
 import { GPTLabDemo } from "@/pages/gpt-lab-demo";
 import LearnPage from "@/pages/learn";
+import { MobileProfilePhotoCaptureView } from "@/pages/mobile-profile-photo-capture";
 
 function Router() {
   // Track page views when routes change
@@ -132,6 +133,9 @@ function Router() {
       <Route path="/admin-verification" component={AdminVerification} />
       <Route path="/admin-verification-complete" component={AdminVerificationComplete} />
       <Route path="/payment" component={PaymentPage} />
+      
+      {/* Mobile profile photo capture (accessed via QR code) */}
+      <Route path="/profile-photo/capture/:token" component={MobileProfilePhotoCaptureView} />
 
       
       {/* Public Blog Routes */}
