@@ -271,18 +271,17 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Calculate dimensions for a square crop
-    const size = Math.min(completedCrop.width, completedCrop.height);
-    canvas.width = size;
-    canvas.height = size;
+    // Use the actual crop dimensions to prevent distortion
+    canvas.width = completedCrop.width;
+    canvas.height = completedCrop.height;
     
     // Apply rotation
     ctx.save();
-    ctx.translate(size / 2, size / 2);
+    ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(-size / 2, -size / 2);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
     
-    // Draw the cropped image
+    // Draw the cropped image without reshaping
     ctx.drawImage(
       image,
       completedCrop.x,
@@ -291,8 +290,8 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
       completedCrop.height,
       0,
       0,
-      size,
-      size
+      completedCrop.width,
+      completedCrop.height
     );
     
     ctx.restore();
@@ -441,8 +440,6 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
                   crop={crop}
                   onChange={(c) => setCrop(c)}
                   onComplete={(c) => setCompletedCrop(c)}
-                  aspect={1}
-                  circularCrop
                 >
                   <img
                     ref={imgRef}
