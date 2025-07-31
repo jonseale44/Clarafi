@@ -1145,23 +1145,29 @@ export function PatientAttachments({
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+    console.log('📎 [Frontend] File select triggered, files:', files?.length || 0);
+    
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
+      console.log('📎 [Frontend] Processing files:', fileArray.map(f => ({ name: f.name, size: f.size, type: f.type })));
       
       if (fileArray.length === 1) {
         // Single file mode
+        console.log('📎 [Frontend] Single file mode, setting uploadFile');
         setUploadFile(fileArray[0]);
         setUploadFiles([]);
         setTitle(fileArray[0].name);
         setUploadMode('single');
       } else {
         // Multiple files mode
+        console.log('📎 [Frontend] Multiple files mode, setting uploadFiles');
         setUploadFiles(fileArray);
         setUploadFile(null);
         setTitle('');
         setUploadMode('multiple');
       }
       
+      console.log('📎 [Frontend] Setting showUploadForm to true');
       setShowUploadForm(true);
     }
     // Reset the input so the same files can be selected again
@@ -1169,12 +1175,27 @@ export function PatientAttachments({
   };
 
   const handleUpload = () => {
-    if (uploadMode === 'single' && !uploadFile) return;
-    if (uploadMode === 'multiple' && uploadFiles.length === 0) return;
+    if (uploadMode === 'single' && !uploadFile) {
+      console.log('📎 [Frontend] No file selected for single upload');
+      return;
+    }
+    if (uploadMode === 'multiple' && uploadFiles.length === 0) {
+      console.log('📎 [Frontend] No files selected for multiple upload');
+      return;
+    }
     
     const formData = new FormData();
     
     if (uploadMode === 'single' && uploadFile) {
+      // Debug file object
+      console.log('📎 [Frontend] Upload file details:', {
+        name: uploadFile.name,
+        size: uploadFile.size,
+        type: uploadFile.type,
+        lastModified: uploadFile.lastModified,
+        isFile: uploadFile instanceof File
+      });
+      
       // Single file upload
       formData.append('file', uploadFile);
       formData.append('title', title);
@@ -1318,6 +1339,7 @@ export function PatientAttachments({
       {!isReadOnly && (
         <Card data-median="attachments-upload-card">
           <CardContent className="pt-6">
+            {console.log('📎 [Frontend] Upload form state:', { showUploadForm, photoCaptureSession, uploadFile, uploadFiles: uploadFiles.length })}
             {!showUploadForm && !photoCaptureSession ? (
               <div 
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer ${
