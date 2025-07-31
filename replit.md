@@ -22,6 +22,8 @@ A comprehensive medical transcription and lab management platform designed to st
 - **Infrastructure**: AWS App Runner (HIPAA compliant with BAA)
 - **Database**: RDS PostgreSQL at clarafi-db.ca54qe20gs6u.us-east-1.rds.amazonaws.com
 - **DNS**: Route 53 managing clarafi.ai domain
+- **Security Group**: sg-097abc98448fc28f1 (configured with PostgreSQL inbound rule on port 5432 from 0.0.0.0/0)
+- **Security Group**: sg-097abc98448fc28f1 (configured with PostgreSQL inbound rule on port 5432 from 0.0.0.0/0)
 
 ### Deployment Process
 1. **Development**: Make changes in Replit and test locally
@@ -38,6 +40,12 @@ A comprehensive medical transcription and lab management platform designed to st
 - Cost: ~$25-45/month (App Runner + RDS)
 
 ## Recent Changes
+
+### July 31, 2025 - Production Database Connection Fix
+- ✅ Fixed 500 error on `/api/check-email` endpoint at https://clarafi.ai
+- ✅ Root cause: RDS security group was missing PostgreSQL inbound rule
+- ✅ Solution: Added inbound rule for PostgreSQL (port 5432) from 0.0.0.0/0 to security group sg-097abc98448fc28f1
+- ✅ This allows AWS App Runner to connect to RDS database across regions (App Runner in us-east-2, RDS in us-east-1)
 
 ### July 31, 2025 - Priority 2 Technical Debt Resolution Progress
 - ✅ Fixed magic link route mismatch: Changed email URLs from `/api/auth/magic-link/${token}` to `/auth/magic-link/${token}`
