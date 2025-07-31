@@ -59,7 +59,7 @@ app.get("/health", (req, res) => {
     status: "healthy",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
-    port: process.env.PORT || 3001
+    port: process.env.PORT || 8080
   });
 });
 
@@ -77,7 +77,7 @@ app.get("/api/test", (req, res) => {
   res.status(200).json({
     message: "Server is running",
     environment: process.env.NODE_ENV || "development",
-    port: process.env.PORT || 5000,
+    port: process.env.PORT || 8080,
     nodeVersion: process.version,
     timestamp: new Date().toISOString()
   });
@@ -201,8 +201,8 @@ app.use((req, res, next) => {
   }
 
   // Use PORT from environment variable for production deployments
-  // Default to 5000 for local development
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+  // Default to 8080 for AWS App Runner compatibility
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 8080;
   server.listen({
     port,
     host: "0.0.0.0",
