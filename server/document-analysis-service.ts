@@ -396,7 +396,7 @@ export class DocumentAnalysisService {
   }
 
   /**
-   * Analyze multiple pages with GPT-4.1 Vision in parallel
+   * Analyze multiple pages with GPT-4.1-mini Vision in parallel
    */
   private async analyzeMultiplePagesWithGPT(base64Images: string[], originalFileName: string): Promise<{
     extractedText: string;
@@ -433,7 +433,7 @@ export class DocumentAnalysisService {
   }
 
   /**
-   * Analyze single page with GPT-4.1 Vision
+   * Analyze single page with GPT-4.1-mini Vision
    */
   private async analyzeWithGPT(
     imageBase64: string,
@@ -444,7 +444,7 @@ export class DocumentAnalysisService {
     documentType: string;
     summary: string;
   }> {
-    console.log(`📄 [DocumentAnalysis] Calling GPT-4.1 Vision for analysis`);
+    console.log(`📄 [DocumentAnalysis] Calling GPT-4.1-mini Vision for analysis`);
     console.log(
       `📄 [DocumentAnalysis] Base64 string length: ${imageBase64.length}`,
     );
@@ -520,7 +520,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
         `📄 [DocumentAnalysis] Making OpenAI API call with clean base64...`,
       );
       const response = await this.openai.chat.completions.create({
-        model: "gpt-4.1",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "user",
@@ -549,7 +549,7 @@ Preserve the original structure and formatting where possible. Be thorough and a
 
       const content = response.choices[0].message.content;
       if (!content) {
-        throw new Error("No response from GPT-4.1");
+        throw new Error("No response from GPT-4.1-mini");
       }
 
       console.log(`📄 [DocumentAnalysis] Raw response content:`, content);
