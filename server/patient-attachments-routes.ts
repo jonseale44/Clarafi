@@ -19,6 +19,20 @@ const getPathModule = async () => {
 
 const router = Router();
 
+// Debug middleware to log all requests to this router
+router.use((req, res, next) => {
+  console.log('📎 [AttachmentRouter] Request received:', {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    contentType: req.get('content-type'),
+    hasFile: !!req.file,
+    hasFiles: !!req.files
+  });
+  next();
+});
+
 // Production EMR file handling standards:
 // - Epic/Athena typically allow up to 100MB for medical documents
 // - Support PDF, JPEG, PNG, TIFF, DICOM
