@@ -33,6 +33,15 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Debug logging
+  console.log('[ProfilePhotoManager] Props:', { 
+    patient, 
+    size, 
+    editable,
+    patientId: patient.id,
+    profilePhotoFilename: patient.profilePhotoFilename 
+  });
   const dropZoneRef = useRef<HTMLDivElement>(null);
   
   const [isExpanded, setIsExpanded] = useState(false);
