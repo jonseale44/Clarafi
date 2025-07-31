@@ -1153,10 +1153,15 @@ export function PatientAttachments({
       
       if (fileArray.length === 1) {
         // Single file mode
-        console.log('📎 [Frontend] Single file mode, setting uploadFile');
-        setUploadFile(fileArray[0]);
+        const file = fileArray[0];
+        console.log('📎 [Frontend] Single file mode, file details:', {
+          name: file.name,
+          size: file.size,
+          type: file.type
+        });
+        setUploadFile(file);
         setUploadFiles([]);
-        setTitle(fileArray[0].name);
+        setTitle(file.name);
         setUploadMode('single');
       } else {
         // Multiple files mode
@@ -1192,8 +1197,7 @@ export function PatientAttachments({
         name: uploadFile.name,
         size: uploadFile.size,
         type: uploadFile.type,
-        lastModified: uploadFile.lastModified,
-        isFile: uploadFile instanceof File
+        lastModified: uploadFile.lastModified
       });
       
       // Single file upload
@@ -1443,12 +1447,19 @@ export function PatientAttachments({
               </div>
             ) : (
               <div className="space-y-4">
-                {uploadMode === 'single' && uploadFile ? (
+                {console.log('📎 [Frontend] Upload form render check:', { 
+                  uploadMode, 
+                  hasUploadFile: !!uploadFile,
+                  uploadFileName: uploadFile?.name || title,
+                  uploadFileSize: uploadFile?.size,
+                  title
+                })}
+                {uploadMode === 'single' && (uploadFile || title) ? (
                   <>
                     <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                      {getFileIcon(uploadFile.type)}
-                      <span className="text-sm font-medium">{uploadFile.name}</span>
-                      <span className="text-xs text-gray-500">({formatFileSize(uploadFile.size)})</span>
+                      {getFileIcon(uploadFile?.type || 'application/octet-stream')}
+                      <span className="text-sm font-medium">{uploadFile?.name || title}</span>
+                      {uploadFile?.size && <span className="text-xs text-gray-500">({formatFileSize(uploadFile.size)})</span>}
                     </div>
                     
                     <div className="space-y-2">
