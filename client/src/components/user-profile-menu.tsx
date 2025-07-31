@@ -316,9 +316,9 @@ export function UserProfileMenu({ className }: UserProfileMenuProps) {
             firstName: user.firstName || "",
             lastName: user.lastName || "",
             role: user.role,
-            credentials: user.credentials,
-            npi: user.npi,
-            healthSystemName: user.healthSystemName
+            credentials: user.credentials || undefined,
+            npi: user.npi || undefined,
+            healthSystemName: ""
           }}
         />
       )}
