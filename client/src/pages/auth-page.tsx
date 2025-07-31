@@ -859,7 +859,6 @@ export default function AuthPage() {
           return;
         }
       } else if (selectedHealthSystemId.startsWith('location-')) {
-```text
         // User selected a specific location
         selectedLocationId = parseInt(selectedHealthSystemId.replace('location-', ''));
         // We'll need to get the health system ID from the location on the backend
@@ -1835,9 +1834,9 @@ export default function AuthPage() {
               <span className="text-white/20">•</span>
               <a href="#contact" className="hover:text-white transition-colors">Contact</a>
               <span className="text-white/20">•</span>
-              <Link href={`/privacy?returnTo=/auth?tab=${activeTab}`} className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href={"/privacy?returnTo=" + encodeURIComponent('/auth?tab=' + activeTab)} className="hover:text-white transition-colors">Privacy Policy</Link>
               <span className="text-white/20">•</span>
-              <Link href={`/terms?returnTo=/auth?tab=${activeTab}`} className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href={"/terms?returnTo=" + encodeURIComponent('/auth?tab=' + activeTab)} className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
             <p className="text-xs text-navy-blue-300 text-center mt-3">
               © 2025 Clarafi Medical. HIPAA Compliant • SOC2 Type II Certified
