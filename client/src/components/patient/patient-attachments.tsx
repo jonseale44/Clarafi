@@ -445,6 +445,7 @@ export function PatientAttachments({
   // Single file upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      console.log('📎 [Frontend] ===== MUTATION FUNCTION STARTED =====');
       console.log('📎 [Frontend] Starting single upload for patient:', patientId);
       console.log('📎 [Frontend] FormData contents:', Array.from(formData.entries()));
       
