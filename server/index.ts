@@ -4,6 +4,7 @@ import { config } from "dotenv";
 config();
 
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { initializeDatabase } from "./init-db";
 import { seedLabData } from "./lab-sample-data";
@@ -11,6 +12,35 @@ import "./lab-order-background-processor.js"; // Auto-start background processor
 import { initializeSystemData } from "./system-initialization";
 
 const app = express();
+
+// Configure CORS for production and development
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'https://clarafi.ai',
+      'https://www.clarafi.ai',
+      'https://unmb7vc4nw.us-east-2.awsapprunner.com'
+    ];
+    
+    // In development, allow requests without origin (like from Postman) or from any origin
+    if (!origin || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, check against allowed origins
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // Important for cookies/sessions
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 // For legacy browser support
+};
+
+app.use(cors(corsOptions));
 
 // Simple log function
 function log(message: string, source = "express") {
