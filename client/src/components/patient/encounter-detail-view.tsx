@@ -1663,7 +1663,10 @@ export function EncounterDetailView({
 
     return (
       content
-        // First, convert any markdown headers (###) to bold format
+        // First, remove any horizontal rules (---) from the content
+        .replace(/^---\s*$/gm, "")
+        .replace(/\n---\s*\n/g, "\n")
+        // Convert any markdown headers (###) to bold format
         .replace(/^###\s+(.+?):/gm, "**$1:**")
         .replace(/\n###\s+(.+?):/g, "\n**$1:**")
         // Convert markdown bold to HTML

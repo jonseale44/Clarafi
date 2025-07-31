@@ -1045,6 +1045,8 @@ Diagnostic and therapeutic plan
 CRITICAL FORMATTING INSTRUCTIONS:
 - Use ONLY double asterisks (**) for section headers, NOT markdown headers (###)
 - Example: **CHIEF COMPLAINT:** (correct) vs ### CHIEF COMPLAINT: (incorrect)
+- DO NOT use horizontal rules (---) or any other separators between sections
+- Each section should flow directly into the next with only line breaks
 - Comprehensive documentation appropriate for initial evaluation
 - Include complete review of systems
 - Detailed physical examination
