@@ -26,6 +26,7 @@ import { Patient } from "@shared/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { ProfilePhotoManager } from "@/components/patient/profile-photo-manager";
 
 interface PatientTableProps {
   patients: Patient[];
@@ -154,6 +155,9 @@ export function PatientTable({ patients }: PatientTableProps) {
       <Table>
         <TableHeader data-median="mobile-table-header">
           <TableRow>
+            <TableHead className="w-20">
+              Photo
+            </TableHead>
             <TableHead>
               <Button
                 variant="ghost"
@@ -220,6 +224,13 @@ export function PatientTable({ patients }: PatientTableProps) {
         <TableBody>
           {sortedPatients.map((patient) => (
             <TableRow key={patient.id}>
+              <TableCell className="py-2">
+                <ProfilePhotoManager
+                  patient={patient}
+                  config={{ size: 'sm', showWhenEmpty: true }}
+                  editable={true}
+                />
+              </TableCell>
               <TableCell className="font-medium">
                 <Link href={`/patients/${patient.id}/chart`}>
                   <span className="text-navy-blue-600 hover:text-navy-blue-800 hover:underline cursor-pointer">
