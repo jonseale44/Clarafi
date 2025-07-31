@@ -1042,7 +1042,9 @@ Clinical impression with differential diagnosis
 **PLAN:**
 Diagnostic and therapeutic plan
 
-IMPORTANT INSTRUCTIONS:
+CRITICAL FORMATTING INSTRUCTIONS:
+- Use ONLY double asterisks (**) for section headers, NOT markdown headers (###)
+- Example: **CHIEF COMPLAINT:** (correct) vs ### CHIEF COMPLAINT: (incorrect)
 - Comprehensive documentation appropriate for initial evaluation
 - Include complete review of systems
 - Detailed physical examination

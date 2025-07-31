@@ -1663,6 +1663,9 @@ export function EncounterDetailView({
 
     return (
       content
+        // First, convert any markdown headers (###) to bold format
+        .replace(/^###\s+(.+?):/gm, "**$1:**")
+        .replace(/\n###\s+(.+?):/g, "\n**$1:**")
         // Convert markdown bold to HTML
         .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
         // Convert single line breaks to HTML breaks
