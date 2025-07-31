@@ -39,6 +39,14 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
+### July 31, 2025 - Priority 2 Technical Debt Resolution Progress
+- ✅ Fixed magic link route mismatch: Changed email URLs from `/api/auth/magic-link/${token}` to `/auth/magic-link/${token}`
+- ✅ Completed standardizing error messages across ALL email verification systems:
+  - ✅ Updated magic-link-routes.ts to use consistent `{ success: false, message: '...' }` format
+  - ✅ Updated admin-verification-routes.ts to use consistent `{ success: false, message: '...' }` format
+  - ✅ All error responses now follow the same pattern for better frontend handling
+- 🔄 Next priority: Normalizing success response formats for consistency
+
 ### July 31, 2025 - Tier 3 Removal & System Simplification
 - ✅ **MAJOR CHANGE**: Removed Tier 3 from the entire system
 - ✅ Updated database schema: Changed `tier3_verified` to `tier2_verified` 

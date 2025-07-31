@@ -27,14 +27,16 @@ router.post("/api/auth/magic-link", async (req, res) => {
     // For login, user must exist
     if (parsed.purpose === 'login' && existingUser.length === 0) {
       return res.status(404).json({ 
-        error: "No account found with this email address" 
+        success: false,
+        message: "No account found with this email address" 
       });
     }
 
     // For registration, user must not exist
     if (parsed.purpose === 'registration' && existingUser.length > 0) {
       return res.status(409).json({ 
-        error: "An account already exists with this email address" 
+        success: false,
+        message: "An account already exists with this email address" 
       });
     }
 
@@ -63,9 +65,15 @@ router.post("/api/auth/magic-link", async (req, res) => {
   } catch (error) {
     console.error('❌ [MagicLink] Error:', error);
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: error.errors[0].message });
+      return res.status(400).json({ 
+        success: false,
+        message: error.errors[0].message 
+      });
     }
-    res.status(500).json({ error: "Failed to send magic link" });
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to send magic link" 
+    });
   }
 });
 
@@ -79,7 +87,8 @@ router.get("/api/auth/magic-link/:token", async (req, res) => {
 
     if (!result.valid) {
       return res.status(400).json({ 
-        error: result.error || "Invalid or expired link" 
+        success: false,
+        message: result.error || "Invalid or expired link" 
       });
     }
 
@@ -91,7 +100,10 @@ router.get("/api/auth/magic-link/:token", async (req, res) => {
         .limit(1);
 
       if (user.length === 0) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ 
+          success: false,
+          message: "User not found" 
+        });
       }
 
       // Create session
@@ -119,7 +131,10 @@ router.get("/api/auth/magic-link/:token", async (req, res) => {
     });
   } catch (error) {
     console.error('❌ [MagicLink] Validation error:', error);
-    res.status(500).json({ error: "Failed to validate magic link" });
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to validate magic link" 
+    });
   }
 });
 

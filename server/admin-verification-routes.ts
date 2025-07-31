@@ -8,19 +8,28 @@ import { clinicAdminVerifications, users, healthSystems } from '@shared/schema';
 // Middleware functions
 const requireAuth = (req: any, res: any, next: any) => {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ 
+      success: false,
+      message: 'Authentication required' 
+    });
   }
   next();
 };
 
 const requireAdmin = (req: any, res: any, next: any) => {
   if (!req.isAuthenticated() || !req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
+    return res.status(401).json({ 
+      success: false,
+      message: 'Authentication required' 
+    });
   }
   
   const userRole = (req.user as any).role;
   if (userRole !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
+    return res.status(403).json({ 
+      success: false,
+      message: 'Admin access required' 
+    });
   }
   
   next();
@@ -68,6 +77,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       if (!validatedData.baaAccepted || !validatedData.termsAccepted) {
         console.log('⚠️ [AdminVerification] Legal agreements not accepted');
         return res.status(400).json({
+          success: false,
           message: 'You must accept the Business Associate Agreement and Terms of Service'
         });
       }
@@ -92,12 +102,14 @@ export function registerAdminVerificationRoutes(app: Express) {
       if (error instanceof z.ZodError) {
         console.error('❌ [AdminVerification] Zod validation errors:', error.errors);
         return res.status(400).json({
+          success: false,
           message: 'Invalid request data',
           errors: error.errors
         });
       }
       
       res.status(400).json({
+        success: false,
         message: error.message || 'Failed to start verification process'
       });
     }
@@ -113,6 +125,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!verificationId || !code) {
         return res.status(400).json({
+          success: false,
           message: 'Verification ID and code are required'
         });
       }
@@ -130,6 +143,7 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error completing verification:', error);
       res.status(400).json({
+        success: false,
         message: error.message || 'Failed to complete verification'
       });
     }
@@ -161,6 +175,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (verifications.length === 0) {
         return res.status(404).json({
+          success: false,
           message: 'No verification found for this email'
         });
       }
@@ -172,6 +187,7 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error checking status:', error);
       res.status(500).json({
+        success: false,
         message: 'Failed to check verification status'
       });
     }
@@ -241,7 +257,10 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!email) {
         console.log('❌ [AdminVerification] No email provided');
-        return res.status(400).json({ error: 'Email is required' });
+        return res.status(400).json({ 
+          success: false,
+          message: 'Email is required' 
+        });
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
@@ -278,7 +297,10 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error) {
       console.error('❌ [AdminVerification] Error checking email:', error);
       console.error('Stack trace:', (error as any).stack);
-      res.status(500).json({ error: 'Failed to check email' });
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to check email' 
+      });
     }
   });
 
@@ -292,7 +314,10 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!phone) {
         console.log('❌ [AdminVerification] No phone provided');
-        return res.status(400).json({ error: 'Phone is required' });
+        return res.status(400).json({ 
+          success: false,
+          message: 'Phone is required' 
+        });
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
@@ -329,7 +354,10 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error) {
       console.error('❌ [AdminVerification] Error checking phone:', error);
       console.error('Stack trace:', (error as any).stack);
-      res.status(500).json({ error: 'Failed to check phone' });
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to check phone' 
+      });
     }
   });
 
@@ -367,7 +395,10 @@ export function registerAdminVerificationRoutes(app: Express) {
       });
     } catch (error) {
       console.error('Error checking tax ID:', error);
-      res.status(500).json({ error: 'Failed to check tax ID' });
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to check tax ID' 
+      });
     }
   });
 
@@ -381,7 +412,10 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!name) {
         console.log('❌ [AdminVerification] No organization name provided');
-        return res.status(400).json({ error: 'Organization name is required' });
+        return res.status(400).json({ 
+          success: false,
+          message: 'Organization name is required' 
+        });
       }
       
       console.log('🔍 [AdminVerification] Checking clinic_admin_verifications table...');
@@ -418,7 +452,10 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error) {
       console.error('❌ [AdminVerification] Error checking organization name:', error);
       console.error('Stack trace:', (error as any).stack);
-      res.status(500).json({ error: 'Failed to check organization name' });
+      res.status(500).json({ 
+        success: false,
+        message: 'Failed to check organization name' 
+      });
     }
   });
 
@@ -442,7 +479,10 @@ export function registerAdminVerificationRoutes(app: Express) {
         });
       } catch (error) {
         console.error('❌ [AdminVerification] Error clearing test data:', error);
-        res.status(500).json({ error: 'Failed to clear test data' });
+        res.status(500).json({ 
+          success: false,
+          message: 'Failed to clear test data' 
+        });
       }
     });
     
@@ -464,7 +504,10 @@ export function registerAdminVerificationRoutes(app: Express) {
         });
       } catch (error) {
         console.error('❌ [AdminVerification] Error clearing verification by email:', error);
-        res.status(500).json({ error: 'Failed to clear verification' });
+        res.status(500).json({ 
+          success: false,
+          message: 'Failed to clear verification' 
+        });
       }
     });
   }
@@ -479,6 +522,7 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error fetching review list:', error);
       res.status(500).json({
+        success: false,
         message: error.message || 'Failed to fetch verification requests'
       });
     }
@@ -492,6 +536,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!['approve', 'reject'].includes(decision)) {
         return res.status(400).json({
+          success: false,
           message: 'Invalid decision. Must be "approve" or "reject"'
         });
       }
@@ -507,6 +552,7 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error processing manual review:', error);
       res.status(400).json({
+        success: false,
         message: error.message || 'Failed to process review'
       });
     }
@@ -520,6 +566,7 @@ export function registerAdminVerificationRoutes(app: Express) {
       
       if (!message) {
         return res.status(400).json({
+          success: false,
           message: 'Message is required'
         });
       }
@@ -534,6 +581,7 @@ export function registerAdminVerificationRoutes(app: Express) {
     } catch (error: any) {
       console.error('❌ [AdminVerification] Error sending communication:', error);
       res.status(400).json({
+        success: false,
         message: error.message || 'Failed to send message'
       });
     }
