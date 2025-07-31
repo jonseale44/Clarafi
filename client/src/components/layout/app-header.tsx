@@ -24,7 +24,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { UserProfileMenu } from '@/components/user-profile-menu';
 
 interface AppHeaderProps {
   className?: string;
@@ -131,8 +130,85 @@ export function AppHeader({ className, showSearch = true, onMenuClick }: AppHead
                   <span className="sr-only">Notifications</span>
                 </Button>
 
-                {/* User profile menu with photo upload */}
-                <UserProfileMenu />
+                {/* User menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="flex items-center space-x-2 px-2"
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.profileImageUrl || undefined} />
+                        <AvatarFallback>{userInitials}</AvatarFallback>
+                      </Avatar>
+                      <div className="hidden sm:block text-left">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {user.role}
+                        </p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-gray-500 hidden sm:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/user-settings">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/account-settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Account Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/learn">
+                        <PlayCircle className="mr-2 h-4 w-4" />
+                        Help & Videos
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    {/* Admin menu items */}
+                    {user.role === 'admin' && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => logoutMutation.mutate()}
+                      className="text-red-600 focus:text-red-600"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               /* Unauthenticated user actions */

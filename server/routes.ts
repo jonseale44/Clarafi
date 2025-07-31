@@ -84,7 +84,6 @@ import fhirLabRoutes from "./fhir-lab-routes";
 import specimenTrackingRoutes from "./specimen-tracking-routes";
 import subscriptionKeyRoutes from "./subscription-key-routes";
 import blogRoutes from "./blog-routes";
-import userProfileRoutes from "./user-profile-routes";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -834,9 +833,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Blog routes (public and admin)
   app.use(blogRoutes);
-
-  // User profile photo routes
-  app.use("/api/user", userProfileRoutes);
 
   // Unified vitals processing (handles both immediate parsing and attachment extraction)
   const unifiedVitalsAPI = (await import("./unified-vitals-api.js")).default;
@@ -6340,11 +6336,6 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.get("/capture/:sessionId", (req: Request, res: Response) => {
     res.redirect(`/api/photo-capture/capture/${req.params.sessionId}`);
   });
-
-  // Import and register patient profile photo routes
-  const { patientProfilePhotoRoutes } = await import("./patient-profile-photo-routes.js");
-  app.use("/api/patient-photos", patientProfilePhotoRoutes);
-  console.log("📸 [PatientPhotos] Patient profile photo routes registered");
 
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
