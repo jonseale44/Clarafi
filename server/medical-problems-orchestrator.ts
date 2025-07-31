@@ -3,7 +3,7 @@
  * 
  * Manages the two-tier processing system for medical problems:
  * - Tier 1: Immediate processing after recording completion
- * - Tier 3: Processing after manual SOAP note edits (only if content changed)
+ * - Post-Edit: Processing after manual SOAP note edits (only if content changed)
  */
 
 import crypto from "crypto";
@@ -86,7 +86,7 @@ class MedicalProblemsOrchestrator {
   }
 
   /**
-   * Tier 3: Process medical problems after manual SOAP edits
+   * Post-Edit: Process medical problems after manual SOAP edits
    * Only processes if SOAP content has actually changed since Tier 1
    */
   async processManualSOAPEdit(
@@ -95,7 +95,7 @@ class MedicalProblemsOrchestrator {
     soapNote: string,
     providerId: number
   ) {
-    console.log(`🎯 [MedicalOrchestrator] === TIER 3 PROCESSING CHECK ===`);
+    console.log(`🎯 [MedicalOrchestrator] === POST-EDIT PROCESSING CHECK ===`);
     console.log(`🎯 [MedicalOrchestrator] Patient: ${patientId}, Encounter: ${encounterId}`);
 
     const state = this.getOrCreateEncounterState(encounterId);
@@ -103,7 +103,7 @@ class MedicalProblemsOrchestrator {
 
     // Check if we should process
     if (!state.hasCompletedInitialProcessing) {
-      console.log(`🎯 [MedicalOrchestrator] No initial processing completed - skipping Tier 3`);
+      console.log(`🎯 [MedicalOrchestrator] No initial processing completed - skipping Post-Edit`);
       return { 
         changes: [], 
         processing_time_ms: 0, 
@@ -113,7 +113,7 @@ class MedicalProblemsOrchestrator {
     }
 
     if (state.lastProcessedSOAPHash === soapHash) {
-      console.log(`🎯 [MedicalOrchestrator] SOAP content unchanged - skipping Tier 3`);
+      console.log(`🎯 [MedicalOrchestrator] SOAP content unchanged - skipping Post-Edit`);
       return { 
         changes: [], 
         processing_time_ms: 0, 
@@ -122,7 +122,7 @@ class MedicalProblemsOrchestrator {
       };
     }
 
-    console.log(`🎯 [MedicalOrchestrator] === TIER 3 PROCESSING START ===`);
+    console.log(`🎯 [MedicalOrchestrator] === POST-EDIT PROCESSING START ===`);
     console.log(`🎯 [MedicalOrchestrator] SOAP content changed - processing revision`);
 
     try {
@@ -140,11 +140,11 @@ class MedicalProblemsOrchestrator {
       // Update state
       state.lastProcessedSOAPHash = soapHash;
 
-      console.log(`✅ [MedicalOrchestrator] Tier 3 completed: ${result.total_problems_affected} problems affected`);
+      console.log(`✅ [MedicalOrchestrator] Post-Edit completed: ${result.total_problems_affected} problems affected`);
       return result;
 
     } catch (error) {
-      console.error(`❌ [MedicalOrchestrator] Tier 3 failed:`, error);
+      console.error(`❌ [MedicalOrchestrator] Post-Edit failed:`, error);
       throw error;
     }
   }

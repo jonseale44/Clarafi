@@ -16,7 +16,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 export interface CreateSubscriptionParams {
   email: string;
   name: string;
-  tier: 1 | 2 | 3;
+  tier: 1 | 2;
   billingPeriod: 'monthly' | 'annual';
   healthSystemId?: number;
   paymentMethodId?: string;
@@ -455,7 +455,7 @@ export class StripeService {
   static async createCheckoutSession(params: {
     email: string;
     name: string;
-    tier: 1 | 2 | 3;
+    tier: 1 | 2;
     billingPeriod: 'monthly' | 'annual';
     healthSystemId: number;
     metadata?: Record<string, string>;
@@ -466,7 +466,7 @@ export class StripeService {
   // Create a checkout session for upgrading (overloaded)
   static async createCheckoutSession(
     customerId: string,
-    tier: 1 | 2 | 3,
+    tier: 1 | 2,
     billingPeriod: 'monthly' | 'annual',
     successUrl: string,
     cancelUrl: string
@@ -475,7 +475,7 @@ export class StripeService {
   // Implementation
   static async createCheckoutSession(
     paramsOrCustomerId: any,
-    tier?: 1 | 2 | 3,
+    tier?: 1 | 2,
     billingPeriod?: 'monthly' | 'annual',
     successUrl?: string,
     cancelUrl?: string

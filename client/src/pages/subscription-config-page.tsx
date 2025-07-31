@@ -52,10 +52,7 @@ export default function SubscriptionConfigPage() {
   // Update configuration mutation
   const updateConfigMutation = useMutation({
     mutationFn: async (updatedConfig: Partial<SubscriptionConfig>) => {
-      return apiRequest('/api/subscription/config', {
-        method: 'PUT',
-        body: JSON.stringify(updatedConfig),
-      });
+      return apiRequest('PUT', '/api/subscription/config', updatedConfig);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/subscription/config'] });
@@ -312,7 +309,7 @@ export default function SubscriptionConfigPage() {
               </CardContent>
             </Card>
 
-            {/* Tier 3 Pricing */}
+            {/* Tier 2 Pricing */}
 
           </div>
         </TabsContent>

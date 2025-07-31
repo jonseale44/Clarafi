@@ -33,7 +33,7 @@ export default function StripeTest() {
     try {
       // Test 2: Create test session
       console.log('[StripeTest] Creating test checkout session...');
-      const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier3', {
+      const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier2', {
         healthSystemId: 2 // Using Waco Family Medicine
       });
       const data = await response.json();

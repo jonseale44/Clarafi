@@ -31,7 +31,7 @@ REPLIT_DEV_DOMAIN=https://YOUR-REPL-URL.replit.app
 ## Test Scenarios
 
 ### Scenario 1: Individual Provider Registration (Tier 1)
-**Goal**: Test individual provider signs up and pays for tier 1 subscription
+**Goal**: Test individual provider signs up for 30-day free trial
 
 1. **Register as Individual Provider**
    - Go to `/auth` and click "Register"
@@ -39,16 +39,20 @@ REPLIT_DEV_DOMAIN=https://YOUR-REPL-URL.replit.app
    - Fill in provider details
    - Submit registration
 
-2. **Stripe Checkout Redirect**
-   - You'll be redirected to Stripe checkout
-   - Use test card: `4242 4242 4242 4242`
-   - Any future date for expiry
-   - Any CVC (e.g., 123)
-   - Complete payment
+2. **Email Verification**
+   - Check your email for verification link
+   - Click the yellow "Verify Email Address" button
+   - Or enter the verification code manually
 
 3. **Verify Access**
    - Login with your credentials
-   - Verify you have tier 1 access (limited features)
+   - Verify you have tier 1 access with 30-day trial
+   - Trial banner should show days remaining
+
+4. **Optional: Upgrade After Trial**
+   - After trial expires (or during trial)
+   - Use `/api/trial/upgrade` endpoint
+   - Complete Stripe payment ($149/month)
 
 ### Scenario 2: Health System Upgrade to Tier 3
 **Goal**: Test health system admin upgrading to tier 3 to get subscription keys

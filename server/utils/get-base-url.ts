@@ -3,13 +3,27 @@
  * This ensures email links and other external URLs work correctly
  */
 export function getBaseUrl(): string {
-  // 1. Check for explicitly set APP_URL (highest priority)
+  // 1. Check for explicitly set PUBLIC_DOMAIN (for production)
+  if (process.env.PUBLIC_DOMAIN) {
+    const publicUrl = `https://${process.env.PUBLIC_DOMAIN.replace(/^https?:\/\//, '')}`;
+    console.log('📍 [BaseURL] Using PUBLIC_DOMAIN:', publicUrl);
+    return publicUrl;
+  }
+
+  // 2. Check for explicitly set APP_URL (legacy support)
   if (process.env.APP_URL) {
     console.log('📍 [BaseURL] Using APP_URL:', process.env.APP_URL);
     return process.env.APP_URL;
   }
 
-  // 2. Check if we're in a Replit deployment
+  // 3. Check if we're in AWS App Runner production
+  if (process.env.NODE_ENV === 'production') {
+    // Default to https://clarafi.ai if in production without explicit domain set
+    console.log('📍 [BaseURL] Using production default: https://clarafi.ai');
+    return 'https://clarafi.ai';
+  }
+
+  // 4. Check if we're in a Replit deployment
   if (process.env.REPLIT_DEPLOYMENT) {
     // Try to use the deployment URL if available
     if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
@@ -19,7 +33,7 @@ export function getBaseUrl(): string {
     }
   }
 
-  // 3. In development, we need to handle this differently
+  // 5. In development, we need to handle this differently
   // Email links from dev environment should include a note about accessing through the workspace
   if (process.env.REPLIT_DEV_DOMAIN) {
     // For development, we'll still use the dev domain but with a different approach
@@ -29,7 +43,7 @@ export function getBaseUrl(): string {
     return devUrl;
   }
 
-  // 4. Fallback to localhost
+  // 6. Fallback to localhost
   const localUrl = 'http://localhost:5000';
   console.log('📍 [BaseURL] Using localhost fallback:', localUrl);
   return localUrl;

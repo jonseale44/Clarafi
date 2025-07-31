@@ -761,7 +761,7 @@ Keep recommendations concise and specific.
       role: 'admin',
       healthSystemId: healthSystem.id,
       emailVerified: true, // Pre-verified through this process
-      verificationStatus: 'tier3_verified',
+      verificationStatus: 'tier2_verified',
       mfaEnabled: true, // Enforce 2FA for admins
       requirePasswordChange: true // Force password change on first login
     }).returning();

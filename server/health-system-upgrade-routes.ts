@@ -98,7 +98,7 @@ router.post('/upgrade-checkout', ensureHealthSystemAdmin, async (req, res) => {
     const checkoutResult = await StripeService.createCheckoutSession({
       email: user.email,
       name: user.healthSystemName || `${user.firstName} ${user.lastName}`,
-      tier: targetTier as 1 | 2 | 3,
+      tier: targetTier as 1 | 2,
       billingPeriod: billingPeriod as 'monthly' | 'annual',
       healthSystemId: user.healthSystemId,
       metadata: {

@@ -61,7 +61,7 @@ export interface RegistrationData {
   practiceState?: string;
   practiceZipCode?: string;
   practicePhone?: string;
-  subscriptionKey?: string; // For tier 3 registration
+  subscriptionKey?: string; // For tier 2 (enterprise) registration
   
   // Acquisition tracking
   utmSource?: string;
@@ -568,7 +568,7 @@ export class RegistrationService {
         // Update user verification status
         await tx.update(users)
           .set({
-            verificationStatus: 'tier3_verified',
+            verificationStatus: 'tier2_verified',
             verifiedWithKeyId: validatedKeyId,
             verifiedAt: new Date()
           })

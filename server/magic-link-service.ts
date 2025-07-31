@@ -104,7 +104,7 @@ export class MagicLinkService {
     // Get the base URL using our utility function
     const baseUrl = getBaseUrl();
 
-    const linkUrl = `${baseUrl}/auth/magic-link/${token}`;
+    const linkUrl = `${baseUrl}/api/auth/magic-link/${token}`;
 
     const subject = purpose === 'login' 
       ? 'Login to Clarafi EMR'

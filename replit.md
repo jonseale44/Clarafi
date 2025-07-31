@@ -39,6 +39,16 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
+### July 31, 2025 - Tier 3 Removal & System Simplification
+- ✅ **MAJOR CHANGE**: Removed Tier 3 from the entire system
+- ✅ Updated database schema: Changed `tier3_verified` to `tier2_verified` 
+- ✅ Modified subscription tiers to only support Tier 1 (Individual) and Tier 2 (Enterprise)
+- ✅ Updated all TypeScript types and interfaces to remove tier 3 references
+- ✅ Modified Stripe integration to only handle 2 tiers
+- ✅ Updated health-system-upgrade component to target tier 2 as max tier
+- ✅ Changed all console logging from "[Tier3Upgrade]" to "[Tier2Upgrade]"
+- ✅ Simplified pricing structure: Tier 1 ($149/month), Tier 2 ($399/month)
+
 ### July 31, 2025 - Email Verification Technical Debt Analysis
 - ✅ Identified critical technical debt in email verification systems
 - ✅ Documented differences between tier 1 and tier 2 registration flows
@@ -143,7 +153,7 @@ This occurred even with:
 4. **After Trial**: Optional upgrade to paid plan via `/api/trial/upgrade`
 5. **Status**: `subscriptionStatus: 'trial'` during trial period
 
-### Tier 2 (Enterprise) - Custom Pricing
+### Tier 2 (Enterprise) - $399/month
 **Path A - New Organization:**
 1. Apply at `/admin-verification`
 2. AI/manual review process

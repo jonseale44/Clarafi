@@ -16,7 +16,7 @@ export const healthSystems = pgTable("health_systems", {
   systemType: text("system_type").notNull(), // 'health_system', 'hospital_network', 'clinic_group', 'individual_provider'
   
   // Subscription Management
-  subscriptionTier: integer("subscription_tier").default(1), // 1=Individual, 2=Small Group, 3=Enterprise
+  subscriptionTier: integer("subscription_tier").default(1), // 1=Individual, 2=Enterprise
   subscriptionStatus: text("subscription_status").default('active'), // 'active', 'suspended', 'cancelled'
   subscriptionStartDate: timestamp("subscription_start_date"),
   subscriptionEndDate: timestamp("subscription_end_date"),
@@ -263,7 +263,7 @@ export const users = pgTable("users", {
   baaVersion: text("baa_version"), // Track which version they accepted
   
   // Subscription Key Verification
-  verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'tier3_verified'
+  verificationStatus: text("verification_status").default("unverified"), // 'unverified', 'verified', 'tier2_verified'
   verifiedWithKeyId: integer("verified_with_key_id"), // Will add reference after table creation
   verifiedAt: timestamp("verified_at"),
   

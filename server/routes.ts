@@ -6287,9 +6287,9 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use("/api/health-system-upgrade", healthSystemUpgradeRoutes);
 
   // Stripe tier upgrade endpoint
-  app.post("/api/stripe/upgrade-to-tier3", async (req, res) => {
+  app.post("/api/stripe/upgrade-to-tier2", async (req, res) => {
     try {
-      console.log("[Tier3Upgrade] Request received:", {
+      console.log("[Tier2Upgrade] Request received:", {
         authenticated: req.isAuthenticated(),
         body: req.body,
         user: req.user
@@ -6304,7 +6304,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const { healthSystemId } = req.body;
       const user = req.user as AuthenticatedUser;
 
-      console.log("[Tier3Upgrade] User details:", {
+      console.log("[Tier2Upgrade] User details:", {
         userId: user.id,
         userRole: user.role,
         userHealthSystemId: user.healthSystemId,
@@ -6313,7 +6313,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
 
       // Verify user is admin of the health system
       if (user.role !== "admin" || user.healthSystemId !== healthSystemId) {
-        console.log("[Tier3Upgrade] Authorization failed:", {
+        console.log("[Tier2Upgrade] Authorization failed:", {
           roleCheck: user.role !== "admin",
           healthSystemCheck: user.healthSystemId !== healthSystemId,
         });
@@ -6325,19 +6325,19 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       // Get health system details
       const healthSystem = await storage.getHealthSystem(healthSystemId);
       if (!healthSystem) {
-        console.log("[Tier3Upgrade] Health system not found:", healthSystemId);
+        console.log("[Tier2Upgrade] Health system not found:", healthSystemId);
         return res.status(404).json({ error: "Health system not found" });
       }
 
-      console.log("[Tier3Upgrade] Current health system:", {
+      console.log("[Tier2Upgrade] Current health system:", {
         id: healthSystem.id,
         name: healthSystem.name,
         currentTier: healthSystem.subscriptionTier,
       });
 
       // Check current tier
-      if (healthSystem.subscriptionTier === 3) {
-        console.log("[Tier3Upgrade] Already on tier 3");
+      if (healthSystem.subscriptionTier === 2) {
+        console.log("[Tier2Upgrade] Already on tier 2");
         return res.status(400).json({ error: "Already on Enterprise tier" });
       }
 
@@ -6352,7 +6352,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         : `${protocol}://${host}`;
 
       console.log(
-        "[Tier3Upgrade] Creating Stripe session for tier 3 upgrade with base URL:",
+        "[Tier2Upgrade] Creating Stripe session for tier 2 upgrade with base URL:",
         baseUrl,
       );
 
@@ -6360,11 +6360,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const stripe = (await import("stripe")).default;
 
       console.log(
-        "[Tier3Upgrade] Stripe API Key present:",
+        "[Tier2Upgrade] Stripe API Key present:",
         !!process.env.STRIPE_SECRET_KEY,
       );
       console.log(
-        "[Tier3Upgrade] Stripe API Key starts with:",
+        "[Tier2Upgrade] Stripe API Key starts with:",
         process.env.STRIPE_SECRET_KEY?.substring(0, 7),
       );
 
@@ -6372,7 +6372,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         apiVersion: "2024-11-20.acacia",
       });
 
-      console.log("[Tier3Upgrade] Creating session with params:", {
+      console.log("[Tier2Upgrade] Creating session with params:", {
         payment_method_types: ["card"],
         mode: "subscription",
         customer_email: user.email,
@@ -6386,16 +6386,16 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       let session;
       try {
         // Test if Stripe instance is working
-        console.log("[Tier3Upgrade] Testing Stripe instance...");
+        console.log("[Tier2Upgrade] Testing Stripe instance...");
         try {
           const testProduct = await stripeInstance.products.list({ limit: 1 });
           console.log(
-            "[Tier3Upgrade] Stripe instance test successful, products access:",
+            "[Tier2Upgrade] Stripe instance test successful, products access:",
             !!testProduct,
           );
         } catch (testError: any) {
           console.error(
-            "[Tier3Upgrade] Stripe instance test failed:",
+            "[Tier2Upgrade] Stripe instance test failed:",
             testError.message,
           );
         }
@@ -6424,14 +6424,14 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           cancel_url: `${baseUrl}/dashboard?upgrade=cancelled`,
           metadata: {
             healthSystemId: healthSystemId.toString(),
-            action: "upgrade-to-tier3",
+            action: "upgrade-to-tier2",
           },
           // Simplified configuration for better compatibility
           billing_address_collection: "auto",
           expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // Expire after 30 minutes
         });
 
-        console.log("[Tier3Upgrade] Session created successfully:", {
+        console.log("[Tier2Upgrade] Session created successfully:", {
           sessionId: session.id,
           sessionUrl: session.url,
           sessionUrlLength: session.url?.length,
@@ -6439,7 +6439,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           sessionMode: session.mode,
         });
       } catch (stripeError: any) {
-        console.error("[Tier3Upgrade] Stripe session creation error:", {
+        console.error("[Tier2Upgrade] Stripe session creation error:", {
           message: stripeError.message,
           type: stripeError.type,
           code: stripeError.code,
@@ -6450,7 +6450,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       }
 
       if (!session.url) {
-        console.error("[Tier3Upgrade] Session created but no URL returned:", {
+        console.error("[Tier2Upgrade] Session created but no URL returned:", {
           sessionId: session.id,
           sessionObject: JSON.stringify(session, null, 2),
         });
@@ -6465,7 +6465,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         sessionUrl: session.url,
       };
 
-      console.log("[Tier3Upgrade] Stripe session result:", {
+      console.log("[Tier2Upgrade] Stripe session result:", {
         success: checkoutResult.success,
         sessionUrl: checkoutResult.sessionUrl,
         urlValid: !!checkoutResult.sessionUrl,
@@ -6479,7 +6479,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
           sessionId: session.id,
         };
-        console.log("[Tier3Upgrade] Sending response:", {
+        console.log("[Tier2Upgrade] Sending response:", {
           success: responseData.success,
           hasCheckoutUrl: !!responseData.checkoutUrl,
           checkoutUrlStart: responseData.checkoutUrl.substring(0, 50),
@@ -6488,7 +6488,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
         return res.json(responseData);
       } else {
         console.error(
-          "[Tier3Upgrade] Failed to create checkout session:",
+          "[Tier2Upgrade] Failed to create checkout session:",
           checkoutResult,
         );
         return res.status(500).json({
@@ -6497,7 +6497,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       }
     } catch (error) {
       console.error(
-        "[Tier3Upgrade] Error creating tier 3 upgrade session:",
+        "[Tier2Upgrade] Error creating tier 2 upgrade session:",
         error,
       );
       res.status(500).json({ error: "Failed to initiate upgrade" });
@@ -6610,9 +6610,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
           if (config.tier2 !== undefined) {
             subscriptionConfig.updateFeature(feature as any, 2, config.tier2);
           }
-          if (config.tier3 !== undefined) {
-            subscriptionConfig.updateFeature(feature as any, 3, config.tier3);
-          }
+          // Tier 3 has been removed
         });
       }
 

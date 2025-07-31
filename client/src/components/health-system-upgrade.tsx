@@ -22,6 +22,7 @@ import {
   Key,
   Shield,
 } from 'lucide-react';
+import type { users, healthSystems } from '@/../../shared/schema';
 
 const tierFeatures = {
   1: {
@@ -57,27 +58,27 @@ export function HealthSystemUpgrade() {
   const [showDebug, setShowDebug] = useState(false);
 
   // Get current user and health system data
-  const { data: userData } = useQuery({
+  const { data: userData } = useQuery<typeof users.$inferSelect>({
     queryKey: ['/api/user'],
   });
 
-  const { data: healthSystemData } = useQuery({
+  const { data: healthSystemData } = useQuery<typeof healthSystems.$inferSelect>({
     queryKey: [`/api/health-systems/${userData?.healthSystemId}`],
     enabled: !!userData?.healthSystemId,
   });
 
   const currentTier = healthSystemData?.subscriptionTier || 1;
   const isSystemAdmin = userData?.username === 'admin';
-  const canUpgrade = userData?.role === 'admin' && currentTier < 3;
+  const canUpgrade = userData?.role === 'admin' && currentTier < 2;
 
   const upgradeMutation = useMutation({
     mutationFn: async () => {
       console.log('[HealthSystemUpgrade] Starting upgrade mutation:', {
         healthSystemId: userData?.healthSystemId,
-        endpoint: '/api/stripe/upgrade-to-tier3',
+        endpoint: '/api/stripe/upgrade-to-tier2',
       });
       
-      const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier3', {
+      const response = await apiRequest('POST', '/api/stripe/upgrade-to-tier2', {
         healthSystemId: userData?.healthSystemId,
       });
       
@@ -234,10 +235,10 @@ export function HealthSystemUpgrade() {
               <h3 className="text-sm font-medium mb-2">Current Tier</h3>
               <div className="flex items-center gap-4">
                 <Badge variant="default" className="text-lg px-4 py-2">
-                  Tier {currentTier} - {tierFeatures[currentTier as 1 | 2 | 3].name}
+                  Tier {currentTier} - {tierFeatures[currentTier as 1 | 2].name}
                 </Badge>
                 <span className="text-muted-foreground">
-                  {tierFeatures[currentTier as 1 | 2 | 3].price}
+                  {tierFeatures[currentTier as 1 | 2].price}
                 </span>
               </div>
             </div>
@@ -247,7 +248,7 @@ export function HealthSystemUpgrade() {
               {Object.entries(tierFeatures).map(([tier, details]) => {
                 const tierNum = parseInt(tier);
                 const isCurrent = tierNum === currentTier;
-                const isTarget = tierNum === 3;
+                const isTarget = tierNum === 2;
 
                 return (
                   <Card
@@ -289,7 +290,7 @@ export function HealthSystemUpgrade() {
               <Alert>
                 <Rocket className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Upgrade to Enterprise (Tier 3)</strong>
+                  <strong>Upgrade to Enterprise (Tier 2)</strong>
                   <ul className="mt-2 space-y-1">
                     <li className="flex items-center gap-2">
                       <Key className="h-3 w-3" />
@@ -335,8 +336,8 @@ export function HealthSystemUpgrade() {
               </div>
             )}
 
-            {/* Already Tier 3 */}
-            {currentTier === 3 && (
+            {/* Already Tier 2 */}
+            {currentTier === 2 && (
               <Alert className="border-green-200 bg-green-50">
                 <Check className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">

@@ -31,7 +31,7 @@ async function addTestHealthSystems() {
       {
         name: "Dallas Medical City",
         systemType: "hospital_network",
-        subscriptionTier: 3,
+        subscriptionTier: 2,
         subscriptionStatus: 'active' as const,
         active: true
       },
