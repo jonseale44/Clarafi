@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Patient } from "@shared/schema";
 import { AlertTriangle, Pill } from "lucide-react";
+import { PatientPhotoUpload } from "./patient-photo-upload";
 
 interface PatientHeaderProps {
   patient: Patient;
@@ -43,15 +44,24 @@ export function PatientHeader({ patient, allergies }: PatientHeaderProps) {
     <Card className="p-6 mb-6" data-median="patient-header-card">
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-6">
-          <Avatar className="w-20 h-20 border-2 border-gray-200" data-median="patient-avatar">
-            <AvatarImage 
-              src={patient.profilePhotoFilename ? `/uploads/${patient.profilePhotoFilename}` : undefined}
-              alt={`${patient.firstName} ${patient.lastName}`}
-            />
-            <AvatarFallback className="text-lg">
-              {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="w-20 h-20 border-2 border-gray-200" data-median="patient-avatar">
+              <AvatarImage 
+                src={patient.profilePhotoFilename ? `/api/patient-photos/${patient.profilePhotoFilename}` : undefined}
+                alt={`${patient.firstName} ${patient.lastName}`}
+              />
+              <AvatarFallback className="text-lg">
+                {patient.firstName?.[0] || 'P'}{patient.lastName?.[0] || 'P'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-2 -right-2">
+              <PatientPhotoUpload
+                patientId={patient.id}
+                patientName={`${patient.firstName} ${patient.lastName}`}
+                currentPhotoFilename={patient.profilePhotoFilename}
+              />
+            </div>
+          </div>
           
           <div>
             <div className="flex items-center space-x-3 mb-2">

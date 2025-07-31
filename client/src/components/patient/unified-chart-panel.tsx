@@ -341,7 +341,7 @@ export function UnifiedChartPanel({
               <AvatarImage
                 src={
                   patient.profilePhotoFilename
-                    ? `/uploads/${patient.profilePhotoFilename}`
+                    ? `/api/patient-photos/${patient.profilePhotoFilename}`
                     : undefined
                 }
                 alt={`${patient.firstName} ${patient.lastName}`}

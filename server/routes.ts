@@ -6341,6 +6341,11 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     res.redirect(`/api/photo-capture/capture/${req.params.sessionId}`);
   });
 
+  // Import and register patient profile photo routes
+  const { patientProfilePhotoRoutes } = await import("./patient-profile-photo-routes.js");
+  app.use("/api/patient-photos", patientProfilePhotoRoutes);
+  console.log("📸 [PatientPhotos] Patient profile photo routes registered");
+
   // Import and register billing management routes
   const { registerBillingRoutes } = await import("./billing-management-routes");
   registerBillingRoutes(app);
