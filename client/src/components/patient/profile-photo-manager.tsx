@@ -399,8 +399,10 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
               </Avatar>
             </div>
             
-            {editable && (
+            {console.log('[ProfilePhotoManager] Dialog render - editable:', editable)}
+            {editable ? (
               <div className="flex justify-center gap-2">
+                {console.log('[ProfilePhotoManager] Rendering buttons')}
                 <Button
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
@@ -431,6 +433,8 @@ export function ProfilePhotoManager({ patient, size = "md", editable = true }: P
                   </Button>
                 )}
               </div>
+            ) : (
+              console.log('[ProfilePhotoManager] Not editable, buttons hidden')
             )}
           </div>
         </DialogContent>
