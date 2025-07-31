@@ -188,7 +188,7 @@ function FaceIDLoginForm({ onLoginSuccess }: { onLoginSuccess: (username: string
           <span className="bg-background px-2 text-muted-foreground">Or</span>
         </div>
       </div>
-      
+
       <Button
         type="button"
         variant="outline"
@@ -292,7 +292,7 @@ function MagicLinkForm() {
           required
         />
       </div>
-      
+
       <Button 
         type="submit" 
         variant="outline" 
@@ -317,7 +317,7 @@ function MagicLinkForm() {
 
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
-  
+
   // Check URL params to restore tab state
   const searchParams = new URLSearchParams(window.location.search);
   const tabFromUrl = searchParams.get('tab');
@@ -333,7 +333,7 @@ export default function AuthPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [baaAccepted, setBaaAccepted] = useState(false);
   const [showBaaDialog, setShowBaaDialog] = useState(false);
-  
+
   // Validation states
   const [usernameValidation, setUsernameValidation] = useState<{available?: boolean; message?: string}>({});
   const [emailValidation, setEmailValidation] = useState<{available?: boolean; message?: string}>({});
@@ -359,7 +359,7 @@ export default function AuthPage() {
     const email = urlParams.get('email');
     const paymentStatus = urlParams.get('payment');
     const sessionId = urlParams.get('session_id');
-    
+
     if (verified === 'true' && email) {
       toast({
         title: "Email Verified!",
@@ -369,13 +369,13 @@ export default function AuthPage() {
       // Clear the URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-    
+
     // Handle Stripe payment success
     if (paymentStatus === 'success' && sessionId) {
       const pendingRegistration = sessionStorage.getItem('pendingRegistration');
       if (pendingRegistration) {
         const { email } = JSON.parse(pendingRegistration);
-        
+
         // Trigger verification email sending
         fetch('/api/send-verification-after-payment', {
           method: 'POST',
@@ -392,15 +392,15 @@ export default function AuthPage() {
         }).catch(err => {
           console.error('Failed to send verification email:', err);
         });
-        
+
         // Clear the pending registration
         sessionStorage.removeItem('pendingRegistration');
       }
-      
+
       // Clear the URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-    
+
     // Handle payment cancellation
     if (paymentStatus === 'cancelled') {
       toast({
@@ -426,7 +426,7 @@ export default function AuthPage() {
       referrerUrl: document.referrer || undefined,
       landingPage: window.location.href,
     };
-    
+
     // Only set if we have at least one tracking parameter
     if (acquisitionData.utmSource || acquisitionData.utmMedium || acquisitionData.referrerUrl) {
       setAcquisitionData(acquisitionData);
@@ -494,16 +494,16 @@ export default function AuthPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const subscriptionKey = urlParams.get('key');
     const tabParam = urlParams.get('tab');
-    
+
     console.log('🔍 URL params:', {
       key: subscriptionKey,
       tab: tabParam,
       fullURL: window.location.href
     });
-    
+
     if (subscriptionKey) {
       console.log('🔑 Found subscription key in URL:', subscriptionKey);
-      
+
       // Fetch key details and pre-populate form
       apiRequest("GET", `/api/subscription-keys/details/${encodeURIComponent(subscriptionKey)}`)
         .then(response => {
@@ -512,20 +512,20 @@ export default function AuthPage() {
         })
         .then(data => {
           console.log('📋 Full subscription key details:', JSON.stringify(data, null, 2));
-          
+
           if (data.success) {
             console.log('✅ Success! Setting form values...');
-            
+
             // Pre-populate form with employee info
             console.log('Setting subscriptionKey:', subscriptionKey);
             registerForm.setValue('subscriptionKey', subscriptionKey);
-            
+
             console.log('Setting registrationType to join_existing');
             registerForm.setValue('registrationType', 'join_existing');
-            
+
             if (data.employeeInfo) {
               console.log('📝 Employee info found:', data.employeeInfo);
-              
+
               if (data.employeeInfo.firstName) {
                 console.log('Setting firstName:', data.employeeInfo.firstName);
                 registerForm.setValue('firstName', data.employeeInfo.firstName);
@@ -568,7 +568,7 @@ export default function AuthPage() {
             } else {
               console.log('⚠️ No employee info in response');
             }
-            
+
             // Pre-populate practice information if available
             if (data.practiceInfo) {
               console.log('🏥 Practice info found:', data.practiceInfo);
@@ -580,7 +580,7 @@ export default function AuthPage() {
                 practiceZipCode: registerForm.getValues('practiceZipCode'),
                 practicePhone: registerForm.getValues('practicePhone')
               });
-              
+
               if (data.practiceInfo.practiceName) {
                 console.log('Setting practiceName:', data.practiceInfo.practiceName);
                 registerForm.setValue('practiceName', data.practiceInfo.practiceName);
@@ -605,7 +605,7 @@ export default function AuthPage() {
                 console.log('Setting practicePhone:', data.practiceInfo.practicePhone);
                 registerForm.setValue('practicePhone', data.practiceInfo.practicePhone);
               }
-              
+
               console.log('Form values after practice update:', {
                 practiceName: registerForm.getValues('practiceName'),
                 practiceAddress: registerForm.getValues('practiceAddress'),
@@ -617,7 +617,7 @@ export default function AuthPage() {
             } else {
               console.log('⚠️ No practice info in response');
             }
-            
+
             // Store health system info for display
             console.log('Setting health system:', {
               id: data.healthSystemId,
@@ -627,14 +627,14 @@ export default function AuthPage() {
               id: data.healthSystemId,
               name: data.healthSystemName
             });
-            
+
             // Switch to register tab
             console.log('Switching to register tab');
             setActiveTab('register');
-            
+
             // Log final form values
             console.log('📊 Final form values:', registerForm.getValues());
-            
+
             toast({
               title: "Subscription Key Loaded",
               description: `Your information has been pre-filled for ${data.healthSystemName}`,
@@ -760,7 +760,7 @@ export default function AuthPage() {
           setTimeout(async () => {
             // Refetch session location to check if it was restored
             const { data: restoredLocation } = await refetchSessionLocation();
-            
+
             if (restoredLocation) {
               // User has a remembered location that was restored
               setLocationSelected(true);
@@ -769,10 +769,10 @@ export default function AuthPage() {
               // Check if user has a primary location assigned during registration
               const response = await fetch('/api/user/locations');
               const userLocations = await response.json();
-              
+
               // Look for a primary location
               const primaryLocation = userLocations.find((loc: any) => loc.isPrimary);
-              
+
               if (primaryLocation) {
                 // User has a primary location from registration - auto-select it
                 console.log('🎯 Auto-selecting primary location:', primaryLocation.locationName);
@@ -827,7 +827,7 @@ export default function AuthPage() {
   const onRegister = (data: RegisterData) => {
     console.log("onRegister called with data:", data);
     const { confirmPassword, ...registerData } = data;
-    
+
     // Validate health system selection for join_existing
     if (registrationType === 'join_existing' && !selectedHealthSystemId) {
       toast({
@@ -837,15 +837,15 @@ export default function AuthPage() {
       });
       return;
     }
-    
+
     // Force registration type to 'create_new' for individual practice
     const finalRegistrationType = registrationType === 'create_new' ? 'create_new' : 'join_existing';
-    
+
     // Parse the selected value - it could be a health system ID, "location-{id}", or "new-{placeId}"
     let existingHealthSystemId: number | undefined;
     let selectedLocationId: number | undefined;
     let googlePlaceData: any = undefined;
-    
+
     if (finalRegistrationType === 'join_existing' && selectedHealthSystemId) {
       if (selectedHealthSystemId.startsWith('new-')) {
         // User selected a new facility from Google Places
@@ -859,6 +859,7 @@ export default function AuthPage() {
           return;
         }
       } else if (selectedHealthSystemId.startsWith('location-')) {
+```text
         // User selected a specific location
         selectedLocationId = parseInt(selectedHealthSystemId.replace('location-', ''));
         // We'll need to get the health system ID from the location on the backend
@@ -867,7 +868,7 @@ export default function AuthPage() {
         existingHealthSystemId = parseInt(selectedHealthSystemId);
       }
     }
-    
+
     // Pass all the data including registration type and practice info
     console.log("Calling registerMutation.mutate with:", {
       ...registerData,
@@ -881,7 +882,7 @@ export default function AuthPage() {
       practiceZipCode: data.practiceZipCode,
       practicePhone: data.practicePhone,
     });
-    
+
     registerMutation.mutate({
       ...registerData,
       // Include additional properties not in the base schema
@@ -936,7 +937,7 @@ export default function AuthPage() {
               <TabsTrigger value="login">Sign In</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <Card>
                 <CardHeader>
@@ -957,7 +958,7 @@ export default function AuthPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="password">Password</Label>
                       <Input
@@ -972,7 +973,7 @@ export default function AuthPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <Button 
                       type="submit" 
                       className="w-full" 
@@ -988,7 +989,7 @@ export default function AuthPage() {
                       )}
                     </Button>
                   </form>
-                  
+
                   <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
@@ -997,16 +998,16 @@ export default function AuthPage() {
                       <span className="bg-background px-2 text-muted-foreground">Or</span>
                     </div>
                   </div>
-                  
+
                   <MagicLinkForm />
-                  
+
                   <FaceIDLoginForm onLoginSuccess={handleFaceIDLogin} />
-                  
+
                   <PasskeyLoginForm />
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="register">
               <Card>
                 <CardHeader>
@@ -1046,7 +1047,7 @@ export default function AuthPage() {
                           }}
                         />
                       </div>
-                      
+
                       {/* Show appropriate message based on whether they entered a key */}
                       {registerForm.watch('subscriptionKey') ? (
                         <Alert className="border-green-200 bg-green-50 dark:bg-green-950">
@@ -1088,7 +1089,7 @@ export default function AuthPage() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="username" className="flex items-center gap-2">
                         Username
@@ -1138,7 +1139,7 @@ export default function AuthPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="email" className="flex items-center gap-2">
                         Email
@@ -1189,7 +1190,7 @@ export default function AuthPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
                       <Select 
@@ -1224,7 +1225,7 @@ export default function AuthPage() {
                         {registerForm.watch('subscriptionKey') && (
                           <p className="text-sm text-muted-foreground">Pre-filled from your organization</p>
                         )}
-                          
+
                           <div className="space-y-2">
                             <Label htmlFor="practiceName">Practice Name</Label>
                             <Input
@@ -1306,9 +1307,9 @@ export default function AuthPage() {
                           </div>
                         </div>
                     )}
-                    
 
-                    
+
+
                     <div className="space-y-2">
                       <Label htmlFor="password" className="flex items-center gap-2">
                         Password
@@ -1418,7 +1419,7 @@ export default function AuthPage() {
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="credentials">Credentials (Optional)</Label>
                       <Input
@@ -1527,7 +1528,7 @@ export default function AuthPage() {
                         {registerForm.formState.errors.termsAccepted.message}
                       </p>
                     )}
-                    
+
                     {/* BAA Acceptance for Providers */}
                     {registerForm.watch("role") === "provider" && registrationType === "create_new" && (
                       <>
@@ -1573,7 +1574,7 @@ export default function AuthPage() {
                         )}
                       </>
                     )}
-                    
+
                     <Button 
                       type="submit" 
                       className="w-full" 
@@ -1582,6 +1583,22 @@ export default function AuthPage() {
                         !termsAccepted ||
                         (registerForm.watch("role") === "provider" && registrationType === "create_new" && !baaAccepted)
                       }
+                      onClick={() => {
+                        console.log("🔘 Create Account button clicked!");
+                        console.log("📊 Button state:", {
+                          isPending: registerMutation.isPending,
+                          termsAccepted,
+                          baaAccepted,
+                          role: registerForm.watch("role"),
+                          registrationType,
+                          isFormValid: registerForm.formState.isValid,
+                          formErrors: registerForm.formState.errors,
+                          formValues: registerForm.getValues(),
+                          isButtonDisabled: registerMutation.isPending || 
+                            !termsAccepted ||
+                            (registerForm.watch("role") === "provider" && registrationType === "create_new" && !baaAccepted)
+                        });
+                      }}
                     >
                       {registerMutation.isPending ? (
                         <>
@@ -1592,7 +1609,7 @@ export default function AuthPage() {
                         "Create Account"
                       )}
                     </Button>
-                    
+
                     <div className="mt-4 text-center space-y-2">
                       <p className="text-sm text-gray-600">
                         Need an enterprise admin account?{' '}
@@ -1614,7 +1631,7 @@ export default function AuthPage() {
           </Tabs>
         </div>
       </div>
-      
+
       {/* Right side - Hero Section */}
       <div className="flex-1 bg-gradient-to-br from-primary to-navy-blue-700 p-8 text-white flex items-center justify-center overflow-y-auto" data-median="auth-hero-section">
         <div className="max-w-2xl text-center py-4">
@@ -1624,7 +1641,7 @@ export default function AuthPage() {
           <p className="text-xl mb-8 text-navy-blue-100">
             The AI ambient scribe + EMR designed to eliminate documentation burden completely. Let the EMR do the heavy lifting while you practice medicine.
           </p>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-8">
             {/* Live AI During Encounter */}
             <TooltipProvider>
@@ -1660,7 +1677,7 @@ export default function AuthPage() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             {/* Automatic Everything */}
             <TooltipProvider>
               <Tooltip>
@@ -1696,7 +1713,7 @@ export default function AuthPage() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             {/* Complete EMR Built-In */}
             <TooltipProvider>
               <Tooltip>
@@ -1733,7 +1750,7 @@ export default function AuthPage() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             {/* One Price, Everything */}
             <TooltipProvider>
               <Tooltip>
@@ -1770,7 +1787,7 @@ export default function AuthPage() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          
+
           {/* Key differentiators */}
           <div className="mb-6 space-y-2">
             <p className="text-sm font-semibold text-gold">Created by physicians who understand documentation burden:</p>
@@ -1780,7 +1797,7 @@ export default function AuthPage() {
               <span className="bg-white/20 px-3 py-1 rounded-full">✓ EMR does the heavy lifting</span>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-2">
             <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
               HIPAA Compliant
@@ -1798,13 +1815,13 @@ export default function AuthPage() {
               24/7 Support
             </Badge>
           </div>
-          
+
           <div className="mt-6 text-xs text-navy-blue-200">
             <p className="font-semibold">Created by doctors who practice medicine every day</p>
             <p className="mt-1">We built this because we needed it. Zero documentation time was the goal.</p>
             <p className="mt-1 text-gold">Complete medical command center from $149/month</p>
           </div>
-          
+
           {/* Footer Links */}
           <div className="mt-8 pt-6 border-t border-white/20">
             <div className="flex flex-wrap justify-center gap-4 text-xs text-navy-blue-200">
@@ -1828,7 +1845,7 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Simplified BAA Dialog */}
       <SimplifiedBAA
         open={showBaaDialog}
