@@ -7,6 +7,12 @@ console.log("[DB CONFIG] db.ts module loaded at:", new Date().toISOString());
 console.log("[DB CONFIG] Environment check - NODE_ENV:", process.env.NODE_ENV);
 console.log("[DB CONFIG] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
 
+// Create a global to track if this module was loaded
+if (typeof global !== 'undefined') {
+  (global as any).__DB_MODULE_LOADED = true;
+  (global as any).__DB_MODULE_LOAD_TIME = new Date().toISOString();
+}
+
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",

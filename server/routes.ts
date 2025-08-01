@@ -6662,29 +6662,53 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     try {
       console.log("🔍 Testing database connection...");
       
+      // Check if db module was already loaded via global tracking
+      const moduleLoadInfo = {
+        wasModuleLoaded: (global as any).__DB_MODULE_LOADED || false,
+        moduleLoadTime: (global as any).__DB_MODULE_LOAD_TIME || 'never',
+        currentTime: new Date().toISOString()
+      };
+      
       // Log current environment and configuration
       const dbConfig = {
         nodeEnv: process.env.NODE_ENV,
         hasDbUrl: !!process.env.DATABASE_URL,
         dbUrlIncludes: {
           rds: process.env.DATABASE_URL?.includes("rds.amazonaws.com") || false,
-          aws: process.env.DATABASE_URL?.includes("aws") || false
-        }
+          aws: process.env.DATABASE_URL?.includes("aws") || false,
+          localhost: process.env.DATABASE_URL?.includes("localhost") || false
+        },
+        dbUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'not set'
       };
       
       console.log("📊 Database configuration:", JSON.stringify(dbConfig));
+      console.log("📊 Module load info:", JSON.stringify(moduleLoadInfo));
       
-      // Import db module and test connection
-      const { db } = await import("./db.js");
+      // Force a fresh import to see if console.logs appear
+      console.log("🔍 About to import db module...");
+      const { db, pool } = await import("./db.js");
+      console.log("✅ db module imported");
+      
+      // Get pool configuration
+      const poolInfo = {
+        totalCount: pool.totalCount,
+        idleCount: pool.idleCount,
+        waitingCount: pool.waitingCount
+      };
       
       // Simple query to test connection
-      const result = await db.execute("SELECT 1 as test");
+      console.log("🔍 Executing test query...");
+      const result = await db.execute("SELECT 1 as test, version() as pg_version");
+      console.log("✅ Test query successful");
       
       res.json({
         status: "success",
         config: dbConfig,
+        moduleLoadInfo,
+        poolInfo,
         testQuery: result,
-        message: "Database connection successful"
+        message: "Database connection successful",
+        serverTime: new Date().toISOString()
       });
       
     } catch (error: any) {
@@ -6692,13 +6716,56 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       res.status(500).json({
         status: "error",
         error: error.message,
+        errorCode: error.code,
         stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
         config: {
           nodeEnv: process.env.NODE_ENV,
           hasDbUrl: !!process.env.DATABASE_URL
+        },
+        moduleLoadInfo: {
+          wasModuleLoaded: (global as any).__DB_MODULE_LOADED || false,
+          moduleLoadTime: (global as any).__DB_MODULE_LOAD_TIME || 'never'
         }
       });
     }
+  });
+
+  // Test console.log functionality directly
+  app.get("/api/test-logs", (req, res) => {
+    console.log("🔍 [TEST-LOGS] Direct console.log test at:", new Date().toISOString());
+    console.error("❌ [TEST-LOGS] Direct console.error test");
+    console.warn("⚠️ [TEST-LOGS] Direct console.warn test");
+    
+    res.json({
+      message: "Console log test completed",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      check: "Check your server logs for the test messages above"
+    });
+  });
+
+  // Check bundling and module loading environment
+  app.get("/api/test-env", (req, res) => {
+    const envInfo = {
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      nodeEnv: process.env.NODE_ENV,
+      isProduction: process.env.NODE_ENV === 'production',
+      processTitle: process.title,
+      execPath: process.execPath,
+      moduleLoaded: (global as any).__DB_MODULE_LOADED || false,
+      moduleLoadTime: (global as any).__DB_MODULE_LOAD_TIME || 'never',
+      // Check if we're running from dist folder (bundled)
+      isFromDist: __filename?.includes('/dist/') || false,
+      filename: __filename || 'unknown',
+      dirname: __dirname || 'unknown',
+      cwd: process.cwd()
+    };
+    
+    console.log("🔍 [TEST-ENV] Environment check:", JSON.stringify(envInfo, null, 2));
+    
+    res.json(envInfo);
   });
 
   // Original test-db endpoint (keeping for compatibility)
