@@ -27,7 +27,11 @@ export async function initializeDatabase() {
           shortName: "Default",
           systemType: "individual_provider"
         }).returning();
-        healthSystemId = newHealthSystems[0]!.id;
+        if (newHealthSystems.length > 0 && newHealthSystems[0]) {
+          healthSystemId = newHealthSystems[0].id;
+        } else {
+          throw new Error("Failed to create default health system");
+        }
       } else {
         healthSystemId = existingHealthSystems[0].id;
       }

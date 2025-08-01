@@ -6757,9 +6757,8 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       moduleLoaded: (global as any).__DB_MODULE_LOADED || false,
       moduleLoadTime: (global as any).__DB_MODULE_LOAD_TIME || 'never',
       // Check if we're running from dist folder (bundled)
-      isFromDist: __filename?.includes('/dist/') || false,
-      filename: __filename || 'unknown',
-      dirname: __dirname || 'unknown',
+      isFromDist: process.cwd().includes('/dist/') || false,
+      metaUrl: import.meta.url || 'unknown',
       cwd: process.cwd()
     };
     
