@@ -1,5 +1,5 @@
 import { Express } from 'express';
-import { ClinicAdminVerificationService, ClinicAdminVerificationRequest } from './clinic-admin-verification-service';
+import { ClinicAdminVerificationService, ClinicAdminVerificationRequest } from './clinic-admin-verification-service.js';
 import { z } from 'zod';
 import { db } from './db.js';
 import { eq } from 'drizzle-orm';

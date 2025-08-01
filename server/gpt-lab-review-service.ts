@@ -16,7 +16,7 @@ import {
   medicalHistory,
 } from "@shared/schema";
 import { eq, desc, inArray, and } from "drizzle-orm";
-import { PatientChartService } from "./patient-chart-service";
+import { PatientChartService } from "./patient-chart-service.js";
 
 // Note: GPT-4.1 is the newest model which was released after GPT-4o and is more advanced and cost-effective
 // Do not change this unless explicitly requested by the user

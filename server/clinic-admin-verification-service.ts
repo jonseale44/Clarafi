@@ -2,9 +2,9 @@ import { db } from './db.js';
 import { healthSystems, users, clinicAdminVerifications, organizationDocuments } from '../shared/schema';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
-import { EmailVerificationService } from './email-verification-service';
+import { EmailVerificationService } from './email-verification-service.js';
 import { OpenAI } from 'openai';
-import { VerificationAPIs } from './verification-apis';
+import { VerificationAPIs } from './verification-apis.js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

@@ -1,5 +1,5 @@
 import { db } from "./db.js";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { 
   patients, 
   medicalProblems, 

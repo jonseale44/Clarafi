@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { tenantIsolation } from './tenant-isolation';
-import { storage } from './storage';
+import { tenantIsolation } from './tenant-isolation.js';
+import { storage } from './storage.js';
 import { z } from 'zod';
 
 const router = Router();

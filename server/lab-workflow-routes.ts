@@ -7,8 +7,8 @@ import { Router, Request, Response } from "express";
 import { db } from "./db.js";
 import { labResults, encounters, labOrders } from "@shared/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
-import { APIResponseHandler } from "./api-response-handler";
-import LabWorkflowService from "./lab-workflow-service";
+import { APIResponseHandler } from "./api-response-handler.js";
+import LabWorkflowService from "./lab-workflow-service.js";
 
 const router = Router();
 

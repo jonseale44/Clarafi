@@ -4,7 +4,7 @@
  */
 
 import { Router } from "express";
-import { intelligentDiagnosis } from "./intelligent-diagnosis-service";
+import { intelligentDiagnosis } from "./intelligent-diagnosis-service.js";
 
 const router = Router();
 

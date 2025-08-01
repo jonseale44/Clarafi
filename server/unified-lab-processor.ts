@@ -15,11 +15,11 @@
 import { db } from "./db.js";
 import { labOrders, labResults, labTestCatalog, externalLabs, hl7Messages, patientAttachments } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { UnifiedLabParser } from "./unified-lab-parser";
-import { HL7Parser } from "./hl7-parser";
-import { GPTLabReviewService } from "./gpt-lab-review-service";
-import { labIntelligenceService } from "./lab-intelligence-service";
-import { LOINCLookupService } from "./loinc-lookup-service";
+import { UnifiedLabParser } from "./unified-lab-parser.js";
+import { HL7Parser } from "./hl7-parser.js";
+import { GPTLabReviewService } from "./gpt-lab-review-service.js";
+import { labIntelligenceService } from "./lab-intelligence-service.js";
+import { LOINCLookupService } from "./loinc-lookup-service.js";
 import type { InsertLabResult, InsertLabOrder } from "@shared/schema";
 
 export type LabSource = 'attachment' | 'hl7' | 'fhir' | 'api' | 'manual';

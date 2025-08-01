@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { tenantIsolation } from "./tenant-isolation";
-import { TestPatientGenerator, TestPatientConfig } from "./test-patient-generator";
-import { storage } from "./storage";
+import { tenantIsolation } from "./tenant-isolation.js";
+import { TestPatientGenerator, TestPatientConfig } from "./test-patient-generator.js";
+import { storage } from "./storage.js";
 
 export const testPatientRoutes = Router();
 

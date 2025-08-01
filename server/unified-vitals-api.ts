@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { VitalsParserService } from "./vitals-parser-service";
-import { APIResponseHandler } from "./api-response-handler";
+import { VitalsParserService } from "./vitals-parser-service.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { db } from "./db.js";
 import { patients, vitals } from "@shared/schema";
 import { eq } from "drizzle-orm";

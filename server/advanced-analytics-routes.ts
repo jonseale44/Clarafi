@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { storage } from "./storage";
-import { APIResponseHandler } from "./api-response-handler";
+import { storage } from "./storage.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { User, AnalyticsEvent } from "@shared/schema";
 
 const router = Router();

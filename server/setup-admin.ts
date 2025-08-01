@@ -2,9 +2,9 @@
 
 import { db } from "./db.js";
 import { users, healthSystems, locations, userLocations } from "@shared/schema";
-import { hashPassword } from "./auth";
+import { hashPassword } from "./auth.js";
 import { eq } from "drizzle-orm";
-import { generateSecurePassword } from "./password-validation";
+import { generateSecurePassword } from "./password-validation.js";
 
 // This script creates an initial admin account
 // Run with: npm run setup-admin

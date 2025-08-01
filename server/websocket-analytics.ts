@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server } from 'http';
-import { realtimeAnalytics } from './services/realtime-analytics-service';
-import { storage } from './storage';
+import { realtimeAnalytics } from './services/realtime-analytics-service.js';
+import { storage } from './storage.js';
 
 export function setupAnalyticsWebSocket(server: Server) {
   const wss = new WebSocketServer({ 

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { storage } from "./storage";
-import { APIResponseHandler } from "./api-response-handler";
+import { storage } from "./storage.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { z } from "zod";
 import {
   insertMarketingMetricsSchema,

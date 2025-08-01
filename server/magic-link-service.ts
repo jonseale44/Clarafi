@@ -2,7 +2,7 @@ import { db } from "./db.js";
 import { users, magicLinks } from "@shared/schema";
 import { eq, and, gt, isNull } from "drizzle-orm";
 import crypto from "crypto";
-import { EmailVerificationService } from "./email-verification-service";
+import { EmailVerificationService } from "./email-verification-service.js";
 import { getBaseUrl, isDevelopment } from './utils/get-base-url.js';
 
 export interface MagicLinkOptions {

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from './auth';
-import { db } from './db';
+import { requireAuth } from './auth.js';
+import { db } from './db.js';
 import { locations, users } from '../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';

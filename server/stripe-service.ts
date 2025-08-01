@@ -2,7 +2,7 @@
 // Handles all payment processing for subscription tiers
 
 import Stripe from 'stripe';
-import { subscriptionConfig } from './subscription-config';
+import { subscriptionConfig } from './subscription-config.js';
 import { db } from './db.js';
 import { healthSystems, users, conversionEvents } from '@shared/schema';
 import { eq } from 'drizzle-orm';

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { MigrationService } from "./migration-service";
+import { MigrationService } from "./migration-service.js";
 import { db } from "./db.js";
 import { users, healthSystems, migrationInvitations } from "@shared/schema";
 import { eq, and, or, gt } from "drizzle-orm";

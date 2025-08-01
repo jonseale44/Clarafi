@@ -1,9 +1,9 @@
 import { db } from "./db.js";
 import { healthSystems, organizations, locations, users, userLocations, subscriptionKeys, patients, userAcquisition, conversionEvents } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { EmailVerificationService } from "./email-verification-service";
-import { StripeService } from "./stripe-service";
-import { SubscriptionKeyService } from "./subscription-key-service";
+import { EmailVerificationService } from "./email-verification-service.js";
+import { StripeService } from "./stripe-service.js";
+import { SubscriptionKeyService } from "./subscription-key-service.js";
 
 // Helper function to determine channel group based on UTM parameters
 function determineChannelGroup(utmSource?: string, utmMedium?: string, referrer?: string): string {

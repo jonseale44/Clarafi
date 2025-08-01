@@ -3,12 +3,12 @@
  * Integrates custom user templates with existing clinical note generation
  */
 
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { encounters } from "../shared/schema.js";
 import { eq } from "drizzle-orm";
-import { PatientChartService } from "./patient-chart-service";
-import { TemplatePromptGenerator } from "./template-prompt-generator";
+import { PatientChartService } from "./patient-chart-service.js";
+import { TemplatePromptGenerator } from "./template-prompt-generator.js";
 import OpenAI from "openai";
 
 const openai = new OpenAI({

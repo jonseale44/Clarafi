@@ -1,8 +1,8 @@
 import { db } from "./db.js";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { hashPassword } from "./auth";
-import { generateSecurePassword } from "./password-validation";
+import { hashPassword } from "./auth.js";
+import { generateSecurePassword } from "./password-validation.js";
 
 async function resetAdminPassword() {
   try {

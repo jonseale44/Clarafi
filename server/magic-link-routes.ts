@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { MagicLinkService } from "./magic-link-service";
+import { MagicLinkService } from "./magic-link-service.js";
 import { z } from "zod";
 import { db } from "./db.js";
 import { users } from "@shared/schema";

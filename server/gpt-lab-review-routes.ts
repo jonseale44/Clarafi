@@ -3,8 +3,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import { APIResponseHandler } from "./api-response-handler";
-import { GPTLabReviewService } from "./gpt-lab-review-service";
+import { APIResponseHandler } from "./api-response-handler.js";
+import { GPTLabReviewService } from "./gpt-lab-review-service.js";
 import { z } from "zod";
 
 const router = Router();

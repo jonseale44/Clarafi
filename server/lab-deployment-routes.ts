@@ -4,8 +4,8 @@
  */
 
 import express from "express";
-import { LabDeploymentReadinessService } from "./lab-deployment-readiness";
-import { APIResponseHandler } from "./api-response-handler";
+import { LabDeploymentReadinessService } from "./lab-deployment-readiness.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 
 const router = express.Router();
 

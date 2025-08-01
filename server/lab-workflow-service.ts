@@ -6,7 +6,7 @@
 import { db } from "./db.js";
 import { labResults, encounters, labOrders, patients, users } from "@shared/schema";
 import { eq, and, desc, gte, sql } from "drizzle-orm";
-import { labIntelligenceService } from "./lab-intelligence-service";
+import { labIntelligenceService } from "./lab-intelligence-service.js";
 
 export interface CriticalResultWorkflow {
   resultId: number;

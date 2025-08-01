@@ -15,7 +15,7 @@
 import { db } from "./db.js";
 import { labResults, labOrders, patients, users } from "@shared/schema";
 import { eq, and, desc, isNull, sql, inArray } from "drizzle-orm";
-import { APIResponseHandler } from "./api-response-handler";
+import { APIResponseHandler } from "./api-response-handler.js";
 
 export interface LabResultForReview {
   id: number;

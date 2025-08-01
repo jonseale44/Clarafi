@@ -5,7 +5,7 @@
  * Used by both AI-parsed orders and manual entry to ensure consistency
  */
 
-import { MedicationFormularyService } from './medication-formulary-service';
+import { MedicationFormularyService } from './medication-formulary-service.js';
 
 export interface StandardizedMedication {
   medicationName: string;        // Clean medication name (e.g., "Montelukast")

@@ -6,8 +6,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import { specimenTrackingService } from "./specimen-tracking-service";
-import { APIResponseHandler } from "./api-response-handler";
+import { specimenTrackingService } from "./specimen-tracking-service.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { z } from "zod";
 
 const router = Router();

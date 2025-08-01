@@ -7,7 +7,7 @@
 import { db } from "./db.js";
 import { labOrders, labResults, patients, encounters } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { APIResponseHandler } from "./api-response-handler";
+import { APIResponseHandler } from "./api-response-handler.js";
 
 export interface LabSimulatorConfig {
   simulationMode: 'development' | 'staging' | 'production';

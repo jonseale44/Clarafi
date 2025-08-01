@@ -5,11 +5,11 @@ config();
 
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { registerRoutes } from "./routes";
-import { initializeDatabase } from "./init-db";
-import { seedLabData } from "./lab-sample-data";
+import { registerRoutes } from "./routes.js";
+import { initializeDatabase } from "./init-db.js";
+import { seedLabData } from "./lab-sample-data.js";
 // import "./lab-order-background-processor.js"; // Auto-start background processor - temporarily disabled due to missing file
-import { initializeSystemData } from "./system-initialization";
+import { initializeSystemData } from "./system-initialization.js";
 
 const app = express();
 

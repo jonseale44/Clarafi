@@ -4,8 +4,8 @@
  */
 
 import { Router } from "express";
-import { MedicationIntelligenceService } from "./medication-intelligence-service";
-import { APIResponseHandler } from "./api-response-handler";
+import { MedicationIntelligenceService } from "./medication-intelligence-service.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import type { Request, Response } from "express";
 
 const router = Router();

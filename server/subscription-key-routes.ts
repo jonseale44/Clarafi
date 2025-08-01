@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { SubscriptionKeyService } from './subscription-key-service';
+import { SubscriptionKeyService } from './subscription-key-service.js';
 import { db } from './db.js';
 import { users, healthSystems, subscriptionKeys, locations } from '../shared/schema';
 import { eq, and, or } from 'drizzle-orm';

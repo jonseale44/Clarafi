@@ -1,6 +1,6 @@
 import { db } from "./db.js";
 import { patients, encounters, vitals, allergies, medications, diagnoses, labOrders, labResults, orders } from "@shared/schema";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 
 export async function seedSampleData() {
   try {

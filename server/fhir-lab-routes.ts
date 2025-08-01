@@ -6,9 +6,9 @@
  */
 
 import { Router, Request, Response } from "express";
-import { FHIRLabResourceBuilder } from "./fhir-lab-resources";
-import { UnifiedLabProcessor } from "./unified-lab-processor";
-import { APIResponseHandler } from "./api-response-handler";
+import { FHIRLabResourceBuilder } from "./fhir-lab-resources.js";
+import { UnifiedLabProcessor } from "./unified-lab-processor.js";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { db } from "./db.js";
 import { labResults, labOrders } from "@shared/schema";
 import { eq, and, gte, lte } from "drizzle-orm";

@@ -1,8 +1,8 @@
 import { db } from './db.js';
 import { locations } from '@shared/schema';
 import { count } from 'drizzle-orm';
-import { ClinicDataImportService } from './clinic-data-import-service';
-import { downloadNPPESData } from './download-nppes-data';
+import { ClinicDataImportService } from './clinic-data-import-service.js';
+import { downloadNPPESData } from './download-nppes-data.js';
 
 export async function initializeSystemData() {
   console.log('🚀 Checking system data initialization...');

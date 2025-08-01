@@ -6,8 +6,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import { APIResponseHandler } from "./api-response-handler";
-import { labReviewService } from "./lab-review-service";
+import { APIResponseHandler } from "./api-response-handler.js";
+import { labReviewService } from "./lab-review-service.js";
 import { z } from "zod";
 
 const router = Router();

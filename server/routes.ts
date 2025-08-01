@@ -19,9 +19,9 @@ import type { Express, Request, Response } from "express";
 import express from "express";
 import path from "path";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
-import { storage } from "./storage";
-import { tenantIsolation } from "./tenant-isolation";
+import { setupAuth } from "./auth.js";
+import { storage } from "./storage.js";
+import { tenantIsolation } from "./tenant-isolation.js";
 import { APIResponseHandler } from "./api-response-handler.js";
 import { trialStatusMiddleware, injectTrialStatus } from "./trial-middleware.js";
 import { setupTrialRoutes } from "./trial-routes.js";
@@ -35,57 +35,57 @@ import {
   attachmentExtractedContent,
 } from "@shared/schema";
 // Legacy import removed - using enhanced realtime service only
-import { parseRoutes } from "./parse-routes";
-import dashboardRoutes from "./dashboard-routes";
+import { parseRoutes } from "./parse-routes.js";
+import dashboardRoutes from "./dashboard-routes.js";
 // Removed orphaned enhanced-medical-problems-routes - functionality moved to unified API
-import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api";
-import unifiedSurgicalHistoryRoutes from "./unified-surgical-history-api";
-import { unifiedFamilyHistoryRoutes } from "./unified-family-history-api";
-import { socialHistoryRoutes } from "./unified-social-history-api";
-import * as unifiedAllergyAPI from "./unified-allergy-api";
-import enhancedMedicationRoutes from "./enhanced-medication-routes";
-import medicationStandardizationRoutes from "./medication-standardization-routes";
-import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes";
-// import medicationFormularyRoutes from "./medication-formulary-routes";
-import validationRoutes from "./validation-routes";
-import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes";
-import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes";
-import setupTemplateRoutes from "./template-routes";
-import { imagingRoutes } from "./imaging-api";
-import { setupUnifiedImagingRoutes } from "./unified-imaging-api";
-import { createRxNormRoutes } from "./rxnorm-routes";
-import { registerAdminUserRoutes } from "./admin-user-routes";
-import { registerAdminVerificationRoutes } from "./admin-verification-routes";
-import adminStatsRoutes from "./admin-stats-routes";
-import { setupRealtimeProxy } from "./realtime-proxy";
-import migrationRoutes from "./migration-routes";
-import { adminClinicImportRoutes } from "./admin-clinic-import-routes";
+import unifiedMedicalProblemsRoutes from "./unified-medical-problems-api.js";
+import unifiedSurgicalHistoryRoutes from "./unified-surgical-history-api.js";
+import { unifiedFamilyHistoryRoutes } from "./unified-family-history-api.js";
+import { socialHistoryRoutes } from "./unified-social-history-api.js";
+import * as unifiedAllergyAPI from "./unified-allergy-api.js";
+import enhancedMedicationRoutes from "./enhanced-medication-routes.js";
+import medicationStandardizationRoutes from "./medication-standardization-routes.js";
+import unifiedMedicationIntelligenceRoutes from "./unified-medication-intelligence-routes.js";
+// import medicationFormularyRoutes from "./medication-formulary-routes.js";
+import validationRoutes from "./validation-routes.js";
+import intelligentDiagnosisRoutes from "./intelligent-diagnosis-routes.js";
+import vitalsFlowsheetRoutes from "./vitals-flowsheet-routes.js";
+import setupTemplateRoutes from "./template-routes.js";
+import { imagingRoutes } from "./imaging-api.js";
+import { setupUnifiedImagingRoutes } from "./unified-imaging-api.js";
+import { createRxNormRoutes } from "./rxnorm-routes.js";
+import { registerAdminUserRoutes } from "./admin-user-routes.js";
+import { registerAdminVerificationRoutes } from "./admin-verification-routes.js";
+import adminStatsRoutes from "./admin-stats-routes.js";
+import { setupRealtimeProxy } from "./realtime-proxy.js";
+import migrationRoutes from "./migration-routes.js";
+import { adminClinicImportRoutes } from "./admin-clinic-import-routes.js";
 import healthcareDataRoutes from "./healthcare-data-routes.js";
 import { healthcareUpdateSettingsRoutes } from "./healthcare-update-settings-routes.js";
-import schedulingRoutes from "./scheduling-routes";
-import { testPatientRoutes } from "./test-patient-routes";
-import acquisitionRoutes from "./acquisition-routes";
+import schedulingRoutes from "./scheduling-routes.js";
+import { testPatientRoutes } from "./test-patient-routes.js";
+import acquisitionRoutes from "./acquisition-routes.js";
 
 
-import patientAttachmentsRoutes from "./patient-attachments-routes";
+import patientAttachmentsRoutes from "./patient-attachments-routes.js";
 
-import nursingSummaryRoutes from "./nursing-summary-routes";
-import labRoutes from "./lab-routes";
-import labEntryRoutes from "./lab-entry-routes";
-import labWorkflowRoutes from "./lab-workflow-routes";
-import labCommunicationRoutes from "./lab-communication-routes";
-import labReviewRoutes from "./lab-review-routes";
-import gptLabReviewRoutes from "./gpt-lab-review-routes";
-import labSimulatorRoutes from "./lab-simulator-routes";
-import labStatusDashboardRoutes from "./lab-status-dashboard-routes";
-import consolidatedLabRoutes from "./consolidated-lab-routes";
-import { externalLabMockRouter } from "./external-lab-mock-service";
-import hl7Routes from "./hl7-routes";
-import labCatalogRoutes from "./lab-catalog-routes";
-import fhirLabRoutes from "./fhir-lab-routes";
-import specimenTrackingRoutes from "./specimen-tracking-routes";
-import subscriptionKeyRoutes from "./subscription-key-routes";
-import blogRoutes from "./blog-routes";
+import nursingSummaryRoutes from "./nursing-summary-routes.js";
+import labRoutes from "./lab-routes.js";
+import labEntryRoutes from "./lab-entry-routes.js";
+import labWorkflowRoutes from "./lab-workflow-routes.js";
+import labCommunicationRoutes from "./lab-communication-routes.js";
+import labReviewRoutes from "./lab-review-routes.js";
+import gptLabReviewRoutes from "./gpt-lab-review-routes.js";
+import labSimulatorRoutes from "./lab-simulator-routes.js";
+import labStatusDashboardRoutes from "./lab-status-dashboard-routes.js";
+import consolidatedLabRoutes from "./consolidated-lab-routes.js";
+import { externalLabMockRouter } from "./external-lab-mock-service.js";
+import hl7Routes from "./hl7-routes.js";
+import labCatalogRoutes from "./lab-catalog-routes.js";
+import fhirLabRoutes from "./fhir-lab-routes.js";
+import specimenTrackingRoutes from "./specimen-tracking-routes.js";
+import subscriptionKeyRoutes from "./subscription-key-routes.js";
+import blogRoutes from "./blog-routes.js";
 import multer from "multer";
 import OpenAI from "openai";
 // Legacy SOAPOrdersExtractor import removed - now handled by frontend parallel processing
@@ -6661,6 +6661,50 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.get("/api/test-db", async (req, res) => {
     try {
       console.log("🔍 Testing database connection...");
+      
+      // Log current environment and configuration
+      const dbConfig = {
+        nodeEnv: process.env.NODE_ENV,
+        hasDbUrl: !!process.env.DATABASE_URL,
+        dbUrlIncludes: {
+          rds: process.env.DATABASE_URL?.includes("rds.amazonaws.com") || false,
+          aws: process.env.DATABASE_URL?.includes("aws") || false
+        }
+      };
+      
+      console.log("📊 Database configuration:", JSON.stringify(dbConfig));
+      
+      // Import db module and test connection
+      const { db } = await import("./db.js");
+      
+      // Simple query to test connection
+      const result = await db.execute("SELECT 1 as test");
+      
+      res.json({
+        status: "success",
+        config: dbConfig,
+        testQuery: result,
+        message: "Database connection successful"
+      });
+      
+    } catch (error: any) {
+      console.error("❌ Database test failed:", error);
+      res.status(500).json({
+        status: "error",
+        error: error.message,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+        config: {
+          nodeEnv: process.env.NODE_ENV,
+          hasDbUrl: !!process.env.DATABASE_URL
+        }
+      });
+    }
+  });
+
+  // Original test-db endpoint (keeping for compatibility)
+  app.get("/api/test-db-tables", async (req, res) => {
+    try {
+      console.log("🔍 Testing database tables...");
       
       // Import the tables we need
       const { users, healthSystems } = await import("@shared/schema");

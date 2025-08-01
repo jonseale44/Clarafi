@@ -5,7 +5,7 @@
  */
 
 import express, { Request, Response } from 'express';
-import { APIResponseHandler } from './api-response-handler';
+import { APIResponseHandler } from './api-response-handler.js';
 
 // Mock LabCorp API responses
 export class LabCorpMockAPI {

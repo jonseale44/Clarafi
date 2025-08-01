@@ -2,6 +2,11 @@ import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "@shared/schema";
 
+// Log immediately to verify this module is being executed
+console.log("[DB CONFIG] db.ts module loaded at:", new Date().toISOString());
+console.log("[DB CONFIG] Environment check - NODE_ENV:", process.env.NODE_ENV);
+console.log("[DB CONFIG] Environment check - DATABASE_URL exists:", !!process.env.DATABASE_URL);
+
 if (!process.env.DATABASE_URL) {
   throw new Error(
     "DATABASE_URL must be set. Did you forget to provision a database?",
@@ -23,16 +28,25 @@ const poolConfig: any = {
 // Apply SSL for production - check both NODE_ENV and if DATABASE_URL contains AWS RDS
 const isProduction =
   process.env.NODE_ENV === "production" ||
-  process.env.DATABASE_URL?.includes("rds.amazonaws.com");
+  process.env.DATABASE_URL?.includes("rds.amazonaws.com") ||
+  process.env.DATABASE_URL?.includes("aws");
 
 console.log("[DB CONFIG] isProduction:", isProduction);
 
-if (isProduction) {
+// CRITICAL FIX: Always apply SSL configuration for AWS RDS connections
+// This is required to fix the self-signed certificate error in production
+if (isProduction || process.env.DATABASE_URL?.includes("amazonaws.com")) {
   console.log("[DB CONFIG] Applying SSL configuration for AWS RDS");
   poolConfig.ssl = {
-    rejectUnauthorized: false, // Required for AWS RDS
-    require: true // Also required for AWS RDS based on check-column-exists.ts
+    rejectUnauthorized: false, // Required for AWS RDS self-signed certificates
+    require: true, // Force SSL connection
+    // Additional SSL options that might help with AWS RDS
+    ca: undefined, // Let Node.js use its default CA bundle
+    checkServerIdentity: () => undefined // Skip server identity check
   };
+  
+  // Log the full SSL configuration for debugging
+  console.log("[DB CONFIG] SSL configuration applied:", JSON.stringify(poolConfig.ssl));
 }
 
 console.log("[DB CONFIG] Final poolConfig has SSL:", !!poolConfig.ssl);

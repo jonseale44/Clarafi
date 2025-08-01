@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db } from './db.js';
 import { eq, and, gte, lte, or, sql } from 'drizzle-orm';
 import { 
   dataArchives, 

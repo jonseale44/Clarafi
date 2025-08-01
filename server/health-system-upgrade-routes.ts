@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { db } from './db.js';
 import { healthSystems, users, subscriptionHistory } from '../shared/schema';
 import { eq } from 'drizzle-orm';
-import { StripeService } from './stripe-service';
-import { SubscriptionConfig } from './subscription-config';
+import { StripeService } from './stripe-service.js';
+import { SubscriptionConfig } from './subscription-config.js';
 
 const router = Router();
 

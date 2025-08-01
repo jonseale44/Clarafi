@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { z } from "zod";
 import OpenAI from "openai";
-import { web_search } from "./web-search-wrapper";
+import { web_search } from "./web-search-wrapper.js";
 
 const router = Router();
 

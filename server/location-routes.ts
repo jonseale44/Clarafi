@@ -1,6 +1,6 @@
 import { Express } from "express";
-import { storage } from "./storage";
-import { tenantIsolation } from "./tenant-isolation";
+import { storage } from "./storage.js";
+import { tenantIsolation } from "./tenant-isolation.js";
 
 export function setupLocationRoutes(app: Express) {
   

@@ -7,7 +7,7 @@ import { Router, Request, Response } from "express";
 import { db } from "./db.js";
 import { labOrders, labResults, patientOrderPreferences } from "@shared/schema";
 import { eq, and, desc, isNull } from "drizzle-orm";
-import { APIResponseHandler } from "./api-response-handler";
+import { APIResponseHandler } from "./api-response-handler.js";
 import { InsertLabOrder } from "@shared/schema";
 import { z } from "zod";
 import { storage } from "./storage.js";

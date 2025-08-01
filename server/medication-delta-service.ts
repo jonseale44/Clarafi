@@ -14,7 +14,7 @@ import {
   medicationFormulary,
 } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { TokenCostAnalyzer } from "./token-cost-analyzer.js";
 import { MedicationStandardizationService } from "./medication-standardization-service.js";
 

@@ -1,5 +1,5 @@
 import { Express, Request } from 'express';
-import { DataArchiveService } from './data-archive-service';
+import { DataArchiveService } from './data-archive-service.js';
 import { z } from 'zod';
 import { db } from './db.js';
 import { eq, and } from 'drizzle-orm';

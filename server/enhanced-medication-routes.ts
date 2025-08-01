@@ -4,9 +4,9 @@
  */
 
 import { Router } from "express";
-import { storage } from "./storage";
-import { medicationDelta } from "./medication-delta-service";
-import { MedicationGroupingIntelligenceService } from "./medication-grouping-intelligence-service";
+import { storage } from "./storage.js";
+import { medicationDelta } from "./medication-delta-service.js";
+import { MedicationGroupingIntelligenceService } from "./medication-grouping-intelligence-service.js";
 import type { Request, Response } from "express";
 
 const router = Router();

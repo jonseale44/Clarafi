@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { pool } from './db';
-import { AuthenticatedRequest } from './auth';
+import { pool } from './db.js';
+import { AuthenticatedRequest } from './auth.js';
 import { phiAccessLogs, authenticationLogs, dataModificationLogs } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';

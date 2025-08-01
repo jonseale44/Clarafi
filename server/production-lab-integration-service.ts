@@ -7,7 +7,7 @@
 import { db } from "./db.js";
 import { labOrders, labResults, externalLabs, orders } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { APIResponseHandler } from "./api-response-handler";
+import { APIResponseHandler } from "./api-response-handler.js";
 
 export interface ProductionLabConfig {
   labId: string;

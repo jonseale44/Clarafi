@@ -2,7 +2,7 @@
 // Provides administrative endpoints for viewing and managing per-user billing
 
 import { Request, Response, Router } from 'express';
-import { BillingCalculationService } from './billing-calculation-service';
+import { BillingCalculationService } from './billing-calculation-service.js';
 import { db } from './db.js';
 import { healthSystems } from '@shared/schema';
 import { eq } from 'drizzle-orm';

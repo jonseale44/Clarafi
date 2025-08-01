@@ -6,7 +6,7 @@
 import { db } from "./db.js";
 import { labOrders, labResults } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { labSimulator } from "./lab-simulator-service";
+import { labSimulator } from "./lab-simulator-service.js";
 
 export class LabOrderIntegrationService {
   /**

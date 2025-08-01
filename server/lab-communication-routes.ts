@@ -5,8 +5,8 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { APIResponseHandler } from './api-response-handler';
-import { LabCommunicationService, MessageGenerationRequest } from './lab-communication-service';
+import { APIResponseHandler } from './api-response-handler.js';
+import { LabCommunicationService, MessageGenerationRequest } from './lab-communication-service.js';
 
 const router = Router();
 

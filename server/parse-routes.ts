@@ -1,11 +1,11 @@
 import { Request, Response, Router } from "express";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { PatientParserService } from "./patient-parser-service";
+import { PatientParserService } from "./patient-parser-service.js";
 import { db } from "./db.js";
 import { patients, insertPatientSchema } from "../shared/schema";
-import { tenantIsolation } from "./tenant-isolation";
-import { storage } from "./storage";
+import { tenantIsolation } from "./tenant-isolation.js";
+import { storage } from "./storage.js";
 
 const router = Router();
 
