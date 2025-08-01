@@ -19,39 +19,44 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Debug logging to help diagnose SSL issues
-console.log("[DB CONFIG] NODE_ENV:", process.env.NODE_ENV);
-console.log("[DB CONFIG] DATABASE_URL includes RDS:", process.env.DATABASE_URL?.includes("rds.amazonaws.com"));
+// AWS RDS SSL Fix: For production AWS RDS connections
+// The key is to append SSL parameters directly to the connection string
+let connectionString = process.env.DATABASE_URL;
+
+// Check if we're connecting to AWS RDS
+const isAWSRDS = connectionString.includes("rds.amazonaws.com");
+const isProduction = process.env.NODE_ENV === "production";
+
+console.log("[DB CONFIG] isAWSRDS:", isAWSRDS);
+console.log("[DB CONFIG] isProduction:", isProduction);
+
+// For AWS RDS, append SSL parameters to the connection string if not already present
+if ((isAWSRDS || isProduction) && !connectionString.includes("sslmode=")) {
+  console.log("[DB CONFIG] Appending SSL parameters to connection string for AWS RDS");
+  // Add SSL parameters to the connection string
+  const separator = connectionString.includes("?") ? "&" : "?";
+  connectionString = `${connectionString}${separator}sslmode=require&ssl=true`;
+  console.log("[DB CONFIG] Modified connection string (SSL params added)");
+}
 
 // Create pool configuration
 const poolConfig: any = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString: connectionString,
   max: 5, // Reduce max connections
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
 };
 
-// Apply SSL for production - check both NODE_ENV and if DATABASE_URL contains AWS RDS
-const isProduction =
-  process.env.NODE_ENV === "production" ||
-  process.env.DATABASE_URL?.includes("rds.amazonaws.com") ||
-  process.env.DATABASE_URL?.includes("aws");
-
-console.log("[DB CONFIG] isProduction:", isProduction);
-
-// CRITICAL FIX: Always apply SSL configuration for AWS RDS connections
-// This is required to fix the self-signed certificate error in production
-if (isProduction || process.env.DATABASE_URL?.includes("amazonaws.com")) {
-  console.log("[DB CONFIG] Applying SSL configuration for AWS RDS");
+// For AWS RDS, we need to disable SSL certificate verification
+// This is the proper way to handle AWS RDS self-signed certificates
+if (isAWSRDS || isProduction) {
+  console.log("[DB CONFIG] Setting SSL configuration for AWS RDS");
+  
+  // This is the correct configuration for AWS RDS with self-signed certificates
   poolConfig.ssl = {
-    rejectUnauthorized: false, // Required for AWS RDS self-signed certificates
-    require: true, // Force SSL connection
-    // Additional SSL options that might help with AWS RDS
-    ca: undefined, // Let Node.js use its default CA bundle
-    checkServerIdentity: () => undefined // Skip server identity check
+    rejectUnauthorized: false
   };
   
-  // Log the full SSL configuration for debugging
   console.log("[DB CONFIG] SSL configuration applied:", JSON.stringify(poolConfig.ssl));
 }
 

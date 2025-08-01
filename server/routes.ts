@@ -6689,12 +6689,20 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       const { db, pool } = await import("./db.js");
       console.log("✅ db module imported");
       
-      // Get pool configuration
+      // Get pool configuration including SSL settings
       const poolInfo = {
         totalCount: pool.totalCount,
         idleCount: pool.idleCount,
-        waitingCount: pool.waitingCount
+        waitingCount: pool.waitingCount,
+        // Try to access the internal pool options to see SSL config
+        options: pool.options ? {
+          ssl: pool.options.ssl,
+          connectionString: pool.options.connectionString ? 'Set (hidden)' : 'Not set'
+        } : 'No options available'
       };
+      
+      // Log pool SSL configuration
+      console.log("🔍 Pool SSL configuration:", JSON.stringify(poolInfo.options));
       
       // Simple query to test connection
       console.log("🔍 Executing test query...");
@@ -6742,6 +6750,72 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       environment: process.env.NODE_ENV,
       check: "Check your server logs for the test messages above"
     });
+  });
+
+  // Test different SSL configurations for AWS RDS
+  app.get("/api/test-db-ssl", async (req, res) => {
+    try {
+      console.log("🔍 Testing different SSL configurations for AWS RDS...");
+      
+      const results = [];
+      
+      // Test 1: Connection string with sslmode parameter
+      try {
+        const { Pool: TestPool1 } = await import("pg");
+        const testPool1 = new TestPool1({
+          connectionString: process.env.DATABASE_URL + "?sslmode=require",
+          ssl: { rejectUnauthorized: false }
+        });
+        await testPool1.query("SELECT 1");
+        await testPool1.end();
+        results.push({ test: "sslmode=require + ssl object", status: "success" });
+      } catch (error: any) {
+        results.push({ test: "sslmode=require + ssl object", status: "failed", error: error.message });
+      }
+      
+      // Test 2: Just ssl: true
+      try {
+        const { Pool: TestPool2 } = await import("pg");
+        const testPool2 = new TestPool2({
+          connectionString: process.env.DATABASE_URL,
+          ssl: true
+        });
+        await testPool2.query("SELECT 1");
+        await testPool2.end();
+        results.push({ test: "ssl: true", status: "success" });
+      } catch (error: any) {
+        results.push({ test: "ssl: true", status: "failed", error: error.message });
+      }
+      
+      // Test 3: SSL with rejectUnauthorized false (current approach)
+      try {
+        const { Pool: TestPool3 } = await import("pg");
+        const testPool3 = new TestPool3({
+          connectionString: process.env.DATABASE_URL,
+          ssl: { rejectUnauthorized: false }
+        });
+        await testPool3.query("SELECT 1");
+        await testPool3.end();
+        results.push({ test: "ssl: { rejectUnauthorized: false }", status: "success" });
+      } catch (error: any) {
+        results.push({ test: "ssl: { rejectUnauthorized: false }", status: "failed", error: error.message });
+      }
+      
+      res.json({
+        message: "SSL configuration tests completed",
+        results: results,
+        recommendation: results.find(r => r.status === "success") 
+          ? `Use configuration: ${results.find(r => r.status === "success")?.test}`
+          : "None of the configurations worked"
+      });
+      
+    } catch (error: any) {
+      console.error("❌ SSL test failed:", error);
+      res.status(500).json({
+        status: "error",
+        error: error.message
+      });
+    }
   });
 
   // Check bundling and module loading environment
