@@ -11,12 +11,22 @@
 import { Client } from 'pg';
 
 async function checkColumnExists(connectionString: string, tableName: string, columnName: string) {
-  const client = new Client({ 
-    connectionString,
-    ssl: connectionString.includes('rds.amazonaws.com') ? {
-      rejectUnauthorized: false
-    } : undefined
-  });
+  // For AWS RDS, we need to handle SSL differently
+  const isAWS = connectionString.includes('rds.amazonaws.com');
+  
+  const clientConfig: any = { connectionString };
+  
+  if (isAWS) {
+    // Remove sslmode from connection string and handle SSL separately
+    const cleanConnectionString = connectionString.replace('?sslmode=require', '');
+    clientConfig.connectionString = cleanConnectionString;
+    clientConfig.ssl = {
+      rejectUnauthorized: false,
+      require: true
+    };
+  }
+  
+  const client = new Client(clientConfig);
   
   try {
     await client.connect();
