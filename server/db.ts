@@ -57,12 +57,16 @@ if (isAWSRDS || isProduction) {
   try {
     // Try multiple paths to find the certificate bundle (for different environments)
     const possiblePaths = [
-      // Production path (from dist directory)
-      path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem'),
+      // When running from dist/index.js, the certificate is at ./certs/
+      path.join(path.dirname(new URL(import.meta.url).pathname), 'certs', 'aws-global-bundle.pem'),
+      // Production path (from repository root)
+      path.join(process.cwd(), 'dist', 'certs', 'aws-global-bundle.pem'),
       // Development path
+      path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem'),
+      // Alternative paths
       path.join(process.cwd(), 'certs', 'aws-global-bundle.pem'),
-      // Alternative production path
-      path.join(process.cwd(), 'dist', 'certs', 'aws-global-bundle.pem')
+      './certs/aws-global-bundle.pem',
+      'certs/aws-global-bundle.pem'
     ];
     
     let awsCertBundle = null;
@@ -79,15 +83,19 @@ if (isAWSRDS || isProduction) {
       }
     }
     
+    console.log("[DB CONFIG] Current working directory:", process.cwd());
+    console.log("[DB CONFIG] Script location:", new URL(import.meta.url).pathname);
+    console.log("[DB CONFIG] All attempted paths:", possiblePaths);
+    
     if (awsCertBundle) {
       // Use the certificate bundle for SSL verification
       poolConfig.ssl = {
         ca: awsCertBundle,
         rejectUnauthorized: true // Enable certificate verification with the bundle
       };
-      console.log("[DB CONFIG] SSL configuration applied with AWS certificate bundle");
+      console.log("[DB CONFIG] SSL configuration applied with AWS certificate bundle from:", certPath);
     } else {
-      throw new Error("Could not find AWS certificate bundle in any expected location");
+      throw new Error("Could not find AWS certificate bundle in any expected location. Tried: " + possiblePaths.join(", "));
     }
   } catch (error) {
     console.error("[DB CONFIG] Failed to read AWS certificate bundle, falling back to rejectUnauthorized: false", error);
