@@ -123,33 +123,62 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/check-email", async (req, res) => {
+    console.log("\n========== CHECK-EMAIL START ==========");
+    console.log("[CheckEmail] Request received at:", new Date().toISOString());
+    console.log("[CheckEmail] Request body:", req.body);
+    
     try {
       const { email } = req.body;
+      console.log("[CheckEmail] Email to check:", email);
       
       // Basic email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email || !emailRegex.test(email)) {
+        console.log("[CheckEmail] Invalid email format");
         return res.json({ 
           available: false, 
           message: "Please enter a valid email address" 
         });
       }
       
+      console.log("[CheckEmail] Email format valid, checking database...");
+      console.log("[CheckEmail] About to call storage.getUserByEmail");
+      console.log("[CheckEmail] Storage object exists:", !!storage);
+      console.log("[CheckEmail] getUserByEmail method exists:", !!storage.getUserByEmail);
+      
       const existingUser = await storage.getUserByEmail(email);
       
+      console.log("[CheckEmail] Database query completed");
+      console.log("[CheckEmail] User found:", !!existingUser);
+      
       if (existingUser) {
+        console.log("[CheckEmail] Email already registered");
         return res.json({ 
           available: false, 
           message: "This email is already registered. Try logging in or use a different email." 
         });
       }
       
+      console.log("[CheckEmail] Email is available");
       return res.json({ 
         available: true, 
         message: "Email is available!" 
       });
-    } catch (error) {
-      console.error("❌ [CheckEmail] Error:", error);
+    } catch (error: any) {
+      console.error("❌ [CheckEmail] Error occurred:");
+      console.error("  - Error type:", error.constructor.name);
+      console.error("  - Error message:", error.message);
+      console.error("  - Error code:", error.code);
+      console.error("  - Error stack:", error.stack);
+      
+      // Log additional details if it's a database error
+      if (error.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+        console.error("  - SSL CERTIFICATE ERROR DETECTED!");
+        console.error("  - This is the exact error we're trying to fix");
+      }
+      
+      console.log("========== CHECK-EMAIL END (ERROR) ==========\n");
+      
       return res.status(500).json({ 
         available: false, 
         message: "Unable to check email availability. Please try again." 
