@@ -40,6 +40,10 @@ let connectionString = process.env.DATABASE_URL;
 const urlForLogging = connectionString.replace(/:[^:@]+@/, ':***@');
 console.log("[DB CONFIG] DATABASE_URL format:", urlForLogging);
 
+// Check environment and connection type
+const isAWSRDS = connectionString.includes("rds.amazonaws.com");
+const isProduction = process.env.NODE_ENV === "production";
+
 // Parse the DATABASE_URL to understand its components
 try {
   const url = new URL(connectionString);
@@ -52,15 +56,15 @@ try {
   console.log("  - Search params:", url.search);
   console.log("  - Has SSL params:", url.search.includes('ssl') || url.search.includes('sslmode'));
   
-  // CRITICAL FIX: Remove SSL parameters from connection string
-  // IMPORTANT: Connection string SSL parameters OVERRIDE pool SSL configuration
-  // This was causing "self-signed certificate in certificate chain" errors even with rejectUnauthorized: false
-  // AWS App Runner adds ?sslmode=require to DATABASE_URL which forces SSL validation
-  if (url.search.includes('ssl') || url.search.includes('sslmode')) {
-    console.log("[DB CONFIG] WARNING: SSL parameters found in connection string!");
+  // ENVIRONMENT-SPECIFIC SSL HANDLING
+  // Production (AWS RDS): Remove SSL params from connection string to use pool SSL config
+  // Development (Replit): Keep SSL params as Replit database requires them
+  
+  if ((isAWSRDS || isProduction) && (url.search.includes('ssl') || url.search.includes('sslmode'))) {
+    console.log("[DB CONFIG] Production/AWS RDS detected with SSL params in URL");
     console.log("[DB CONFIG] Removing SSL parameters to allow pool SSL config to take effect...");
     
-    // Remove all SSL-related parameters
+    // Remove all SSL-related parameters for production only
     url.searchParams.delete('ssl');
     url.searchParams.delete('sslmode');
     url.searchParams.delete('sslcert');
@@ -70,15 +74,14 @@ try {
     // Update the connection string
     connectionString = url.toString();
     console.log("[DB CONFIG] Updated connection string (SSL params removed):", connectionString.replace(/:[^:@]+@/, ':***@'));
+  } else if (url.search.includes('ssl') || url.search.includes('sslmode')) {
+    console.log("[DB CONFIG] Development environment - keeping SSL params in connection string");
   }
 } catch (e) {
   console.error("[DB CONFIG] Failed to parse DATABASE_URL:", e);
 }
 
-// Check if we're connecting to AWS RDS
-const isAWSRDS = connectionString.includes("rds.amazonaws.com");
-const isProduction = process.env.NODE_ENV === "production";
-
+// These variables are already defined above in the URL parsing section
 console.log("[DB CONFIG] Connection type detection:");
 console.log("  - isAWSRDS:", isAWSRDS);
 console.log("  - isProduction:", isProduction);

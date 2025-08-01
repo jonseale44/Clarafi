@@ -41,13 +41,16 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
-### August 1, 2025 - AWS RDS SSL Certificate Fix (RESOLVED)
-- ✅ **SOLVED**: "self-signed certificate in certificate chain" error in production
-- ✅ **Root Cause**: DATABASE_URL contained `?sslmode=require` which overrode pool SSL configuration
-- ✅ **Solution**: Strip all SSL parameters from connection string to allow pool configuration to work
-- ✅ Key discovery: Connection string SSL parameters take precedence over pool SSL settings
-- ✅ Fix implemented in `server/db.ts` - removes SSL params before creating pool
-- ✅ Production now successfully connects with `ssl: { rejectUnauthorized: false }`
+### August 1, 2025 - AWS RDS SSL Certificate Fix & Development Compatibility (RESOLVED)
+- ✅ **SOLVED**: SSL configuration conflict between production and development environments
+- ✅ **Root Cause**: 
+  - Production (AWS RDS): Needs SSL params removed from connection string to use pool SSL config
+  - Development (Replit): Requires SSL params (`?sslmode=require`) to remain in connection string
+- ✅ **Solution**: Environment-specific SSL handling in `server/db.ts`:
+  - Production/AWS RDS: Strips SSL parameters, uses `ssl: { rejectUnauthorized: false }` in pool config
+  - Development/Replit: Keeps SSL parameters in connection string
+- ✅ Key implementation: Check for `isAWSRDS || isProduction` before removing SSL params
+- ✅ Both environments now work without manual toggling
 
 ### July 31, 2025 - Production Database Connection Fix
 - ✅ Fixed 500 error on `/api/check-email` endpoint at https://clarafi.ai
