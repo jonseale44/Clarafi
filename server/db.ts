@@ -31,6 +31,7 @@ if (isProduction) {
   console.log("[DB CONFIG] Applying SSL configuration for AWS RDS");
   poolConfig.ssl = {
     rejectUnauthorized: false, // Required for AWS RDS
+    require: true // Also required for AWS RDS based on check-column-exists.ts
   };
 }
 
