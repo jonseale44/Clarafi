@@ -11,7 +11,12 @@
 import { Client } from 'pg';
 
 async function checkColumnExists(connectionString: string, tableName: string, columnName: string) {
-  const client = new Client({ connectionString });
+  const client = new Client({ 
+    connectionString,
+    ssl: connectionString.includes('rds.amazonaws.com') ? {
+      rejectUnauthorized: false
+    } : undefined
+  });
   
   try {
     await client.connect();

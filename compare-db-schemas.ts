@@ -19,7 +19,12 @@ interface ColumnInfo {
 }
 
 async function getSchemaInfo(connectionString: string, label: string): Promise<Map<string, ColumnInfo[]>> {
-  const client = new Client({ connectionString });
+  const client = new Client({ 
+    connectionString,
+    ssl: connectionString.includes('rds.amazonaws.com') ? {
+      rejectUnauthorized: false
+    } : undefined
+  });
   
   try {
     await client.connect();
