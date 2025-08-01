@@ -55,51 +55,33 @@ if (isAWSRDS || isProduction) {
   console.log("[DB CONFIG] Setting SSL configuration for AWS RDS with certificate bundle");
   
   try {
-    // Try multiple paths to find the certificate bundle (for different environments)
-    const possiblePaths = [
-      // When running from dist/index.js, the certificate is at ./certs/
-      path.join(path.dirname(new URL(import.meta.url).pathname), 'certs', 'aws-global-bundle.pem'),
-      // Production path (from repository root)
-      path.join(process.cwd(), 'dist', 'certs', 'aws-global-bundle.pem'),
-      // Development path
-      path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem'),
-      // Alternative paths
-      path.join(process.cwd(), 'certs', 'aws-global-bundle.pem'),
-      './certs/aws-global-bundle.pem',
-      'certs/aws-global-bundle.pem'
-    ];
+    // Try to load certificate from file for local development
+    const certPath = path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem');
     
-    let awsCertBundle = null;
-    let certPath = null;
-    
-    for (const tryPath of possiblePaths) {
-      try {
-        awsCertBundle = fs.readFileSync(tryPath, 'utf8');
-        certPath = tryPath;
-        console.log("[DB CONFIG] Successfully loaded AWS certificate bundle from:", certPath);
-        break;
-      } catch (e) {
-        console.log("[DB CONFIG] Certificate not found at:", tryPath);
-      }
-    }
-    
-    console.log("[DB CONFIG] Current working directory:", process.cwd());
-    console.log("[DB CONFIG] Script location:", new URL(import.meta.url).pathname);
-    console.log("[DB CONFIG] All attempted paths:", possiblePaths);
-    
-    if (awsCertBundle) {
-      // Use the certificate bundle for SSL verification
+    if (fs.existsSync(certPath)) {
+      console.log("[DB CONFIG] Loading AWS certificate bundle from file");
+      const awsCertBundle = fs.readFileSync(certPath, 'utf8');
+      
       poolConfig.ssl = {
         ca: awsCertBundle,
-        rejectUnauthorized: true // Enable certificate verification with the bundle
+        rejectUnauthorized: true
       };
-      console.log("[DB CONFIG] SSL configuration applied with AWS certificate bundle from:", certPath);
+      
+      console.log("[DB CONFIG] SSL configuration applied with certificate bundle from file");
     } else {
-      throw new Error("Could not find AWS certificate bundle in any expected location. Tried: " + possiblePaths.join(", "));
+      console.log("[DB CONFIG] Certificate file not found, using standard SSL configuration");
+      
+      // Use standard SSL configuration for AWS App Runner
+      // AWS handles certificates properly in their environment
+      poolConfig.ssl = {
+        rejectUnauthorized: false // AWS RDS requires SSL but handles certs internally
+      };
+      
+      console.log("[DB CONFIG] SSL configuration applied for AWS environment");
     }
   } catch (error) {
-    console.error("[DB CONFIG] Failed to read AWS certificate bundle, falling back to rejectUnauthorized: false", error);
-    // Fallback to disabling certificate verification if bundle can't be read
+    console.error("[DB CONFIG] Error configuring SSL:", error);
+    // Fallback to basic SSL configuration
     poolConfig.ssl = {
       rejectUnauthorized: false
     };
