@@ -53,7 +53,9 @@ try {
   console.log("  - Has SSL params:", url.search.includes('ssl') || url.search.includes('sslmode'));
   
   // CRITICAL FIX: Remove SSL parameters from connection string
-  // These override our pool SSL configuration
+  // IMPORTANT: Connection string SSL parameters OVERRIDE pool SSL configuration
+  // This was causing "self-signed certificate in certificate chain" errors even with rejectUnauthorized: false
+  // AWS App Runner adds ?sslmode=require to DATABASE_URL which forces SSL validation
   if (url.search.includes('ssl') || url.search.includes('sslmode')) {
     console.log("[DB CONFIG] WARNING: SSL parameters found in connection string!");
     console.log("[DB CONFIG] Removing SSL parameters to allow pool SSL config to take effect...");

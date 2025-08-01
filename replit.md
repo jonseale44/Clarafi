@@ -41,14 +41,13 @@ A comprehensive medical transcription and lab management platform designed to st
 
 ## Recent Changes
 
-### August 1, 2025 - AWS RDS SSL Certificate Fix (Updated)
-- ✅ Resolved "self-signed certificate in certificate chain" error in production
-- ✅ Added AWS global certificate bundle to project at `server/certs/aws-global-bundle.pem`
-- ✅ Implemented dual SSL configuration approach in db.ts:
-  - Local development: Loads certificate bundle from file for full validation
-  - AWS production: Uses SSL with AWS's internal certificate handling
-- ✅ Avoided AWS App Runner deployment issues by removing build-time file operations
-- ✅ Production now uses SSL encryption with AWS's infrastructure-level certificate validation
+### August 1, 2025 - AWS RDS SSL Certificate Fix (RESOLVED)
+- ✅ **SOLVED**: "self-signed certificate in certificate chain" error in production
+- ✅ **Root Cause**: DATABASE_URL contained `?sslmode=require` which overrode pool SSL configuration
+- ✅ **Solution**: Strip all SSL parameters from connection string to allow pool configuration to work
+- ✅ Key discovery: Connection string SSL parameters take precedence over pool SSL settings
+- ✅ Fix implemented in `server/db.ts` - removes SSL params before creating pool
+- ✅ Production now successfully connects with `ssl: { rejectUnauthorized: false }`
 
 ### July 31, 2025 - Production Database Connection Fix
 - ✅ Fixed 500 error on `/api/check-email` endpoint at https://clarafi.ai
