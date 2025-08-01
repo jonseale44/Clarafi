@@ -32,14 +32,8 @@ const isProduction = process.env.NODE_ENV === "production";
 console.log("[DB CONFIG] isAWSRDS:", isAWSRDS);
 console.log("[DB CONFIG] isProduction:", isProduction);
 
-// For AWS RDS, append SSL parameters to the connection string if not already present
-if ((isAWSRDS || isProduction) && !connectionString.includes("sslmode=")) {
-  console.log("[DB CONFIG] Appending SSL parameters to connection string for AWS RDS");
-  // Add SSL parameters to the connection string
-  const separator = connectionString.includes("?") ? "&" : "?";
-  connectionString = `${connectionString}${separator}sslmode=require&ssl=true`;
-  console.log("[DB CONFIG] Modified connection string (SSL params added)");
-}
+// Do NOT append SSL parameters to connection string - handle via poolConfig.ssl instead
+// This prevents conflicts between connection string SSL and pool SSL settings
 
 // Create pool configuration
 const poolConfig: any = {
