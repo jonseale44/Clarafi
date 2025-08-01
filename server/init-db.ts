@@ -17,17 +17,19 @@ export async function initializeDatabase() {
       const hashedPassword = await hashPassword("admin123");
       
       // First, ensure we have at least one health system
-      const [defaultHealthSystem] = await db.select().from(healthSystems).limit(1);
-      let healthSystemId = defaultHealthSystem?.id;
+      const existingHealthSystems = await db.select().from(healthSystems).limit(1);
+      let healthSystemId: number;
       
-      if (!healthSystemId) {
+      if (existingHealthSystems.length === 0) {
         // Create a default health system if none exists
         const newHealthSystems = await db.insert(healthSystems).values({
           name: "Default Health System",
           shortName: "Default",
           systemType: "individual_provider"
         }).returning();
-        healthSystemId = newHealthSystems[0].id;
+        healthSystemId = newHealthSystems[0]!.id;
+      } else {
+        healthSystemId = existingHealthSystems[0].id;
       }
       
       await db.insert(users).values({

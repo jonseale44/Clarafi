@@ -31,6 +31,8 @@ import {
   insertPatientSchema,
   insertEncounterSchema,
   insertOrderSchema,
+  patientAttachments,
+  attachmentExtractedContent,
 } from "@shared/schema";
 // Legacy import removed - using enhanced realtime service only
 import { parseRoutes } from "./parse-routes";
@@ -6302,7 +6304,7 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
       }
 
       const { healthSystemId } = req.body;
-      const user = req.user as AuthenticatedUser;
+      const user = req.user as Express.User;
 
       console.log("[Tier2Upgrade] User details:", {
         userId: user.id,
