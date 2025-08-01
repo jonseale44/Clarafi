@@ -6655,6 +6655,38 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
   app.use(advancedAnalyticsRoutes.default);
   console.log("📈 [AdvancedAnalytics] Advanced analytics routes registered");
   
+  // Database connection test endpoint
+  app.get("/api/test-db", async (req, res) => {
+    try {
+      console.log("🔍 Testing database connection...");
+      
+      // Import the tables we need
+      const { users, healthSystems } = await import("@shared/schema");
+      
+      // Test basic connection
+      const result = await db.select({ count: sql`count(*)` }).from(users);
+      
+      // Test if we can query health_systems table
+      const healthSystemsCount = await db.select({ count: sql`count(*)` }).from(healthSystems);
+      
+      res.json({
+        success: true,
+        message: "Database connection successful",
+        userCount: result[0]?.count || 0,
+        healthSystemCount: healthSystemsCount[0]?.count || 0,
+        databaseUrl: process.env.DATABASE_URL ? "Set (hidden)" : "Not set"
+      });
+    } catch (error: any) {
+      console.error("❌ Database connection test failed:", error);
+      res.status(500).json({
+        success: false,
+        message: "Database connection failed",
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  });
+
   // Import and register advanced marketing routes
   const advancedMarketingRoutes = await import("./advanced-marketing-routes");
   app.use(advancedMarketingRoutes.default);
