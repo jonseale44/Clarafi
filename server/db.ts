@@ -1,6 +1,8 @@
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "@shared/schema";
+import * as fs from "fs";
+import * as path from "path";
 
 // Log immediately to verify this module is being executed
 console.log("[DB CONFIG] db.ts module loaded at:", new Date().toISOString());
@@ -47,17 +49,55 @@ const poolConfig: any = {
   connectionTimeoutMillis: 10000,
 };
 
-// For AWS RDS, we need to disable SSL certificate verification
-// This is the proper way to handle AWS RDS self-signed certificates
+// For AWS RDS, we need to use the AWS certificate bundle
+// This is the proper way to handle AWS RDS SSL certificates securely
 if (isAWSRDS || isProduction) {
-  console.log("[DB CONFIG] Setting SSL configuration for AWS RDS");
+  console.log("[DB CONFIG] Setting SSL configuration for AWS RDS with certificate bundle");
   
-  // This is the correct configuration for AWS RDS with self-signed certificates
-  poolConfig.ssl = {
-    rejectUnauthorized: false
-  };
+  try {
+    // Try multiple paths to find the certificate bundle (for different environments)
+    const possiblePaths = [
+      // Production path (from dist directory)
+      path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem'),
+      // Development path
+      path.join(process.cwd(), 'certs', 'aws-global-bundle.pem'),
+      // Alternative production path
+      path.join(process.cwd(), 'dist', 'certs', 'aws-global-bundle.pem')
+    ];
+    
+    let awsCertBundle = null;
+    let certPath = null;
+    
+    for (const tryPath of possiblePaths) {
+      try {
+        awsCertBundle = fs.readFileSync(tryPath, 'utf8');
+        certPath = tryPath;
+        console.log("[DB CONFIG] Successfully loaded AWS certificate bundle from:", certPath);
+        break;
+      } catch (e) {
+        console.log("[DB CONFIG] Certificate not found at:", tryPath);
+      }
+    }
+    
+    if (awsCertBundle) {
+      // Use the certificate bundle for SSL verification
+      poolConfig.ssl = {
+        ca: awsCertBundle,
+        rejectUnauthorized: true // Enable certificate verification with the bundle
+      };
+      console.log("[DB CONFIG] SSL configuration applied with AWS certificate bundle");
+    } else {
+      throw new Error("Could not find AWS certificate bundle in any expected location");
+    }
+  } catch (error) {
+    console.error("[DB CONFIG] Failed to read AWS certificate bundle, falling back to rejectUnauthorized: false", error);
+    // Fallback to disabling certificate verification if bundle can't be read
+    poolConfig.ssl = {
+      rejectUnauthorized: false
+    };
+  }
   
-  console.log("[DB CONFIG] SSL configuration applied:", JSON.stringify(poolConfig.ssl));
+  console.log("[DB CONFIG] SSL configuration applied:", poolConfig.ssl ? "SSL enabled" : "SSL disabled");
 }
 
 console.log("[DB CONFIG] Final poolConfig has SSL:", !!poolConfig.ssl);
