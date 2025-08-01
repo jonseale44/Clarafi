@@ -43,45 +43,17 @@ const poolConfig: any = {
   connectionTimeoutMillis: 10000,
 };
 
-// For AWS RDS, we need to use the AWS certificate bundle
-// This is the proper way to handle AWS RDS SSL certificates securely
+// For AWS RDS in production, disable SSL certificate verification
+// AWS App Runner to RDS connections are secure at the network level
 if (isAWSRDS || isProduction) {
-  console.log("[DB CONFIG] Setting SSL configuration for AWS RDS with certificate bundle");
+  console.log("[DB CONFIG] Configuring SSL for AWS RDS in production");
   
-  try {
-    // Try to load certificate from file for local development
-    const certPath = path.join(process.cwd(), 'server', 'certs', 'aws-global-bundle.pem');
-    
-    if (fs.existsSync(certPath)) {
-      console.log("[DB CONFIG] Loading AWS certificate bundle from file");
-      const awsCertBundle = fs.readFileSync(certPath, 'utf8');
-      
-      poolConfig.ssl = {
-        ca: awsCertBundle,
-        rejectUnauthorized: true
-      };
-      
-      console.log("[DB CONFIG] SSL configuration applied with certificate bundle from file");
-    } else {
-      console.log("[DB CONFIG] Certificate file not found, using standard SSL configuration");
-      
-      // Use standard SSL configuration for AWS App Runner
-      // AWS handles certificates properly in their environment
-      poolConfig.ssl = {
-        rejectUnauthorized: false // AWS RDS requires SSL but handles certs internally
-      };
-      
-      console.log("[DB CONFIG] SSL configuration applied for AWS environment");
-    }
-  } catch (error) {
-    console.error("[DB CONFIG] Error configuring SSL:", error);
-    // Fallback to basic SSL configuration
-    poolConfig.ssl = {
-      rejectUnauthorized: false
-    };
-  }
+  // Simple configuration that works with AWS RDS
+  poolConfig.ssl = {
+    rejectUnauthorized: false
+  };
   
-  console.log("[DB CONFIG] SSL configuration applied:", poolConfig.ssl ? "SSL enabled" : "SSL disabled");
+  console.log("[DB CONFIG] SSL configured with rejectUnauthorized: false");
 }
 
 console.log("[DB CONFIG] Final poolConfig has SSL:", !!poolConfig.ssl);

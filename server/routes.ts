@@ -6752,6 +6752,27 @@ CRITICAL: Always provide complete, validated orders that a physician would actua
     });
   });
 
+  // Environment check endpoint
+  app.get("/api/test/env", (req, res) => {
+    const dbUrl = process.env.DATABASE_URL || '';
+    const cleanDbUrl = dbUrl.replace(/:[^:@]+@/, ':***@'); // Hide password
+    
+    res.json({
+      message: "Environment configuration check",
+      nodeEnv: process.env.NODE_ENV,
+      nodeVersion: process.version,
+      dbUrlFormat: cleanDbUrl,
+      sslEnvVars: {
+        NODE_TLS_REJECT_UNAUTHORIZED: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
+        PGSSLMODE: process.env.PGSSLMODE,
+        PGSSL: process.env.PGSSL,
+        DATABASE_SSL: process.env.DATABASE_SSL
+      },
+      isAWSRDS: dbUrl.includes('rds.amazonaws.com'),
+      hasSSLInUrl: dbUrl.includes('ssl=') || dbUrl.includes('sslmode=')
+    });
+  });
+
   // Test different SSL configurations for AWS RDS
   app.get("/api/test-db-ssl", async (req, res) => {
     try {
