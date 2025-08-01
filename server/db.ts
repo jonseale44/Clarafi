@@ -51,6 +51,24 @@ try {
   console.log("  - Database:", url.pathname);
   console.log("  - Search params:", url.search);
   console.log("  - Has SSL params:", url.search.includes('ssl') || url.search.includes('sslmode'));
+  
+  // CRITICAL FIX: Remove SSL parameters from connection string
+  // These override our pool SSL configuration
+  if (url.search.includes('ssl') || url.search.includes('sslmode')) {
+    console.log("[DB CONFIG] WARNING: SSL parameters found in connection string!");
+    console.log("[DB CONFIG] Removing SSL parameters to allow pool SSL config to take effect...");
+    
+    // Remove all SSL-related parameters
+    url.searchParams.delete('ssl');
+    url.searchParams.delete('sslmode');
+    url.searchParams.delete('sslcert');
+    url.searchParams.delete('sslkey');
+    url.searchParams.delete('sslrootcert');
+    
+    // Update the connection string
+    connectionString = url.toString();
+    console.log("[DB CONFIG] Updated connection string (SSL params removed):", connectionString.replace(/:[^:@]+@/, ':***@'));
+  }
 } catch (e) {
   console.error("[DB CONFIG] Failed to parse DATABASE_URL:", e);
 }
