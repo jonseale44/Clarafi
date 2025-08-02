@@ -386,31 +386,6 @@ export class DocumentAnalysisService {
       if (pageFiles.length === 0) {
         console.log(`📄 [DocumentAnalysis] ⚠️ No pages extracted from command`);
         
-        // For PDFs in production, try fallback method
-        if (mimeType === "application/pdf" && process.env.NODE_ENV === 'production') {
-          console.log(`📄 [DocumentAnalysis] === PRODUCTION PDF FALLBACK ===`);
-          console.log(`📄 [DocumentAnalysis] Attempting to process PDF as image directly with sharp`);
-          
-          try {
-            // Try to convert PDF directly to image using sharp
-            // Note: This requires sharp to be built with PDF support
-            const pdfBuffer = await fs.readFile(filePath);
-            const imageBuffer = await sharp(pdfBuffer, { pages: -1 })
-              .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
-              .jpeg({ quality: 95 })
-              .toBuffer();
-            
-            const base64String = imageBuffer.toString('base64');
-            console.log(`📄 [DocumentAnalysis] ✅ Sharp PDF fallback successful`);
-            console.log(`📄 [DocumentAnalysis] Base64 length: ${base64String.length} characters`);
-            return [base64String];
-          } catch (sharpError) {
-            console.error(`📄 [DocumentAnalysis] ❌ Sharp PDF fallback failed:`, sharpError);
-            console.error(`📄 [DocumentAnalysis] This PDF cannot be processed without pdftoppm`);
-            throw new Error(`PDF processing failed: pdftoppm not available and sharp fallback failed`);
-          }
-        }
-        
         // For images, fallback to single page processing
         if (mimeType.startsWith("image/")) {
           console.log(`📄 [DocumentAnalysis] No multiple pages found, processing as single image`);
