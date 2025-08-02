@@ -2039,18 +2039,39 @@ export function EncounterDetailView({
 
   // Actual recording implementation (extracted from original startRecording)
   const proceedWithRecording = async () => {
-    console.log("🎯 [EncounterView] proceedWithRecording called");
+    console.log("🎯 [EncounterView] === PROCEED WITH RECORDING STARTED ===");
+    console.log("🎯 [EncounterView] Timestamp:", new Date().toISOString());
+    console.log("🎯 [EncounterView] Stack trace:", new Error().stack?.split('\n').slice(0, 5).join('\n'));
+    
+    console.log("🎯 [EncounterView] Component props and state:");
     console.log("🎯 [EncounterView] - encounterId prop:", encounterId);
+    console.log("🎯 [EncounterView] - typeof encounterId:", typeof encounterId);
     console.log("🎯 [EncounterView] - patient prop:", patient);
     console.log("🎯 [EncounterView] - patient.id:", patient?.id);
+    console.log("🎯 [EncounterView] - typeof patient?.id:", typeof patient?.id);
+    console.log("🎯 [EncounterView] - isRecording state:", isRecording);
+    console.log("🎯 [EncounterView] - wsConnected state:", wsConnected);
+    console.log("🎯 [EncounterView] - useRestAPI state:", useRestAPI);
+    
+    console.log("🌐 [EncounterView] Pre-recording environment check:");
+    console.log("🌐 [EncounterView] - Window object exists:", typeof window !== 'undefined');
+    console.log("🌐 [EncounterView] - Document object exists:", typeof document !== 'undefined');
+    console.log("🌐 [EncounterView] - Navigator object exists:", typeof navigator !== 'undefined');
+    console.log("🌐 [EncounterView] - WebSocket constructor:", typeof WebSocket);
+    console.log("🌐 [EncounterView] - Location protocol:", window?.location?.protocol);
+    console.log("🌐 [EncounterView] - Location host:", window?.location?.host);
+    console.log("🌐 [EncounterView] - Location href:", window?.location?.href);
     
     // Clear previous suggestions when starting new recording (both WebSocket and REST API)
+    console.log("🧹 [EncounterView] Clearing previous state data...");
     setGptSuggestions("");
     setLiveSuggestions(""); // Clear live suggestions for new encounter
     setSuggestionsBuffer(""); // Clear suggestions buffer for fresh accumulation
     // NOTE: Don't clear transcription here - let it accumulate for intelligent streaming
+    console.log("🧹 [EncounterView] State cleared successfully");
 
     try {
+      console.log("🎯 [EncounterView] Entering main try block for recording setup...");
       // CRITICAL FIX: Only create WebSocket connection in WebSocket mode
       let realtimeWs: WebSocket | null = null;
       let transcriptionBuffer = "";
@@ -2076,18 +2097,63 @@ export function EncounterDetailView({
         console.log("🔧 [EncounterView] Creating secure WebSocket connection...");
 
         // Check if patient exists before proceeding
+        console.log("🔍 [EncounterView] Pre-WebSocket validation checks:");
+        console.log("🔍 [EncounterView] - patient exists:", !!patient);
+        console.log("🔍 [EncounterView] - patient type:", typeof patient);
+        console.log("🔍 [EncounterView] - patient.id exists:", !!patient?.id);
+        console.log("🔍 [EncounterView] - patient.id value:", patient?.id);
+        console.log("🔍 [EncounterView] - patient.id type:", typeof patient?.id);
+        
         if (!patient || !patient.id) {
           console.error("❌ [EncounterView] Patient is undefined or missing ID!");
           console.error("❌ [EncounterView] Patient object:", patient);
+          console.error("❌ [EncounterView] Patient validation failed - aborting WebSocket connection");
           throw new Error("Patient information is not available");
         }
 
+        console.log("✅ [EncounterView] Patient validation passed, proceeding to WebSocket setup");
+        
         // Connect via WebSocket proxy (no API key needed)
+        console.log("🔧 [EncounterView] Preparing WebSocket URL parameters:");
+        console.log("🔧 [EncounterView] - Raw patient.id:", patient.id);
+        console.log("🔧 [EncounterView] - patient.id.toString():", patient.id.toString());
+        console.log("🔧 [EncounterView] - Raw encounterId:", encounterId);
+        console.log("🔧 [EncounterView] - encounterId.toString():", encounterId.toString());
+        
         const params = new URLSearchParams({
           patientId: patient.id.toString(),
           encounterId: encounterId.toString(),  // Use encounterId prop instead of encounter.id
         });
+        
+        console.log("🔧 [EncounterView] URLSearchParams created:");
+        console.log("🔧 [EncounterView] - params.toString():", params.toString());
+        console.log("🔧 [EncounterView] - params entries:", Array.from(params.entries()));
 
+        console.log("🔍 [EncounterView] === PRE-WEBSOCKET ENVIRONMENT CHECK ===");
+        console.log("🔍 [EncounterView] Browser environment:", {
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          vendor: navigator.vendor,
+          cookieEnabled: navigator.cookieEnabled,
+          onLine: navigator.onLine,
+          language: navigator.language
+        });
+        console.log("🔍 [EncounterView] Window location details:", {
+          href: window.location.href,
+          protocol: window.location.protocol,
+          host: window.location.host,
+          hostname: window.location.hostname,
+          port: window.location.port,
+          pathname: window.location.pathname,
+          search: window.location.search,
+          origin: window.location.origin
+        });
+        console.log("🔍 [EncounterView] Security context:", {
+          isSecureContext: window.isSecureContext,
+          location_protocol: window.location.protocol,
+          document_location: document.location.href
+        });
+        
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${window.location.host}/api/realtime/connect?${params.toString()}`;
         
@@ -2097,6 +2163,9 @@ export function EncounterDetailView({
         console.log("🔌 [EncounterView] - Full URL:", wsUrl);
         console.log("🔌 [EncounterView] - Patient ID:", patient.id);
         console.log("🔌 [EncounterView] - Encounter ID:", encounterId);
+        console.log("🔌 [EncounterView] - Is AWS App Runner:", window.location.host.includes('awsapprunner.com'));
+        console.log("🔌 [EncounterView] - Is production domain:", window.location.hostname === 'clarafi.ai');
+        console.log("🔌 [EncounterView] - WebSocket constructor available:", typeof WebSocket);
         
         console.log("🔧 [EncounterView] About to create WebSocket with URL:", wsUrl);
         console.log("🔧 [EncounterView] Window location:", {
@@ -2115,9 +2184,54 @@ export function EncounterDetailView({
           console.log("🔧 [EncounterView] typeof patient.id:", typeof patient.id);
           console.log("🔧 [EncounterView] Full WebSocket URL again:", wsUrl);
           
-          realtimeWs = new WebSocket(wsUrl);
+          // Check WebSocket availability
+          console.log("🔧 [EncounterView] === PRE-WEBSOCKET CONSTRUCTOR DIAGNOSTICS ===");
+          console.log("🔧 [EncounterView] WebSocket constructor type:", typeof WebSocket);
+          console.log("🔧 [EncounterView] WebSocket in window:", 'WebSocket' in window);
+          console.log("🔧 [EncounterView] WebSocket constructor:", WebSocket);
+          console.log("🔧 [EncounterView] WebSocket.prototype:", WebSocket.prototype);
+          console.log("🔧 [EncounterView] WebSocket.CONNECTING:", WebSocket.CONNECTING);
+          console.log("🔧 [EncounterView] WebSocket.OPEN:", WebSocket.OPEN);
+          console.log("🔧 [EncounterView] WebSocket.CLOSING:", WebSocket.CLOSING);
+          console.log("🔧 [EncounterView] WebSocket.CLOSED:", WebSocket.CLOSED);
+          
+          console.log("🔧 [EncounterView] Final WebSocket URL check:");
+          console.log("🔧 [EncounterView] - URL to be used:", wsUrl);
+          console.log("🔧 [EncounterView] - URL protocol:", wsUrl.split('://')[0]);
+          console.log("🔧 [EncounterView] - URL host:", wsUrl.split('://')[1]?.split('/')[0]);
+          console.log("🔧 [EncounterView] - URL path:", '/' + wsUrl.split('://')[1]?.split('/').slice(1).join('/'));
+          
+          console.log("🚨 [EncounterView] === CALLING NEW WEBSOCKET() NOW ===");
+          console.log("🚨 [EncounterView] Time before constructor:", new Date().toISOString());
+          
+          try {
+            realtimeWs = new WebSocket(wsUrl);
+            console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
+          } catch (wsConstructorError) {
+            console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
+            console.error("💥 [EncounterView] Error:", wsConstructorError);
+            console.error("💥 [EncounterView] Error type:", typeof wsConstructorError);
+            console.error("💥 [EncounterView] Error name:", (wsConstructorError as any)?.name);
+            console.error("💥 [EncounterView] Error message:", (wsConstructorError as any)?.message);
+            console.error("💥 [EncounterView] Error stack:", (wsConstructorError as any)?.stack);
+            throw wsConstructorError;
+          }
+          
+          console.log("🔧 [EncounterView] Time after constructor:", new Date().toISOString());
+          console.log("🔧 [EncounterView] WebSocket instance created:", !!realtimeWs);
+          console.log("🔧 [EncounterView] WebSocket type:", typeof realtimeWs);
+          console.log("🔧 [EncounterView] WebSocket instanceof WebSocket:", realtimeWs instanceof WebSocket);
+          console.log("🔧 [EncounterView] Initial readyState:", realtimeWs?.readyState);
+          console.log("🔧 [EncounterView] ReadyState name:", ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs?.readyState || 0]);
+          console.log("🔧 [EncounterView] WebSocket url property:", realtimeWs?.url);
+          console.log("🔧 [EncounterView] WebSocket protocol property:", realtimeWs?.protocol);
+          console.log("🔧 [EncounterView] WebSocket extensions property:", realtimeWs?.extensions);
+          console.log("🔧 [EncounterView] WebSocket bufferedAmount:", realtimeWs?.bufferedAmount);
+          console.log("🔧 [EncounterView] WebSocket binaryType:", realtimeWs?.binaryType);
+          
           // Store globally for cleanup
           (window as any).currentWebSocket = realtimeWs;
+          console.log("🔧 [EncounterView] WebSocket stored globally as window.currentWebSocket");
           
           console.log("🔌 [EncounterView] WebSocket object created successfully");
           console.log("🔌 [EncounterView] WebSocket readyState after creation:", realtimeWs.readyState);
