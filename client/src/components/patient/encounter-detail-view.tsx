@@ -2245,32 +2245,21 @@ export function EncounterDetailView({
           // Store connection start time globally for duration tracking
           (window as any).wsConnectionStart = Date.now();
           
-          // Check if we're on AWS App Runner
-          const isAppRunner = window.location.hostname.includes('awsapprunner.com');
-          
-          if (isAppRunner) {
-            console.log("⚠️ [EncounterView] AWS App Runner detected - WebSocket not supported");
-            console.log("🔄 [EncounterView] Using HTTP fallback for audio recording");
-            
-            // Skip WebSocket creation on App Runner
-            // We'll use HTTP polling instead after microphone setup
-            realtimeWs = null;
-          } else {
-            try {
-              console.log("🚨 [EncounterView] Invoking: new WebSocket('" + wsUrl + "')");
-              realtimeWs = new WebSocket(wsUrl);
-              const constructorEndTime = Date.now();
-              console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
-              console.log("✅ [EncounterView] Constructor execution time:", constructorEndTime - constructorStartTime, "ms");
-              console.log("✅ [EncounterView] WebSocket object created");
-              console.log("✅ [EncounterView] WebSocket.toString():", realtimeWs.toString());
-              console.log("✅ [EncounterView] WebSocket keys:", Object.keys(realtimeWs));
-              console.log("✅ [EncounterView] WebSocket.constructor.name:", realtimeWs.constructor.name);
-            } catch (wsConstructorError) {
-              const constructorErrorTime = Date.now();
-              console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
-              console.error("💥 [EncounterView] Constructor failed after:", constructorErrorTime - constructorStartTime, "ms");
-              console.error("💥 [EncounterView] Error object:", wsConstructorError);
+          try {
+            console.log("🚨 [EncounterView] Invoking: new WebSocket('" + wsUrl + "')");
+            realtimeWs = new WebSocket(wsUrl);
+            const constructorEndTime = Date.now();
+            console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
+            console.log("✅ [EncounterView] Constructor execution time:", constructorEndTime - constructorStartTime, "ms");
+            console.log("✅ [EncounterView] WebSocket object created");
+            console.log("✅ [EncounterView] WebSocket.toString():", realtimeWs.toString());
+            console.log("✅ [EncounterView] WebSocket keys:", Object.keys(realtimeWs));
+            console.log("✅ [EncounterView] WebSocket.constructor.name:", realtimeWs.constructor.name);
+          } catch (wsConstructorError) {
+            const constructorErrorTime = Date.now();
+            console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
+            console.error("💥 [EncounterView] Constructor failed after:", constructorErrorTime - constructorStartTime, "ms");
+            console.error("💥 [EncounterView] Error object:", wsConstructorError);
             console.error("💥 [EncounterView] Error toString():", String(wsConstructorError));
             console.error("💥 [EncounterView] Error type:", typeof wsConstructorError);
             console.error("💥 [EncounterView] Error constructor:", (wsConstructorError as any)?.constructor?.name);
@@ -2373,21 +2362,6 @@ export function EncounterDetailView({
               clearInterval(stateInterval);
             }
           }, 1000);
-        } catch (wsCreationError) {
-          console.error("❌ [EncounterView] WebSocket creation failed:", wsCreationError);
-          console.error("❌ [EncounterView] Error details:", {
-            name: (wsCreationError as any)?.name,
-            message: (wsCreationError as any)?.message,
-            stack: (wsCreationError as any)?.stack,
-            code: (wsCreationError as any)?.code,
-            type: typeof wsCreationError,
-            wsUrl: wsUrl,
-            encounterId: encounterId,
-            patientId: patient.id
-          });
-          setWsConnected(false);
-          throw wsCreationError;
-        }
 
         // Add connection timeout detection
         const connectionTimeout = setTimeout(() => {
@@ -3563,6 +3537,8 @@ Please provide medical suggestions based on this complete conversation context.`
         title: "Enhanced Recording Started",
         description: "Real-time AI analysis with patient context active",
       });
+      
+      // Main try block ends here
     } catch (error) {
       console.error("❌ [EncounterView] DETAILED ERROR in hybrid recording:", {
         error,
@@ -3582,6 +3558,15 @@ Please provide medical suggestions based on this complete conversation context.`
       toast({
         title: "Recording Failed",
         description: `Enhanced recording error: ${errorMessage}`,
+        variant: "destructive",
+      });
+    }
+    } catch (mainError) {
+      // Catch for the main try block that starts at line 2073
+      console.error("❌ [EncounterView] Main recording error:", mainError);
+      toast({
+        title: "Recording Failed",
+        description: "Failed to start recording. Please try again.",
         variant: "destructive",
       });
     }
