@@ -43,7 +43,13 @@ router.use((req, res, next) => {
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadsDir = getUploadsDir('attachments');
-    await fs.mkdir(uploadsDir, { recursive: true });
+    try {
+      await fs.mkdir(uploadsDir, { recursive: true });
+      console.log(`📎 [AttachmentUpload] Created/verified upload directory: ${uploadsDir}`);
+    } catch (error) {
+      console.error(`📎 [AttachmentUpload] Failed to create upload directory: ${uploadsDir}`, error);
+      return cb(error as any, uploadsDir);
+    }
     cb(null, uploadsDir);
   },
   filename: async (req, file, cb) => {
@@ -199,6 +205,14 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     // Get path module for file extension
     const pathModule = await getPathModule();
     
+    // Log production-specific paths for debugging
+    console.log('📎 [AttachmentUpload] File storage paths:', {
+      environment: process.env.NODE_ENV,
+      filePath: req.file.path,
+      uploadsDir: getUploadsDir('attachments'),
+      baseDir: process.env.NODE_ENV === 'production' ? '/tmp/clarafi-storage' : process.cwd()
+    });
+
     const attachmentData = {
       patientId,
       encounterId: encounterId ? parseInt(encounterId) : undefined,
@@ -522,8 +536,24 @@ router.get('/:patientId/attachments/:attachmentId/download', async (req: Request
     // Check file exists
     try {
       await fs.access(attachment.filePath);
-    } catch {
-      return res.status(404).json({ error: 'File not found on disk' });
+      console.log(`📎 [Download] File found at: ${attachment.filePath}`);
+    } catch (error) {
+      console.error(`📎 [Download] File not found at: ${attachment.filePath}`, error);
+      // In production, files might be in /tmp - try to reconstruct the path
+      if (process.env.NODE_ENV === 'production') {
+        const reconstructedPath = attachment.filePath.replace('/app/uploads', '/tmp/clarafi-storage/uploads');
+        console.log(`📎 [Download] Trying reconstructed path: ${reconstructedPath}`);
+        try {
+          await fs.access(reconstructedPath);
+          console.log(`📎 [Download] Found file at reconstructed path`);
+          attachment.filePath = reconstructedPath;
+        } catch (innerError) {
+          console.error(`📎 [Download] File not found at reconstructed path either`, innerError);
+          return res.status(404).json({ error: 'File not found on disk' });
+        }
+      } else {
+        return res.status(404).json({ error: 'File not found on disk' });
+      }
     }
     
     // Set appropriate headers
@@ -566,7 +596,22 @@ router.get('/:patientId/attachments/:attachmentId/thumbnail', async (req: Reques
       await fs.access(attachment.thumbnailPath);
       const path = await getPathModule();
       res.sendFile(path.resolve(attachment.thumbnailPath));
-    } catch {
+    } catch (error) {
+      console.error(`📎 [Thumbnail] File not found at: ${attachment.thumbnailPath}`, error);
+      // In production, files might be in /tmp - try to reconstruct the path
+      if (process.env.NODE_ENV === 'production' && attachment.thumbnailPath) {
+        const reconstructedPath = attachment.thumbnailPath.replace('/app/uploads', '/tmp/clarafi-storage/uploads');
+        console.log(`📎 [Thumbnail] Trying reconstructed path: ${reconstructedPath}`);
+        try {
+          await fs.access(reconstructedPath);
+          console.log(`📎 [Thumbnail] Found file at reconstructed path`);
+          const path = await getPathModule();
+          res.sendFile(path.resolve(reconstructedPath));
+          return;
+        } catch (innerError) {
+          console.error(`📎 [Thumbnail] File not found at reconstructed path either`, innerError);
+        }
+      }
       return res.status(404).json({ error: 'Thumbnail file not found' });
     }
   } catch (error) {

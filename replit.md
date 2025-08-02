@@ -33,6 +33,7 @@ Clarafi EMR is a comprehensive medical transcription and lab management platform
 - **Environment**: Production deployed on AWS App Runner (HIPAA compliant with BAA) in `us-east-2`.
 - **Database**: AWS RDS PostgreSQL.
 - **DNS**: Route 53.
+- **File Storage**: AWS App Runner has a read-only file system. Production uploads use `/tmp/clarafi-storage/` for writable storage.
 - **Development Guidelines**:
     - Avoid modifying Vite setup files.
     - Use Drizzle ORM for all database operations and update schema types accordingly.

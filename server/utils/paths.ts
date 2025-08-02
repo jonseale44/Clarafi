@@ -2,12 +2,13 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 // Get the base directory for the application
-// In production, we use the /app directory (App Runner standard)
+// In production, we use /tmp for writable storage (App Runner limitation)
 // In development, we use process.cwd()
 const getBaseDir = (): string => {
   if (process.env.NODE_ENV === 'production') {
-    // App Runner uses /app as the base directory
-    return '/app';
+    // AWS App Runner only allows writes to /tmp directory
+    // All other directories are read-only in production
+    return '/tmp/clarafi-storage';
   }
   
   // For development, use process.cwd()
