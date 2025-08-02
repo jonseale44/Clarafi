@@ -419,13 +419,13 @@ export function PatientAttachments({
         
         // Set the file and show upload form
         setUploadFile(file);
-        setTitle('EMR Screenshot');
+        setTitle('Secure Screenshot');
         
         // If GPT detected patient context, add it to description
         if (event.data.context?.patientName) {
           setDescription(`Captured from EMR for patient: ${event.data.context.patientName}`);
         } else {
-          setDescription('Screenshot captured from EMR system');
+          setDescription('Screenshot captured from secure system');
         }
         
         setShowUploadForm(true);
@@ -1108,7 +1108,7 @@ export function PatientAttachments({
 
       // Create file from blob
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `emr-screenshot-area-${timestamp}.png`;
+      const filename = `secure-screenshot-area-${timestamp}.png`;
       
       console.log('Creating File object from blob...');
       // Create a File-like object since File constructor may not be available in all environments
@@ -1123,8 +1123,8 @@ export function PatientAttachments({
       // Set the file for upload
       setUploadFile(file);
       setShowUploadForm(true);
-      setTitle('EMR Screenshot (Selected Area)');
-      setDescription('Selected area from EMR screenshot');
+      setTitle('Secure Screenshot (Selected Area)');
+      setDescription('Selected area from secure screenshot');
       setUploadMode('single');
 
       // Hide area selector
@@ -1472,7 +1472,7 @@ export function PatientAttachments({
                       className="w-full"
                     >
                       <Camera className="h-4 w-4 mr-2" />
-                      Capture EMR Screenshot
+                      Capture Secure Screenshot
                     </Button>
                   </div>
                 </div>
