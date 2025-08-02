@@ -5,6 +5,8 @@ config();
 
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
+import os from "os";
+import { exec } from "child_process";
 import { registerRoutes } from "./routes.js";
 import { initializeDatabase } from "./init-db.js";
 import { seedLabData } from "./lab-sample-data.js";
@@ -243,12 +245,11 @@ app.use((req, res, next) => {
       console.log('🚀 [STARTUP] === PRODUCTION ENVIRONMENT DIAGNOSTICS ===');
       console.log('🚀 [STARTUP]   AWS App Runner:', process.env.AWS_EXECUTION_ENV ? 'Detected' : 'Not detected');
       console.log('🚀 [STARTUP]   Container ID:', process.env.HOSTNAME || 'Unknown');
-      console.log('🚀 [STARTUP]   Available CPUs:', require('os').cpus().length);
-      console.log('🚀 [STARTUP]   Total memory:', Math.round(require('os').totalmem() / 1024 / 1024) + ' MB');
-      console.log('🚀 [STARTUP]   Free memory:', Math.round(require('os').freemem() / 1024 / 1024) + ' MB');
+      console.log('🚀 [STARTUP]   Available CPUs:', os.cpus().length);
+      console.log('🚀 [STARTUP]   Total memory:', Math.round(os.totalmem() / 1024 / 1024) + ' MB');
+      console.log('🚀 [STARTUP]   Free memory:', Math.round(os.freemem() / 1024 / 1024) + ' MB');
       
       // Check for system dependencies
-      const { exec } = require('child_process');
       exec('which pdftoppm', (err: any, stdout: string) => {
         if (err) {
           console.log('🚀 [STARTUP]   pdftoppm (poppler): ✗ NOT FOUND - PDF processing will fail');

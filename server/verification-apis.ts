@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import * as twilio from 'twilio';
 
 // API Configuration
 const API_KEYS = {
@@ -542,7 +543,7 @@ export class VerificationAPIs {
       const accountSid = API_KEYS.TWILIO_SID;
       const authToken = API_KEYS.TWILIO_AUTH_TOKEN;
       
-      const client = require('twilio')(accountSid, authToken);
+      const client = twilio(accountSid, authToken);
       
       const message = await client.messages.create({
         body: `Your Clarafi EMR verification code is: ${code}. This code expires in 10 minutes.`,

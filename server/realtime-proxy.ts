@@ -13,6 +13,7 @@ import { IncomingMessage } from 'http';
 import { Express } from 'express';
 import { Server as HTTPServer } from 'http';
 import OpenAI from 'openai';
+import * as dns from 'dns';
 
 interface AuthenticatedWebSocket extends WebSocket {
   userId?: number;
@@ -444,8 +445,8 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               
               // Test DNS resolution
               try {
-                const dns = require('dns').promises;
-                const addresses = await dns.resolve4('api.openai.com');
+                const dnsPromises = dns.promises;
+                const addresses = await dnsPromises.resolve4('api.openai.com');
                 console.log('🔧 [RealtimeProxy]   OpenAI API IPs:', addresses);
               } catch (dnsError) {
                 console.error('🔧 [RealtimeProxy]   DNS resolution failed:', dnsError);

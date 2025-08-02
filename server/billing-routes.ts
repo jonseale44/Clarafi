@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import { StripeService } from './stripe-service.js';
 import { PaymentAutomationService } from './payment-automation-service.js';
 import { BillingCalculationService } from './billing-calculation-service.js';
+import Stripe from 'stripe';
 
 const router = Router();
 
@@ -113,7 +114,7 @@ router.get('/current-subscription', ensureAuthenticated, async (req, res) => {
     // Get next billing date from Stripe if subscription exists
     if (user.stripeSubscriptionId) {
       try {
-        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
         const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
         nextBillingDate = new Date(subscription.current_period_end * 1000).toLocaleDateString();
       } catch (error) {
