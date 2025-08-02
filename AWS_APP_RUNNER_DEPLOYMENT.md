@@ -69,6 +69,11 @@ Or use AWS Console:
 
 ### Step 3: Deploy to App Runner
 
+**IMPORTANT**: An `apprunner.yaml` file has been added to the repository root that configures:
+- Installation of `poppler-utils` (required for PDF processing)
+- Installation of `imagemagick` (required for image processing)
+- Proper Node.js 20 runtime configuration
+
 #### Option A: Using AWS Console (Recommended)
 
 1. **Go to App Runner Console**: https://console.aws.amazon.com/apprunner
@@ -80,10 +85,8 @@ Or use AWS Console:
    - Deployment trigger: "Automatic" (redeploys on push)
 
 4. **Build settings**:
-   - Runtime: "Node.js 20"
-   - Build command: `npm install && npm run build`
-   - Start command: `npm start`
-   - Port: `8080`
+   - Configuration source: **"Use a configuration file"** (this will use apprunner.yaml)
+   - The apprunner.yaml file handles all build commands automatically
 
 5. **Service settings**:
    - Service name: `clarafi-emr`

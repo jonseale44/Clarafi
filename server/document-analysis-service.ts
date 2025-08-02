@@ -292,14 +292,26 @@ export class DocumentAnalysisService {
    * Unified function that handles both PDFs and multi-page PNGs
    */
   private async extractPageImages(filePath: string, mimeType: string): Promise<string[]> {
-    console.log(`📄 [DocumentAnalysis] Extracting pages from: ${filePath} (${mimeType})`);
+    console.log(`📄 [DocumentAnalysis] === EXTRACT PAGE IMAGES START ===`);
+    console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
+    console.log(`📄 [DocumentAnalysis] MIME type: ${mimeType}`);
 
     // Generate UUID-based temp directory to avoid collisions
     const sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const tempPattern = `/tmp/page_extract_${sessionId}*`;
 
     try {
-      await fs.access(filePath);
+      // Verify file exists and is readable
+      try {
+        await fs.access(filePath, fs.constants.R_OK);
+        const stats = await fs.stat(filePath);
+        console.log(`📄 [DocumentAnalysis] ✅ File exists and is readable`);
+        console.log(`📄 [DocumentAnalysis] File size: ${stats.size} bytes`);
+      } catch (accessError) {
+        console.error(`📄 [DocumentAnalysis] ❌ File access error:`, accessError);
+        throw new Error(`Cannot access file at ${filePath}: ${accessError.message}`);
+      }
 
       let command: string;
       let expectedExtension: string;
@@ -309,18 +321,58 @@ export class DocumentAnalysisService {
         const outputPrefix = `/tmp/page_extract_${sessionId}`;
         command = `pdftoppm -jpeg -r 150 "${filePath}" "${outputPrefix}"`;
         expectedExtension = ".jpg";
-        console.log(`📄 [DocumentAnalysis] PDF extraction command: ${command}`);
+        console.log(`📄 [DocumentAnalysis] === PDF PROCESSING ===`);
+        console.log(`📄 [DocumentAnalysis] Command: ${command}`);
+        
+        // Test if pdftoppm is available in production
+        if (process.env.NODE_ENV === 'production') {
+          console.log(`📄 [DocumentAnalysis] PRODUCTION: Checking pdftoppm availability...`);
+          try {
+            const { stdout: whichOutput } = await execAsync(`which pdftoppm`);
+            console.log(`📄 [DocumentAnalysis] ✅ pdftoppm found at: ${whichOutput.trim()}`);
+            
+            const { stdout: versionOutput } = await execAsync(`pdftoppm -v 2>&1 || echo "version check failed"`);
+            console.log(`📄 [DocumentAnalysis] pdftoppm version: ${versionOutput.trim()}`);
+          } catch (whichError) {
+            console.error(`📄 [DocumentAnalysis] ❌ pdftoppm not found in PATH!`);
+            console.error(`📄 [DocumentAnalysis] Error:`, whichError);
+            throw new Error(`pdftoppm is not installed or not in PATH`);
+          }
+        }
       } else {
         // Use ImageMagick convert for multi-page images
         const outputPrefix = `/tmp/page_extract_${sessionId}`;
         command = `convert "${filePath}" "${outputPrefix}_%d.png"`;
         expectedExtension = ".png";
-        console.log(`📄 [DocumentAnalysis] Image extraction command: ${command}`);
+        console.log(`📄 [DocumentAnalysis] === IMAGE PROCESSING ===`);
+        console.log(`📄 [DocumentAnalysis] Command: ${command}`);
       }
 
-      const { stdout, stderr } = await execAsync(command);
-      if (stderr && !stderr.includes('Warning')) {
-        console.log(`📄 [DocumentAnalysis] Command stderr: ${stderr}`);
+      console.log(`📄 [DocumentAnalysis] Executing command...`);
+      let stdout: string;
+      let stderr: string;
+      
+      try {
+        const result = await execAsync(command);
+        stdout = result.stdout;
+        stderr = result.stderr;
+        console.log(`📄 [DocumentAnalysis] ✅ Command executed successfully`);
+        if (stdout) console.log(`📄 [DocumentAnalysis] Command stdout: ${stdout}`);
+        if (stderr) console.log(`📄 [DocumentAnalysis] Command stderr: ${stderr}`);
+      } catch (execError) {
+        console.error(`📄 [DocumentAnalysis] ❌ Command execution failed!`);
+        console.error(`📄 [DocumentAnalysis] Exit code:`, execError.code);
+        console.error(`📄 [DocumentAnalysis] Error message:`, execError.message);
+        console.error(`📄 [DocumentAnalysis] Stderr:`, execError.stderr);
+        console.error(`📄 [DocumentAnalysis] Stdout:`, execError.stdout);
+        
+        if (process.env.NODE_ENV === 'production' && mimeType === "application/pdf") {
+          console.error(`📄 [DocumentAnalysis] === PRODUCTION PDF PROCESSING FAILURE ===`);
+          console.error(`📄 [DocumentAnalysis] This suggests pdftoppm is not available in AWS App Runner`);
+          console.error(`📄 [DocumentAnalysis] Consider using alternative PDF processing method`);
+        }
+        
+        throw new Error(`Command execution failed: ${execError.message}`);
       }
 
       // Find all generated pages
@@ -332,11 +384,39 @@ export class DocumentAnalysisService {
       const pageFiles = lsOutput.trim().split('\n').filter(f => f.length > 0);
 
       if (pageFiles.length === 0) {
+        console.log(`📄 [DocumentAnalysis] ⚠️ No pages extracted from command`);
+        
+        // For PDFs in production, try fallback method
+        if (mimeType === "application/pdf" && process.env.NODE_ENV === 'production') {
+          console.log(`📄 [DocumentAnalysis] === PRODUCTION PDF FALLBACK ===`);
+          console.log(`📄 [DocumentAnalysis] Attempting to process PDF as image directly with sharp`);
+          
+          try {
+            // Try to convert PDF directly to image using sharp
+            // Note: This requires sharp to be built with PDF support
+            const pdfBuffer = await fs.readFile(filePath);
+            const imageBuffer = await sharp(pdfBuffer, { pages: -1 })
+              .resize(2048, 2048, { fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 95 })
+              .toBuffer();
+            
+            const base64String = imageBuffer.toString('base64');
+            console.log(`📄 [DocumentAnalysis] ✅ Sharp PDF fallback successful`);
+            console.log(`📄 [DocumentAnalysis] Base64 length: ${base64String.length} characters`);
+            return [base64String];
+          } catch (sharpError) {
+            console.error(`📄 [DocumentAnalysis] ❌ Sharp PDF fallback failed:`, sharpError);
+            console.error(`📄 [DocumentAnalysis] This PDF cannot be processed without pdftoppm`);
+            throw new Error(`PDF processing failed: pdftoppm not available and sharp fallback failed`);
+          }
+        }
+        
         // For images, fallback to single page processing
         if (mimeType.startsWith("image/")) {
           console.log(`📄 [DocumentAnalysis] No multiple pages found, processing as single image`);
           return [await this.imageToBase64(filePath)];
         }
+        
         throw new Error(`No pages extracted from ${mimeType} file`);
       }
 
