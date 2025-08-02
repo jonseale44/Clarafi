@@ -31,19 +31,29 @@ const activeSessions = new Map<string, {
 
 export function setupRealtimeProxy(app: Express, server: HTTPServer) {
   console.log('🔒 [RealtimeProxy] Setting up secure WebSocket proxy for OpenAI');
+  console.log('🔒 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+  console.log('🔒 [RealtimeProxy] Server listening on port:', process.env.PORT || 5000);
   
   const wss = new WebSocketServer({ 
     noServer: true,
     path: '/api/realtime/connect'
   });
+  
+  console.log('🔒 [RealtimeProxy] WebSocket server created with path: /api/realtime/connect');
 
   // Handle WebSocket upgrade requests
   server.on('upgrade', async (request: IncomingMessage, socket: any, head: Buffer) => {
+    console.log('🔌 [RealtimeProxy] WebSocket upgrade request received');
+    console.log('🔌 [RealtimeProxy] Request URL:', request.url);
+    console.log('🔌 [RealtimeProxy] Request headers host:', request.headers.host);
+    
     // Parse URL to handle query parameters
     const url = new URL(request.url || '', `http://${request.headers.host}`);
+    console.log('🔌 [RealtimeProxy] Parsed pathname:', url.pathname);
     
     // Only handle our realtime proxy path
     if (url.pathname !== '/api/realtime/connect') {
+      console.log('🔌 [RealtimeProxy] Ignoring non-realtime path:', url.pathname);
       return;
     }
 
@@ -200,8 +210,8 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             // Set up OpenAI WebSocket handlers
             openAiWs.on('open', () => {
               console.log('🌐 [RealtimeProxy] Connected to OpenAI WebSocket');
-              console.log('🌐 [RealtimeProxy] WebSocket readyState:', openAiWs.readyState);
-              console.log('🌐 [RealtimeProxy] WebSocket URL:', openAiWs.url);
+              console.log('🌐 [RealtimeProxy] WebSocket readyState:', openAiWs?.readyState);
+              console.log('🌐 [RealtimeProxy] WebSocket URL:', openAiWs?.url);
               console.log('🌐 [RealtimeProxy] Connection established at:', new Date().toISOString());
               sessionActive = true;
               
@@ -395,7 +405,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
       }
 
       // Clean up session and save recording metadata
-      for (const [sessionId, session] of activeSessions.entries()) {
+      for (const [sessionId, session] of Array.from(activeSessions.entries())) {
         if (session.clientWs === clientWs) {
           activeSessions.delete(sessionId);
           
@@ -407,17 +417,10 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
           // Save recording metadata to the encounter if we have encounter context
           if (session.patientId && durationInSeconds > 5) { // Only save if recording was meaningful (>5 seconds)
             try {
-              const { saveRecordingMetadata } = await import('./storage.js');
-              await saveRecordingMetadata({
-                userId: session.userId,
-                patientId: session.patientId,
-                duration: durationInSeconds,
-                startTime: session.startTime,
-                endTime: new Date()
-              });
-              console.log(`💾 [RealtimeProxy] Saved recording metadata - Duration: ${durationInSeconds}s`);
+              // TODO: Implement saveRecordingMetadata in storage if needed
+              console.log(`📊 [RealtimeProxy] Recording session completed - Duration: ${durationInSeconds}s, Patient: ${session.patientId}`);
             } catch (error) {
-              console.error('❌ [RealtimeProxy] Failed to save recording metadata:', error);
+              console.error('❌ [RealtimeProxy] Failed to log recording metadata:', error);
             }
           }
           
