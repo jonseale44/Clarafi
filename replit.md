@@ -52,6 +52,15 @@ A comprehensive medical transcription and lab management platform designed to st
 - ✅ Key implementation: Check for `isAWSRDS || isProduction` before removing SSL params
 - ✅ Both environments now work without manual toggling
 
+### August 1, 2025 - Document Processing System Dependencies (RESOLVED)
+- ✅ **SOLVED**: Missing system dependencies for PDF and multi-page image processing
+- ✅ **Issue**: Production was missing ImageMagick (`convert` command) and Poppler (`pdftoppm` command)
+- ✅ **Solution**: Installed system dependencies via Replit package manager:
+  - ImageMagick: For multi-page image processing and format conversion
+  - Poppler: For PDF page extraction and processing
+- ✅ **Documentation**: Created `docs/SYSTEM_DEPENDENCIES.md` with installation instructions
+- ✅ Full document processing functionality now available in both development and production
+
 ### July 31, 2025 - Production Database Connection Fix
 - ✅ Fixed 500 error on `/api/check-email` endpoint at https://clarafi.ai
 - ✅ Root cause: RDS security group was missing PostgreSQL inbound rule
