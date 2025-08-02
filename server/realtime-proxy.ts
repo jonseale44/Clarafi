@@ -183,21 +183,146 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
       return;
     }
 
-    console.log('✅ [RealtimeProxy] Session verified successfully');
+    console.log('✅ [RealtimeProxy] === SESSION VERIFIED SUCCESSFULLY ===');
     console.log('✅ [RealtimeProxy] User ID:', userId);
-    console.log('✅ [RealtimeProxy] Proceeding with WebSocket upgrade');
-
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      const authenticatedWs = ws as AuthenticatedWebSocket;
-      authenticatedWs.userId = userId;
-      authenticatedWs.sessionId = sessionId;
-      wss.emit('connection', authenticatedWs, request);
-    });
+    console.log('✅ [RealtimeProxy] Session ID:', sessionId.substring(0, 20) + '...');
+    console.log('✅ [RealtimeProxy] Timestamp:', new Date().toISOString());
+    console.log('✅ [RealtimeProxy] Memory state:', process.memoryUsage());
+    
+    console.log('✅ [RealtimeProxy] Initiating WebSocket upgrade...');
+    console.log('✅ [RealtimeProxy] WebSocket server readyState:', wss.readyState);
+    console.log('✅ [RealtimeProxy] WebSocket server clients count:', wss.clients.size);
+    
+    try {
+      console.log('✅ [RealtimeProxy] Calling wss.handleUpgrade...');
+      const upgradeStartTime = Date.now();
+      
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        console.log('✅ [RealtimeProxy] === WEBSOCKET UPGRADE COMPLETED ===');
+        console.log('✅ [RealtimeProxy] Upgrade duration:', Date.now() - upgradeStartTime, 'ms');
+        console.log('✅ [RealtimeProxy] WebSocket state:', ws.readyState);
+        console.log('✅ [RealtimeProxy] WebSocket URL:', ws.url);
+        console.log('✅ [RealtimeProxy] WebSocket protocol:', ws.protocol);
+        
+        const authenticatedWs = ws as AuthenticatedWebSocket;
+        authenticatedWs.userId = userId;
+        authenticatedWs.sessionId = sessionId;
+        
+        console.log('✅ [RealtimeProxy] Authentication data attached to WebSocket');
+        console.log('✅ [RealtimeProxy] Emitting connection event...');
+        
+        try {
+          wss.emit('connection', authenticatedWs, request);
+          console.log('✅ [RealtimeProxy] Connection event emitted successfully');
+        } catch (emitError) {
+          console.error('❌ [RealtimeProxy] ERROR EMITTING CONNECTION EVENT');
+          console.error('❌ [RealtimeProxy] Error:', emitError);
+          console.error('❌ [RealtimeProxy] Stack:', (emitError as any)?.stack);
+        }
+      });
+      
+      console.log('✅ [RealtimeProxy] handleUpgrade called successfully');
+    } catch (upgradeError) {
+      console.error('❌ [RealtimeProxy] === WEBSOCKET UPGRADE FAILED ===');
+      console.error('❌ [RealtimeProxy] Error during handleUpgrade:', upgradeError);
+      console.error('❌ [RealtimeProxy] Error type:', (upgradeError as any)?.constructor?.name);
+      console.error('❌ [RealtimeProxy] Error message:', (upgradeError as any)?.message);
+      console.error('❌ [RealtimeProxy] Error code:', (upgradeError as any)?.code);
+      console.error('❌ [RealtimeProxy] Stack trace:', (upgradeError as any)?.stack);
+      
+      console.error('❌ [RealtimeProxy] Socket state at error:', {
+        destroyed: socket.destroyed,
+        readable: socket.readable,
+        writable: socket.writable,
+        closed: socket.closed,
+        connecting: socket.connecting
+      });
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.error('❌ [RealtimeProxy] PRODUCTION UPGRADE FAILURE CONTEXT:');
+        console.error('❌ [RealtimeProxy]   Process uptime:', process.uptime(), 'seconds');
+        console.error('❌ [RealtimeProxy]   Active sessions:', activeSessions.size);
+        console.error('❌ [RealtimeProxy]   WebSocket clients:', wss.clients.size);
+      }
+      
+      // Send error response to client
+      try {
+        if (!socket.destroyed) {
+          socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
+          socket.destroy();
+        }
+      } catch (socketError) {
+        console.error('❌ [RealtimeProxy] Error sending error response:', socketError);
+      }
+    }
   });
 
   // Handle WebSocket connections
-  wss.on('connection', async (clientWs: AuthenticatedWebSocket) => {
-    console.log('🤝 [RealtimeProxy] Client connected, user:', clientWs.userId);
+  wss.on('connection', async (clientWs: AuthenticatedWebSocket, request: IncomingMessage) => {
+    const connectionTime = new Date();
+    console.log('🤝 [RealtimeProxy] === CLIENT WEBSOCKET CONNECTED ===');
+    console.log('🤝 [RealtimeProxy] Connection timestamp:', connectionTime.toISOString());
+    console.log('🤝 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+    console.log('🤝 [RealtimeProxy] User ID:', clientWs.userId);
+    console.log('🤝 [RealtimeProxy] Session ID:', clientWs.sessionId?.substring(0, 20) + '...');
+    
+    console.log('🤝 [RealtimeProxy] Client WebSocket details:', {
+      readyState: clientWs.readyState,
+      readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][clientWs.readyState],
+      bufferedAmount: clientWs.bufferedAmount,
+      extensions: clientWs.extensions,
+      protocol: clientWs.protocol,
+      binaryType: clientWs.binaryType
+    });
+    
+    console.log('🤝 [RealtimeProxy] Request details:', {
+      url: request?.url,
+      headers: request?.headers ? Object.keys(request.headers).length + ' headers' : 'No headers',
+      method: request?.method,
+      httpVersion: request?.httpVersion
+    });
+    
+    // Extract URL parameters
+    if (request?.url) {
+      try {
+        const url = new URL(request.url, `http://${request?.headers?.host || 'localhost'}`);
+        console.log('🤝 [RealtimeProxy] URL parameters:', {
+          pathname: url.pathname,
+          search: url.search,
+          params: Object.fromEntries(url.searchParams.entries())
+        });
+      } catch (urlError) {
+        console.error('🤝 [RealtimeProxy] Error parsing URL:', urlError);
+      }
+    }
+    
+    console.log('🤝 [RealtimeProxy] Connection metrics:', {
+      totalConnections: wss.clients.size,
+      activeSessions: activeSessions.size,
+      memoryUsage: process.memoryUsage(),
+      uptime: process.uptime()
+    });
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🤝 [RealtimeProxy] PRODUCTION CONNECTION INFO:');
+      console.log('🤝 [RealtimeProxy]   AWS instance:', process.env.AWS_INSTANCE_ID || 'Unknown');
+      console.log('🤝 [RealtimeProxy]   Container hostname:', process.env.HOSTNAME || 'Unknown');
+      console.log('🤝 [RealtimeProxy]   OpenAI API key:', process.env.OPENAI_API_KEY ? 'Present' : 'Missing');
+      console.log('🤝 [RealtimeProxy]   Session secret:', process.env.SESSION_SECRET ? 'Present' : 'Missing');
+    }
+    
+    console.log('🤝 [RealtimeProxy] Sending initial success message to client...');
+    try {
+      clientWs.send(JSON.stringify({
+        type: 'connection.success',
+        timestamp: connectionTime.toISOString(),
+        userId: clientWs.userId,
+        message: 'WebSocket connection established successfully'
+      }));
+      console.log('🤝 [RealtimeProxy] Success message sent to client');
+    } catch (sendError) {
+      console.error('🤝 [RealtimeProxy] Error sending success message:', sendError);
+    }
     
     let openAiWs: WebSocket | null = null;
     let sessionActive = false;
@@ -206,6 +331,7 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
     // Set up heartbeat to detect disconnected clients
     clientWs.isAlive = true;
     clientWs.on('pong', () => {
+      console.log('💓 [RealtimeProxy] Heartbeat pong received from user:', clientWs.userId);
       clientWs.isAlive = true;
     });
 
