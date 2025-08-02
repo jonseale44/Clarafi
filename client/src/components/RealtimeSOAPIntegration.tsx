@@ -30,6 +30,29 @@ export interface RealtimeSOAPRef {
   stopRecording: () => Promise<void>;
 }
 
+// Helper function to explain WebSocket close codes
+const getCloseCodeExplanation = (code: number): string => {
+  const closeCodeExplanations: Record<number, string> = {
+    1000: "Normal closure",
+    1001: "Endpoint going away (server shutdown or browser navigating away)",
+    1002: "Protocol error",
+    1003: "Received unsupported data type",
+    1005: "No status code present",
+    1006: "Abnormal closure (connection lost without close frame)",
+    1007: "Invalid data received",
+    1008: "Policy violation",
+    1009: "Message too large",
+    1010: "Extension negotiation failed",
+    1011: "Server error",
+    1012: "Service restart",
+    1013: "Try again later",
+    1014: "Bad gateway",
+    1015: "TLS handshake failure"
+  };
+  
+  return closeCodeExplanations[code] || `Unknown close code: ${code}`;
+};
+
 export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPIntegrationProps>(({
   patientId,
   encounterId,
@@ -399,19 +422,37 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       }, 10000);
       
       ws.onopen = () => {
+        console.log("🌐 [RealtimeSOAPIntegration] === WEBSOCKET OPENED ===");
         console.log("🌐 [RealtimeSOAPIntegration] ✅ Connected to WebSocket proxy", {
           readyState: ws.readyState,
+          readyStateText: 'OPEN',
           url: ws.url,
           protocol: ws.protocol,
           isProduction: isProduction,
-          connectionTime: `${Date.now() - startTime}ms`
+          connectionTime: `${Date.now() - startTime}ms`,
+          timestamp: new Date().toISOString(),
+          environment: process.env.NODE_ENV
+        });
+        
+        console.log("🌐 [RealtimeSOAPIntegration] WebSocket properties:", {
+          extensions: ws.extensions,
+          binaryType: ws.binaryType,
+          bufferedAmount: ws.bufferedAmount
         });
         
         // Clear timeout since connection succeeded
-        if (connectionTimeout) clearTimeout(connectionTimeout);
-        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          console.log("🌐 [RealtimeSOAPIntegration] Connection timeout cleared");
+        }
+        if (connectionStateInterval) {
+          clearInterval(connectionStateInterval);
+          console.log("🌐 [RealtimeSOAPIntegration] State monitoring interval cleared");
+        }
         
+        console.log("🌐 [RealtimeSOAPIntegration] Setting wsConnected to true");
         setWsConnected(true);
+        console.log("🌐 [RealtimeSOAPIntegration] wsConnected state updated");
         
         // Send session creation request
         const sessionConfig = {
@@ -448,15 +489,26 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
           },
         };
 
+        console.log("🌐 [RealtimeSOAPIntegration] Sending session create message", sessionCreateMessage);
         ws.send(JSON.stringify(sessionCreateMessage));
+        console.log("🌐 [RealtimeSOAPIntegration] Session create message sent");
       };
 
       ws.onmessage = (event) => {
+        console.log("📨 [RealtimeSOAPIntegration] === WEBSOCKET MESSAGE RECEIVED ===");
+        console.log("📨 [RealtimeSOAPIntegration] Raw message length:", event.data.length);
+        
         const message = JSON.parse(event.data);
-        console.log("📨 [RealtimeSOAPIntegration] WebSocket message type:", message.type);
+        console.log("📨 [RealtimeSOAPIntegration] Message details:", {
+          type: message.type,
+          hasData: !!message.data,
+          hasTranscript: !!message.transcript,
+          timestamp: new Date().toISOString()
+        });
 
         if (message.type === "session.created") {
           console.log("✅ [RealtimeSOAPIntegration] Session created successfully");
+          console.log("✅ [RealtimeSOAPIntegration] Session details:", message.data);
         } else if (message.type === "conversation.item.input_audio_transcription.completed") {
           const completedTranscript = message.transcript || "";
           console.log("✅ [RealtimeSOAPIntegration] Transcription completed:", completedTranscript.substring(0, 100) + "...");
@@ -486,51 +538,100 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       };
 
       ws.onerror = (error) => {
-        console.error("❌ [RealtimeSOAPIntegration] WebSocket error occurred", {
+        console.error("❌ [RealtimeSOAPIntegration] === WEBSOCKET ERROR ===");
+        console.error("❌ [RealtimeSOAPIntegration] Error details:", {
           error: error,
           errorType: error.type,
           errorTarget: error.target,
           readyState: ws.readyState,
+          readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][ws.readyState],
           wsConnected: wsConnected,
           isProduction: isProduction,
           url: wsUrl,
-          diagnostics: {
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString(),
-            connectionDuration: `${Date.now() - startTime}ms`
-          }
+          timestamp: new Date().toISOString(),
+          connectionDuration: `${Date.now() - startTime}ms`
         });
         
-        // Clear intervals/timeouts on error
-        if (connectionTimeout) clearTimeout(connectionTimeout);
-        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        console.error("❌ [RealtimeSOAPIntegration] Browser diagnostics:", {
+          userAgent: navigator.userAgent,
+          onLine: navigator.onLine,
+          hostname: window.location.hostname,
+          protocol: window.location.protocol,
+          port: window.location.port || 'default'
+        });
         
+        if (isProduction) {
+          console.error("❌ [RealtimeSOAPIntegration] === PRODUCTION ERROR ANALYSIS ===");
+          console.error("❌ [RealtimeSOAPIntegration] Common causes in production:");
+          console.error("❌ [RealtimeSOAPIntegration]   - SSL/TLS certificate issues");
+          console.error("❌ [RealtimeSOAPIntegration]   - WebSocket proxy not properly configured");
+          console.error("❌ [RealtimeSOAPIntegration]   - App Runner port configuration");
+          console.error("❌ [RealtimeSOAPIntegration]   - Reverse proxy blocking WebSocket upgrade");
+        }
+        
+        // Clear intervals/timeouts on error
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          console.error("❌ [RealtimeSOAPIntegration] Connection timeout cleared");
+        }
+        if (connectionStateInterval) {
+          clearInterval(connectionStateInterval);
+          console.error("❌ [RealtimeSOAPIntegration] State monitoring cleared");
+        }
+        
+        console.error("❌ [RealtimeSOAPIntegration] Setting wsConnected to false");
         setWsConnected(false);
       };
 
       ws.onclose = (event) => {
-        console.log("🔌 [RealtimeSOAPIntegration] WebSocket connection closed", {
+        console.log("🔌 [RealtimeSOAPIntegration] === WEBSOCKET CLOSED ===");
+        console.log("🔌 [RealtimeSOAPIntegration] Close details:", {
           code: event.code,
-          reason: event.reason,
+          codeExplanation: getCloseCodeExplanation(event.code),
+          reason: event.reason || 'No reason provided',
           wasClean: event.wasClean,
           readyState: ws.readyState,
+          readyStateText: 'CLOSED',
           isProduction: isProduction,
           connectionDuration: `${Date.now() - startTime}ms`,
-          diagnostics: {
-            url: wsUrl,
-            timestamp: new Date().toISOString()
-          }
+          timestamp: new Date().toISOString()
         });
         
+        console.log("🔌 [RealtimeSOAPIntegration] Connection history:", {
+          url: wsUrl,
+          everConnected: wsConnected,
+          protocol: protocol,
+          host: window.location.host
+        });
+        
+        if (isProduction) {
+          console.log("🔌 [RealtimeSOAPIntegration] === PRODUCTION CLOSE ANALYSIS ===");
+          if (event.code === 1006) {
+            console.log("🔌 [RealtimeSOAPIntegration] Code 1006: Abnormal closure - connection lost");
+            console.log("🔌 [RealtimeSOAPIntegration] Common causes: Network issues, server crash, or proxy timeout");
+          } else if (event.code === 1015) {
+            console.log("🔌 [RealtimeSOAPIntegration] Code 1015: TLS handshake failure");
+            console.log("🔌 [RealtimeSOAPIntegration] Check SSL certificate configuration in production");
+          }
+        }
+        
         // Clear intervals/timeouts on close
-        if (connectionTimeout) clearTimeout(connectionTimeout);
-        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+          console.log("🔌 [RealtimeSOAPIntegration] Connection timeout cleared");
+        }
+        if (connectionStateInterval) {
+          clearInterval(connectionStateInterval);
+          console.log("🔌 [RealtimeSOAPIntegration] State monitoring cleared");
+        }
         
         // Clear global reference
         if ((window as any).currentWebSocket === ws) {
           (window as any).currentWebSocket = null;
+          console.log("🔌 [RealtimeSOAPIntegration] Global WebSocket reference cleared");
         }
         
+        console.log("🔌 [RealtimeSOAPIntegration] Setting wsConnected to false");
         setWsConnected(false);
       };
 
