@@ -249,9 +249,9 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
           transcriptionLength: transcription.trim().length
         });
         
-        // Track conversion event for SOAP generation
+        // Track conversion event for SOAP generation as feature usage
         analytics.trackConversion({
-          eventType: 'soap_note_generated',
+          eventType: 'ai_scribe_used',
           eventData: {
             noteType: noteType,
             encounterId: encounterId,
@@ -321,13 +321,96 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/api/realtime/connect?patientId=${patientId}&encounterId=${encounterId}&userId=${patientId}`;
       
-      console.log("🌐 [RealtimeSOAPIntegration] Connecting to WebSocket:", wsUrl);
+      // Enhanced diagnostic logging for production debugging
+      const isProduction = window.location.hostname.includes('.replit.app') || 
+                          window.location.hostname.includes('.repl.co') ||
+                          !['localhost', '127.0.0.1'].includes(window.location.hostname);
+      
+      console.log("🌐 [RealtimeSOAPIntegration] WebSocket Connection Details:", {
+        url: wsUrl,
+        protocol: protocol,
+        host: window.location.host,
+        hostname: window.location.hostname,
+        port: window.location.port,
+        isProduction: isProduction,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+      });
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
       
+      // Store WebSocket globally for debugging
+      (window as any).currentWebSocket = ws;
+      
+      // Connection state monitoring
+      let connectionStateInterval: NodeJS.Timeout | null = null;
+      let connectionTimeout: NodeJS.Timeout | null = null;
+      
+      // Monitor WebSocket state every second during connection
+      connectionStateInterval = setInterval(() => {
+        const stateMap: Record<number, string> = {
+          0: 'CONNECTING',
+          1: 'OPEN', 
+          2: 'CLOSING',
+          3: 'CLOSED'
+        };
+        
+        const currentState = ws.readyState;
+        console.log(`🔍 [WebSocket State Monitor] Current state: ${stateMap[currentState]} (${currentState})`, {
+          wsConnected: wsConnected,
+          isProduction: isProduction,
+          elapsed: `${Math.floor((Date.now() - startTime) / 1000)}s`
+        });
+        
+        // Clear interval once connected or closed
+        if (currentState === WebSocket.OPEN || currentState === WebSocket.CLOSED) {
+          if (connectionStateInterval) clearInterval(connectionStateInterval);
+        }
+      }, 1000);
+      
+      const startTime = Date.now();
+      
+      // Set connection timeout (10 seconds)
+      connectionTimeout = setTimeout(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          console.error("⏱️ [WebSocket Timeout] Connection failed after 10 seconds", {
+            finalState: ws.readyState,
+            wsConnected: wsConnected,
+            isProduction: isProduction,
+            diagnostics: {
+              url: wsUrl,
+              protocol: protocol,
+              host: window.location.host,
+              userAgent: navigator.userAgent
+            }
+          });
+          
+          // Clean up and close connection
+          if (connectionStateInterval) clearInterval(connectionStateInterval);
+          ws.close();
+          
+          toast({
+            title: "Connection Timeout",
+            description: "Failed to establish WebSocket connection. Please try again.",
+            variant: "destructive",
+          });
+        }
+      }, 10000);
+      
       ws.onopen = () => {
-        console.log("🌐 [RealtimeSOAPIntegration] ✅ Connected to WebSocket proxy");
+        console.log("🌐 [RealtimeSOAPIntegration] ✅ Connected to WebSocket proxy", {
+          readyState: ws.readyState,
+          url: ws.url,
+          protocol: ws.protocol,
+          isProduction: isProduction,
+          connectionTime: `${Date.now() - startTime}ms`
+        });
+        
+        // Clear timeout since connection succeeded
+        if (connectionTimeout) clearTimeout(connectionTimeout);
+        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        
         setWsConnected(true);
         
         // Send session creation request
@@ -403,12 +486,51 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
       };
 
       ws.onerror = (error) => {
-        console.error("❌ [RealtimeSOAPIntegration] WebSocket error:", error);
+        console.error("❌ [RealtimeSOAPIntegration] WebSocket error occurred", {
+          error: error,
+          errorType: error.type,
+          errorTarget: error.target,
+          readyState: ws.readyState,
+          wsConnected: wsConnected,
+          isProduction: isProduction,
+          url: wsUrl,
+          diagnostics: {
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+            connectionDuration: `${Date.now() - startTime}ms`
+          }
+        });
+        
+        // Clear intervals/timeouts on error
+        if (connectionTimeout) clearTimeout(connectionTimeout);
+        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        
         setWsConnected(false);
       };
 
-      ws.onclose = () => {
-        console.log("🔌 [RealtimeSOAPIntegration] WebSocket connection closed");
+      ws.onclose = (event) => {
+        console.log("🔌 [RealtimeSOAPIntegration] WebSocket connection closed", {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+          readyState: ws.readyState,
+          isProduction: isProduction,
+          connectionDuration: `${Date.now() - startTime}ms`,
+          diagnostics: {
+            url: wsUrl,
+            timestamp: new Date().toISOString()
+          }
+        });
+        
+        // Clear intervals/timeouts on close
+        if (connectionTimeout) clearTimeout(connectionTimeout);
+        if (connectionStateInterval) clearInterval(connectionStateInterval);
+        
+        // Clear global reference
+        if ((window as any).currentWebSocket === ws) {
+          (window as any).currentWebSocket = null;
+        }
+        
         setWsConnected(false);
       };
 
@@ -493,7 +615,12 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
   };
 
   const stopRecording = async (): Promise<void> => {
-    console.log("🎤 [RealtimeSOAPIntegration] === STOP RECORDING CALLED ===");
+    console.log("🎤 [RealtimeSOAPIntegration] === STOP RECORDING CALLED ===", {
+      wsConnected: wsConnected,
+      wsReadyState: wsRef.current?.readyState,
+      hasMediaRecorder: !!mediaRecorderRef.current,
+      timestamp: new Date().toISOString()
+    });
     
     try {
       setInternalIsRecording(false);
@@ -526,10 +653,35 @@ export const RealtimeSOAPIntegration = forwardRef<RealtimeSOAPRef, RealtimeSOAPI
         }
       }
 
-      // Close WebSocket
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-        console.log("🔌 [RealtimeSOAPIntegration] WebSocket closed");
+      // Close WebSocket with enhanced cleanup logging
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        const stateMap: Record<number, string> = {
+          0: 'CONNECTING',
+          1: 'OPEN',
+          2: 'CLOSING',
+          3: 'CLOSED'
+        };
+        
+        console.log("🔌 [RealtimeSOAPIntegration] Cleaning up WebSocket", {
+          currentState: stateMap[ws.readyState],
+          readyState: ws.readyState,
+          url: ws.url,
+          protocol: ws.protocol
+        });
+        
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          ws.close();
+          console.log("🔌 [RealtimeSOAPIntegration] WebSocket close() called");
+        }
+        
+        // Clear global reference
+        if ((window as any).currentWebSocket === ws) {
+          (window as any).currentWebSocket = null;
+          console.log("🧹 [RealtimeSOAPIntegration] Cleared global WebSocket reference");
+        }
+        
+        wsRef.current = null;
       }
 
       setWsConnected(false);
