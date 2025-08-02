@@ -52,14 +52,12 @@ A comprehensive medical transcription and lab management platform designed to st
 - ✅ Key implementation: Check for `isAWSRDS || isProduction` before removing SSL params
 - ✅ Both environments now work without manual toggling
 
-### August 1, 2025 - Document Processing System Dependencies (RESOLVED)
-- ✅ **SOLVED**: Missing system dependencies for PDF and multi-page image processing
-- ✅ **Issue**: Production was missing ImageMagick (`convert` command) and Poppler (`pdftoppm` command)
-- ✅ **Solution**: Installed system dependencies via Replit package manager:
-  - ImageMagick: For multi-page image processing and format conversion
-  - Poppler: For PDF page extraction and processing
-- ✅ **Documentation**: Created `docs/SYSTEM_DEPENDENCIES.md` with installation instructions
-- ✅ Full document processing functionality now available in both development and production
+### August 1, 2025 - Document Processing System Dependencies (DEVELOPMENT ONLY)
+- ✅ **DEVELOPMENT**: Installed ImageMagick and Poppler in Replit development environment
+- ⚠️ **PRODUCTION ISSUE**: AWS App Runner production still missing ImageMagick (`convert` command) and Poppler (`pdftoppm` command)
+- ✅ **CURRENT STATE**: Document processing works in development, has fallback behavior in production
+- 🔄 **NEXT STEP**: Production uses "Configuration source: API" setup - system dependencies can only be added via build command in AWS Console
+- ⚠️ **RISK**: Changing production build command could break current working deployment
 
 ### July 31, 2025 - Production Database Connection Fix
 - ✅ Fixed 500 error on `/api/check-email` endpoint at https://clarafi.ai
