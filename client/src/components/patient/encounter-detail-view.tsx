@@ -2116,10 +2116,31 @@ export function EncounterDetailView({
           console.log("🔧 [EncounterView] Full WebSocket URL again:", wsUrl);
           
           realtimeWs = new WebSocket(wsUrl);
+          // Store globally for cleanup
+          (window as any).currentWebSocket = realtimeWs;
+          
           console.log("🔌 [EncounterView] WebSocket object created successfully");
           console.log("🔌 [EncounterView] WebSocket readyState after creation:", realtimeWs.readyState);
           console.log("🔌 [EncounterView] WebSocket URL property:", realtimeWs.url);
           console.log("🔌 [EncounterView] WebSocket protocol property:", realtimeWs.protocol);
+          
+          // Monitor WebSocket state changes
+          const stateInterval = setInterval(() => {
+            if (realtimeWs) {
+              console.log("🔍 [EncounterView] WebSocket state check:", {
+                readyState: realtimeWs.readyState,
+                readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState],
+                url: realtimeWs.url,
+                isProduction: window.location.hostname === 'clarafi.ai',
+                timestamp: new Date().toISOString()
+              });
+              
+              // Clear interval once connected or closed
+              if (realtimeWs.readyState === WebSocket.OPEN || realtimeWs.readyState === WebSocket.CLOSED) {
+                clearInterval(stateInterval);
+              }
+            }
+          }, 1000);
         } catch (wsCreationError) {
           console.error("❌ [EncounterView] WebSocket creation failed:", wsCreationError);
           console.error("❌ [EncounterView] Error details:", {
@@ -2142,6 +2163,10 @@ export function EncounterDetailView({
             console.error("⏱️ [EncounterView] WebSocket connection timeout after 10 seconds");
             console.error("⏱️ [EncounterView] - ReadyState:", realtimeWs.readyState);
             console.error("⏱️ [EncounterView] - ReadyState meanings: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED");
+            console.error("⏱️ [EncounterView] - WebSocket URL:", realtimeWs.url);
+            console.error("⏱️ [EncounterView] - WebSocket protocol:", realtimeWs.protocol);
+            console.error("⏱️ [EncounterView] - Current location:", window.location.href);
+            console.error("⏱️ [EncounterView] - Is production:", window.location.hostname === 'clarafi.ai');
             setWsConnected(false);
           }
         }, 10000);
@@ -2151,6 +2176,10 @@ export function EncounterDetailView({
           console.log("🌐 [EncounterView] ✅ Connected to WebSocket proxy");
           console.log("🌐 [EncounterView] - ReadyState:", realtimeWs?.readyState);
           console.log("🌐 [EncounterView] - URL:", realtimeWs?.url);
+          console.log("🌐 [EncounterView] - Protocol:", realtimeWs?.protocol);
+          console.log("🌐 [EncounterView] - Setting wsConnected to true");
+          setWsConnected(true);
+          console.log("🌐 [EncounterView] - wsConnected state updated");
 
           // Send session creation request to proxy
           const sessionConfig = {
@@ -2534,9 +2563,14 @@ Please provide medical suggestions based on this complete conversation context.`
 
         realtimeWs.onerror = (error) => {
           console.error("❌ [EncounterView] WebSocket error event triggered");
-          console.error("❌ [EncounterView] Error details:", error);
+          console.error("❌ [EncounterView] Error event object:", error);
+          console.error("❌ [EncounterView] Error type:", (error as any)?.type);
+          console.error("❌ [EncounterView] Error target:", (error as any)?.target);
           console.error("❌ [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
           console.error("❌ [EncounterView] WebSocket URL:", realtimeWs?.url);
+          console.error("❌ [EncounterView] Current location:", window.location.href);
+          console.error("❌ [EncounterView] Is production:", window.location.hostname === 'clarafi.ai');
+          console.error("❌ [EncounterView] Browser user agent:", navigator.userAgent);
           setWsConnected(false);
         };
         
@@ -2723,6 +2757,7 @@ Please provide medical suggestions based on this complete conversation context.`
       "🎤 [EncounterView] soapNote.trim():",
       soapNote?.trim() ? "HAS CONTENT" : "EMPTY AFTER TRIM",
     );
+    console.log("🎤 [EncounterView] WebSocket connected state:", wsConnected);
 
     // Stop recording based on current mode
     const mediaRecorder =
@@ -2743,8 +2778,27 @@ Please provide medical suggestions based on this complete conversation context.`
         mediaRecorder?.state || "null",
       );
     }
+    
+    // Clean up WebSocket if it exists
+    const realtimeWs = (window as any).currentWebSocket;
+    if (realtimeWs) {
+      console.log("🔌 [EncounterView] Cleaning up WebSocket connection");
+      console.log("🔌 [EncounterView] WebSocket readyState before close:", realtimeWs.readyState);
+      console.log("🔌 [EncounterView] WebSocket readyState meanings: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED");
+      
+      if (realtimeWs.readyState === WebSocket.OPEN || realtimeWs.readyState === WebSocket.CONNECTING) {
+        console.log("🔌 [EncounterView] Closing WebSocket connection...");
+        realtimeWs.close(1000, "Recording stopped by user");
+      }
+      
+      (window as any).currentWebSocket = null;
+      console.log("🔌 [EncounterView] WebSocket reference cleared");
+    } else {
+      console.log("🔌 [EncounterView] No WebSocket connection to clean up");
+    }
 
     setIsRecording(false);
+    setWsConnected(false);
     setLastRecordingStopTime(Date.now());
 
     // Activate recording cooldown to prevent AI overwrites during transcription completion
