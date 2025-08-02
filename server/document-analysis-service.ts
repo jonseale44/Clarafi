@@ -128,15 +128,40 @@ export class DocumentAnalysisService {
       };
 
       if (attachment.mimeType.startsWith("image/") || attachment.mimeType === "application/pdf") {
+        console.log(`📄 [DocumentAnalysis] === FILE PROCESSING START ===`);
         console.log(`📄 [DocumentAnalysis] Processing ${attachment.mimeType} file`);
-        const base64Images = await this.extractPageImages(attachment.filePath, attachment.mimeType);
+        console.log(`📄 [DocumentAnalysis] File: ${attachment.originalFileName}`);
+        console.log(`📄 [DocumentAnalysis] Path: ${attachment.filePath}`);
+        console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+        console.log(`📄 [DocumentAnalysis] Timestamp: ${new Date().toISOString()}`);
         
-        if (base64Images.length === 1) {
-          console.log(`📄 [DocumentAnalysis] Single page processing`);
-          result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
-        } else {
-          console.log(`📄 [DocumentAnalysis] Multi-page processing (${base64Images.length} pages)`);
-          result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
+        try {
+          const base64Images = await this.extractPageImages(attachment.filePath, attachment.mimeType);
+          console.log(`📄 [DocumentAnalysis] Successfully extracted ${base64Images.length} pages`);
+          
+          if (base64Images.length === 1) {
+            console.log(`📄 [DocumentAnalysis] Single page processing`);
+            result = await this.analyzeWithGPT(base64Images[0], attachment.originalFileName);
+          } else {
+            console.log(`📄 [DocumentAnalysis] Multi-page processing (${base64Images.length} pages)`);
+            result = await this.analyzeMultiplePagesWithGPT(base64Images, attachment.originalFileName);
+          }
+        } catch (extractError: any) {
+          console.error(`📄 [DocumentAnalysis] === PAGE EXTRACTION FAILED ===`);
+          console.error(`📄 [DocumentAnalysis] Error type: ${extractError.constructor.name}`);
+          console.error(`📄 [DocumentAnalysis] Error message: ${extractError.message}`);
+          console.error(`📄 [DocumentAnalysis] Error stack:`, extractError.stack);
+          
+          if (process.env.NODE_ENV === 'production') {
+            console.error(`📄 [DocumentAnalysis] === PRODUCTION ERROR ANALYSIS ===`);
+            console.error(`📄 [DocumentAnalysis] This error occurred in the production environment`);
+            console.error(`📄 [DocumentAnalysis] Common causes:`);
+            console.error(`📄 [DocumentAnalysis]   - Missing system dependencies (pdftoppm, imagemagick)`);
+            console.error(`📄 [DocumentAnalysis]   - File system permissions`);
+            console.error(`📄 [DocumentAnalysis]   - Memory constraints`);
+          }
+          
+          throw extractError;
         }
       } else {
         throw new Error(`Unsupported file type: ${attachment.mimeType}`);
@@ -205,19 +230,38 @@ export class DocumentAnalysisService {
         );
         // Don't throw - document analysis was successful even if chart processing failed
       }
-    } catch (error) {
-      console.error(
-        `📄 [DocumentAnalysis] Processing failed for attachment ${attachmentId}:`,
-        error,
-      );
+    } catch (error: any) {
+      console.error(`📄 [DocumentAnalysis] === PROCESSING FAILED ===`);
+      console.error(`📄 [DocumentAnalysis] Attachment ID: ${attachmentId}`);
+      console.error(`📄 [DocumentAnalysis] Error type: ${error.constructor.name}`);
+      console.error(`📄 [DocumentAnalysis] Error message: ${error.message}`);
+      console.error(`📄 [DocumentAnalysis] Error stack:`, error.stack);
+      console.error(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+      console.error(`📄 [DocumentAnalysis] Timestamp: ${new Date().toISOString()}`);
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.error(`📄 [DocumentAnalysis] === PRODUCTION FAILURE DIAGNOSTICS ===`);
+        if (error.message && error.message.includes('pdftoppm')) {
+          console.error(`📄 [DocumentAnalysis] ❌ PDF processing failed due to missing pdftoppm`);
+          console.error(`📄 [DocumentAnalysis] AWS App Runner requires custom Docker image with poppler-utils`);
+        }
+        if (error.message && error.message.includes('convert')) {
+          console.error(`📄 [DocumentAnalysis] ❌ Image processing failed due to missing ImageMagick`);
+          console.error(`📄 [DocumentAnalysis] AWS App Runner requires custom Docker image with imagemagick`);
+        }
+      }
 
-      // Update failure status
+      // Update failure status with detailed error information
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const detailedError = process.env.NODE_ENV === 'production' 
+        ? `${errorMessage} [Production environment - check system dependencies]`
+        : errorMessage;
+
       await db
         .update(attachmentExtractedContent)
         .set({
           processingStatus: "failed",
-          errorMessage:
-            error instanceof Error ? error.message : "Unknown error",
+          errorMessage: detailedError,
         })
         .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
 
@@ -294,8 +338,13 @@ export class DocumentAnalysisService {
   private async extractPageImages(filePath: string, mimeType: string): Promise<string[]> {
     console.log(`📄 [DocumentAnalysis] === EXTRACT PAGE IMAGES START ===`);
     console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📄 [DocumentAnalysis] Node Version: ${process.version}`);
+    console.log(`📄 [DocumentAnalysis] Platform: ${process.platform}`);
+    console.log(`📄 [DocumentAnalysis] Architecture: ${process.arch}`);
     console.log(`📄 [DocumentAnalysis] Input file: ${filePath}`);
     console.log(`📄 [DocumentAnalysis] MIME type: ${mimeType}`);
+    console.log(`📄 [DocumentAnalysis] Working directory: ${process.cwd()}`);
+    console.log(`📄 [DocumentAnalysis] Temp directory: /tmp`);
 
     // Generate UUID-based temp directory to avoid collisions
     const sessionId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -324,20 +373,44 @@ export class DocumentAnalysisService {
         console.log(`📄 [DocumentAnalysis] === PDF PROCESSING ===`);
         console.log(`📄 [DocumentAnalysis] Command: ${command}`);
         
-        // Test if pdftoppm is available in production
-        if (process.env.NODE_ENV === 'production') {
-          console.log(`📄 [DocumentAnalysis] PRODUCTION: Checking pdftoppm availability...`);
-          try {
-            const { stdout: whichOutput } = await execAsync(`which pdftoppm`);
-            console.log(`📄 [DocumentAnalysis] ✅ pdftoppm found at: ${whichOutput.trim()}`);
+        // Enhanced system binary check for diagnostics
+        console.log(`📄 [DocumentAnalysis] === SYSTEM BINARY CHECK ===`);
+        console.log(`📄 [DocumentAnalysis] Checking pdftoppm availability...`);
+        console.log(`📄 [DocumentAnalysis] PATH environment variable: ${process.env.PATH || 'NOT SET'}`);
+        
+        try {
+          const { stdout: whichOutput } = await execAsync(`which pdftoppm 2>&1`);
+          console.log(`📄 [DocumentAnalysis] ✅ pdftoppm found at: ${whichOutput.trim()}`);
+          
+          const { stdout: versionOutput } = await execAsync(`pdftoppm -v 2>&1 || echo "version check failed"`);
+          console.log(`📄 [DocumentAnalysis] pdftoppm version: ${versionOutput.trim()}`);
+          
+          // Check if the binary is executable
+          const { stdout: lsOutput } = await execAsync(`ls -la ${whichOutput.trim()} 2>&1 || echo "ls failed"`);
+          console.log(`📄 [DocumentAnalysis] pdftoppm permissions: ${lsOutput.trim()}`);
+        } catch (whichError: any) {
+          console.error(`📄 [DocumentAnalysis] ❌ pdftoppm not found in PATH!`);
+          console.error(`📄 [DocumentAnalysis] Which error code: ${whichError.code}`);
+          console.error(`📄 [DocumentAnalysis] Which error message: ${whichError.message}`);
+          console.error(`📄 [DocumentAnalysis] Which stderr: ${whichError.stderr}`);
+          
+          // Additional diagnostics for production
+          if (process.env.NODE_ENV === 'production') {
+            console.error(`📄 [DocumentAnalysis] === PRODUCTION ENVIRONMENT DIAGNOSTICS ===`);
+            console.error(`📄 [DocumentAnalysis] This is a production environment where pdftoppm is not available`);
+            console.error(`📄 [DocumentAnalysis] AWS App Runner does not include poppler-utils by default`);
+            console.error(`📄 [DocumentAnalysis] Available system packages would need to be installed via Docker or buildpack`);
             
-            const { stdout: versionOutput } = await execAsync(`pdftoppm -v 2>&1 || echo "version check failed"`);
-            console.log(`📄 [DocumentAnalysis] pdftoppm version: ${versionOutput.trim()}`);
-          } catch (whichError) {
-            console.error(`📄 [DocumentAnalysis] ❌ pdftoppm not found in PATH!`);
-            console.error(`📄 [DocumentAnalysis] Error:`, whichError);
-            throw new Error(`pdftoppm is not installed or not in PATH`);
+            // Check what IS available
+            try {
+              const { stdout: convertCheck } = await execAsync(`which convert 2>&1`);
+              console.log(`📄 [DocumentAnalysis] ImageMagick convert available at: ${convertCheck.trim()}`);
+            } catch (e) {
+              console.error(`📄 [DocumentAnalysis] ImageMagick convert also not available`);
+            }
           }
+          
+          throw new Error(`pdftoppm is not installed or not in PATH`);
         }
       } else {
         // Use ImageMagick convert for multi-page images
@@ -348,28 +421,51 @@ export class DocumentAnalysisService {
         console.log(`📄 [DocumentAnalysis] Command: ${command}`);
       }
 
-      console.log(`📄 [DocumentAnalysis] Executing command...`);
+      console.log(`📄 [DocumentAnalysis] === COMMAND EXECUTION ===`);
+      console.log(`📄 [DocumentAnalysis] Executing command: ${command}`);
+      console.log(`📄 [DocumentAnalysis] Current working directory: ${process.cwd()}`);
+      console.log(`📄 [DocumentAnalysis] User ID: ${process.getuid ? process.getuid() : 'N/A'}`);
+      console.log(`📄 [DocumentAnalysis] Group ID: ${process.getgid ? process.getgid() : 'N/A'}`);
+      
       let stdout: string;
       let stderr: string;
       
       try {
+        const startTime = Date.now();
         const result = await execAsync(command);
+        const executionTime = Date.now() - startTime;
+        
         stdout = result.stdout;
         stderr = result.stderr;
-        console.log(`📄 [DocumentAnalysis] ✅ Command executed successfully`);
+        console.log(`📄 [DocumentAnalysis] ✅ Command executed successfully in ${executionTime}ms`);
         if (stdout) console.log(`📄 [DocumentAnalysis] Command stdout: ${stdout}`);
         if (stderr) console.log(`📄 [DocumentAnalysis] Command stderr: ${stderr}`);
-      } catch (execError) {
+      } catch (execError: any) {
         console.error(`📄 [DocumentAnalysis] ❌ Command execution failed!`);
-        console.error(`📄 [DocumentAnalysis] Exit code:`, execError.code);
-        console.error(`📄 [DocumentAnalysis] Error message:`, execError.message);
-        console.error(`📄 [DocumentAnalysis] Stderr:`, execError.stderr);
-        console.error(`📄 [DocumentAnalysis] Stdout:`, execError.stdout);
+        console.error(`📄 [DocumentAnalysis] Exit code: ${execError.code}`);
+        console.error(`📄 [DocumentAnalysis] Signal: ${execError.signal || 'none'}`);
+        console.error(`📄 [DocumentAnalysis] Error message: ${execError.message}`);
+        console.error(`📄 [DocumentAnalysis] Stderr: ${execError.stderr}`);
+        console.error(`📄 [DocumentAnalysis] Stdout: ${execError.stdout}`);
+        
+        // Enhanced error diagnostics
+        if (execError.code === 127) {
+          console.error(`📄 [DocumentAnalysis] Error code 127: Command not found`);
+          console.error(`📄 [DocumentAnalysis] The binary '${mimeType === "application/pdf" ? "pdftoppm" : "convert"}' is not available`);
+        } else if (execError.code === 126) {
+          console.error(`📄 [DocumentAnalysis] Error code 126: Command not executable`);
+        } else if (execError.code === 1) {
+          console.error(`📄 [DocumentAnalysis] Error code 1: General command failure`);
+        }
         
         if (process.env.NODE_ENV === 'production' && mimeType === "application/pdf") {
           console.error(`📄 [DocumentAnalysis] === PRODUCTION PDF PROCESSING FAILURE ===`);
           console.error(`📄 [DocumentAnalysis] This suggests pdftoppm is not available in AWS App Runner`);
-          console.error(`📄 [DocumentAnalysis] Consider using alternative PDF processing method`);
+          console.error(`📄 [DocumentAnalysis] AWS App Runner runs on Amazon Linux 2 and does not include poppler-utils`);
+          console.error(`📄 [DocumentAnalysis] Solutions:`);
+          console.error(`📄 [DocumentAnalysis]   1. Use a custom Docker image with poppler-utils installed`);
+          console.error(`📄 [DocumentAnalysis]   2. Implement JavaScript-based PDF processing`);
+          console.error(`📄 [DocumentAnalysis]   3. Use a Lambda function for PDF processing`);
         }
         
         throw new Error(`Command execution failed: ${execError.message}`);
