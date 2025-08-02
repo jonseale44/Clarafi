@@ -5,7 +5,7 @@
 
 echo "🔧 Installing system dependencies..."
 yum update -y
-yum install -y ImageMagick poppler-utils vips-devel gcc gcc-c++ make
+yum install -y ImageMagick poppler-utils libvips-devel gcc gcc-c++ make
 
 echo "📦 Installing npm dependencies..."
 npm install
