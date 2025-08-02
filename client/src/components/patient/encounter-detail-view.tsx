@@ -2245,21 +2245,32 @@ export function EncounterDetailView({
           // Store connection start time globally for duration tracking
           (window as any).wsConnectionStart = Date.now();
           
-          try {
-            console.log("🚨 [EncounterView] Invoking: new WebSocket('" + wsUrl + "')");
-            realtimeWs = new WebSocket(wsUrl);
-            const constructorEndTime = Date.now();
-            console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
-            console.log("✅ [EncounterView] Constructor execution time:", constructorEndTime - constructorStartTime, "ms");
-            console.log("✅ [EncounterView] WebSocket object created");
-            console.log("✅ [EncounterView] WebSocket.toString():", realtimeWs.toString());
-            console.log("✅ [EncounterView] WebSocket keys:", Object.keys(realtimeWs));
-            console.log("✅ [EncounterView] WebSocket.constructor.name:", realtimeWs.constructor.name);
-          } catch (wsConstructorError) {
-            const constructorErrorTime = Date.now();
-            console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
-            console.error("💥 [EncounterView] Constructor failed after:", constructorErrorTime - constructorStartTime, "ms");
-            console.error("💥 [EncounterView] Error object:", wsConstructorError);
+          // Check if we're on AWS App Runner
+          const isAppRunner = window.location.hostname.includes('awsapprunner.com');
+          
+          if (isAppRunner) {
+            console.log("⚠️ [EncounterView] AWS App Runner detected - WebSocket not supported");
+            console.log("🔄 [EncounterView] Using HTTP fallback for audio recording");
+            
+            // Skip WebSocket creation on App Runner
+            // We'll use HTTP polling instead after microphone setup
+            realtimeWs = null;
+          } else {
+            try {
+              console.log("🚨 [EncounterView] Invoking: new WebSocket('" + wsUrl + "')");
+              realtimeWs = new WebSocket(wsUrl);
+              const constructorEndTime = Date.now();
+              console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
+              console.log("✅ [EncounterView] Constructor execution time:", constructorEndTime - constructorStartTime, "ms");
+              console.log("✅ [EncounterView] WebSocket object created");
+              console.log("✅ [EncounterView] WebSocket.toString():", realtimeWs.toString());
+              console.log("✅ [EncounterView] WebSocket keys:", Object.keys(realtimeWs));
+              console.log("✅ [EncounterView] WebSocket.constructor.name:", realtimeWs.constructor.name);
+            } catch (wsConstructorError) {
+              const constructorErrorTime = Date.now();
+              console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
+              console.error("💥 [EncounterView] Constructor failed after:", constructorErrorTime - constructorStartTime, "ms");
+              console.error("💥 [EncounterView] Error object:", wsConstructorError);
             console.error("💥 [EncounterView] Error toString():", String(wsConstructorError));
             console.error("💥 [EncounterView] Error type:", typeof wsConstructorError);
             console.error("💥 [EncounterView] Error constructor:", (wsConstructorError as any)?.constructor?.name);
