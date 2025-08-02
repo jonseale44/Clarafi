@@ -20,9 +20,35 @@ export class DocumentAnalysisService {
   private openai: OpenAI;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    console.log(`📄 [DocumentAnalysis] === DOCUMENT ANALYSIS SERVICE INITIALIZATION ===`);
+    console.log(`📄 [DocumentAnalysis] Timestamp: ${new Date().toISOString()}`);
+    console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📄 [DocumentAnalysis] Process ID: ${process.pid}`);
+    console.log(`📄 [DocumentAnalysis] Node version: ${process.version}`);
+    console.log(`📄 [DocumentAnalysis] OpenAI API Key exists: ${!!process.env.OPENAI_API_KEY}`);
+    console.log(`📄 [DocumentAnalysis] OpenAI API Key length: ${process.env.OPENAI_API_KEY?.length || 0}`);
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`📄 [DocumentAnalysis] === PRODUCTION INITIALIZATION ===`);
+      console.log(`📄 [DocumentAnalysis] AWS App Runner environment detected`);
+      console.log(`📄 [DocumentAnalysis] Port: ${process.env.PORT}`);
+      console.log(`📄 [DocumentAnalysis] Container port: ${process.env.CONTAINER_PORT}`);
+    }
+    
+    try {
+      this.openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+      });
+      console.log(`📄 [DocumentAnalysis] ✅ OpenAI client initialized successfully`);
+      console.log(`📄 [DocumentAnalysis] OpenAI client type: ${typeof this.openai}`);
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] ❌ Failed to initialize OpenAI client:`, error);
+      console.error(`📄 [DocumentAnalysis] Error type: ${error?.constructor?.name}`);
+      console.error(`📄 [DocumentAnalysis] Error message: ${(error as any)?.message}`);
+      throw error;
+    }
+    
+    console.log(`📄 [DocumentAnalysis] === SERVICE INITIALIZATION COMPLETE ===`);
   }
 
   /**
@@ -32,92 +58,193 @@ export class DocumentAnalysisService {
     console.log(
       `🔥 [ANALYSIS WORKFLOW] ============= STARTING DOCUMENT ANALYSIS =============`,
     );
-    console.log(
-      `📄 [DocumentAnalysis] Queuing attachment ${attachmentId} for processing`,
-    );
-
-    // Check if already queued or processed (skip check for reprocessing)
-    // Use Drizzle query builder which handles camelCase to snake_case conversion
-    const existingQueue = await db
-      .select({
-        id: documentProcessingQueue.id,
-        attachmentId: documentProcessingQueue.attachmentId,
-        status: documentProcessingQueue.status
-      })
-      .from(documentProcessingQueue)
-      .where(eq(documentProcessingQueue.attachmentId, attachmentId))
-      .limit(1);
+    console.log(`📄 [DocumentAnalysis] === QUEUE DOCUMENT START ===`);
+    console.log(`📄 [DocumentAnalysis] Timestamp: ${new Date().toISOString()}`);
+    console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📄 [DocumentAnalysis] Attachment ID: ${attachmentId}`);
+    console.log(`📄 [DocumentAnalysis] Process ID: ${process.pid}`);
+    console.log(`📄 [DocumentAnalysis] Memory usage:`, process.memoryUsage());
+    console.log(`📄 [DocumentAnalysis] OpenAI API Key configured: ${!!process.env.OPENAI_API_KEY}`);
     
-    const existingQueueItem = existingQueue[0];
+    try {
+      // Check if already queued or processed
+      console.log(`📄 [DocumentAnalysis] Checking existing queue...`);
+      const existingQueue = await db
+        .select({
+          id: documentProcessingQueue.id,
+          attachmentId: documentProcessingQueue.attachmentId,
+          status: documentProcessingQueue.status
+        })
+        .from(documentProcessingQueue)
+        .where(eq(documentProcessingQueue.attachmentId, attachmentId))
+        .limit(1);
+      
+      const existingQueueItem = existingQueue[0];
+      console.log(`📄 [DocumentAnalysis] Existing queue item:`, existingQueueItem || 'None found');
 
-    const [existingContent] = await db
-      .select()
-      .from(attachmentExtractedContent)
-      .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+      console.log(`📄 [DocumentAnalysis] Checking existing extracted content...`);
+      const [existingContent] = await db
+        .select()
+        .from(attachmentExtractedContent)
+        .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+      console.log(`📄 [DocumentAnalysis] Existing content:`, existingContent ? {
+        id: existingContent.id,
+        status: existingContent.processingStatus,
+        hasText: !!existingContent.extractedText
+      } : 'None found');
 
-    // Add to queue using Drizzle query builder
-    await db.insert(documentProcessingQueue).values({
-      attachmentId: attachmentId,
-      status: 'queued',
-      attempts: 0,
-      processorType: 'document_analysis'
-    });
+      // Add to queue
+      console.log(`📄 [DocumentAnalysis] Inserting into document processing queue...`);
+      try {
+        await db.insert(documentProcessingQueue).values({
+          attachmentId: attachmentId,
+          status: 'queued',
+          attempts: 0,
+          processorType: 'document_analysis'
+        });
+        console.log(`📄 [DocumentAnalysis] ✅ Successfully inserted into queue`);
+      } catch (queueError) {
+        console.error(`📄 [DocumentAnalysis] ❌ Queue insertion error:`, queueError);
+        console.error(`📄 [DocumentAnalysis] Queue error details:`, {
+          message: (queueError as any).message,
+          code: (queueError as any).code,
+          detail: (queueError as any).detail
+        });
+      }
 
-    // Create processing record using Drizzle query builder
-    await db.insert(attachmentExtractedContent).values({
-      attachmentId: attachmentId,
-      processingStatus: 'pending',
-      contentType: 'document'
-    });
+      // Create processing record
+      console.log(`📄 [DocumentAnalysis] Inserting into extracted content table...`);
+      try {
+        await db.insert(attachmentExtractedContent).values({
+          attachmentId: attachmentId,
+          processingStatus: 'pending',
+          contentType: 'document'
+        });
+        console.log(`📄 [DocumentAnalysis] ✅ Successfully created processing record`);
+      } catch (contentError) {
+        console.error(`📄 [DocumentAnalysis] ❌ Content insertion error:`, contentError);
+        console.error(`📄 [DocumentAnalysis] Content error details:`, {
+          message: (contentError as any).message,
+          code: (contentError as any).code,
+          detail: (contentError as any).detail
+        });
+      }
 
-    console.log(
-      `📄 [DocumentAnalysis] Attachment ${attachmentId} queued for processing`,
-    );
-
-    // Process immediately in background
-    this.processDocument(attachmentId).catch((error) => {
-      console.error(
-        `📄 [DocumentAnalysis] Background processing failed for attachment ${attachmentId}:`,
-        error,
+      console.log(
+        `📄 [DocumentAnalysis] Attachment ${attachmentId} queued for processing`,
       );
-    });
+
+      // Process immediately in background
+      console.log(`📄 [DocumentAnalysis] === TRIGGERING BACKGROUND PROCESSING ===`);
+      console.log(`📄 [DocumentAnalysis] Calling processDocument asynchronously...`);
+      
+      this.processDocument(attachmentId)
+        .then(() => {
+          console.log(`📄 [DocumentAnalysis] ✅ Background processing completed for attachment ${attachmentId}`);
+        })
+        .catch((error) => {
+          console.error(`📄 [DocumentAnalysis] ❌ === BACKGROUND PROCESSING FAILED ===`);
+          console.error(`📄 [DocumentAnalysis] ❌ Attachment ID: ${attachmentId}`);
+          console.error(`📄 [DocumentAnalysis] ❌ Error type: ${error?.constructor?.name}`);
+          console.error(`📄 [DocumentAnalysis] ❌ Error message: ${error?.message}`);
+          console.error(`📄 [DocumentAnalysis] ❌ Error stack:`, error?.stack);
+          console.error(`📄 [DocumentAnalysis] ❌ Full error object:`, error);
+          console.error(`📄 [DocumentAnalysis] ❌ Environment: ${process.env.NODE_ENV}`);
+          console.error(`📄 [DocumentAnalysis] ❌ Timestamp: ${new Date().toISOString()}`);
+          
+          if (process.env.NODE_ENV === 'production') {
+            console.error(`📄 [DocumentAnalysis] ❌ === PRODUCTION PROCESSING FAILURE ===`);
+            console.error(`📄 [DocumentAnalysis] ❌ This indicates a critical issue in the document processing pipeline`);
+            console.error(`📄 [DocumentAnalysis] ❌ Common causes:`);
+            console.error(`📄 [DocumentAnalysis] ❌   1. Missing system dependencies (pdftoppm, imagemagick)`);
+            console.error(`📄 [DocumentAnalysis] ❌   2. File access issues in /tmp`);
+            console.error(`📄 [DocumentAnalysis] ❌   3. OpenAI API key issues`);
+            console.error(`📄 [DocumentAnalysis] ❌   4. Memory constraints`);
+          }
+        });
+      
+      console.log(`📄 [DocumentAnalysis] Background processing triggered`);
+      console.log(`📄 [DocumentAnalysis] === QUEUE DOCUMENT END ===`);
+      
+    } catch (error) {
+      console.error(`📄 [DocumentAnalysis] ❌ === QUEUE DOCUMENT FAILED ===`);
+      console.error(`📄 [DocumentAnalysis] ❌ Error during queueDocument:`, error);
+      console.error(`📄 [DocumentAnalysis] ❌ Error type: ${error?.constructor?.name}`);
+      console.error(`📄 [DocumentAnalysis] ❌ Error message: ${(error as any)?.message}`);
+      console.error(`📄 [DocumentAnalysis] ❌ Error stack:`, (error as any)?.stack);
+      throw error;
+    }
   }
 
   /**
    * Process a single document
    */
   async processDocument(attachmentId: number): Promise<void> {
-    console.log(
-      `📄 [DocumentAnalysis] Starting processing for attachment ${attachmentId}`,
-    );
+    console.log(`📄 [DocumentAnalysis] === PROCESS DOCUMENT START ===`);
+    console.log(`📄 [DocumentAnalysis] ✅ processDocument method called!`);
+    console.log(`📄 [DocumentAnalysis] Timestamp: ${new Date().toISOString()}`);
+    console.log(`📄 [DocumentAnalysis] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📄 [DocumentAnalysis] Attachment ID: ${attachmentId}`);
+    console.log(`📄 [DocumentAnalysis] Process ID: ${process.pid}`);
+    console.log(`📄 [DocumentAnalysis] Memory at start:`, process.memoryUsage());
+    console.log(`📄 [DocumentAnalysis] OpenAI configured: ${!!this.openai}`);
+    console.log(`📄 [DocumentAnalysis] Database connection available: ${!!db}`);
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`📄 [DocumentAnalysis] === PRODUCTION PROCESSING ===`);
+      console.log(`📄 [DocumentAnalysis] AWS App Runner environment`);
+      console.log(`📄 [DocumentAnalysis] Temp directory: /tmp`);
+      console.log(`📄 [DocumentAnalysis] Working directory: ${process.cwd()}`);
+    }
 
     try {
       // Update status to processing
-      await db
-        .update(documentProcessingQueue)
-        .set({
-          status: "processing",
-        })
-        .where(eq(documentProcessingQueue.attachmentId, attachmentId));
+      console.log(`📄 [DocumentAnalysis] Updating queue status to 'processing'...`);
+      try {
+        await db
+          .update(documentProcessingQueue)
+          .set({
+            status: "processing",
+          })
+          .where(eq(documentProcessingQueue.attachmentId, attachmentId));
+        console.log(`📄 [DocumentAnalysis] ✅ Queue status updated`);
+      } catch (queueUpdateError) {
+        console.error(`📄 [DocumentAnalysis] ❌ Failed to update queue status:`, queueUpdateError);
+      }
 
-      await db
-        .update(attachmentExtractedContent)
-        .set({ processingStatus: "processing" })
-        .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+      console.log(`📄 [DocumentAnalysis] Updating extracted content status to 'processing'...`);
+      try {
+        await db
+          .update(attachmentExtractedContent)
+          .set({ processingStatus: "processing" })
+          .where(eq(attachmentExtractedContent.attachmentId, attachmentId));
+        console.log(`📄 [DocumentAnalysis] ✅ Extracted content status updated`);
+      } catch (contentUpdateError) {
+        console.error(`📄 [DocumentAnalysis] ❌ Failed to update content status:`, contentUpdateError);
+      }
 
       // Get attachment details
+      console.log(`📄 [DocumentAnalysis] Fetching attachment details from database...`);
       const [attachment] = await db
         .select()
         .from(patientAttachments)
         .where(eq(patientAttachments.id, attachmentId));
 
       if (!attachment) {
+        console.error(`📄 [DocumentAnalysis] ❌ Attachment ${attachmentId} not found in database`);
         throw new Error(`Attachment ${attachmentId} not found`);
       }
 
-      console.log(
-        `📄 [DocumentAnalysis] Processing ${attachment.originalFileName} (${attachment.mimeType})`,
-      );
+      console.log(`📄 [DocumentAnalysis] ✅ Attachment found:`, {
+        id: attachment.id,
+        fileName: attachment.fileName,
+        originalFileName: attachment.originalFileName,
+        mimeType: attachment.mimeType,
+        fileSize: attachment.fileSize,
+        filePath: attachment.filePath,
+        patientId: attachment.patientId,
+        encounterId: attachment.encounterId
+      });
       console.log(`📄 [DocumentAnalysis] File path: ${attachment.filePath}`);
 
       let result: {
@@ -826,4 +953,13 @@ Preserve the original structure and formatting where possible. Be thorough and a
 }
 
 // Export singleton instance
+console.log(`📄 [DocumentAnalysis] === CREATING DOCUMENT ANALYSIS SERVICE SINGLETON ===`);
+console.log(`📄 [DocumentAnalysis] File: document-analysis-service.ts`);
+console.log(`📄 [DocumentAnalysis] Module loading timestamp: ${new Date().toISOString()}`);
+
 export const documentAnalysisService = new DocumentAnalysisService();
+
+console.log(`📄 [DocumentAnalysis] ✅ Document analysis service singleton created`);
+console.log(`📄 [DocumentAnalysis] Singleton type: ${typeof documentAnalysisService}`);
+console.log(`📄 [DocumentAnalysis] Has queueDocument method: ${typeof documentAnalysisService?.queueDocument === 'function'}`);
+console.log(`📄 [DocumentAnalysis] Has processDocument method: ${typeof documentAnalysisService?.processDocument === 'function'}`);

@@ -393,13 +393,49 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     })}`);
     
     // Queue for document analysis
+    console.log(`📎 [AttachmentUpload] === DOCUMENT ANALYSIS QUEUEING ===`);
+    console.log(`📎 [AttachmentUpload] Timestamp: ${new Date().toISOString()}`);
+    console.log(`📎 [AttachmentUpload] Environment: ${process.env.NODE_ENV}`);
+    console.log(`📎 [AttachmentUpload] Attachment ID to queue: ${attachment.id}`);
+    console.log(`📎 [AttachmentUpload] documentAnalysisService exists: ${!!documentAnalysisService}`);
+    console.log(`📎 [AttachmentUpload] documentAnalysisService type: ${typeof documentAnalysisService}`);
+    console.log(`📎 [AttachmentUpload] documentAnalysisService has queueDocument: ${typeof documentAnalysisService?.queueDocument}`);
+    
     try {
-      console.log(`📎 [AttachmentUpload] 🔄 Queuing attachment ${attachment.id} for document analysis`);
-      await documentAnalysisService.queueDocument(attachment.id);
+      console.log(`📎 [AttachmentUpload] 🔄 Calling documentAnalysisService.queueDocument(${attachment.id})...`);
+      
+      if (!documentAnalysisService) {
+        console.error(`📎 [AttachmentUpload] ❌ documentAnalysisService is null or undefined!`);
+        throw new Error('documentAnalysisService not initialized');
+      }
+      
+      if (typeof documentAnalysisService.queueDocument !== 'function') {
+        console.error(`📎 [AttachmentUpload] ❌ queueDocument is not a function!`);
+        console.error(`📎 [AttachmentUpload] documentAnalysisService keys:`, Object.keys(documentAnalysisService));
+        throw new Error('queueDocument method not available');
+      }
+      
+      const queueResult = await documentAnalysisService.queueDocument(attachment.id);
+      console.log(`📎 [AttachmentUpload] ✅ queueDocument returned:`, queueResult);
       console.log(`📎 [AttachmentUpload] ✅ Successfully queued for analysis`);
+      
     } catch (analysisError) {
-      console.error('📎 [AttachmentUpload] ❌ Failed to queue document for analysis:', analysisError);
+      console.error('📎 [AttachmentUpload] ❌ === DOCUMENT ANALYSIS QUEUEING FAILED ===');
+      console.error('📎 [AttachmentUpload] ❌ Error type:', analysisError?.constructor?.name);
+      console.error('📎 [AttachmentUpload] ❌ Error message:', (analysisError as any)?.message);
+      console.error('📎 [AttachmentUpload] ❌ Error stack:', (analysisError as any)?.stack);
+      console.error('📎 [AttachmentUpload] ❌ Full error:', analysisError);
+      console.error('📎 [AttachmentUpload] ❌ Environment: ${process.env.NODE_ENV}');
+      console.error('📎 [AttachmentUpload] ❌ Timestamp: ${new Date().toISOString()}');
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.error('📎 [AttachmentUpload] ❌ === PRODUCTION ANALYSIS FAILURE ===');
+        console.error('📎 [AttachmentUpload] ❌ This prevents PDF/document OCR processing');
+        console.error('📎 [AttachmentUpload] ❌ Documents will be stored but not analyzed');
+      }
+      
       // Continue - don't fail the upload if analysis queueing fails
+      console.log('📎 [AttachmentUpload] ⚠️ Continuing with upload despite analysis failure');
     }
     
     res.status(201).json(attachment);
