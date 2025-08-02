@@ -45,15 +45,35 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
   server.on('upgrade', async (request: IncomingMessage, socket: any, head: Buffer) => {
     console.log('🔌 [RealtimeProxy] ========== WEBSOCKET UPGRADE REQUEST ==========');
     console.log('🔌 [RealtimeProxy] Timestamp:', new Date().toISOString());
+    console.log('🔌 [RealtimeProxy] Process ID:', process.pid);
     console.log('🔌 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+    console.log('🔌 [RealtimeProxy] Node version:', process.version);
     console.log('🔌 [RealtimeProxy] Request URL:', request.url);
     console.log('🔌 [RealtimeProxy] Request method:', request.method);
     console.log('🔌 [RealtimeProxy] HTTP version:', request.httpVersion);
+    console.log('🔌 [RealtimeProxy] Socket info:', {
+      remoteAddress: socket.remoteAddress,
+      remotePort: socket.remotePort,
+      localAddress: socket.localAddress,
+      localPort: socket.localPort,
+      bytesRead: socket.bytesRead,
+      bytesWritten: socket.bytesWritten,
+      destroyed: socket.destroyed,
+      connecting: socket.connecting,
+      readyState: socket.readyState
+    });
     
     // Log all headers for production debugging
     console.log('🔌 [RealtimeProxy] ALL REQUEST HEADERS:');
     Object.entries(request.headers).forEach(([key, value]) => {
       if (key.toLowerCase() === 'cookie') {
+        console.log(`🔌 [RealtimeProxy]   ${key}: [REDACTED - ${value?.toString().length || 0} chars]`);
+        // Log cookie presence without values
+        const cookieString = value?.toString() || '';
+        const cookieCount = cookieString.split(';').filter(c => c.trim()).length;
+        console.log(`🔌 [RealtimeProxy]   Cookie count: ${cookieCount}`);
+        console.log(`🔌 [RealtimeProxy]   Has connect.sid: ${cookieString.includes('connect.sid')}`);
+      } else if (key.toLowerCase() === 'authorization') {
         console.log(`🔌 [RealtimeProxy]   ${key}: [REDACTED - ${value?.toString().length || 0} chars]`);
       } else {
         console.log(`🔌 [RealtimeProxy]   ${key}: ${value}`);
@@ -196,30 +216,71 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
 
         // Handle session creation
         if (message.type === 'session.create') {
-          console.log('🎯 [RealtimeProxy] Received session.create message');
-          console.log('🎯 [RealtimeProxy] Message structure:', {
+          console.log('🎯 [RealtimeProxy] === SESSION CREATE MESSAGE RECEIVED ===');
+          console.log('🎯 [RealtimeProxy] Timestamp:', new Date().toISOString());
+          console.log('🎯 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+          console.log('🎯 [RealtimeProxy] Process uptime:', process.uptime(), 'seconds');
+          console.log('🎯 [RealtimeProxy] Memory state:', process.memoryUsage());
+          
+          console.log('🎯 [RealtimeProxy] Message analysis:', {
             type: message.type,
             hasData: !!message.data,
+            dataKeys: message.data ? Object.keys(message.data) : [],
             hasSessionConfig: !!message.data?.sessionConfig,
+            sessionConfigKeys: message.data?.sessionConfig ? Object.keys(message.data.sessionConfig) : [],
             hasPatientId: !!message.data?.patientId,
-            hasEncounterId: !!message.data?.encounterId
+            patientId: message.data?.patientId,
+            hasEncounterId: !!message.data?.encounterId,
+            encounterId: message.data?.encounterId,
+            messageSize: JSON.stringify(message).length
+          });
+          
+          console.log('🎯 [RealtimeProxy] Client WebSocket state:', {
+            userId: clientWs.userId,
+            sessionId: clientWs.sessionId,
+            readyState: clientWs.readyState,
+            readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][clientWs.readyState],
+            isAlive: clientWs.isAlive,
+            bufferedAmount: clientWs.bufferedAmount
           });
           
           if (openAiWs) {
-            console.warn('⚠️ [RealtimeProxy] Session already exists, ignoring duplicate request');
+            console.warn('⚠️ [RealtimeProxy] === SESSION ALREADY EXISTS ===');
+            console.warn('⚠️ [RealtimeProxy] Existing session state:', {
+              readyState: openAiWs.readyState,
+              readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs.readyState],
+              bufferedAmount: openAiWs.bufferedAmount,
+              sessionActive: sessionActive,
+              messageBufferLength: messageBuffer.length
+            });
+            console.warn('⚠️ [RealtimeProxy] Ignoring duplicate session.create request');
             return;
           }
 
-          console.log('🔧 [RealtimeProxy] Creating OpenAI session');
+          console.log('🔧 [RealtimeProxy] === BEGINNING OPENAI SESSION CREATION ===');
           console.log('🔧 [RealtimeProxy] Full message data:', JSON.stringify(message.data, null, 2));
+          console.log('🔧 [RealtimeProxy] Raw message string (first 500 chars):', data.toString().substring(0, 500));
           
           // Extract session config from client message
           const clientData = message.data || {};
           const sessionConfig = clientData.sessionConfig || {};
           
-          console.log('🔧 [RealtimeProxy] Extracted session config:', JSON.stringify(sessionConfig, null, 2));
-          console.log('🔧 [RealtimeProxy] Patient ID:', clientData.patientId);
-          console.log('🔧 [RealtimeProxy] Encounter ID:', clientData.encounterId);
+          console.log('🔧 [RealtimeProxy] Session configuration:', {
+            hasSessionConfig: !!sessionConfig,
+            configKeys: Object.keys(sessionConfig),
+            model: sessionConfig.model,
+            modalities: sessionConfig.modalities,
+            instructions: sessionConfig.instructions ? sessionConfig.instructions.substring(0, 100) + '...' : 'None',
+            voice: sessionConfig.voice,
+            temperature: sessionConfig.temperature,
+            turnDetection: sessionConfig.turn_detection
+          });
+          
+          console.log('🔧 [RealtimeProxy] Clinical context:', {
+            patientId: clientData.patientId,
+            encounterId: clientData.encounterId,
+            hasAdditionalData: Object.keys(clientData).filter(k => !['sessionConfig', 'patientId', 'encounterId'].includes(k))
+          });
           
           // Ensure we use server-side API key, never client-provided
           console.log('🔧 [RealtimeProxy] Creating OpenAI client instance...');
@@ -265,6 +326,9 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               }
             }
             
+            const openAiConnectionStart = Date.now();
+            console.log('🔧 [RealtimeProxy] Connection attempt started at:', new Date(openAiConnectionStart).toISOString());
+            
             try {
               console.log('🔧 [RealtimeProxy] WebSocket constructor call...');
               openAiWs = new WebSocket(wsUrl, {
@@ -281,7 +345,8 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
                 readyState: openAiWs.readyState,
                 readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs.readyState],
                 protocol: openAiWs.protocol,
-                extensions: openAiWs.extensions
+                extensions: openAiWs.extensions,
+                timeSinceStart: Date.now() - openAiConnectionStart + 'ms'
               });
             } catch (wsCreateError) {
               console.error('❌ [RealtimeProxy] WEBSOCKET CREATION FAILED');
@@ -306,19 +371,61 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
 
             // Set up OpenAI WebSocket handlers
             openAiWs.on('open', () => {
+              const connectionDuration = Date.now() - openAiConnectionStart;
               console.log('🌐 [RealtimeProxy] === OPENAI WEBSOCKET OPENED ===');
-              console.log('🌐 [RealtimeProxy] Connected at:', new Date().toISOString());
-              console.log('🌐 [RealtimeProxy] WebSocket readyState:', openAiWs?.readyState);
-              console.log('🌐 [RealtimeProxy] WebSocket URL:', openAiWs?.url);
-              console.log('🌐 [RealtimeProxy] WebSocket protocol:', openAiWs?.protocol);
-              console.log('🌐 [RealtimeProxy] WebSocket extensions:', openAiWs?.extensions);
+              console.log('🌐 [RealtimeProxy] Connection established at:', new Date().toISOString());
+              console.log('🌐 [RealtimeProxy] Connection duration:', connectionDuration, 'ms');
+              console.log('🌐 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+              
+              console.log('🌐 [RealtimeProxy] WebSocket state details:', {
+                readyState: openAiWs?.readyState,
+                readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs?.readyState || 0],
+                url: openAiWs?.url,
+                protocol: openAiWs?.protocol,
+                extensions: openAiWs?.extensions,
+                bufferedAmount: openAiWs?.bufferedAmount,
+                binaryType: openAiWs?.binaryType
+              });
+              
+              console.log('🌐 [RealtimeProxy] Connection context:', {
+                userId: clientWs.userId,
+                sessionId: clientWs.sessionId,
+                patientId: clientData.patientId,
+                encounterId: clientData.encounterId,
+                clientWsState: clientWs.readyState,
+                clientWsIsAlive: clientWs.isAlive,
+                messageBufferSize: messageBuffer.length,
+                activeSessions: activeSessions.size
+              });
+              
+              console.log('🌐 [RealtimeProxy] Process metrics at connection:', {
+                uptime: process.uptime(),
+                memory: process.memoryUsage(),
+                cpuUsage: process.cpuUsage()
+              });
+              
               sessionActive = true;
+              console.log('🌐 [RealtimeProxy] Session marked as active');
               
               if (process.env.NODE_ENV === 'production') {
-                console.log('🌐 [RealtimeProxy] PRODUCTION CONNECTION SUCCESS');
-                console.log('🌐 [RealtimeProxy] Session ID:', clientData.sessionId || 'Not provided');
-                console.log('🌐 [RealtimeProxy] Patient ID:', clientData.patientId);
-                console.log('🌐 [RealtimeProxy] User ID:', clientWs.userId);
+                console.log('🌐 [RealtimeProxy] === PRODUCTION CONNECTION SUCCESS ===');
+                console.log('🌐 [RealtimeProxy] Production details:', {
+                  awsRegion: process.env.AWS_REGION || 'Not set',
+                  instanceId: process.env.AWS_INSTANCE_ID || 'Not set',
+                  containerPort: process.env.PORT || '5000',
+                  hostname: process.env.HOSTNAME || 'Unknown',
+                  productionDomain: process.env.PRODUCTION_DOMAIN || 'Not set',
+                  sessionStore: process.env.SESSION_STORE || 'memory',
+                  cookieDomain: process.env.SESSION_COOKIE_DOMAIN || 'not set',
+                  cookieSecure: process.env.SESSION_COOKIE_SECURE || 'not set'
+                });
+                
+                console.log('🌐 [RealtimeProxy] Connection security:', {
+                  apiKeyExists: !!process.env.OPENAI_API_KEY,
+                  apiKeyLength: process.env.OPENAI_API_KEY?.length || 0,
+                  sessionSecretExists: !!process.env.SESSION_SECRET,
+                  httpsEnabled: process.env.NODE_ENV === 'production'
+                });
               }
               
               // Send session configuration as first message with full API compliance
@@ -406,31 +513,76 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
               console.error('❌ [RealtimeProxy] === OPENAI WEBSOCKET ERROR ===');
               console.error('❌ [RealtimeProxy] Timestamp:', new Date().toISOString());
               console.error('❌ [RealtimeProxy] Environment:', process.env.NODE_ENV);
-              console.error('❌ [RealtimeProxy] Error type:', error?.constructor?.name);
-              console.error('❌ [RealtimeProxy] Error message:', (error as any)?.message);
-              console.error('❌ [RealtimeProxy] Error code:', (error as any)?.code);
-              console.error('❌ [RealtimeProxy] Error errno:', (error as any)?.errno);
-              console.error('❌ [RealtimeProxy] Error syscall:', (error as any)?.syscall);
-              console.error('❌ [RealtimeProxy] Error address:', (error as any)?.address);
-              console.error('❌ [RealtimeProxy] Error port:', (error as any)?.port);
-              console.error('❌ [RealtimeProxy] Full error:', error);
-              console.error('❌ [RealtimeProxy] WebSocket readyState:', openAiWs?.readyState);
-              console.error('❌ [RealtimeProxy] Session was active:', sessionActive);
+              console.error('❌ [RealtimeProxy] Process uptime:', process.uptime(), 'seconds');
+              console.error('❌ [RealtimeProxy] Memory usage:', process.memoryUsage());
+              
+              console.error('❌ [RealtimeProxy] Error details:');
+              console.error('❌ [RealtimeProxy]   Error type:', error?.constructor?.name);
+              console.error('❌ [RealtimeProxy]   Error message:', (error as any)?.message);
+              console.error('❌ [RealtimeProxy]   Error code:', (error as any)?.code);
+              console.error('❌ [RealtimeProxy]   Error errno:', (error as any)?.errno);
+              console.error('❌ [RealtimeProxy]   Error syscall:', (error as any)?.syscall);
+              console.error('❌ [RealtimeProxy]   Error address:', (error as any)?.address);
+              console.error('❌ [RealtimeProxy]   Error port:', (error as any)?.port);
+              console.error('❌ [RealtimeProxy]   Error path:', (error as any)?.path);
+              console.error('❌ [RealtimeProxy]   Error host:', (error as any)?.host);
+              console.error('❌ [RealtimeProxy]   Error hostname:', (error as any)?.hostname);
+              console.error('❌ [RealtimeProxy]   Error stack:', (error as any)?.stack);
+              console.error('❌ [RealtimeProxy]   Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+              
+              console.error('❌ [RealtimeProxy] WebSocket state:');
+              console.error('❌ [RealtimeProxy]   ReadyState:', openAiWs?.readyState);
+              console.error('❌ [RealtimeProxy]   ReadyState name:', ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs?.readyState || 0]);
+              console.error('❌ [RealtimeProxy]   URL:', openAiWs?.url);
+              console.error('❌ [RealtimeProxy]   Protocol:', openAiWs?.protocol);
+              console.error('❌ [RealtimeProxy]   Session was active:', sessionActive);
               
               if (process.env.NODE_ENV === 'production') {
-                console.error('❌ [RealtimeProxy] PRODUCTION ERROR CONTEXT:');
+                console.error('❌ [RealtimeProxy] === PRODUCTION ERROR CONTEXT ===');
+                console.error('❌ [RealtimeProxy] Environment variables:');
+                console.error('❌ [RealtimeProxy]   NODE_ENV:', process.env.NODE_ENV);
+                console.error('❌ [RealtimeProxy]   PORT:', process.env.PORT);
+                console.error('❌ [RealtimeProxy]   AWS_REGION:', process.env.AWS_REGION || 'Not set');
                 console.error('❌ [RealtimeProxy]   OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
                 console.error('❌ [RealtimeProxy]   OpenAI API Key length:', process.env.OPENAI_API_KEY?.length || 0);
+                console.error('❌ [RealtimeProxy]   OpenAI API Key format valid:', /^sk-[a-zA-Z0-9]{48,}$/.test(process.env.OPENAI_API_KEY || ''));
+                
+                console.error('❌ [RealtimeProxy] Connection context:');
                 console.error('❌ [RealtimeProxy]   Messages buffered:', messageBuffer.length);
                 console.error('❌ [RealtimeProxy]   User ID:', clientWs.userId);
+                console.error('❌ [RealtimeProxy]   Session ID:', clientWs.sessionId);
                 console.error('❌ [RealtimeProxy]   Patient ID:', clientData.patientId);
-                console.error('❌ [RealtimeProxy]   Common error causes:');
-                console.error('❌ [RealtimeProxy]     - Network connectivity issues');
-                console.error('❌ [RealtimeProxy]     - Invalid API key');
-                console.error('❌ [RealtimeProxy]     - Rate limiting');
-                console.error('❌ [RealtimeProxy]     - TLS/SSL handshake failure');
-                console.error('❌ [RealtimeProxy]     - DNS resolution failure');
-                console.error('❌ [RealtimeProxy]     - Firewall/proxy blocking');
+                console.error('❌ [RealtimeProxy]   Client WebSocket state:', clientWs.readyState);
+                console.error('❌ [RealtimeProxy]   Client alive:', clientWs.isAlive);
+                
+                console.error('❌ [RealtimeProxy] Common error causes by code:');
+                const errorCode = (error as any)?.code;
+                switch (errorCode) {
+                  case 'ECONNREFUSED':
+                    console.error('❌ [RealtimeProxy]   → Connection refused: OpenAI API is not reachable');
+                    console.error('❌ [RealtimeProxy]   → Check network connectivity and firewall rules');
+                    break;
+                  case 'ENOTFOUND':
+                    console.error('❌ [RealtimeProxy]   → DNS resolution failed: Cannot resolve api.openai.com');
+                    console.error('❌ [RealtimeProxy]   → Check DNS configuration and network connectivity');
+                    break;
+                  case 'ETIMEDOUT':
+                    console.error('❌ [RealtimeProxy]   → Connection timeout: Network is too slow or blocked');
+                    console.error('❌ [RealtimeProxy]   → Check firewall rules, proxy settings, and network latency');
+                    break;
+                  case 'ECONNRESET':
+                    console.error('❌ [RealtimeProxy]   → Connection reset: Connection was forcibly closed');
+                    console.error('❌ [RealtimeProxy]   → Could indicate rate limiting or network interruption');
+                    break;
+                  case 'CERT_HAS_EXPIRED':
+                  case 'UNABLE_TO_VERIFY_LEAF_SIGNATURE':
+                    console.error('❌ [RealtimeProxy]   → SSL/TLS certificate error');
+                    console.error('❌ [RealtimeProxy]   → Check system time and certificate chain');
+                    break;
+                  default:
+                    console.error('❌ [RealtimeProxy]   → Unknown error code:', errorCode);
+                    console.error('❌ [RealtimeProxy]   → Could be: Invalid API key, rate limiting, or service outage');
+                }
               }
               
               console.error('❌ [RealtimeProxy] Session config:', JSON.stringify(sessionConfig, null, 2));
@@ -449,51 +601,126 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
             });
 
             openAiWs.on('close', (code, reason) => {
+              const closeTime = Date.now();
+              const connectionDuration = 'Unknown'; // Connection start time tracking would need to be implemented server-side
+              
               console.log('🔌 [RealtimeProxy] === OPENAI WEBSOCKET CLOSED ===');
               console.log('🔌 [RealtimeProxy] Timestamp:', new Date().toISOString());
               console.log('🔌 [RealtimeProxy] Environment:', process.env.NODE_ENV);
-              console.log('🔌 [RealtimeProxy] Close code:', code);
-              console.log('🔌 [RealtimeProxy] Close reason:', reason?.toString() || 'No reason provided');
-              console.log('🔌 [RealtimeProxy] Close code interpretation:');
+              console.log('🔌 [RealtimeProxy] Process uptime:', process.uptime(), 'seconds');
+              console.log('🔌 [RealtimeProxy] Memory usage:', process.memoryUsage());
               
+              console.log('🔌 [RealtimeProxy] Close event details:');
+              console.log('🔌 [RealtimeProxy]   Close code:', code);
+              console.log('🔌 [RealtimeProxy]   Close reason:', reason?.toString() || 'No reason provided');
+              console.log('🔌 [RealtimeProxy]   Reason length:', reason?.toString().length || 0);
+              console.log('🔌 [RealtimeProxy]   Connection duration:', connectionDuration, 'ms');
+              console.log('🔌 [RealtimeProxy]   Session was active:', sessionActive);
+              console.log('🔌 [RealtimeProxy]   Messages buffered:', messageBuffer.length);
+              
+              console.log('🔌 [RealtimeProxy] WebSocket final state:');
+              console.log('🔌 [RealtimeProxy]   ReadyState:', openAiWs?.readyState);
+              console.log('🔌 [RealtimeProxy]   ReadyState name:', ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs?.readyState || 0]);
+              console.log('🔌 [RealtimeProxy]   URL:', openAiWs?.url);
+              console.log('🔌 [RealtimeProxy]   Protocol:', openAiWs?.protocol);
+              console.log('🔌 [RealtimeProxy]   Extensions:', openAiWs?.extensions);
+              
+              console.log('🔌 [RealtimeProxy] Close code interpretation:');
               switch(code) {
                 case 1000:
-                  console.log('🔌 [RealtimeProxy]   ✅ 1000: Normal closure');
+                  console.log('🔌 [RealtimeProxy]   ✅ 1000: Normal closure - Connection completed successfully');
                   break;
                 case 1001:
-                  console.log('🔌 [RealtimeProxy]   ⚠️ 1001: Going away (server shutdown)');
+                  console.log('🔌 [RealtimeProxy]   ⚠️ 1001: Going away - Server shutdown or browser navigating away');
+                  break;
+                case 1002:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1002: Protocol error - Invalid WebSocket protocol');
+                  break;
+                case 1003:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1003: Unsupported data - Server received unsupported data type');
                   break;
                 case 1006:
-                  console.log('🔌 [RealtimeProxy]   ❌ 1006: Abnormal closure (network error)');
+                  console.log('🔌 [RealtimeProxy]   ❌ 1006: Abnormal closure - Connection lost without close frame');
+                  console.log('🔌 [RealtimeProxy]   Common causes: Network failure, server crash, firewall blocking');
+                  break;
+                case 1007:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1007: Invalid frame payload data');
+                  break;
+                case 1008:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1008: Policy violation - Message violates server policy');
+                  break;
+                case 1009:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1009: Message too big - Payload exceeds server limits');
+                  break;
+                case 1010:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1010: Mandatory extension - Server requires extension client doesn\'t support');
+                  break;
+                case 1011:
+                  console.log('🔌 [RealtimeProxy]   ❌ 1011: Internal server error - Unexpected condition on server');
                   break;
                 case 1015:
-                  console.log('🔌 [RealtimeProxy]   ❌ 1015: TLS handshake failure');
+                  console.log('🔌 [RealtimeProxy]   ❌ 1015: TLS handshake failure - SSL/TLS certificate issues');
+                  console.log('🔌 [RealtimeProxy]   Check: Certificate validity, hostname match, TLS version compatibility');
                   break;
                 case 4000:
-                  console.log('🔌 [RealtimeProxy]   ❌ 4000: Invalid request');
+                  console.log('🔌 [RealtimeProxy]   ❌ 4000: Invalid request - Malformed request to OpenAI');
                   break;
                 case 4001:
-                  console.log('🔌 [RealtimeProxy]   ❌ 4001: Unauthorized (invalid API key)');
+                  console.log('🔌 [RealtimeProxy]   ❌ 4001: Unauthorized - Invalid or missing API key');
+                  console.log('🔌 [RealtimeProxy]   API key exists:', !!process.env.OPENAI_API_KEY);
+                  console.log('🔌 [RealtimeProxy]   API key format valid:', /^sk-[a-zA-Z0-9]{48,}$/.test(process.env.OPENAI_API_KEY || ''));
                   break;
                 case 4002:
-                  console.log('🔌 [RealtimeProxy]   ❌ 4002: Rate limit exceeded');
+                  console.log('🔌 [RealtimeProxy]   ❌ 4002: Rate limit exceeded - Too many requests');
                   break;
                 case 4003:
-                  console.log('🔌 [RealtimeProxy]   ❌ 4003: Resource exhausted');
+                  console.log('🔌 [RealtimeProxy]   ❌ 4003: Resource exhausted - Quota or resource limit reached');
+                  break;
+                case 4008:
+                  console.log('🔌 [RealtimeProxy]   ❌ 4008: Invalid session config - Session parameters rejected');
                   break;
                 default:
                   if (code >= 4000 && code <= 4999) {
-                    console.log(`🔌 [RealtimeProxy]   ❌ ${code}: Application-specific error`);
+                    console.log(`🔌 [RealtimeProxy]   ❌ ${code}: OpenAI application-specific error`);
+                  } else if (code >= 3000 && code <= 3999) {
+                    console.log(`🔌 [RealtimeProxy]   ⚠️ ${code}: Reserved for libraries/frameworks`);
                   } else {
-                    console.log(`🔌 [RealtimeProxy]   ⚠️ ${code}: Unknown close code`);
+                    console.log(`🔌 [RealtimeProxy]   ⚠️ ${code}: Unknown/non-standard close code`);
                   }
               }
               
               if (process.env.NODE_ENV === 'production') {
-                console.log('🔌 [RealtimeProxy] PRODUCTION CLOSE CONTEXT:');
+                console.log('🔌 [RealtimeProxy] === PRODUCTION CLOSE CONTEXT ===');
+                console.log('🔌 [RealtimeProxy] Connection info:');
                 console.log('🔌 [RealtimeProxy]   Session duration:', sessionActive ? 'Active session terminated' : 'No active session');
+                console.log('🔌 [RealtimeProxy]   Connection lasted:', connectionDuration, 'ms');
                 console.log('🔌 [RealtimeProxy]   User ID:', clientWs.userId);
-                console.log('🔌 [RealtimeProxy]   Session config:', JSON.stringify(sessionConfig, null, 2));
+                console.log('🔌 [RealtimeProxy]   Session ID:', clientWs.sessionId);
+                console.log('🔌 [RealtimeProxy]   Patient ID:', clientData.patientId);
+                
+                console.log('🔌 [RealtimeProxy] Session configuration used:');
+                console.log('🔌 [RealtimeProxy]', JSON.stringify(sessionConfig, null, 2));
+                
+                console.log('🔌 [RealtimeProxy] Client WebSocket state:');
+                console.log('🔌 [RealtimeProxy]   Client still connected:', clientWs.readyState === WebSocket.OPEN);
+                console.log('🔌 [RealtimeProxy]   Client readyState:', clientWs.readyState);
+                console.log('🔌 [RealtimeProxy]   Client alive flag:', clientWs.isAlive);
+                
+                // Log recommendations based on close code
+                if (code === 1006) {
+                  console.log('🔌 [RealtimeProxy] Recommendations for code 1006:');
+                  console.log('🔌 [RealtimeProxy]   1. Check AWS App Runner network configuration');
+                  console.log('🔌 [RealtimeProxy]   2. Verify outbound HTTPS/WSS is allowed');
+                  console.log('🔌 [RealtimeProxy]   3. Check if api.openai.com is reachable from container');
+                  console.log('🔌 [RealtimeProxy]   4. Review AWS security groups and NACLs');
+                  console.log('🔌 [RealtimeProxy]   5. Consider network latency and timeouts');
+                } else if (code === 4001) {
+                  console.log('🔌 [RealtimeProxy] Recommendations for code 4001:');
+                  console.log('🔌 [RealtimeProxy]   1. Verify OPENAI_API_KEY environment variable is set');
+                  console.log('🔌 [RealtimeProxy]   2. Check API key has realtime API access');
+                  console.log('🔌 [RealtimeProxy]   3. Ensure API key is not expired or revoked');
+                  console.log('🔌 [RealtimeProxy]   4. Verify billing is active on OpenAI account');
+                }
               }
               
               sessionActive = false;
@@ -529,20 +756,92 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
         } 
         // Handle audio buffer append messages
         else if (message.type === 'input_audio_buffer.append') {
-          console.log('🎵 [RealtimeProxy] Audio chunk from client:', {
+          console.log('🎵 [RealtimeProxy] === AUDIO CHUNK RECEIVED ===');
+          console.log('🎵 [RealtimeProxy] Timestamp:', new Date().toISOString());
+          console.log('🎵 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+          console.log('🎵 [RealtimeProxy] Process uptime:', process.uptime(), 'seconds');
+          console.log('🎵 [RealtimeProxy] Audio chunk details:', {
             hasAudio: !!message.audio,
             audioLength: message.audio?.length || 0,
+            audioType: typeof message.audio,
+            audioIsString: typeof message.audio === 'string',
             sessionActive: sessionActive,
+            openAiWsExists: !!openAiWs,
             openAiWsState: openAiWs?.readyState,
-            openAiWsStateText: openAiWs ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs.readyState] : 'null'
+            openAiWsStateText: openAiWs ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][openAiWs.readyState] : 'null',
+            messageBufferLength: messageBuffer.length,
+            dataType: typeof data,
+            dataLength: data.toString().length
           });
           
+          if (message.audio && typeof message.audio === 'string') {
+            console.log('🎵 [RealtimeProxy] Audio data analysis:');
+            console.log('🎵 [RealtimeProxy]   String length:', message.audio.length);
+            console.log('🎵 [RealtimeProxy]   First 100 chars:', message.audio.substring(0, 100));
+            console.log('🎵 [RealtimeProxy]   Last 100 chars:', message.audio.substring(message.audio.length - 100));
+            console.log('🎵 [RealtimeProxy]   Looks like base64:', /^[A-Za-z0-9+/]+=*$/.test(message.audio.substring(0, 100)));
+          }
+          
+          if (process.env.NODE_ENV === 'production') {
+            console.log('🎵 [RealtimeProxy] PRODUCTION AUDIO METRICS:');
+            console.log('🎵 [RealtimeProxy]   Memory usage:', process.memoryUsage());
+            console.log('🎵 [RealtimeProxy]   Client WS state:', clientWs.readyState);
+            console.log('🎵 [RealtimeProxy]   Client is alive:', clientWs.isAlive);
+            console.log('🎵 [RealtimeProxy]   User ID:', clientWs.userId);
+            console.log('🎵 [RealtimeProxy]   Session ID:', clientWs.sessionId);
+            console.log('🎵 [RealtimeProxy]   Active sessions count:', activeSessions.size);
+          }
+          
           if (openAiWs && sessionActive) {
-            openAiWs.send(data.toString());
-            console.log('✅ [RealtimeProxy] Audio forwarded to OpenAI');
+            console.log('🎵 [RealtimeProxy] === FORWARDING AUDIO TO OPENAI ===');
+            console.log('🎵 [RealtimeProxy] Pre-send state:', {
+              openAiReadyState: openAiWs.readyState,
+              openAiBufferedAmount: openAiWs.bufferedAmount,
+              dataSize: data.toString().length,
+              messageSize: JSON.stringify(message).length
+            });
+            
+            try {
+              const startTime = Date.now();
+              openAiWs.send(data.toString());
+              const sendDuration = Date.now() - startTime;
+              
+              console.log('✅ [RealtimeProxy] Audio forwarded successfully');
+              console.log('✅ [RealtimeProxy] Send duration:', sendDuration, 'ms');
+              console.log('✅ [RealtimeProxy] Post-send buffered amount:', openAiWs.bufferedAmount);
+              
+              if (sendDuration > 100) {
+                console.warn('⚠️ [RealtimeProxy] SLOW SEND DETECTED:', sendDuration, 'ms');
+              }
+            } catch (sendError: any) {
+              console.error('❌ [RealtimeProxy] AUDIO FORWARD ERROR');
+              console.error('❌ [RealtimeProxy] Error type:', sendError?.constructor?.name);
+              console.error('❌ [RealtimeProxy] Error message:', sendError?.message);
+              console.error('❌ [RealtimeProxy] Error code:', sendError?.code);
+              console.error('❌ [RealtimeProxy] Error stack:', sendError?.stack);
+              console.error('❌ [RealtimeProxy] WebSocket state at error:', openAiWs.readyState);
+            }
           } else {
-            console.log('⏳ [RealtimeProxy] Buffering audio until session ready');
+            console.log('⏳ [RealtimeProxy] === BUFFERING AUDIO ===');
+            console.log('⏳ [RealtimeProxy] Reason for buffering:');
+            console.log('⏳ [RealtimeProxy]   OpenAI WS exists:', !!openAiWs);
+            console.log('⏳ [RealtimeProxy]   Session active:', sessionActive);
+            console.log('⏳ [RealtimeProxy]   Current buffer size:', messageBuffer.length);
+            console.log('⏳ [RealtimeProxy]   Will buffer to position:', messageBuffer.length + 1);
+            
+            if (!openAiWs) {
+              console.log('⏳ [RealtimeProxy]   PRIMARY ISSUE: No OpenAI WebSocket connection');
+            } else if (!sessionActive) {
+              console.log('⏳ [RealtimeProxy]   PRIMARY ISSUE: Session not yet active');
+              console.log('⏳ [RealtimeProxy]   OpenAI WS state:', openAiWs.readyState);
+            }
+            
             messageBuffer.push(message);
+            console.log('⏳ [RealtimeProxy] Audio chunk buffered successfully');
+            
+            if (messageBuffer.length > 100) {
+              console.warn('⚠️ [RealtimeProxy] LARGE BUFFER WARNING: ', messageBuffer.length, 'messages buffered');
+            }
           }
         }
         // Handle response.create messages
@@ -573,15 +872,57 @@ export function setupRealtimeProxy(app: Express, server: HTTPServer) {
       }
     });
 
-    clientWs.on('close', async () => {
-      console.log('👋 [RealtimeProxy] Client disconnected');
+    clientWs.on('close', async (code, reason) => {
+      console.log('👋 [RealtimeProxy] === CLIENT DISCONNECTED ===');
+      console.log('👋 [RealtimeProxy] Timestamp:', new Date().toISOString());
+      console.log('👋 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+      console.log('👋 [RealtimeProxy] Disconnection details:', {
+        code: code,
+        reason: reason?.toString() || 'No reason provided',
+        userId: clientWs.userId,
+        sessionId: clientWs.sessionId,
+        wasAlive: clientWs.isAlive,
+        sessionWasActive: sessionActive,
+        openAiWsExists: !!openAiWs,
+        openAiWsState: openAiWs?.readyState,
+        messageBufferLength: messageBuffer.length,
+        processUptime: process.uptime()
+      });
+      
+      if (process.env.NODE_ENV === 'production') {
+        console.log('👋 [RealtimeProxy] PRODUCTION DISCONNECT ANALYSIS:');
+        console.log('👋 [RealtimeProxy]   Memory at disconnect:', process.memoryUsage());
+        console.log('👋 [RealtimeProxy]   Active sessions before cleanup:', activeSessions.size);
+        console.log('👋 [RealtimeProxy]   Common disconnect codes:');
+        console.log('👋 [RealtimeProxy]     1000 = Normal closure');
+        console.log('👋 [RealtimeProxy]     1001 = Going away (page navigation)');
+        console.log('👋 [RealtimeProxy]     1006 = Abnormal closure (network loss)');
+        console.log('👋 [RealtimeProxy]     1011 = Server error');
+        console.log('👋 [RealtimeProxy]   Actual code:', code);
+      }
       
       // Close OpenAI connection
       if (openAiWs) {
-        openAiWs.close();
+        console.log('👋 [RealtimeProxy] Closing OpenAI WebSocket...');
+        console.log('👋 [RealtimeProxy]   OpenAI WS state before close:', openAiWs.readyState);
+        console.log('👋 [RealtimeProxy]   OpenAI WS buffered amount:', openAiWs.bufferedAmount);
+        
+        try {
+          openAiWs.close(1000, 'Client disconnected');
+          console.log('👋 [RealtimeProxy] OpenAI WebSocket close initiated');
+        } catch (closeError: any) {
+          console.error('👋 [RealtimeProxy] Error closing OpenAI WebSocket:', closeError);
+          console.error('👋 [RealtimeProxy]   Error type:', closeError?.constructor?.name);
+          console.error('👋 [RealtimeProxy]   Error message:', closeError?.message);
+        }
+      } else {
+        console.log('👋 [RealtimeProxy] No OpenAI WebSocket to close');
       }
 
       // Clean up session and save recording metadata
+      console.log('👋 [RealtimeProxy] === SESSION CLEANUP ===');
+      console.log('👋 [RealtimeProxy] Active sessions to check:', activeSessions.size);
+      
       for (const [sessionId, session] of Array.from(activeSessions.entries())) {
         if (session.clientWs === clientWs) {
           activeSessions.delete(sessionId);
@@ -645,47 +986,153 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 
 // Verify session with your session store
 async function verifySession(sessionId: string): Promise<number | null> {
-  console.log('🔍 [RealtimeProxy] Verifying session:', sessionId);
+  console.log('🔍 [RealtimeProxy] === SESSION VERIFICATION START ===');
+  console.log('🔍 [RealtimeProxy] Timestamp:', new Date().toISOString());
+  console.log('🔍 [RealtimeProxy] Environment:', process.env.NODE_ENV);
+  console.log('🔍 [RealtimeProxy] Raw session ID:', sessionId.substring(0, 30) + '...');
+  console.log('🔍 [RealtimeProxy] Session ID length:', sessionId.length);
+  console.log('🔍 [RealtimeProxy] Session ID format analysis:', {
+    startsWithS: sessionId.startsWith('s:'),
+    hasSignature: sessionId.includes('.'),
+    colonCount: (sessionId.match(/:/g) || []).length,
+    dotCount: (sessionId.match(/\./g) || []).length
+  });
   
   // Import storage instance to access sessionStore
-  const { storage } = await import('./storage');
-  
-  console.log('🔍 [RealtimeProxy] Storage imported, sessionStore available:', !!storage.sessionStore);
-  
-  // Extract session ID from connect.sid cookie format (s:sessionId.signature)
-  const cleanSessionId = sessionId.split(':')[1]?.split('.')[0];
-  
-  if (!cleanSessionId) {
-    console.error('❌ [RealtimeProxy] Invalid session ID format:', sessionId);
-    console.error('❌ [RealtimeProxy] Raw sessionId:', sessionId);
-    console.error('❌ [RealtimeProxy] Split result:', sessionId.split(':'));
+  console.log('🔍 [RealtimeProxy] Importing storage module...');
+  const importStart = Date.now();
+  let storage;
+  try {
+    const module = await import('./storage');
+    storage = module.storage;
+    const importDuration = Date.now() - importStart;
+    console.log('🔍 [RealtimeProxy] Storage imported successfully in', importDuration, 'ms');
+    console.log('🔍 [RealtimeProxy] Storage type:', storage?.constructor?.name);
+    console.log('🔍 [RealtimeProxy] SessionStore available:', !!storage?.sessionStore);
+    console.log('🔍 [RealtimeProxy] SessionStore type:', storage?.sessionStore?.constructor?.name);
+  } catch (importError) {
+    console.error('❌ [RealtimeProxy] Failed to import storage:', importError);
+    console.error('❌ [RealtimeProxy] Import error type:', (importError as any)?.constructor?.name);
+    console.error('❌ [RealtimeProxy] Import error message:', (importError as any)?.message);
+    console.error('❌ [RealtimeProxy] Import error stack:', (importError as any)?.stack);
     return null;
   }
   
-  console.log('🔍 [RealtimeProxy] Clean session ID:', cleanSessionId);
+  // Extract session ID from connect.sid cookie format (s:sessionId.signature)
+  console.log('🔍 [RealtimeProxy] Parsing session ID format...');
+  console.log('🔍 [RealtimeProxy] Session ID parts after split by ":":', sessionId.split(':'));
+  const cleanSessionId = sessionId.split(':')[1]?.split('.')[0];
+  
+  if (!cleanSessionId) {
+    console.error('❌ [RealtimeProxy] === INVALID SESSION ID FORMAT ===');
+    console.error('❌ [RealtimeProxy] Failed to extract clean session ID');
+    console.error('❌ [RealtimeProxy] Raw sessionId:', sessionId);
+    console.error('❌ [RealtimeProxy] Split by ":" result:', sessionId.split(':'));
+    console.error('❌ [RealtimeProxy] Expected format: s:sessionId.signature');
+    console.error('❌ [RealtimeProxy] Actual format analysis:', {
+      firstChar: sessionId[0],
+      secondChar: sessionId[1],
+      firstColon: sessionId.indexOf(':'),
+      firstDot: sessionId.indexOf('.'),
+      substring: sessionId.substring(0, 50)
+    });
+    console.error('❌ [RealtimeProxy] === END INVALID SESSION ID ===');
+    return null;
+  }
+  
+  console.log('🔍 [RealtimeProxy] Clean session ID extracted:', cleanSessionId.substring(0, 20) + '...');
+  console.log('🔍 [RealtimeProxy] Clean session ID length:', cleanSessionId.length);
 
   return new Promise((resolve) => {
+    console.log('🔍 [RealtimeProxy] Looking up session in store...');
+    const lookupStart = Date.now();
+    
     storage.sessionStore.get(cleanSessionId, (err: any, session: any) => {
-      if (err || !session) {
-        console.error('❌ [RealtimeProxy] Session not found or error:', err);
+      const lookupDuration = Date.now() - lookupStart;
+      console.log('🔍 [RealtimeProxy] === SESSION LOOKUP COMPLETE ===');
+      console.log('🔍 [RealtimeProxy] Lookup duration:', lookupDuration, 'ms');
+      
+      if (err) {
+        console.error('❌ [RealtimeProxy] === SESSION LOOKUP ERROR ===');
+        console.error('❌ [RealtimeProxy] Error during session lookup');
+        console.error('❌ [RealtimeProxy] Error type:', err?.constructor?.name);
+        console.error('❌ [RealtimeProxy] Error message:', err?.message);
+        console.error('❌ [RealtimeProxy] Error code:', (err as any)?.code);
+        console.error('❌ [RealtimeProxy] Error stack:', err?.stack);
+        console.error('❌ [RealtimeProxy] Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+        
+        if (process.env.NODE_ENV === 'production') {
+          console.error('❌ [RealtimeProxy] PRODUCTION CONTEXT:');
+          console.error('❌ [RealtimeProxy]   Database connectivity check needed');
+          console.error('❌ [RealtimeProxy]   Session table may be inaccessible');
+          console.error('❌ [RealtimeProxy]   Check RDS connection and permissions');
+        }
+        console.error('❌ [RealtimeProxy] === END SESSION LOOKUP ERROR ===');
         resolve(null);
         return;
       }
+      
+      if (!session) {
+        console.error('❌ [RealtimeProxy] === SESSION NOT FOUND ===');
+        console.error('❌ [RealtimeProxy] No session found for clean ID:', cleanSessionId.substring(0, 20) + '...');
+        console.error('❌ [RealtimeProxy] This could mean:');
+        console.error('❌ [RealtimeProxy]   - Session has expired');
+        console.error('❌ [RealtimeProxy]   - Session was never created');
+        console.error('❌ [RealtimeProxy]   - Session ID mismatch between cookie and store');
+        console.error('❌ [RealtimeProxy]   - Different session stores between HTTP and WebSocket');
+        
+        if (process.env.NODE_ENV === 'production') {
+          console.error('❌ [RealtimeProxy] PRODUCTION DEBUG:');
+          console.error('❌ [RealtimeProxy]   SESSION_STORE type:', process.env.SESSION_STORE || 'Not set');
+          console.error('❌ [RealtimeProxy]   Check if using same session store as Express');
+        }
+        console.error('❌ [RealtimeProxy] === END SESSION NOT FOUND ===');
+        resolve(null);
+        return;
+      }
+
+      console.log('🔍 [RealtimeProxy] Session found successfully');
+      console.log('🔍 [RealtimeProxy] Session structure:', {
+        hasPassport: !!session.passport,
+        passportKeys: session.passport ? Object.keys(session.passport) : [],
+        hasUser: !!session.passport?.user,
+        userType: typeof session.passport?.user,
+        sessionKeys: Object.keys(session),
+        cookie: {
+          expires: session.cookie?.expires,
+          maxAge: session.cookie?.maxAge,
+          httpOnly: session.cookie?.httpOnly,
+          secure: session.cookie?.secure,
+          sameSite: session.cookie?.sameSite,
+          domain: session.cookie?.domain,
+          path: session.cookie?.path
+        }
+      });
 
       // Check if session has passport user
       if (!session.passport?.user) {
-        console.error('❌ [RealtimeProxy] No user in session');
+        console.error('❌ [RealtimeProxy] === NO USER IN SESSION ===');
+        console.error('❌ [RealtimeProxy] Session exists but no passport.user');
+        console.error('❌ [RealtimeProxy] Session passport data:', JSON.stringify(session.passport, null, 2));
+        console.error('❌ [RealtimeProxy] Full session data:', JSON.stringify(session, null, 2));
+        console.error('❌ [RealtimeProxy] This indicates:');
+        console.error('❌ [RealtimeProxy]   - User logged out but session persists');
+        console.error('❌ [RealtimeProxy]   - Passport deserialization failed');
+        console.error('❌ [RealtimeProxy]   - Session data corruption');
+        console.error('❌ [RealtimeProxy] === END NO USER IN SESSION ===');
         resolve(null);
         return;
       }
 
-      console.log('✅ [RealtimeProxy] Session verified for user:', session.passport.user);
-      resolve(session.passport.user);
+      const userId = typeof session.passport.user === 'object' ? session.passport.user.id : session.passport.user;
+      console.log('✅ [RealtimeProxy] === SESSION VERIFIED ===');
+      console.log('✅ [RealtimeProxy] User ID:', userId);
+      console.log('✅ [RealtimeProxy] User ID type:', typeof userId);
+      console.log('✅ [RealtimeProxy] Session verification complete');
+      console.log('✅ [RealtimeProxy] === END SESSION VERIFICATION ===');
+      resolve(userId);
     });
   });
-  // You MUST implement proper session verification here
-  console.warn('⚠️ [RealtimeProxy] Using placeholder session verification - implement proper verification!');
-  return 1; // Placeholder user ID
 }
 
 // Export session management functions for monitoring

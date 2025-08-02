@@ -655,6 +655,56 @@ export class AttachmentChartProcessor {
       console.log(`💾 [AttachmentChartProcessor] DEBUG - encounterId type: ${typeof encounterId}`);
       console.log(`💾 [AttachmentChartProcessor] DEBUG - validEncounterId: ${validEncounterId}`);
       
+      console.log(`💾 [AttachmentChartProcessor] === BUILDING VITALS ENTRY ===`);
+      console.log(`💾 [AttachmentChartProcessor] Environment: ${process.env.NODE_ENV}`);
+      console.log(`💾 [AttachmentChartProcessor] Timestamp: ${new Date().toISOString()}`);
+      console.log(`💾 [AttachmentChartProcessor] Patient ID: ${patientId} (type: ${typeof patientId})`);
+      console.log(`💾 [AttachmentChartProcessor] Encounter ID: ${validEncounterId} (type: ${typeof validEncounterId})`);
+      console.log(`💾 [AttachmentChartProcessor] Attachment ID: ${attachmentId} (type: ${typeof attachmentId})`);
+      console.log(`💾 [AttachmentChartProcessor] Document type: ${documentType}`);
+      console.log(`💾 [AttachmentChartProcessor] Set: ${setLabel}`);
+      console.log(`💾 [AttachmentChartProcessor] Confidence: ${overallConfidence}%`);
+      
+      // Log raw vital values
+      console.log(`💾 [AttachmentChartProcessor] === RAW VITAL VALUES ===`);
+      console.log(`💾 [AttachmentChartProcessor] vitalSet object:`, JSON.stringify(vitalSet, null, 2));
+      console.log(`💾 [AttachmentChartProcessor] Individual values:`);
+      console.log(`💾   - systolicBp: ${vitalSet.systolicBp} (type: ${typeof vitalSet.systolicBp})`);
+      console.log(`💾   - diastolicBp: ${vitalSet.diastolicBp} (type: ${typeof vitalSet.diastolicBp})`);
+      console.log(`💾   - heartRate: ${vitalSet.heartRate} (type: ${typeof vitalSet.heartRate})`);
+      console.log(`💾   - temperature: ${vitalSet.temperature} (type: ${typeof vitalSet.temperature})`);
+      console.log(`💾   - weight: ${vitalSet.weight} (type: ${typeof vitalSet.weight})`);
+      console.log(`💾   - height: ${vitalSet.height} (type: ${typeof vitalSet.height})`);
+      console.log(`💾   - bmi: ${vitalSet.bmi} (type: ${typeof vitalSet.bmi})`);
+      console.log(`💾   - oxygenSaturation: ${vitalSet.oxygenSaturation} (type: ${typeof vitalSet.oxygenSaturation})`);
+      console.log(`💾   - respiratoryRate: ${vitalSet.respiratoryRate} (type: ${typeof vitalSet.respiratoryRate})`);
+      console.log(`💾   - painScale: ${vitalSet.painScale} (type: ${typeof vitalSet.painScale})`);
+      
+      // Log parsed values
+      console.log(`💾 [AttachmentChartProcessor] === PARSED VALUES FOR DB ===`);
+      const parsedTemp = vitalSet.temperature ? parseFloat(vitalSet.temperature) : undefined;
+      const parsedWeight = vitalSet.weight ? parseFloat(vitalSet.weight) : undefined;
+      const parsedHeight = vitalSet.height ? parseFloat(vitalSet.height) : undefined;
+      const parsedBmi = vitalSet.bmi ? parseFloat(vitalSet.bmi) : undefined;
+      const parsedO2 = vitalSet.oxygenSaturation ? Math.round(parseFloat(vitalSet.oxygenSaturation)) : undefined;
+      
+      console.log(`💾   - parsedTemp: ${parsedTemp} (from: ${vitalSet.temperature})`);
+      console.log(`💾   - parsedWeight: ${parsedWeight} (from: ${vitalSet.weight})`);
+      console.log(`💾   - parsedHeight: ${parsedHeight} (from: ${vitalSet.height})`);
+      console.log(`💾   - parsedBmi: ${parsedBmi} (from: ${vitalSet.bmi})`);
+      console.log(`💾   - parsedO2: ${parsedO2} (from: ${vitalSet.oxygenSaturation})`);
+      
+      // Log source confidence calculation
+      const rawConfidence = overallConfidence <= 1 ? overallConfidence : overallConfidence / 100;
+      const cappedConfidence = Math.min(0.99, rawConfidence);
+      const formattedConfidence = cappedConfidence.toFixed(2);
+      console.log(`💾 [AttachmentChartProcessor] === CONFIDENCE CALCULATION ===`);
+      console.log(`💾   - overallConfidence input: ${overallConfidence}`);
+      console.log(`💾   - rawConfidence: ${rawConfidence}`);
+      console.log(`💾   - cappedConfidence: ${cappedConfidence}`);
+      console.log(`💾   - formattedConfidence: ${formattedConfidence}`);
+      console.log(`💾   - DB field: sourceConfidence (precision 3, scale 2, max: 0.99)`);
+      
       const vitalsEntry = {
         patientId: patientId,
         encounterId: validEncounterId,
@@ -666,17 +716,17 @@ export class AttachmentChartProcessor {
         systolicBp: vitalSet.systolicBp || undefined,
         diastolicBp: vitalSet.diastolicBp || undefined,
         heartRate: vitalSet.heartRate || undefined,
-        temperature: vitalSet.temperature ? parseFloat(vitalSet.temperature) : undefined,
-        weight: vitalSet.weight ? parseFloat(vitalSet.weight) : undefined,
-        height: vitalSet.height ? parseFloat(vitalSet.height) : undefined,
-        bmi: vitalSet.bmi ? parseFloat(vitalSet.bmi) : undefined,
-        oxygenSaturation: vitalSet.oxygenSaturation ? Math.round(parseFloat(vitalSet.oxygenSaturation)) : undefined,
+        temperature: parsedTemp,
+        weight: parsedWeight,
+        height: parsedHeight,
+        bmi: parsedBmi,
+        oxygenSaturation: parsedO2,
         respiratoryRate: vitalSet.respiratoryRate || undefined,
         painScale: vitalSet.painScale || undefined,
         
         // Source tracking
         sourceType: "attachment_extracted" as const,
-        sourceConfidence: Math.min(0.99, overallConfidence <= 1 ? overallConfidence : overallConfidence / 100).toFixed(2), // Cap at 0.99 for precision 3,2
+        sourceConfidence: formattedConfidence, // Cap at 0.99 for precision 3,2
         sourceNotes: sourceNotes,
         extractedFromAttachmentId: attachmentId,
         enteredBy: 1, // Using existing user ID (jonseale) - TODO: make configurable
@@ -686,6 +736,9 @@ export class AttachmentChartProcessor {
         originalText: vitalSet.parsedText || `Vitals set ${setLabel}`,
         alerts: vitalSet.warnings || undefined,
       };
+      
+      console.log(`💾 [AttachmentChartProcessor] === FINAL VITALS ENTRY ===`);
+      console.log(`💾 [AttachmentChartProcessor] Complete vitalsEntry object:`, JSON.stringify(vitalsEntry, null, 2));
 
       // DETAILED VALUE LOGGING FOR DEBUGGING NUMERIC PRECISION ERRORS
       console.log(`💾 [AttachmentChartProcessor] ===== DETAILED VALUES DEBUG =====`);

@@ -2186,14 +2186,48 @@ export function EncounterDetailView({
           
           // Check WebSocket availability
           console.log("🔧 [EncounterView] === PRE-WEBSOCKET CONSTRUCTOR DIAGNOSTICS ===");
+          console.log("🔧 [EncounterView] Timestamp:", new Date().toISOString());
           console.log("🔧 [EncounterView] WebSocket constructor type:", typeof WebSocket);
           console.log("🔧 [EncounterView] WebSocket in window:", 'WebSocket' in window);
+          console.log("🔧 [EncounterView] WebSocket in globalThis:", 'WebSocket' in globalThis);
           console.log("🔧 [EncounterView] WebSocket constructor:", WebSocket);
           console.log("🔧 [EncounterView] WebSocket.prototype:", WebSocket.prototype);
-          console.log("🔧 [EncounterView] WebSocket.CONNECTING:", WebSocket.CONNECTING);
-          console.log("🔧 [EncounterView] WebSocket.OPEN:", WebSocket.OPEN);
-          console.log("🔧 [EncounterView] WebSocket.CLOSING:", WebSocket.CLOSING);
-          console.log("🔧 [EncounterView] WebSocket.CLOSED:", WebSocket.CLOSED);
+          console.log("🔧 [EncounterView] WebSocket.prototype.constructor:", WebSocket.prototype.constructor);
+          console.log("🔧 [EncounterView] WebSocket states: CONNECTING=" + WebSocket.CONNECTING + 
+                      ", OPEN=" + WebSocket.OPEN + ", CLOSING=" + WebSocket.CLOSING + ", CLOSED=" + WebSocket.CLOSED);
+          
+          // Network and browser diagnostics
+          console.log("🔧 [EncounterView] === NETWORK DIAGNOSTICS ===");
+          console.log("🔧 [EncounterView] Navigator.onLine:", navigator.onLine);
+          console.log("🔧 [EncounterView] Document.readyState:", document.readyState);
+          console.log("🔧 [EncounterView] Document.visibilityState:", document.visibilityState);
+          console.log("🔧 [EncounterView] Window.isSecureContext:", window.isSecureContext);
+          console.log("🔧 [EncounterView] Navigator.userAgent:", navigator.userAgent);
+          console.log("🔧 [EncounterView] Navigator.platform:", navigator.platform);
+          console.log("🔧 [EncounterView] Navigator.language:", navigator.language);
+          console.log("🔧 [EncounterView] Window.location.origin:", window.location.origin);
+          console.log("🔧 [EncounterView] Document.cookie length:", document.cookie.length);
+          console.log("🔧 [EncounterView] SessionStorage available:", typeof sessionStorage !== 'undefined');
+          console.log("🔧 [EncounterView] LocalStorage available:", typeof localStorage !== 'undefined');
+          
+          // Production environment checks
+          console.log("🔧 [EncounterView] === ENVIRONMENT DIAGNOSTICS ===");
+          console.log("🔧 [EncounterView] process.env.NODE_ENV:", process.env.NODE_ENV);
+          console.log("🔧 [EncounterView] Is clarafi.ai:", window.location.hostname === 'clarafi.ai');
+          console.log("🔧 [EncounterView] Is AWS:", window.location.hostname.includes('awsapprunner.com'));
+          console.log("🔧 [EncounterView] Is localhost:", window.location.hostname === 'localhost');
+          console.log("🔧 [EncounterView] Has port:", !!window.location.port);
+          console.log("🔧 [EncounterView] Port value:", window.location.port || 'default');
+          
+          // Memory and performance checks
+          console.log("🔧 [EncounterView] === PERFORMANCE DIAGNOSTICS ===");
+          if (performance && performance.memory) {
+            console.log("🔧 [EncounterView] JS heap size limit:", (performance as any).memory.jsHeapSizeLimit);
+            console.log("🔧 [EncounterView] Total JS heap size:", (performance as any).memory.totalJSHeapSize);
+            console.log("🔧 [EncounterView] Used JS heap size:", (performance as any).memory.usedJSHeapSize);
+          }
+          console.log("🔧 [EncounterView] Navigation timing - page load time:", 
+                      performance.timing ? performance.timing.loadEventEnd - performance.timing.navigationStart : 'N/A');
           
           console.log("🔧 [EncounterView] Final WebSocket URL check:");
           console.log("🔧 [EncounterView] - URL to be used:", wsUrl);
@@ -2202,18 +2236,47 @@ export function EncounterDetailView({
           console.log("🔧 [EncounterView] - URL path:", '/' + wsUrl.split('://')[1]?.split('/').slice(1).join('/'));
           
           console.log("🚨 [EncounterView] === CALLING NEW WEBSOCKET() NOW ===");
+          const constructorStartTime = Date.now();
           console.log("🚨 [EncounterView] Time before constructor:", new Date().toISOString());
+          console.log("🚨 [EncounterView] Performance.now():", performance.now());
+          console.log("🚨 [EncounterView] URL being passed:", wsUrl);
+          console.log("🚨 [EncounterView] URL length:", wsUrl.length);
+          
+          // Store connection start time globally for duration tracking
+          (window as any).wsConnectionStart = Date.now();
           
           try {
+            console.log("🚨 [EncounterView] Invoking: new WebSocket('" + wsUrl + "')");
             realtimeWs = new WebSocket(wsUrl);
+            const constructorEndTime = Date.now();
             console.log("✅ [EncounterView] WebSocket() constructor completed successfully!");
+            console.log("✅ [EncounterView] Constructor execution time:", constructorEndTime - constructorStartTime, "ms");
+            console.log("✅ [EncounterView] WebSocket object created");
+            console.log("✅ [EncounterView] WebSocket.toString():", realtimeWs.toString());
+            console.log("✅ [EncounterView] WebSocket keys:", Object.keys(realtimeWs));
+            console.log("✅ [EncounterView] WebSocket.constructor.name:", realtimeWs.constructor.name);
           } catch (wsConstructorError) {
+            const constructorErrorTime = Date.now();
             console.error("💥 [EncounterView] WebSocket() constructor threw an error!");
-            console.error("💥 [EncounterView] Error:", wsConstructorError);
+            console.error("💥 [EncounterView] Constructor failed after:", constructorErrorTime - constructorStartTime, "ms");
+            console.error("💥 [EncounterView] Error object:", wsConstructorError);
+            console.error("💥 [EncounterView] Error toString():", String(wsConstructorError));
             console.error("💥 [EncounterView] Error type:", typeof wsConstructorError);
+            console.error("💥 [EncounterView] Error constructor:", (wsConstructorError as any)?.constructor?.name);
             console.error("💥 [EncounterView] Error name:", (wsConstructorError as any)?.name);
             console.error("💥 [EncounterView] Error message:", (wsConstructorError as any)?.message);
+            console.error("💥 [EncounterView] Error code:", (wsConstructorError as any)?.code);
             console.error("💥 [EncounterView] Error stack:", (wsConstructorError as any)?.stack);
+            console.error("💥 [EncounterView] Error keys:", Object.keys(wsConstructorError || {}));
+            console.error("💥 [EncounterView] URL that failed:", wsUrl);
+            console.error("💥 [EncounterView] Environment at failure:", {
+              hostname: window.location.hostname,
+              protocol: window.location.protocol,
+              port: window.location.port,
+              isProduction: window.location.hostname === 'clarafi.ai',
+              isSecure: window.isSecureContext,
+              onLine: navigator.onLine
+            });
             throw wsConstructorError;
           }
           
@@ -2238,21 +2301,65 @@ export function EncounterDetailView({
           console.log("🔌 [EncounterView] WebSocket URL property:", realtimeWs.url);
           console.log("🔌 [EncounterView] WebSocket protocol property:", realtimeWs.protocol);
           
-          // Monitor WebSocket state changes
+          // Monitor WebSocket state changes with comprehensive logging
+          let stateCheckCount = 0;
           const stateInterval = setInterval(() => {
+            stateCheckCount++;
             if (realtimeWs) {
-              console.log("🔍 [EncounterView] WebSocket state check:", {
-                readyState: realtimeWs.readyState,
-                readyStateText: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState],
+              const currentState = realtimeWs.readyState;
+              const stateName = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][currentState];
+              const elapsedTime = Date.now() - (window as any).wsConnectionStart;
+              
+              console.log("🔍 [EncounterView] === WEBSOCKET STATE CHECK #" + stateCheckCount + " ===");
+              console.log("🔍 [EncounterView] Current state:", currentState, "(" + stateName + ")");
+              console.log("🔍 [EncounterView] Time elapsed:", elapsedTime, "ms");
+              console.log("🔍 [EncounterView] Timestamp:", new Date().toISOString());
+              console.log("🔍 [EncounterView] WebSocket details:", {
+                readyState: currentState,
+                readyStateText: stateName,
                 url: realtimeWs.url,
+                protocol: realtimeWs.protocol,
+                extensions: realtimeWs.extensions,
+                bufferedAmount: realtimeWs.bufferedAmount,
+                binaryType: realtimeWs.binaryType
+              });
+              console.log("🔍 [EncounterView] Environment:", {
                 isProduction: window.location.hostname === 'clarafi.ai',
-                timestamp: new Date().toISOString()
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                onLine: navigator.onLine,
+                connectionType: (navigator as any).connection?.effectiveType
               });
               
-              // Clear interval once connected or closed
-              if (realtimeWs.readyState === WebSocket.OPEN || realtimeWs.readyState === WebSocket.CLOSED) {
-                clearInterval(stateInterval);
+              // Log specific state information
+              switch (currentState) {
+                case WebSocket.CONNECTING:
+                  console.log("🔍 [EncounterView] ⏳ Still CONNECTING after", elapsedTime, "ms");
+                  console.log("🔍 [EncounterView] - This could indicate:");
+                  console.log("🔍 [EncounterView]   • Network latency or slow connection");
+                  console.log("🔍 [EncounterView]   • Server not responding");
+                  console.log("🔍 [EncounterView]   • Firewall/proxy interference");
+                  if (elapsedTime > 5000) {
+                    console.warn("🔍 [EncounterView] ⚠️ Connection taking unusually long (>5s)");
+                  }
+                  break;
+                case WebSocket.OPEN:
+                  console.log("🔍 [EncounterView] ✅ Connection OPEN after", elapsedTime, "ms");
+                  clearInterval(stateInterval);
+                  break;
+                case WebSocket.CLOSING:
+                  console.log("🔍 [EncounterView] 🔄 Connection CLOSING after", elapsedTime, "ms");
+                  break;
+                case WebSocket.CLOSED:
+                  console.log("🔍 [EncounterView] ❌ Connection CLOSED after", elapsedTime, "ms");
+                  clearInterval(stateInterval);
+                  break;
               }
+              
+              console.log("🔍 [EncounterView] === END STATE CHECK #" + stateCheckCount + " ===");
+            } else {
+              console.error("🔍 [EncounterView] WebSocket object is null/undefined!");
+              clearInterval(stateInterval);
             }
           }, 1000);
         } catch (wsCreationError) {
@@ -2285,12 +2392,31 @@ export function EncounterDetailView({
           }
         }, 10000);
 
-        realtimeWs.onopen = () => {
+        realtimeWs.onopen = (event) => {
           clearTimeout(connectionTimeout);
+          console.log("🌐 [EncounterView] === WEBSOCKET ONOPEN EVENT FIRED ===");
+          console.log("🌐 [EncounterView] Timestamp:", new Date().toISOString());
           console.log("🌐 [EncounterView] ✅ Connected to WebSocket proxy");
+          console.log("🌐 [EncounterView] Event object:", event);
+          console.log("🌐 [EncounterView] Event type:", event.type);
+          console.log("🌐 [EncounterView] Event target:", event.target);
+          console.log("🌐 [EncounterView] Event isTrusted:", event.isTrusted);
+          console.log("🌐 [EncounterView] Event timeStamp:", event.timeStamp);
+          
+          console.log("🌐 [EncounterView] WebSocket state after open:");
           console.log("🌐 [EncounterView] - ReadyState:", realtimeWs?.readyState);
+          console.log("🌐 [EncounterView] - ReadyState name:", ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs?.readyState || 0]);
           console.log("🌐 [EncounterView] - URL:", realtimeWs?.url);
           console.log("🌐 [EncounterView] - Protocol:", realtimeWs?.protocol);
+          console.log("🌐 [EncounterView] - Extensions:", realtimeWs?.extensions);
+          console.log("🌐 [EncounterView] - BufferedAmount:", realtimeWs?.bufferedAmount);
+          console.log("🌐 [EncounterView] - BinaryType:", realtimeWs?.binaryType);
+          
+          console.log("🌐 [EncounterView] Connection details:");
+          console.log("🌐 [EncounterView] - Current location:", window.location.href);
+          console.log("🌐 [EncounterView] - Is production:", window.location.hostname === 'clarafi.ai');
+          console.log("🌐 [EncounterView] - Connection took:", Date.now() - (window as any).wsConnectionStart + "ms");
+          
           console.log("🌐 [EncounterView] - Setting wsConnected to true");
           setWsConnected(true);
           console.log("🌐 [EncounterView] - wsConnected state updated");
@@ -2339,14 +2465,49 @@ export function EncounterDetailView({
         // AI suggestions handled via REST API only, not WebSocket
 
         realtimeWs.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          console.log(
-            "📨 [EncounterView] WebSocket proxy message type:",
-            message.type,
-          );
+          console.log("📨 [EncounterView] === WEBSOCKET MESSAGE RECEIVED ===");
+          console.log("📨 [EncounterView] Timestamp:", new Date().toISOString());
+          console.log("📨 [EncounterView] Event object:", {
+            type: event.type,
+            origin: event.origin,
+            lastEventId: event.lastEventId,
+            isTrusted: event.isTrusted,
+            timeStamp: event.timeStamp,
+            data: event.data ? `[${event.data.length} chars]` : 'No data'
+          });
+          
+          console.log("📨 [EncounterView] Raw data preview (first 200 chars):", event.data?.substring(0, 200));
+          console.log("📨 [EncounterView] WebSocket state:", {
+            readyState: realtimeWs?.readyState,
+            bufferedAmount: realtimeWs?.bufferedAmount,
+            url: realtimeWs?.url
+          });
+          
+          let message;
+          try {
+            message = JSON.parse(event.data);
+            console.log("📨 [EncounterView] Successfully parsed message");
+            console.log("📨 [EncounterView] Message type:", message.type);
+            console.log("📨 [EncounterView] Message structure:", {
+              hasType: !!message.type,
+              hasEventId: !!message.event_id,
+              hasData: !!message.data,
+              hasDelta: !!message.delta,
+              hasTranscript: !!message.transcript,
+              hasText: !!message.text,
+              hasError: !!message.error,
+              hasItem: !!message.item,
+              hasSession: !!message.session
+            });
+          } catch (parseError) {
+            console.error("❌ [EncounterView] Failed to parse WebSocket message");
+            console.error("❌ [EncounterView] Parse error:", parseError);
+            console.error("❌ [EncounterView] Raw data:", event.data);
+            return;
+          }
 
           // Log all incoming messages for debugging
-          console.log("📥 [Proxy] Message received:");
+          console.log("📥 [Proxy] Full message received:");
           console.log(JSON.stringify(message, null, 2));
 
           // Handle session.created response from proxy
@@ -2676,28 +2837,126 @@ Please provide medical suggestions based on this complete conversation context.`
         };
 
         realtimeWs.onerror = (error) => {
-          console.error("❌ [EncounterView] WebSocket error event triggered");
+          console.error("❌ [EncounterView] === WEBSOCKET ERROR EVENT ===");
+          console.error("❌ [EncounterView] Timestamp:", new Date().toISOString());
+          console.error("❌ [EncounterView] Error event triggered - this usually indicates connection failure");
           console.error("❌ [EncounterView] Error event object:", error);
-          console.error("❌ [EncounterView] Error type:", (error as any)?.type);
-          console.error("❌ [EncounterView] Error target:", (error as any)?.target);
-          console.error("❌ [EncounterView] WebSocket readyState:", realtimeWs?.readyState);
-          console.error("❌ [EncounterView] WebSocket URL:", realtimeWs?.url);
-          console.error("❌ [EncounterView] Current location:", window.location.href);
-          console.error("❌ [EncounterView] Is production:", window.location.hostname === 'clarafi.ai');
-          console.error("❌ [EncounterView] Browser user agent:", navigator.userAgent);
+          console.error("❌ [EncounterView] Error event type:", error.type);
+          console.error("❌ [EncounterView] Error event target:", error.target);
+          console.error("❌ [EncounterView] Error event target URL:", (error.target as any)?.url);
+          console.error("❌ [EncounterView] Error event isTrusted:", (error as any).isTrusted);
+          console.error("❌ [EncounterView] Error event timeStamp:", error.timeStamp);
+          console.error("❌ [EncounterView] Error event currentTarget:", error.currentTarget);
+          console.error("❌ [EncounterView] Error event composed:", (error as any).composed);
+          console.error("❌ [EncounterView] Error event bubbles:", error.bubbles);
+          console.error("❌ [EncounterView] Error event cancelable:", error.cancelable);
+          
+          console.error("❌ [EncounterView] WebSocket state during error:");
+          console.error("❌ [EncounterView] - ReadyState:", realtimeWs?.readyState);
+          console.error("❌ [EncounterView] - ReadyState name:", ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs?.readyState || 0]);
+          console.error("❌ [EncounterView] - URL:", realtimeWs?.url);
+          console.error("❌ [EncounterView] - Protocol:", realtimeWs?.protocol);
+          console.error("❌ [EncounterView] - Extensions:", realtimeWs?.extensions);
+          console.error("❌ [EncounterView] - BufferedAmount:", realtimeWs?.bufferedAmount);
+          
+          console.error("❌ [EncounterView] Environment during error:");
+          console.error("❌ [EncounterView] - Current location:", window.location.href);
+          console.error("❌ [EncounterView] - Is production:", window.location.hostname === 'clarafi.ai');
+          console.error("❌ [EncounterView] - Is AWS:", window.location.hostname.includes('awsapprunner.com'));
+          console.error("❌ [EncounterView] - Protocol:", window.location.protocol);
+          console.error("❌ [EncounterView] - Port:", window.location.port || 'default');
+          
+          console.error("❌ [EncounterView] Network state during error:");
+          console.error("❌ [EncounterView] - Navigator.onLine:", navigator.onLine);
+          console.error("❌ [EncounterView] - Connection type:", (navigator as any).connection?.effectiveType);
+          console.error("❌ [EncounterView] - Connection downlink:", (navigator as any).connection?.downlink);
+          console.error("❌ [EncounterView] - Connection RTT:", (navigator as any).connection?.rtt);
+          
+          console.error("❌ [EncounterView] Browser info during error:");
+          console.error("❌ [EncounterView] - User agent:", navigator.userAgent);
+          console.error("❌ [EncounterView] - Platform:", navigator.platform);
+          console.error("❌ [EncounterView] - Vendor:", navigator.vendor);
+          console.error("❌ [EncounterView] - Language:", navigator.language);
+          
+          console.error("❌ [EncounterView] Common WebSocket error causes:");
+          console.error("❌ [EncounterView] - Network connectivity issues");
+          console.error("❌ [EncounterView] - CORS policy violations");
+          console.error("❌ [EncounterView] - SSL/TLS certificate problems");
+          console.error("❌ [EncounterView] - Firewall or proxy blocking");
+          console.error("❌ [EncounterView] - Server not responding");
+          console.error("❌ [EncounterView] - Invalid WebSocket URL");
+          console.error("❌ [EncounterView] - Mixed content (HTTP/HTTPS)");
+          
+          console.error("❌ [EncounterView] === END WEBSOCKET ERROR EVENT ===");
           setWsConnected(false);
         };
         
         realtimeWs.onclose = (event) => {
+          console.log("🔌 [EncounterView] === WEBSOCKET CLOSE EVENT ===");
+          console.log("🔌 [EncounterView] Timestamp:", new Date().toISOString());
           console.log("🔌 [EncounterView] WebSocket disconnected");
-          console.log("🔌 [EncounterView] Close event code:", event.code);
-          console.log("🔌 [EncounterView] Close event reason:", event.reason);
-          console.log("🔌 [EncounterView] Was clean close:", event.wasClean);
-          console.log("🔌 [EncounterView] Common close codes:");
-          console.log("🔌 [EncounterView] - 1000: Normal closure");
-          console.log("🔌 [EncounterView] - 1001: Going away");
-          console.log("🔌 [EncounterView] - 1006: Abnormal closure (network error)");
-          console.log("🔌 [EncounterView] - 1015: TLS handshake failure");
+          console.log("🔌 [EncounterView] Close event details:");
+          console.log("🔌 [EncounterView] - Code:", event.code);
+          console.log("🔌 [EncounterView] - Reason:", event.reason || '(no reason provided)');
+          console.log("🔌 [EncounterView] - Was clean close:", event.wasClean);
+          console.log("🔌 [EncounterView] - Event type:", event.type);
+          console.log("🔌 [EncounterView] - Event target:", event.target);
+          console.log("🔌 [EncounterView] - Event target URL:", (event.target as any)?.url);
+          console.log("🔌 [EncounterView] - Event isTrusted:", event.isTrusted);
+          console.log("🔌 [EncounterView] - Event timeStamp:", event.timeStamp);
+          
+          console.log("🔌 [EncounterView] WebSocket state at close:");
+          console.log("🔌 [EncounterView] - Final readyState:", realtimeWs?.readyState);
+          console.log("🔌 [EncounterView] - Final URL:", realtimeWs?.url);
+          console.log("🔌 [EncounterView] - Final protocol:", realtimeWs?.protocol);
+          console.log("🔌 [EncounterView] - Final extensions:", realtimeWs?.extensions);
+          console.log("🔌 [EncounterView] - Final bufferedAmount:", realtimeWs?.bufferedAmount);
+          
+          console.log("🔌 [EncounterView] Close code analysis:");
+          console.log("🔌 [EncounterView] - Code", event.code, "means:");
+          switch(event.code) {
+            case 1000: console.log("🔌 [EncounterView]   → Normal closure (connection completed successfully)"); break;
+            case 1001: console.log("🔌 [EncounterView]   → Going away (server shutdown or browser navigating away)"); break;
+            case 1002: console.log("🔌 [EncounterView]   → Protocol error"); break;
+            case 1003: console.log("🔌 [EncounterView]   → Unsupported data type"); break;
+            case 1005: console.log("🔌 [EncounterView]   → No status code was actually present"); break;
+            case 1006: console.log("🔌 [EncounterView]   → Abnormal closure (connection lost, no close frame)"); break;
+            case 1007: console.log("🔌 [EncounterView]   → Invalid data type"); break;
+            case 1008: console.log("🔌 [EncounterView]   → Policy violation"); break;
+            case 1009: console.log("🔌 [EncounterView]   → Message too big"); break;
+            case 1010: console.log("🔌 [EncounterView]   → Mandatory extension missing"); break;
+            case 1011: console.log("🔌 [EncounterView]   → Server encountered unexpected condition"); break;
+            case 1012: console.log("🔌 [EncounterView]   → Service restart"); break;
+            case 1013: console.log("🔌 [EncounterView]   → Try again later"); break;
+            case 1014: console.log("🔌 [EncounterView]   → Bad gateway"); break;
+            case 1015: console.log("🔌 [EncounterView]   → TLS handshake failure"); break;
+            default: console.log("🔌 [EncounterView]   → Unknown/custom close code");
+          }
+          
+          console.log("🔌 [EncounterView] Connection lifecycle:");
+          console.log("🔌 [EncounterView] - Connection started:", (window as any).wsConnectionStart);
+          console.log("🔌 [EncounterView] - Connection duration:", Date.now() - ((window as any).wsConnectionStart || Date.now()), "ms");
+          console.log("🔌 [EncounterView] - Current location:", window.location.href);
+          console.log("🔌 [EncounterView] - Is production:", window.location.hostname === 'clarafi.ai');
+          console.log("🔌 [EncounterView] - Is AWS:", window.location.hostname.includes('awsapprunner.com'));
+          
+          console.log("🔌 [EncounterView] Common causes for code", event.code + ":");
+          if (event.code === 1006) {
+            console.log("🔌 [EncounterView] - Network interruption or server unreachable");
+            console.log("🔌 [EncounterView] - CORS policy blocking connection");
+            console.log("🔌 [EncounterView] - SSL/TLS certificate issues");
+            console.log("🔌 [EncounterView] - Firewall or proxy interference");
+            console.log("🔌 [EncounterView] - Server crash or not running");
+            console.log("🔌 [EncounterView] - Invalid WebSocket endpoint URL");
+            console.log("🔌 [EncounterView] - Mixed content (HTTP page trying WSS)");
+          } else if (event.code === 1015) {
+            console.log("🔌 [EncounterView] - SSL certificate expired or invalid");
+            console.log("🔌 [EncounterView] - Certificate not trusted by browser");
+            console.log("🔌 [EncounterView] - Certificate hostname mismatch");
+            console.log("🔌 [EncounterView] - TLS version mismatch");
+          }
+          
+          console.log("🔌 [EncounterView] === END WEBSOCKET CLOSE EVENT ===");
           clearTimeout(connectionTimeout);
           setWsConnected(false);
         };
@@ -2715,27 +2974,226 @@ Please provide medical suggestions based on this complete conversation context.`
         // Fall back to chunked processing if direct connection fails
       }
 
-      console.log("🎤 [EncounterView] Requesting microphone access...");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000,
-        },
+      console.log("🎤 [EncounterView] === MICROPHONE ACCESS REQUEST ===");
+      console.log("🎤 [EncounterView] Timestamp:", new Date().toISOString());
+      console.log("🎤 [EncounterView] Environment:", {
+        isProduction: window.location.hostname === 'clarafi.ai',
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        isSecureContext: window.isSecureContext
       });
-      console.log("🎤 [EncounterView] ✅ Microphone access granted");
+      console.log("🎤 [EncounterView] MediaDevices API available:", !!navigator.mediaDevices);
+      console.log("🎤 [EncounterView] getUserMedia available:", !!(navigator.mediaDevices?.getUserMedia));
+      console.log("🎤 [EncounterView] Audio constraints:", {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: 16000
+      });
+      
+      let stream;
+      const micAccessStart = Date.now();
+      try {
+        console.log("🎤 [EncounterView] Calling getUserMedia...");
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 16000,
+          },
+        });
+        const micAccessDuration = Date.now() - micAccessStart;
+        console.log("🎤 [EncounterView] ✅ Microphone access granted");
+        console.log("🎤 [EncounterView] Access duration:", micAccessDuration, "ms");
+        console.log("🎤 [EncounterView] Stream details:", {
+          id: stream.id,
+          active: stream.active,
+          audioTracks: stream.getAudioTracks().length,
+          videoTracks: stream.getVideoTracks().length
+        });
+        
+        const audioTracks = stream.getAudioTracks();
+        audioTracks.forEach((track, index) => {
+          console.log("🎤 [EncounterView] Audio track", index + ":", {
+            id: track.id,
+            kind: track.kind,
+            label: track.label,
+            enabled: track.enabled,
+            muted: track.muted,
+            readyState: track.readyState,
+            constraints: track.getConstraints(),
+            settings: track.getSettings(),
+            capabilities: track.getCapabilities ? track.getCapabilities() : 'Not available'
+          });
+        });
+      } catch (micError) {
+        const micAccessDuration = Date.now() - micAccessStart;
+        console.error("🎤 [EncounterView] ❌ MICROPHONE ACCESS FAILED");
+        console.error("🎤 [EncounterView] Access attempt duration:", micAccessDuration, "ms");
+        console.error("🎤 [EncounterView] Error:", micError);
+        console.error("🎤 [EncounterView] Error type:", (micError as any)?.constructor?.name);
+        console.error("🎤 [EncounterView] Error name:", (micError as any)?.name);
+        console.error("🎤 [EncounterView] Error message:", (micError as any)?.message);
+        console.error("🎤 [EncounterView] Error code:", (micError as any)?.code);
+        console.error("🎤 [EncounterView] Error constraint:", (micError as any)?.constraint);
+        
+        if ((micError as any)?.name === 'NotAllowedError') {
+          console.error("🎤 [EncounterView] User denied microphone permission");
+          console.error("🎤 [EncounterView] Possible causes:");
+          console.error("🎤 [EncounterView] - User clicked 'Deny' on permission prompt");
+          console.error("🎤 [EncounterView] - Microphone blocked in browser settings");
+          console.error("🎤 [EncounterView] - Page not served over HTTPS in production");
+        } else if ((micError as any)?.name === 'NotFoundError') {
+          console.error("🎤 [EncounterView] No microphone found");
+          console.error("🎤 [EncounterView] - Check if microphone is connected");
+          console.error("🎤 [EncounterView] - Check system audio settings");
+        } else if ((micError as any)?.name === 'NotReadableError') {
+          console.error("🎤 [EncounterView] Microphone is already in use");
+          console.error("🎤 [EncounterView] - Another application may be using the microphone");
+          console.error("🎤 [EncounterView] - Hardware error accessing microphone");
+        }
+        
+        throw micError;
+      }
+      console.log("🎤 [EncounterView] === END MICROPHONE ACCESS ===" );
 
       // Set up audio processing exactly like your working AudioRecorder
-      const audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = audioContext.createMediaStreamSource(stream);
+      console.log("🎵 [EncounterView] === AUDIO CONTEXT SETUP ===");
+      console.log("🎵 [EncounterView] Timestamp:", new Date().toISOString());
+      console.log("🎵 [EncounterView] AudioContext available:", typeof AudioContext !== 'undefined');
+      console.log("🎵 [EncounterView] webkitAudioContext available:", typeof (window as any).webkitAudioContext !== 'undefined');
+      
+      let audioContext;
+      try {
+        console.log("🎵 [EncounterView] Creating AudioContext with sample rate: 16000");
+        audioContext = new AudioContext({ sampleRate: 16000 });
+        console.log("🎵 [EncounterView] ✅ AudioContext created successfully");
+        console.log("🎵 [EncounterView] AudioContext details:", {
+          sampleRate: audioContext.sampleRate,
+          state: audioContext.state,
+          baseLatency: audioContext.baseLatency,
+          outputLatency: audioContext.outputLatency,
+          currentTime: audioContext.currentTime,
+          destination: {
+            numberOfInputs: audioContext.destination.numberOfInputs,
+            numberOfOutputs: audioContext.destination.numberOfOutputs,
+            channelCount: audioContext.destination.channelCount,
+            channelCountMode: audioContext.destination.channelCountMode,
+            channelInterpretation: audioContext.destination.channelInterpretation,
+            maxChannelCount: audioContext.destination.maxChannelCount
+          }
+        });
+      } catch (audioContextError) {
+        console.error("🎵 [EncounterView] ❌ Failed to create AudioContext!");
+        console.error("🎵 [EncounterView] Error:", audioContextError);
+        console.error("🎵 [EncounterView] Error type:", (audioContextError as any)?.constructor?.name);
+        console.error("🎵 [EncounterView] Error message:", (audioContextError as any)?.message);
+        throw audioContextError;
+      }
+      
+      console.log("🎵 [EncounterView] Creating MediaStreamSource from stream...");
+      let source;
+      try {
+        source = audioContext.createMediaStreamSource(stream);
+        console.log("🎵 [EncounterView] ✅ MediaStreamSource created successfully");
+        console.log("🎵 [EncounterView] Source details:", {
+          numberOfInputs: source.numberOfInputs,
+          numberOfOutputs: source.numberOfOutputs,
+          channelCount: source.channelCount,
+          channelCountMode: source.channelCountMode,
+          channelInterpretation: source.channelInterpretation
+        });
+      } catch (sourceError) {
+        console.error("🎵 [EncounterView] ❌ Failed to create MediaStreamSource!");
+        console.error("🎵 [EncounterView] Error:", sourceError);
+        console.error("🎵 [EncounterView] Stream active:", stream.active);
+        console.error("🎵 [EncounterView] Stream audio tracks:", stream.getAudioTracks().length);
+        throw sourceError;
+      }
+      
       const bufferSize = 4096; // Same as your working code
-      const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+      console.log("🎵 [EncounterView] Creating ScriptProcessor with buffer size:", bufferSize);
+      let processor;
+      try {
+        processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+        console.log("🎵 [EncounterView] ✅ ScriptProcessor created successfully");
+        console.log("🎵 [EncounterView] Processor details:", {
+          bufferSize: processor.bufferSize,
+          numberOfInputs: processor.numberOfInputs,
+          numberOfOutputs: processor.numberOfOutputs,
+          channelCount: processor.channelCount,
+          channelCountMode: processor.channelCountMode,
+          channelInterpretation: processor.channelInterpretation
+        });
+      } catch (processorError) {
+        console.error("🎵 [EncounterView] ❌ Failed to create ScriptProcessor!");
+        console.error("🎵 [EncounterView] Error:", processorError);
+        console.error("🎵 [EncounterView] Note: ScriptProcessor is deprecated, but still needed for compatibility");
+        throw processorError;
+      }
+      console.log("🎵 [EncounterView] === END AUDIO CONTEXT SETUP ===");
 
+      let audioProcessCount = 0;
+      const audioProcessStartTime = Date.now();
       processor.onaudioprocess = async (e) => {
-        if (!realtimeWs || realtimeWs.readyState !== WebSocket.OPEN) return;
+        audioProcessCount++;
+        
+        if (audioProcessCount === 1) {
+          console.log("🎵 [EncounterView] === FIRST AUDIO PROCESS EVENT ===");
+          console.log("🎵 [EncounterView] Timestamp:", new Date().toISOString());
+          console.log("🎵 [EncounterView] Time since setup:", Date.now() - audioProcessStartTime, "ms");
+          console.log("🎵 [EncounterView] AudioProcessingEvent details:", {
+            playbackTime: e.playbackTime,
+            inputBuffer: {
+              duration: e.inputBuffer.duration,
+              length: e.inputBuffer.length,
+              numberOfChannels: e.inputBuffer.numberOfChannels,
+              sampleRate: e.inputBuffer.sampleRate
+            },
+            outputBuffer: {
+              duration: e.outputBuffer.duration,
+              length: e.outputBuffer.length,
+              numberOfChannels: e.outputBuffer.numberOfChannels,
+              sampleRate: e.outputBuffer.sampleRate
+            }
+          });
+        }
+        
+        // Log every 100th audio process event for ongoing monitoring
+        if (audioProcessCount % 100 === 0) {
+          console.log("🎵 [EncounterView] Audio process event #", audioProcessCount);
+          console.log("🎵 [EncounterView] - Time elapsed:", Date.now() - audioProcessStartTime, "ms");
+          console.log("🎵 [EncounterView] - WebSocket state:", realtimeWs?.readyState);
+          console.log("🎵 [EncounterView] - AudioContext state:", audioContext.state);
+          console.log("🎵 [EncounterView] - Current time:", audioContext.currentTime);
+          console.log("🎵 [EncounterView] - Playback time:", e.playbackTime);
+        }
+        
+        if (!realtimeWs) {
+          if (audioProcessCount % 50 === 0) {
+            console.warn("🎵 [EncounterView] ⚠️ No WebSocket instance (event #" + audioProcessCount + ")");
+          }
+          return;
+        }
+        
+        if (realtimeWs.readyState !== WebSocket.OPEN) {
+          if (audioProcessCount % 50 === 0) {
+            console.warn("🎵 [EncounterView] ⚠️ WebSocket not open, state:", realtimeWs.readyState, "(event #" + audioProcessCount + ")");
+          }
+          return;
+        }
 
         const inputData = e.inputBuffer.getChannelData(0);
+        
+        if (audioProcessCount === 1) {
+          console.log("🎵 [EncounterView] First audio data received:");
+          console.log("🎵 [EncounterView] - Input data length:", inputData.length);
+          console.log("🎵 [EncounterView] - Sample values (first 10):", Array.from(inputData.slice(0, 10)));
+          console.log("🎵 [EncounterView] - Min value:", Math.min(...inputData));
+          console.log("🎵 [EncounterView] - Max value:", Math.max(...inputData));
+          console.log("🎵 [EncounterView] - Has non-zero values:", inputData.some(v => v !== 0));
+        }
 
         // Convert to PCM16 and create blob exactly like your working code
         const pcm16Data = new Int16Array(inputData.length);
@@ -2760,19 +3218,51 @@ Please provide medical suggestions based on this complete conversation context.`
             const base64Audio = btoa(binary);
 
             // Send audio buffer with event_id for API compliance
-            realtimeWs!.send(
-              JSON.stringify({
-                event_id: `event_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-                type: "input_audio_buffer.append",
-                audio: base64Audio,
-              }),
-            );
-
-            console.log(
-              "🎵 [EncounterView] Sent audio buffer:",
-              base64Audio.length,
-              "bytes",
-            );
+            const audioMessage = {
+              event_id: `event_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+              type: "input_audio_buffer.append",
+              audio: base64Audio,
+            };
+            
+            console.log("🎵 [EncounterView] === SENDING AUDIO BUFFER ===");
+            console.log("🎵 [EncounterView] Timestamp:", new Date().toISOString());
+            console.log("🎵 [EncounterView] WebSocket state before send:", {
+              readyState: realtimeWs?.readyState,
+              readyStateName: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs?.readyState || 0],
+              bufferedAmount: realtimeWs?.bufferedAmount,
+              url: realtimeWs?.url
+            });
+            console.log("🎵 [EncounterView] Audio message details:", {
+              event_id: audioMessage.event_id,
+              type: audioMessage.type,
+              audioLength: base64Audio.length,
+              audioPreview: base64Audio.substring(0, 50) + '...',
+              jsonLength: JSON.stringify(audioMessage).length
+            });
+            
+            if (realtimeWs?.readyState !== WebSocket.OPEN) {
+              console.error("🎵 [EncounterView] ❌ WebSocket not open, cannot send audio!");
+              console.error("🎵 [EncounterView] Current state:", realtimeWs?.readyState);
+              return;
+            }
+            
+            try {
+              const sendStart = Date.now();
+              realtimeWs!.send(JSON.stringify(audioMessage));
+              const sendDuration = Date.now() - sendStart;
+              
+              console.log("🎵 [EncounterView] ✅ Audio buffer sent successfully");
+              console.log("🎵 [EncounterView] Send duration:", sendDuration, "ms");
+              console.log("🎵 [EncounterView] Buffered amount after send:", realtimeWs?.bufferedAmount);
+              console.log("🎵 [EncounterView] Total audio bytes sent:", base64Audio.length);
+            } catch (sendError) {
+              console.error("🎵 [EncounterView] ❌ Failed to send audio buffer!");
+              console.error("🎵 [EncounterView] Send error:", sendError);
+              console.error("🎵 [EncounterView] Error type:", (sendError as any)?.constructor?.name);
+              console.error("🎵 [EncounterView] Error message:", (sendError as any)?.message);
+              console.error("🎵 [EncounterView] WebSocket state at error:", realtimeWs?.readyState);
+            }
+            console.log("🎵 [EncounterView] === END AUDIO BUFFER SEND ===");
           } catch (error) {
             console.error("❌ [EncounterView] Error processing audio:", error);
           }
@@ -2780,15 +3270,128 @@ Please provide medical suggestions based on this complete conversation context.`
         reader.readAsArrayBuffer(audioBlob);
       };
 
-      source.connect(processor);
-      processor.connect(audioContext.destination);
+      console.log("🔗 [EncounterView] === CONNECTING AUDIO NODES ===");
+      console.log("🔗 [EncounterView] Timestamp:", new Date().toISOString());
+      
+      try {
+        console.log("🔗 [EncounterView] Connecting source to processor...");
+        source.connect(processor);
+        console.log("🔗 [EncounterView] ✅ Source connected to processor");
+        console.log("🔗 [EncounterView] Source node state:", {
+          numberOfOutputs: source.numberOfOutputs,
+          channelCount: source.channelCount,
+          connected: true
+        });
+      } catch (connectError) {
+        console.error("🔗 [EncounterView] ❌ Failed to connect source to processor!");
+        console.error("🔗 [EncounterView] Error:", connectError);
+        throw connectError;
+      }
+      
+      try {
+        console.log("🔗 [EncounterView] Connecting processor to destination...");
+        processor.connect(audioContext.destination);
+        console.log("🔗 [EncounterView] ✅ Processor connected to destination");
+        console.log("🔗 [EncounterView] Audio pipeline complete:");
+        console.log("🔗 [EncounterView]   Microphone → MediaStreamSource → ScriptProcessor → AudioDestination");
+        console.log("🔗 [EncounterView] Processor state:", {
+          bufferSize: processor.bufferSize,
+          connected: true,
+          hasEventHandler: !!processor.onaudioprocess
+        });
+      } catch (connectError) {
+        console.error("🔗 [EncounterView] ❌ Failed to connect processor to destination!");
+        console.error("🔗 [EncounterView] Error:", connectError);
+        throw connectError;
+      }
+      console.log("🔗 [EncounterView] === END AUDIO NODE CONNECTIONS ===");
 
-      const mediaRecorder = new MediaRecorder(stream);
+      console.log("🎬 [EncounterView] === CREATING MEDIA RECORDER ===");
+      console.log("🎬 [EncounterView] Timestamp:", new Date().toISOString());
+      console.log("🎬 [EncounterView] MediaRecorder API available:", typeof MediaRecorder !== 'undefined');
+      console.log("🎬 [EncounterView] Stream for MediaRecorder:", {
+        id: stream.id,
+        active: stream.active,
+        audioTracks: stream.getAudioTracks().length
+      });
+      
+      let mediaRecorder;
+      try {
+        console.log("🎬 [EncounterView] Checking supported MIME types...");
+        const mimeTypes = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/ogg;codecs=opus',
+          'audio/ogg',
+          'audio/wav',
+          'audio/mp4'
+        ];
+        
+        for (const mimeType of mimeTypes) {
+          const supported = MediaRecorder.isTypeSupported(mimeType);
+          console.log("🎬 [EncounterView] - " + mimeType + ":", supported ? "✅ Supported" : "❌ Not supported");
+        }
+        
+        console.log("🎬 [EncounterView] Creating MediaRecorder with default options...");
+        mediaRecorder = new MediaRecorder(stream);
+        console.log("🎬 [EncounterView] ✅ MediaRecorder created successfully");
+        console.log("🎬 [EncounterView] MediaRecorder details:", {
+          state: mediaRecorder.state,
+          mimeType: mediaRecorder.mimeType,
+          videoBitsPerSecond: mediaRecorder.videoBitsPerSecond,
+          audioBitsPerSecond: mediaRecorder.audioBitsPerSecond,
+          stream: {
+            id: mediaRecorder.stream?.id,
+            active: mediaRecorder.stream?.active
+          }
+        });
+      } catch (recorderError) {
+        console.error("🎬 [EncounterView] ❌ Failed to create MediaRecorder!");
+        console.error("🎬 [EncounterView] Error:", recorderError);
+        console.error("🎬 [EncounterView] Error type:", (recorderError as any)?.constructor?.name);
+        console.error("🎬 [EncounterView] Error message:", (recorderError as any)?.message);
+        throw recorderError;
+      }
+      
       const audioChunks: Blob[] = [];
+      console.log("🎬 [EncounterView] Audio chunks array initialized");
+      console.log("🎬 [EncounterView] === END MEDIA RECORDER CREATION ===");
 
+      let dataAvailableCount = 0;
+      const dataAvailableStartTime = Date.now();
       mediaRecorder.ondataavailable = (event) => {
+        dataAvailableCount++;
+        
+        if (dataAvailableCount === 1) {
+          console.log("🎬 [EncounterView] === FIRST DATA AVAILABLE EVENT ===");
+          console.log("🎬 [EncounterView] Timestamp:", new Date().toISOString());
+          console.log("🎬 [EncounterView] Time since recorder creation:", Date.now() - dataAvailableStartTime, "ms");
+          console.log("🎬 [EncounterView] MediaRecorder state:", mediaRecorder.state);
+        }
+        
+        console.log("🎬 [EncounterView] Data available event #", dataAvailableCount);
+        console.log("🎬 [EncounterView] Event details:", {
+          data: {
+            size: event.data.size,
+            type: event.data.type,
+            hasData: event.data.size > 0
+          },
+          timecode: event.timecode,
+          isTrusted: event.isTrusted,
+          type: event.type
+        });
+        
         if (event.data.size > 0) {
           audioChunks.push(event.data);
+          console.log("🎬 [EncounterView] ✅ Audio chunk added to buffer");
+          console.log("🎬 [EncounterView] Buffer state:", {
+            totalChunks: audioChunks.length,
+            totalSize: audioChunks.reduce((sum, chunk) => sum + chunk.size, 0),
+            lastChunkSize: event.data.size,
+            lastChunkType: event.data.type
+          });
+        } else {
+          console.warn("🎬 [EncounterView] ⚠️ Received empty data chunk");
         }
       };
 
@@ -2803,9 +3406,57 @@ Please provide medical suggestions based on this complete conversation context.`
         }
 
         // Close WebSocket connection when recording stops
-        if (realtimeWs && realtimeWs.readyState === WebSocket.OPEN) {
-          realtimeWs.close();
-          console.log("🔌 [EncounterView] WebSocket connection closed");
+        if (realtimeWs) {
+          console.log("🔌 [EncounterView] === WEBSOCKET CLEANUP START ===");
+          console.log("🔌 [EncounterView] Timestamp:", new Date().toISOString());
+          console.log("🔌 [EncounterView] WebSocket state before cleanup:", {
+            readyState: realtimeWs.readyState,
+            readyStateName: ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][realtimeWs.readyState],
+            bufferedAmount: realtimeWs.bufferedAmount,
+            url: realtimeWs.url,
+            protocol: realtimeWs.protocol,
+            extensions: realtimeWs.extensions
+          });
+          
+          if (realtimeWs.readyState === WebSocket.CONNECTING) {
+            console.log("🔌 [EncounterView] WebSocket still CONNECTING - forcing close");
+          } else if (realtimeWs.readyState === WebSocket.OPEN) {
+            console.log("🔌 [EncounterView] WebSocket is OPEN - closing normally");
+          } else if (realtimeWs.readyState === WebSocket.CLOSING) {
+            console.log("🔌 [EncounterView] WebSocket already CLOSING - waiting");
+          } else if (realtimeWs.readyState === WebSocket.CLOSED) {
+            console.log("🔌 [EncounterView] WebSocket already CLOSED - no action needed");
+          }
+          
+          if (realtimeWs.readyState !== WebSocket.CLOSED) {
+            try {
+              console.log("🔌 [EncounterView] Calling close() on WebSocket");
+              const closeStart = Date.now();
+              realtimeWs.close(1000, "Recording stopped by user");
+              const closeDuration = Date.now() - closeStart;
+              console.log("🔌 [EncounterView] close() called successfully");
+              console.log("🔌 [EncounterView] Close call duration:", closeDuration, "ms");
+              console.log("🔌 [EncounterView] Close code: 1000 (Normal Closure)");
+              console.log("🔌 [EncounterView] Close reason: 'Recording stopped by user'");
+            } catch (closeError) {
+              console.error("🔌 [EncounterView] ❌ Error closing WebSocket!");
+              console.error("🔌 [EncounterView] Close error:", closeError);
+              console.error("🔌 [EncounterView] Error type:", (closeError as any)?.constructor?.name);
+              console.error("🔌 [EncounterView] Error message:", (closeError as any)?.message);
+            }
+          }
+          
+          // Clear any remaining references
+          console.log("🔌 [EncounterView] Clearing WebSocket references");
+          const globalWs = (window as any).currentWebSocket;
+          if (globalWs === realtimeWs) {
+            (window as any).currentWebSocket = null;
+            console.log("🔌 [EncounterView] Global WebSocket reference cleared");
+          }
+          
+          console.log("🔌 [EncounterView] === WEBSOCKET CLEANUP END ===");
+        } else {
+          console.log("🔌 [EncounterView] No WebSocket instance to clean up");
         }
 
         console.log(
@@ -2815,8 +3466,77 @@ Please provide medical suggestions based on this complete conversation context.`
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
-      setIsRecording(true);
+      console.log("🎬 [EncounterView] === STARTING MEDIA RECORDER ===");
+      console.log("🎬 [EncounterView] Timestamp:", new Date().toISOString());
+      console.log("🎬 [EncounterView] MediaRecorder state before start:", mediaRecorder.state);
+      console.log("🎬 [EncounterView] TimerSlice: 1500ms (collect chunks every 1.5 seconds)");
+      console.log("🎬 [EncounterView] Environment:", {
+        isProduction: window.location.hostname === 'clarafi.ai',
+        hostname: window.location.hostname,
+        protocol: window.location.protocol
+      });
+      
+      // Add error handler before starting
+      mediaRecorder.onerror = (error) => {
+        console.error("🎬 [EncounterView] ❌ MEDIA RECORDER ERROR EVENT!");
+        console.error("🎬 [EncounterView] Error timestamp:", new Date().toISOString());
+        console.error("🎬 [EncounterView] Error object:", error);
+        console.error("🎬 [EncounterView] Error type:", (error as any)?.type);
+        console.error("🎬 [EncounterView] Error name:", (error as any)?.name);
+        console.error("🎬 [EncounterView] Error message:", (error as any)?.message);
+        console.error("🎬 [EncounterView] MediaRecorder state at error:", mediaRecorder.state);
+        console.error("🎬 [EncounterView] Stream active at error:", stream.active);
+        console.error("🎬 [EncounterView] Audio tracks at error:", stream.getAudioTracks().length);
+      };
+      
+      // Add state change handler
+      mediaRecorder.onstart = () => {
+        const startDuration = Date.now() - recorderStart;
+        console.log("🎬 [EncounterView] ✅ MEDIA RECORDER STARTED!");
+        console.log("🎬 [EncounterView] Start event timestamp:", new Date().toISOString());
+        console.log("🎬 [EncounterView] Start duration:", startDuration, "ms");
+        console.log("🎬 [EncounterView] Current state:", mediaRecorder.state);
+        console.log("🎬 [EncounterView] MimeType:", mediaRecorder.mimeType);
+        console.log("🎬 [EncounterView] Stream active:", stream.active);
+        console.log("🎬 [EncounterView] Audio tracks:", stream.getAudioTracks().map(track => ({
+          id: track.id,
+          label: track.label,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState
+        })));
+      };
+      
+      try {
+        const recorderStart = Date.now();
+        console.log("🎬 [EncounterView] Calling MediaRecorder.start(1500)...");
+        mediaRecorder.start(1500); // Collect chunks every 1.5 seconds for faster suggestions
+        console.log("🎬 [EncounterView] MediaRecorder.start() called successfully");
+        console.log("🎬 [EncounterView] State after start call:", mediaRecorder.state);
+        
+        setIsRecording(true);
+        console.log("🎬 [EncounterView] ✅ Recording state updated to true");
+      } catch (startError) {
+        console.error("🎬 [EncounterView] ❌ FAILED TO START MEDIA RECORDER!");
+        console.error("🎬 [EncounterView] Start error:", startError);
+        console.error("🎬 [EncounterView] Error type:", (startError as any)?.constructor?.name);
+        console.error("🎬 [EncounterView] Error name:", (startError as any)?.name);
+        console.error("🎬 [EncounterView] Error message:", (startError as any)?.message);
+        console.error("🎬 [EncounterView] MediaRecorder state:", mediaRecorder.state);
+        console.error("🎬 [EncounterView] Stream active:", stream.active);
+        
+        if ((startError as any)?.name === 'InvalidStateError') {
+          console.error("🎬 [EncounterView] InvalidStateError: MediaRecorder is in wrong state");
+          console.error("🎬 [EncounterView] - Possibly already recording");
+          console.error("🎬 [EncounterView] - Or stream has ended");
+        } else if ((startError as any)?.name === 'NotSupportedError') {
+          console.error("🎬 [EncounterView] NotSupportedError: MIME type or codec not supported");
+          console.error("🎬 [EncounterView] Current MIME type:", mediaRecorder.mimeType);
+        }
+        
+        throw startError;
+      }
+      console.log("🎬 [EncounterView] === END MEDIA RECORDER START ===");
 
       // Clear all edit locks when starting new recording
       setUserEditingLock(false);

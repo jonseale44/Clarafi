@@ -208,12 +208,74 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, async () => {
-    console.log(`🚀 [STARTUP] Server listening on http://0.0.0.0:${port}`);
-    console.log(`🚀 [STARTUP] Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`🚀 [STARTUP] Database URL: ${process.env.DATABASE_URL ? "✓ Set" : "✗ Missing"}`);
-    console.log(`🚀 [STARTUP] Health check endpoints:`);
-    console.log(`   - GET /health`);
-    console.log(`   - GET /api/health`);
+    console.log('🚀 [STARTUP] === SERVER STARTUP DIAGNOSTICS ===');
+    console.log('🚀 [STARTUP] Timestamp:', new Date().toISOString());
+    console.log('🚀 [STARTUP] Server listening on http://0.0.0.0:' + port);
+    console.log('🚀 [STARTUP] Environment:', process.env.NODE_ENV || 'development');
+    console.log('🚀 [STARTUP] Process details:', {
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      pid: process.pid,
+      uptime: process.uptime(),
+      memory: process.memoryUsage()
+    });
+    
+    console.log('🚀 [STARTUP] Environment variables check:');
+    console.log('🚀 [STARTUP]   DATABASE_URL:', process.env.DATABASE_URL ? '✓ Set [' + process.env.DATABASE_URL.length + ' chars]' : '✗ Missing');
+    console.log('🚀 [STARTUP]   OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✓ Set [' + process.env.OPENAI_API_KEY.length + ' chars]' : '✗ Missing');
+    console.log('🚀 [STARTUP]   SESSION_SECRET:', process.env.SESSION_SECRET ? '✓ Set [' + process.env.SESSION_SECRET.length + ' chars]' : '✗ Missing');
+    console.log('🚀 [STARTUP]   PORT:', process.env.PORT || 'Not set (using default 5000)');
+    console.log('🚀 [STARTUP]   NODE_ENV:', process.env.NODE_ENV || 'Not set (defaulting to development)');
+    console.log('🚀 [STARTUP]   STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? '✓ Set' : '✗ Missing');
+    console.log('🚀 [STARTUP]   STRIPE_WEBHOOK_SECRET:', process.env.STRIPE_WEBHOOK_SECRET ? '✓ Set' : '✗ Missing');
+    console.log('🚀 [STARTUP]   PRODUCTION_DOMAIN:', process.env.PRODUCTION_DOMAIN || 'Not set');
+    console.log('🚀 [STARTUP]   AWS_REGION:', process.env.AWS_REGION || 'Not set');
+    console.log('🚀 [STARTUP]   AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? '✓ Set' : '✗ Missing');
+    console.log('🚀 [STARTUP]   AWS_SECRET_ACCESS_KEY:', process.env.AWS_SECRET_ACCESS_KEY ? '✓ Set' : '✗ Missing');
+    
+    console.log('🚀 [STARTUP] File system analysis:');
+    console.log('🚀 [STARTUP]   Current working directory:', process.cwd());
+    console.log('🚀 [STARTUP]   __dirname equivalent:', import.meta.url);
+    console.log('🚀 [STARTUP]   Upload directory:', process.env.UPLOAD_DIR || './uploads');
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log('🚀 [STARTUP] === PRODUCTION ENVIRONMENT DIAGNOSTICS ===');
+      console.log('🚀 [STARTUP]   AWS App Runner:', process.env.AWS_EXECUTION_ENV ? 'Detected' : 'Not detected');
+      console.log('🚀 [STARTUP]   Container ID:', process.env.HOSTNAME || 'Unknown');
+      console.log('🚀 [STARTUP]   Available CPUs:', require('os').cpus().length);
+      console.log('🚀 [STARTUP]   Total memory:', Math.round(require('os').totalmem() / 1024 / 1024) + ' MB');
+      console.log('🚀 [STARTUP]   Free memory:', Math.round(require('os').freemem() / 1024 / 1024) + ' MB');
+      
+      // Check for system dependencies
+      const { exec } = require('child_process');
+      exec('which pdftoppm', (err: any, stdout: string) => {
+        if (err) {
+          console.log('🚀 [STARTUP]   pdftoppm (poppler): ✗ NOT FOUND - PDF processing will fail');
+        } else {
+          console.log('🚀 [STARTUP]   pdftoppm (poppler): ✓ Found at', stdout.trim());
+        }
+      });
+      
+      exec('which magick', (err: any, stdout: string) => {
+        if (err) {
+          exec('which convert', (err2: any, stdout2: string) => {
+            if (err2) {
+              console.log('🚀 [STARTUP]   ImageMagick: ✗ NOT FOUND - Image processing will fail');
+            } else {
+              console.log('🚀 [STARTUP]   ImageMagick: ✓ Found at', stdout2.trim());
+            }
+          });
+        } else {
+          console.log('🚀 [STARTUP]   ImageMagick: ✓ Found at', stdout.trim());
+        }
+      });
+    }
+    
+    console.log('🚀 [STARTUP] Health check endpoints:');
+    console.log('🚀 [STARTUP]   - GET /health');
+    console.log('🚀 [STARTUP]   - GET /api/health');
+    console.log('🚀 [STARTUP] === END STARTUP DIAGNOSTICS ===');
     
     log(`serving on port ${port}`);
     log("Database ready - you can register a new account or use admin/admin123 if already created");
