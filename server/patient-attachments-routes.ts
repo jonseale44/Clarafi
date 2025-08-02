@@ -43,21 +43,72 @@ router.use((req, res, next) => {
 const storage = multer.diskStorage({
   destination: async (req, file, cb) => {
     const uploadsDir = getUploadsDir('attachments');
+    console.log('📁 [Multer] === DESTINATION CALLBACK ===');
+    console.log('📁 [Multer] Timestamp:', new Date().toISOString());
+    console.log('📁 [Multer] Environment:', process.env.NODE_ENV);
+    console.log('📁 [Multer] Target directory:', uploadsDir);
+    console.log('📁 [Multer] File info:', {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      encoding: file.encoding,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.log('📁 [Multer] PRODUCTION PATH INFO:');
+      console.log('📁 [Multer]   Base dir:', process.env.NODE_ENV === 'production' ? '/tmp/clarafi-storage' : process.cwd());
+      console.log('📁 [Multer]   Uploads dir:', getUploadsDir());
+      console.log('📁 [Multer]   Final path:', uploadsDir);
+      console.log('📁 [Multer]   /tmp exists:', await fs.access('/tmp').then(() => true).catch(() => false));
+    }
+    
     try {
       await fs.mkdir(uploadsDir, { recursive: true });
-      console.log(`📎 [AttachmentUpload] Created/verified upload directory: ${uploadsDir}`);
+      console.log(`📁 [Multer] ✅ Created/verified upload directory: ${uploadsDir}`);
+      
+      // Verify directory in production
+      if (process.env.NODE_ENV === 'production') {
+        const stats = await fs.stat(uploadsDir);
+        console.log('📁 [Multer] Directory stats:', {
+          isDirectory: stats.isDirectory(),
+          mode: '0' + (stats.mode & parseInt('777', 8)).toString(8),
+          size: stats.size,
+          created: stats.birthtime
+        });
+      }
     } catch (error) {
-      console.error(`📎 [AttachmentUpload] Failed to create upload directory: ${uploadsDir}`, error);
+      console.error(`📁 [Multer] ❌ Failed to create upload directory: ${uploadsDir}`, error);
+      console.error('📁 [Multer] Error details:', {
+        message: (error as any).message,
+        code: (error as any).code,
+        syscall: (error as any).syscall,
+        path: (error as any).path
+      });
       return cb(error as any, uploadsDir);
     }
     cb(null, uploadsDir);
   },
   filename: async (req, file, cb) => {
+    console.log('📁 [Multer] === FILENAME CALLBACK ===');
+    console.log('📁 [Multer] Original filename:', file.originalname);
+    console.log('📁 [Multer] File mimetype:', file.mimetype);
+    
     // Generate secure filename: hash + timestamp + extension
     const path = await getPathModule();
-    const hash = createHash('md5').update(file.originalname + Date.now()).digest('hex');
+    const timestamp = Date.now();
+    const hash = createHash('md5').update(file.originalname + timestamp).digest('hex');
     const ext = path.extname(file.originalname);
-    cb(null, `${hash}${ext}`);
+    const finalFilename = `${hash}${ext}`;
+    
+    console.log('📁 [Multer] Generated filename:', {
+      timestamp: timestamp,
+      hash: hash,
+      extension: ext,
+      final: finalFilename
+    });
+    
+    cb(null, finalFilename);
   }
 });
 
@@ -67,6 +118,15 @@ const upload = multer({
     fileSize: 100 * 1024 * 1024, // 100MB limit (Epic/Athena standard)
   },
   fileFilter: (req, file, cb) => {
+    console.log('📁 [Multer] === FILE FILTER ===');
+    console.log('📁 [Multer] File details:', {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      encoding: file.encoding,
+      mimetype: file.mimetype,
+      size: file.size || 'Unknown'
+    });
+    
     // Production EMR supported formats
     const allowedMimes = [
       'application/pdf',
@@ -82,8 +142,11 @@ const upload = multer({
     ];
     
     if (allowedMimes.includes(file.mimetype)) {
+      console.log('📁 [Multer] ✅ File type allowed:', file.mimetype);
       cb(null, true);
     } else {
+      console.log('📁 [Multer] ❌ File type rejected:', file.mimetype);
+      console.log('📁 [Multer] Allowed types:', allowedMimes);
       cb(new Error(`File type ${file.mimetype} not supported. Supported formats: PDF, Images (JPEG, PNG, TIFF), DICOM, DOC, DOCX, TXT`));
     }
   }
@@ -122,27 +185,84 @@ async function generateThumbnail(filePath: string, mimeType: string): Promise<st
 
 // Upload single attachment
 router.post('/:patientId/attachments', upload.single('file'), async (req: Request, res: Response) => {
-  console.log('🔥 [UPLOAD WORKFLOW] ============= STARTING ATTACHMENT UPLOAD =============');
+  console.log('🔥 [UPLOAD WORKFLOW] ================= STARTING ATTACHMENT UPLOAD =================');
+  console.log('📎 [AttachmentUpload] Timestamp:', new Date().toISOString());
+  console.log('📎 [AttachmentUpload] Environment:', process.env.NODE_ENV);
   console.log('📎 [AttachmentUpload] Single upload request received');
   console.log('📎 [AttachmentUpload] Patient ID:', req.params.patientId);
   console.log('📎 [AttachmentUpload] Auth status:', !!req.isAuthenticated?.());
   console.log('📎 [AttachmentUpload] User:', req.user?.id);
-  console.log('📎 [AttachmentUpload] File info:', req.file ? {
-    filename: req.file.filename,
+  
+  // Production-specific request logging
+  if (process.env.NODE_ENV === 'production') {
+    console.log('📎 [AttachmentUpload] === PRODUCTION REQUEST INFO ===');
+    console.log('📎 [AttachmentUpload] Headers:', {
+      'content-type': req.get('content-type'),
+      'content-length': req.get('content-length'),
+      'x-forwarded-for': req.get('x-forwarded-for'),
+      'x-forwarded-proto': req.get('x-forwarded-proto'),
+      'x-real-ip': req.get('x-real-ip'),
+      'user-agent': req.get('user-agent')
+    });
+    console.log('📎 [AttachmentUpload] AWS App Runner info:', {
+      'aws-region': process.env.AWS_REGION,
+      'port': process.env.PORT,
+      'instance-id': process.env.AWS_INSTANCE_ID,
+      'container-port': process.env.CONTAINER_PORT
+    });
+  }
+  
+  console.log('📎 [AttachmentUpload] Multer processed file:', req.file ? {
+    fieldname: req.file.fieldname,
     originalname: req.file.originalname,
-    size: req.file.size,
-    mimetype: req.file.mimetype
-  } : 'No file');
+    encoding: req.file.encoding,
+    mimetype: req.file.mimetype,
+    destination: req.file.destination,
+    filename: req.file.filename,
+    path: req.file.path,
+    size: req.file.size
+  } : 'NO FILE RECEIVED');
+  
   console.log('📎 [AttachmentUpload] Request body:', req.body);
+  console.log('📎 [AttachmentUpload] Upload directory config:', {
+    baseDir: process.env.NODE_ENV === 'production' ? '/tmp/clarafi-storage' : process.cwd(),
+    uploadsDir: getUploadsDir('attachments')
+  });
+  
+  // Check file system permissions in production
+  if (process.env.NODE_ENV === 'production') {
+    const fs = await import('fs/promises');
+    const uploadsDir = getUploadsDir('attachments');
+    console.log('📎 [AttachmentUpload] === FILE SYSTEM CHECK ===');
+    console.log('📎 [AttachmentUpload] Target directory:', uploadsDir);
+    
+    try {
+      const stats = await fs.stat(uploadsDir);
+      console.log('📎 [AttachmentUpload] Directory exists:', stats.isDirectory());
+      console.log('📎 [AttachmentUpload] Directory permissions:', {
+        readable: !!(stats.mode & 0o400),
+        writable: !!(stats.mode & 0o200),
+        executable: !!(stats.mode & 0o100),
+        mode: '0' + (stats.mode & parseInt('777', 8)).toString(8)
+      });
+    } catch (statError) {
+      console.log('📎 [AttachmentUpload] Directory does not exist yet, will be created');
+    }
+  }
   
   try {
     if (!req.isAuthenticated()) {
-      console.log('📎 [Backend] Authentication failed');
+      console.log('📎 [Backend] ❌ Authentication failed');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     if (!req.file) {
-      console.log('📎 [Backend] No file in request');
+      console.log('📎 [Backend] ❌ No file in request after multer processing');
+      console.log('📎 [Backend] This could be due to:');
+      console.log('📎 [Backend]   1. File size exceeding limit (100MB)');
+      console.log('📎 [Backend]   2. Unsupported file type');
+      console.log('📎 [Backend]   3. Multer configuration issue');
+      console.log('📎 [Backend]   4. Network timeout during upload');
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
@@ -205,13 +325,41 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     // Get path module for file extension
     const pathModule = await getPathModule();
     
-    // Log production-specific paths for debugging
-    console.log('📎 [AttachmentUpload] File storage paths:', {
-      environment: process.env.NODE_ENV,
-      filePath: req.file.path,
-      uploadsDir: getUploadsDir('attachments'),
-      baseDir: process.env.NODE_ENV === 'production' ? '/tmp/clarafi-storage' : process.cwd()
+    // Extensive production path debugging
+    console.log('📎 [AttachmentUpload] === FILE STORAGE PATHS ===');
+    console.log('📎 [AttachmentUpload] Environment:', process.env.NODE_ENV);
+    console.log('📎 [AttachmentUpload] File paths:', {
+      'req.file.path': req.file.path,
+      'req.file.destination': req.file.destination,
+      'req.file.filename': req.file.filename,
+      'absolute path': pathModule.resolve(req.file.path),
+      'dirname': pathModule.dirname(req.file.path),
+      'basename': pathModule.basename(req.file.path)
     });
+    console.log('📎 [AttachmentUpload] Directory structure:', {
+      'base directory': process.env.NODE_ENV === 'production' ? '/tmp/clarafi-storage' : process.cwd(),
+      'uploads directory': getUploadsDir(),
+      'attachments directory': getUploadsDir('attachments'),
+      'thumbnails directory': getUploadsDir('thumbnails')
+    });
+    
+    // Verify file actually exists
+    console.log('📎 [AttachmentUpload] Verifying file existence...');
+    try {
+      await fs.access(req.file.path);
+      console.log('📎 [AttachmentUpload] ✅ File exists at:', req.file.path);
+      const fileStats = await fs.stat(req.file.path);
+      console.log('📎 [AttachmentUpload] File stats:', {
+        size: fileStats.size,
+        isFile: fileStats.isFile(),
+        created: fileStats.birthtime,
+        modified: fileStats.mtime,
+        permissions: '0' + (fileStats.mode & parseInt('777', 8)).toString(8)
+      });
+    } catch (accessError) {
+      console.error('📎 [AttachmentUpload] ❌ FILE ACCESS ERROR:', accessError);
+      console.error('📎 [AttachmentUpload] File does not exist at expected path');
+    }
 
     const attachmentData = {
       patientId,
@@ -256,19 +404,47 @@ router.post('/:patientId/attachments', upload.single('file'), async (req: Reques
     
     res.status(201).json(attachment);
   } catch (error) {
-    console.error('📎 [AttachmentUpload] ❌ File upload error:', error);
+    console.error('📎 [AttachmentUpload] ❌ ===================== FILE UPLOAD ERROR =====================');
+    console.error('📎 [AttachmentUpload] ❌ Timestamp:', new Date().toISOString());
+    console.error('📎 [AttachmentUpload] ❌ Environment:', process.env.NODE_ENV);
     console.error('📎 [AttachmentUpload] ❌ Error type:', typeof error);
+    console.error('📎 [AttachmentUpload] ❌ Error constructor:', error?.constructor?.name);
     console.error('📎 [AttachmentUpload] ❌ Error name:', (error as any)?.name);
     console.error('📎 [AttachmentUpload] ❌ Error message:', (error as any)?.message);
-    console.error('📎 [AttachmentUpload] ❌ Error stack:', (error as any)?.stack);
+    console.error('📎 [AttachmentUpload] ❌ Error code:', (error as any)?.code);
+    console.error('📎 [AttachmentUpload] ❌ Error errno:', (error as any)?.errno);
+    console.error('📎 [AttachmentUpload] ❌ Error syscall:', (error as any)?.syscall);
+    console.error('📎 [AttachmentUpload] ❌ Error path:', (error as any)?.path);
     
-    // More detailed error information
+    // Production-specific error debugging
+    if (process.env.NODE_ENV === 'production') {
+      console.error('📎 [AttachmentUpload] ❌ === PRODUCTION ERROR CONTEXT ===');
+      console.error('📎 [AttachmentUpload] ❌ AWS App Runner paths:', {
+        '/tmp exists': await fs.access('/tmp').then(() => true).catch(() => false),
+        '/tmp writable': await fs.access('/tmp', fs.constants.W_OK).then(() => true).catch(() => false),
+        '/tmp/clarafi-storage exists': await fs.access('/tmp/clarafi-storage').then(() => true).catch(() => false),
+        '/app exists': await fs.access('/app').then(() => true).catch(() => false),
+        '/app writable': await fs.access('/app', fs.constants.W_OK).then(() => true).catch(() => false)
+      });
+      
+      // List /tmp contents
+      try {
+        const tmpContents = await fs.readdir('/tmp');
+        console.error('📎 [AttachmentUpload] ❌ /tmp contents:', tmpContents.slice(0, 10), tmpContents.length > 10 ? `... and ${tmpContents.length - 10} more` : '');
+      } catch (e) {
+        console.error('📎 [AttachmentUpload] ❌ Could not list /tmp contents:', e);
+      }
+    }
+    
+    // Full error object
     if (error instanceof Error) {
-      console.error('📎 [AttachmentUpload] ❌ Error details:', {
+      console.error('📎 [AttachmentUpload] ❌ Full error details:', {
         name: error.name,
         message: error.message,
-        stack: error.stack?.split('\n').slice(0, 5).join('\n') // First 5 lines of stack
+        stack: error.stack?.split('\n').slice(0, 10).join('\n') // First 10 lines
       });
+    } else {
+      console.error('📎 [AttachmentUpload] ❌ Non-Error object:', error);
     }
     
     // Clean up file if database insertion fails
