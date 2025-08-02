@@ -4,8 +4,8 @@
 # Installs system dependencies and builds the application
 
 echo "🔧 Installing system dependencies..."
-apt-get update
-apt-get install -y imagemagick poppler-utils libvips-dev build-essential
+yum update -y
+yum install -y ImageMagick poppler-utils vips-devel gcc gcc-c++ make
 
 echo "📦 Installing npm dependencies..."
 npm install
